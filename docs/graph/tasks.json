@@ -1293,7 +1293,7 @@
       "id": "T70",
       "title": "Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT",
       "phase": "M1 · Ciclo Fusion",
-      "status": "in_progress",
+      "status": "todo",
       "deps": [
         "T24"
       ],
@@ -1310,8 +1310,11 @@
         "docs/architecture"
       ],
       "suggested": "codex",
-      "owner": "codex",
-      "started": "2026-09-25 11:14"
+      "owner": null,
+      "started": "2026-09-25 11:14",
+      "notes": [
+        "2026-09-25 11:30 codex: Prima base completata e verificata nella milestone T75; codice e contratto pronti, T76 integra UI. T70 resta aperto per booleane robuste e genealogia/rimappatura split-merge previste nelle tappe successive, non implementate ora. Storico T63 e snapshot v2 T30 dipendono dalla base T75, senza attendere le booleane. Per riprendere leggere KERNEL_V1.md e rispettare ordine ROADMAP."
+      ]
     },
     {
       "id": "T71",
@@ -1395,7 +1398,7 @@
       "id": "T75",
       "title": "Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70)",
       "phase": "M1 · Ciclo Fusion",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T24"
       ],
@@ -1404,7 +1407,28 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 11:26"
+      "started": "2026-09-25 11:26",
+      "finished": "2026-09-25 11:30",
+      "notes": [
+        "2026-09-25 11:30 codex: Prima consegna T70 verificata: topologia esplicita box/cilindro sfaccettato/estrusione semplice, coedge, IDs deterministici con limiti documentati, BodySnapshot e DesignModel.snapshot cached con diagnostica. Contratto KERNEL_V1.md pronto per Claude. CI verde: 19 core (80 profili), 50 assistant, 15 MCP, 23 OpenAI, 3 connector, 3MF e build. Grafo esplorativo 63 nodi/86 archi/0 RESOLVED, verificato nel browser. Booleane e naming split/merge restano nel T70 aperto."
+      ]
+    },
+    {
+      "id": "T76",
+      "title": "Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T72",
+        "T75"
+      ],
+      "paths": [
+        "App/Sources/UI/Viewport",
+        "App/Sources/UI/Selection",
+        "App/Sources/UI/Workspace"
+      ],
+      "suggested": "claude",
+      "owner": null
     }
   ]
 }

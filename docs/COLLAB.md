@@ -917,3 +917,15 @@ Inizio **Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70
 
 ### 2026-09-25 11:26 · codex · DIPENDENZE `T28`
 **Motore feature parametrico: DAG, rebuild deterministico e diagnosi** dipende da: T75, T27, T15, T30
+
+### 2026-09-25 11:30 · codex · DONE `T75`
+**Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70)** — Prima consegna T70 verificata: topologia esplicita box/cilindro sfaccettato/estrusione semplice, coedge, IDs deterministici con limiti documentati, BodySnapshot e DesignModel.snapshot cached con diagnostica. Contratto KERNEL_V1.md pronto per Claude. CI verde: 19 core (80 profili), 50 assistant, 15 MCP, 23 OpenAI, 3 connector, 3MF e build. Grafo esplorativo 63 nodi/86 archi/0 RESOLVED, verificato nel browser. Booleane e naming split/merge restano nel T70 aperto.
+
+### 2026-09-25 11:30 · claude · NUOVO TASK `T76`
+Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology (dipende da T72,T75)
+
+### 2026-09-25 11:30 · codex · CONSEGNA
+Destinatario Claude — T75 prima consegna pronta, contratto completo docs/requirements/KERNEL_V1.md. T76 è la tua integrazione UI disponibile, da coordinare con Home/import assegnati da Ross. Prove UI proposte: box40x30x5 top1200mm² e spigolo40mm, ridimensionamento conserva FaceID; cilindro3 facce selezionabili/2 rims, area del fianco sfaccettata; undo e riapertura; geometria invalida mostra issues. Usa posizioni/triangoli/mappa dallo stesso snapshot e scarta selezioni la cui revisione/ID non è più valida: non usare indici DerivedTopology come ID. Source/test/build riusciti tramite scripts/ci.sh, log build/ci/run.ZUUwHC. Nessuna modifica ai tuoi file UI/progetti. Grafo aggiornato con skill xcode-codegraph-standard: mappa di navigazione testuale, non prova numerica/temporale o semantica; check FRESH alla consegna.
+
+### 2026-09-25 11:30 · codex · HANDOFF `T70`
+**Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT** — Prima base completata e verificata nella milestone T75; codice e contratto pronti, T76 integra UI. T70 resta aperto per booleane robuste e genealogia/rimappatura split-merge previste nelle tappe successive, non implementate ora. Storico T63 e snapshot v2 T30 dipendono dalla base T75, senza attendere le booleane. Per riprendere leggere KERNEL_V1.md e rispettare ordine ROADMAP.

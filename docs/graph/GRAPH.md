@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:26. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:30. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -111,9 +111,10 @@ flowchart LR
     T66["T66 · UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0<br/><i>claude</i>"]:::todo
     T67["T67 · UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore<br/><i>claude</i>"]:::todo
     T68["T68 · UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione<br/><i>claude</i>"]:::todo
-    T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>codex</i>"]:::in_progress
+    T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>codex</i>"]:::todo
     T72["T72 · UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)<br/><i>claude</i>"]:::done
-    T75["T75 · Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70)<br/><i>codex</i>"]:::in_progress
+    T75["T75 · Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70)<br/><i>codex</i>"]:::done
+    T76["T76 · Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology<br/><i>claude</i>"]:::todo
   end
   subgraph P17["Coordinamento"]
     T71["T71 · Allineare roadmap e regole sulle dipendenze alla richiesta di Ross<br/><i>codex</i>"]:::done
@@ -278,6 +279,8 @@ flowchart LR
   T17 --> T73
   T73 --> T74
   T24 --> T75
+  T72 --> T76
+  T75 --> T76
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -287,7 +290,10 @@ flowchart LR
 ## Pronti da iniziare
 
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
+- **T63** Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza — suggerito: codex
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: codex
+- **T70** Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT — suggerito: codex
+- **T76** Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology — suggerito: claude
 
 ## Tabella
 
@@ -363,9 +369,10 @@ flowchart LR
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
 | T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | todo | codex | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |
-| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | in_progress | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
+| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | todo | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
 | T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | done | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
 | T72 | UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) | done | claude | T19 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T73 | Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard | in_progress | claude | T17 | App/Sources/Integration/Projects<br>App/Sources/UI/Home<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/FusionTakeoff.entitlements |
 | T74 | Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home | todo | claude | T73 | Tools/FusionAddin<br>App/Sources/Integration/FusionImport<br>App/Sources/UI/Home |
-| T75 | Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70) | in_progress | codex | T24 | docs/requirements/KERNEL_V1.md |
+| T75 | Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70) | done | codex | T24 | docs/requirements/KERNEL_V1.md |
+| T76 | Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology | todo | claude | T72, T75 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |

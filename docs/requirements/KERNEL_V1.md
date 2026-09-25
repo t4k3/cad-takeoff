@@ -16,7 +16,7 @@ librerie esterne. Il renderer di Claude può usare il risultato attraverso il Mo
 
 Un solo guscio chiuso, un contorno per faccia, nessun foro. Ogni spigolo ha due
 coedge opposti; ogni faccia possiede un ciclo orientato. Il modello controlla
-incidenza, planaritá, orientamento dei triangoli e volume positivo. I profili
+incidenza, planarità, orientamento dei triangoli e volume positivo. I profili
 autointersecanti, a contatto, con vertici coincidenti o consecutivi allineati
 sono rifiutati con un errore; non viene restituita una geometria parziale.
 

@@ -22,14 +22,14 @@
 <script type="application/json" id="data">{
   "schemaVersion": 1,
   "title": "Fusion Takeoff — mappa architetturale esplorativa",
-  "generatedAt": "2026-09-25T08:56:46.370489+00:00",
+  "generatedAt": "2026-09-25T09:28:25.738420+00:00",
   "method": "MANUAL_TEXTUAL",
   "coverageState": "PARTIAL_EXPLORATORY",
   "identity": {
     "checkout": "/Users/ross/APP varie/FUSION-TAKEOFF",
     "branch": "main",
-    "commit": "a111145a5ed3e8db5fd9f46ab0b947b36df95e2d",
-    "dirtyStatus": "M docs/COLLAB.md\n M docs/architecture/graph-spec.json\n M docs/graph/GRAPH.md\n M docs/graph/tasks.json",
+    "commit": "68076f2304b6decc3f7d770e6f25f720d6b5ea3c",
+    "dirtyStatus": "M docs/architecture/graph-spec.json",
     "project": "FusionTakeoff.xcodeproj",
     "scheme": "FusionTakeoff",
     "configuration": "Debug",
@@ -40,13 +40,15 @@
     "python": "3.9.6"
   },
   "coverage": {
-    "sourceFilesFound": 54,
-    "sourceFilesInventoried": 54,
-    "sourceFilesWithMappedSymbols": 30,
+    "sourceFilesFound": 64,
+    "sourceFilesInventoried": 64,
+    "sourceFilesWithMappedSymbols": 36,
     "sourceFilesParsedSemantically": 0,
     "unmappedFiles": [
       "App/Sources/Integration/Assistant/AnthropicStream.swift",
       "App/Sources/Integration/Assistant/Keychain.swift",
+      "App/Sources/Integration/Projects/DesignModel+Files.swift",
+      "App/Sources/Integration/Projects/ThumbnailRenderer.swift",
       "App/Sources/UI/Assistant/AssistantSettings.swift",
       "App/Sources/UI/Command/CommandPanel.swift",
       "App/Sources/UI/Command/CommandSession.swift",
@@ -55,7 +57,10 @@
       "App/Sources/UI/Connectors/ClaudeDesktopSetup.swift",
       "App/Sources/UI/Connectors/ConnectorsPanel.swift",
       "App/Sources/UI/DesignSystem/Theme.swift",
+      "App/Sources/UI/Home/HomeView.swift",
       "App/Sources/UI/Previews/CommandPanelPreviews.swift",
+      "App/Sources/UI/Selection/DerivedTopology.swift",
+      "App/Sources/UI/Selection/GeoSelection.swift",
       "App/Sources/UI/Sketch/SketchCommands.swift",
       "App/Sources/UI/Sketch/SketchSession.swift",
       "App/Sources/UI/Viewport/Camera.swift",
@@ -63,32 +68,31 @@
       "App/Sources/UI/Viewport/Picking.swift",
       "App/Sources/UI/Viewport/ShaderSource.swift",
       "App/Sources/UI/Viewport/ViewCube.swift",
-      "App/Sources/UI/Viewport/ViewportContainer.swift",
       "App/Sources/UI/Workspace/BrowserPanel.swift",
+      "App/Sources/UI/Workspace/PartColorPicker.swift",
       "App/Sources/UI/Workspace/Ribbon.swift",
       "App/Sources/UI/Workspace/StatusBar.swift",
-      "App/Sources/UI/Workspace/TimelineBar.swift",
-      "App/Sources/UI/Workspace/WorkspaceState.swift"
+      "App/Sources/UI/Workspace/TimelineBar.swift"
     ],
     "parseErrors": null,
     "parseNote": "Nessun parser AST o semantico eseguito.",
-    "nodes": 46,
-    "edges": 66,
+    "nodes": 63,
+    "edges": 86,
     "edgesByState": {
-      "SYNTACTIC": 51,
+      "SYNTACTIC": 71,
       "RUNTIME/EXTERNAL": 10,
       "INFERRED": 5
     },
     "edgesByRelation": {
       "owns_observable_state": 1,
       "owns_state": 5,
-      "constructs_type": 9,
-      "calls_direct": 16,
+      "constructs_type": 16,
+      "calls_direct": 17,
       "persists_model": 2,
       "loads_resource": 1,
       "writes_export": 1,
-      "references_symbol": 8,
-      "reads_state": 1,
+      "references_symbol": 19,
+      "reads_state": 2,
       "type_conforms_protocol": 6,
       "casts_protocol": 1,
       "binds_state": 1,
@@ -306,6 +310,54 @@
       }
     },
     {
+      "file": "App/Sources/Integration/Projects/DesignModel+Files.swift",
+      "sha256": "f4d08b69acf2d4c43a8c6b9894edf8d1307c107fcc5d6d5d7e768f8b2a1c8ac2",
+      "lines": 19,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/Integration/Projects/ProjectLibrary.swift",
+      "sha256": "69a4b2b5d3d4d617b0ab1a81cc241639bd0b65adbaedd65d89882f85e008280e",
+      "lines": 307,
+      "target": "FusionTakeoff",
+      "mapped": true,
+      "literalSites": {
+        "observation": 1,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 1,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/Integration/Projects/ThumbnailRenderer.swift",
+      "sha256": "01230ee6eada5d246569c157e2bfbc517f9a4f63bb9ecc57f4e597a3cb43f7bd",
+      "lines": 59,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
       "file": "App/Sources/Integration/ToolBridge.swift",
       "sha256": "695b55c1ccad50e9357d016a9acb7502491447deac7fc593db2134b22a3c0248",
       "lines": 101,
@@ -323,8 +375,8 @@
     },
     {
       "file": "App/Sources/Model/DesignModel.swift",
-      "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8",
-      "lines": 146,
+      "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17",
+      "lines": 183,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -531,12 +583,28 @@
     },
     {
       "file": "App/Sources/UI/FusionTakeoffApp.swift",
-      "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8",
-      "lines": 39,
+      "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a",
+      "lines": 47,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
-        "observation": 3,
+        "observation": 4,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/UI/Home/HomeView.swift",
+      "sha256": "f556787903a62c8184efda819394aaf64073e600e6add18200a3460aabcf1103",
+      "lines": 272,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 10,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -556,6 +624,38 @@
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/UI/Selection/DerivedTopology.swift",
+      "sha256": "982628058d3ed4633970c671040e6f76690c383cb5f1ecfc5bb02c40337c16a8",
+      "lines": 112,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/UI/Selection/GeoSelection.swift",
+      "sha256": "00aa95ab479d21d2920d4c084264aeeae3502b2c9bfb2d637d568e81fd6745d2",
+      "lines": 69,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 1,
         "selectors": 0,
         "delegate": 0,
         "representableWitness": 0
@@ -627,8 +727,8 @@
     },
     {
       "file": "App/Sources/UI/Viewport/MetalViewport.swift",
-      "sha256": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012",
-      "lines": 151,
+      "sha256": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3",
+      "lines": 165,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -659,8 +759,8 @@
     },
     {
       "file": "App/Sources/UI/Viewport/ShaderSource.swift",
-      "sha256": "a7a5f4698fccd2d403e9ebead01d7b029339bf8fad69e4fc34d267dc08c4788c",
-      "lines": 81,
+      "sha256": "468bb2e41e1c5bb5ff6ea62b73140339380ba3a362a9753c2218d319521d2700",
+      "lines": 83,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -691,10 +791,10 @@
     },
     {
       "file": "App/Sources/UI/Viewport/ViewportContainer.swift",
-      "sha256": "00447b806b7ed2aed09f7bae01e8a59f07fa4175ddfa8f2157e8d843e149f3a1",
-      "lines": 211,
+      "sha256": "3bf4a976ff62c6e5dc5f63e1fe25602c362da78d113e564c0ee89eb7868cc761",
+      "lines": 368,
       "target": "FusionTakeoff",
-      "mapped": false,
+      "mapped": true,
       "literalSites": {
         "observation": 4,
         "combine": 0,
@@ -707,8 +807,8 @@
     },
     {
       "file": "App/Sources/UI/Viewport/ViewportRenderer.swift",
-      "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97",
-      "lines": 267,
+      "sha256": "bb54512aaf830fbba4aa6e7c0de80afcb85eaf04138bbbd9e46f6530b58a02d2",
+      "lines": 305,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -723,8 +823,8 @@
     },
     {
       "file": "App/Sources/UI/Workspace/BrowserPanel.swift",
-      "sha256": "e0bb6c7e11d9e95de156087a7ee7e0da29ac34798b8483e6663e0d1948097e99",
-      "lines": 124,
+      "sha256": "89a592b9bbf5e1d3a54490f79655e72148b7eb1e9091c857e8353cd6320f1458",
+      "lines": 127,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -739,8 +839,8 @@
     },
     {
       "file": "App/Sources/UI/Workspace/InspectorPanel.swift",
-      "sha256": "dff6a5adde115fe78edc0aa696d7863736bf30d3bcab5d8f83a095c702320018",
-      "lines": 88,
+      "sha256": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748",
+      "lines": 89,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -754,13 +854,29 @@
       }
     },
     {
-      "file": "App/Sources/UI/Workspace/Ribbon.swift",
-      "sha256": "31c816b243d12c8be32da7a8e611c7e447d9694a72cb71bb2d2b80bf13ef8d88",
-      "lines": 164,
+      "file": "App/Sources/UI/Workspace/PartColorPicker.swift",
+      "sha256": "1bbd78add262ae8d9a13a0a81005fc06843b46882caf21ccb947e0eb40cfb521",
+      "lines": 79,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
         "observation": 3,
+        "combine": 0,
+        "concurrency": 5,
+        "mainActor": 1,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/UI/Workspace/Ribbon.swift",
+      "sha256": "e5c70d5e72b83c1b1a42cce8ddb280bb19a465c47039aeaca51134ed6f6bc801",
+      "lines": 176,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 4,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -787,8 +903,8 @@
     },
     {
       "file": "App/Sources/UI/Workspace/TimelineBar.swift",
-      "sha256": "9ff8f5afd947e03daba9cea58dee743f0489efe6d051616b9c815271389684c5",
-      "lines": 62,
+      "sha256": "0932a7bdfedd91a371f2c54ba151889a9e56edd7554dd5f126009ac68b219833",
+      "lines": 65,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -803,10 +919,10 @@
     },
     {
       "file": "App/Sources/UI/Workspace/WorkspaceState.swift",
-      "sha256": "02ba785645e95df32b84adf42b7be3d9844b321b5db3e06e8822ab4b896b95b4",
-      "lines": 80,
+      "sha256": "773fb5b24fec16cb6d4615f8832f4377495eec930fb4455d519ff8f46a9c6405",
+      "lines": 87,
       "target": "FusionTakeoff",
-      "mapped": false,
+      "mapped": true,
       "literalSites": {
         "observation": 1,
         "combine": 0,
@@ -819,12 +935,12 @@
     },
     {
       "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
-      "sha256": "6b69878f64412fb4a6c3c4e837d5f6bac2b90ce8321d06979af846d432176e12",
-      "lines": 64,
+      "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76",
+      "lines": 71,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
-        "observation": 5,
+        "observation": 6,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -853,6 +969,54 @@
       "file": "Packages/CADCore/Sources/CADCore/Export.swift",
       "sha256": "ba2eb3b394c30b094db765e235081738c4484b5e4050c0277f2976bedd18f62d",
       "lines": 79,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+      "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e",
+      "lines": 105,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+      "sha256": "90d6eaa1ffab4ac23eb0403e8c6931321dd77d99116308aaab9c42cfe078a05f",
+      "lines": 163,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f",
+      "lines": 148,
       "target": "CADCore",
       "mapped": true,
       "literalSites": {
@@ -992,8 +1156,11 @@
     "App/Sources/Integration/OpenAI/OpenAIConversation.swift": "7ecde36830d2ec5b207282f93418d4eed7d40dbc921721f7f5a756eba9e2b1a8",
     "App/Sources/Integration/OpenAI/OpenAIProvider.swift": "29a10f519d46211dc388badc2f5d151f42d7c32cf72f41c545778c239bb026b7",
     "App/Sources/Integration/OpenAI/OpenAIStream.swift": "0d2c9812bee75ec110915dcb9f9091484070d1255933ec8ecb41528bce6e5228",
+    "App/Sources/Integration/Projects/DesignModel+Files.swift": "f4d08b69acf2d4c43a8c6b9894edf8d1307c107fcc5d6d5d7e768f8b2a1c8ac2",
+    "App/Sources/Integration/Projects/ProjectLibrary.swift": "69a4b2b5d3d4d617b0ab1a81cc241639bd0b65adbaedd65d89882f85e008280e",
+    "App/Sources/Integration/Projects/ThumbnailRenderer.swift": "01230ee6eada5d246569c157e2bfbc517f9a4f63bb9ecc57f4e597a3cb43f7bd",
     "App/Sources/Integration/ToolBridge.swift": "695b55c1ccad50e9357d016a9acb7502491447deac7fc593db2134b22a3c0248",
-    "App/Sources/Model/DesignModel.swift": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8",
+    "App/Sources/Model/DesignModel.swift": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17",
     "App/Sources/Model/Tools/CADToolCatalog.swift": "8e37b5047c3628875e2420abe7b0d7a29dfa36b30d9c9922222a39760615dce4",
     "App/Sources/Model/Tools/CADToolValidation.swift": "b29f4abaf770dc0b16c126568e346090509b9c88091abb395b5a3b6a6f179345",
     "App/Sources/Model/Tools/DesignModel+Tools.swift": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9",
@@ -1006,29 +1173,36 @@
     "App/Sources/UI/Connectors/ClaudeDesktopSetup.swift": "6d501c71658774e4270935b5cd81f71e84159c7dd141a148bfb27726f8de84e4",
     "App/Sources/UI/Connectors/ConnectorsPanel.swift": "6304501f3a2d6dbd2c6dfba879a49faccf5b59a3f5780abec102e3a58c1fa87e",
     "App/Sources/UI/DesignSystem/Theme.swift": "89e6023e512663e5cda2c370086b7ff208fe330b2fc73057af06597bbf28b049",
-    "App/Sources/UI/FusionTakeoffApp.swift": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8",
+    "App/Sources/UI/FusionTakeoffApp.swift": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a",
+    "App/Sources/UI/Home/HomeView.swift": "f556787903a62c8184efda819394aaf64073e600e6add18200a3460aabcf1103",
     "App/Sources/UI/Previews/CommandPanelPreviews.swift": "78269bea41240cb20785f5fcfae056172f2f357ec6b0bc21685674184efbfbad",
+    "App/Sources/UI/Selection/DerivedTopology.swift": "982628058d3ed4633970c671040e6f76690c383cb5f1ecfc5bb02c40337c16a8",
+    "App/Sources/UI/Selection/GeoSelection.swift": "00aa95ab479d21d2920d4c084264aeeae3502b2c9bfb2d637d568e81fd6745d2",
     "App/Sources/UI/Sketch/SketchCommands.swift": "a4b7d445f79ca630cf63edc0387d20f3eca00ca609994f3493d6c829ec5e1aaa",
     "App/Sources/UI/Sketch/SketchSession.swift": "b449d9214a628f27d9d7e87a476058b2b832c670e6eacdbbc49b1df3a2ec32c8",
     "App/Sources/UI/Viewport/Camera.swift": "0ca2b4a4881818f3408089ea45e1daa22797a24d974304460547514bd346a825",
     "App/Sources/UI/Viewport/MatrixMath.swift": "a01c828de24644854bef110c0584d6217e3d8f322f9203c0c38d0d14e4462bbf",
-    "App/Sources/UI/Viewport/MetalViewport.swift": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012",
+    "App/Sources/UI/Viewport/MetalViewport.swift": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3",
     "App/Sources/UI/Viewport/Picking.swift": "93cc6444367e57df86acd2a64b0e8ddb59bb27ae77fc697d407a791bbfc8a420",
-    "App/Sources/UI/Viewport/ShaderSource.swift": "a7a5f4698fccd2d403e9ebead01d7b029339bf8fad69e4fc34d267dc08c4788c",
+    "App/Sources/UI/Viewport/ShaderSource.swift": "468bb2e41e1c5bb5ff6ea62b73140339380ba3a362a9753c2218d319521d2700",
     "App/Sources/UI/Viewport/ViewCube.swift": "9348c92ef68ada28d7507dbb65f333f41c5f8d1b2cedba4479634e37e3373b74",
-    "App/Sources/UI/Viewport/ViewportContainer.swift": "00447b806b7ed2aed09f7bae01e8a59f07fa4175ddfa8f2157e8d843e149f3a1",
-    "App/Sources/UI/Viewport/ViewportRenderer.swift": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97",
-    "App/Sources/UI/Workspace/BrowserPanel.swift": "e0bb6c7e11d9e95de156087a7ee7e0da29ac34798b8483e6663e0d1948097e99",
-    "App/Sources/UI/Workspace/InspectorPanel.swift": "dff6a5adde115fe78edc0aa696d7863736bf30d3bcab5d8f83a095c702320018",
-    "App/Sources/UI/Workspace/Ribbon.swift": "31c816b243d12c8be32da7a8e611c7e447d9694a72cb71bb2d2b80bf13ef8d88",
+    "App/Sources/UI/Viewport/ViewportContainer.swift": "3bf4a976ff62c6e5dc5f63e1fe25602c362da78d113e564c0ee89eb7868cc761",
+    "App/Sources/UI/Viewport/ViewportRenderer.swift": "bb54512aaf830fbba4aa6e7c0de80afcb85eaf04138bbbd9e46f6530b58a02d2",
+    "App/Sources/UI/Workspace/BrowserPanel.swift": "89a592b9bbf5e1d3a54490f79655e72148b7eb1e9091c857e8353cd6320f1458",
+    "App/Sources/UI/Workspace/InspectorPanel.swift": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748",
+    "App/Sources/UI/Workspace/PartColorPicker.swift": "1bbd78add262ae8d9a13a0a81005fc06843b46882caf21ccb947e0eb40cfb521",
+    "App/Sources/UI/Workspace/Ribbon.swift": "e5c70d5e72b83c1b1a42cce8ddb280bb19a465c47039aeaca51134ed6f6bc801",
     "App/Sources/UI/Workspace/StatusBar.swift": "20aa7e5dc330f507d8becae310a9d3ed949c49b309431d3c9a94f31557602f35",
-    "App/Sources/UI/Workspace/TimelineBar.swift": "9ff8f5afd947e03daba9cea58dee743f0489efe6d051616b9c815271389684c5",
-    "App/Sources/UI/Workspace/WorkspaceState.swift": "02ba785645e95df32b84adf42b7be3d9844b321b5db3e06e8822ab4b896b95b4",
-    "App/Sources/UI/Workspace/WorkspaceView.swift": "6b69878f64412fb4a6c3c4e837d5f6bac2b90ce8321d06979af846d432176e12",
-    "FusionTakeoff.xcodeproj/project.pbxproj": "f6e7e5bc2102e58836b713b5d214d1dd87d102f8114586b96eb944e12024d726",
+    "App/Sources/UI/Workspace/TimelineBar.swift": "0932a7bdfedd91a371f2c54ba151889a9e56edd7554dd5f126009ac68b219833",
+    "App/Sources/UI/Workspace/WorkspaceState.swift": "773fb5b24fec16cb6d4615f8832f4377495eec930fb4455d519ff8f46a9c6405",
+    "App/Sources/UI/Workspace/WorkspaceView.swift": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76",
+    "FusionTakeoff.xcodeproj/project.pbxproj": "802b17805e68f2a1b8807be19df18e216f1fe9bb9a6315b437dcff7a77051fbb",
     "Packages/CADCore/Package.swift": "020fcbe1497b1671441987703ac82f815719fd3c2a9a1a90b3901dbdaa46da63",
     "Packages/CADCore/Sources/CADCore/Document.swift": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8",
     "Packages/CADCore/Sources/CADCore/Export.swift": "ba2eb3b394c30b094db765e235081738c4484b5e4050c0277f2976bedd18f62d",
+    "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e",
+    "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift": "90d6eaa1ffab4ac23eb0403e8c6931321dd77d99116308aaab9c42cfe078a05f",
+    "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f",
     "Packages/CADCore/Sources/CADCore/Math.swift": "ac1464153e9fe7a142cc9432b655d96b22c1fe87812ea3daca3175e64a74f76c",
     "Packages/CADCore/Sources/CADCore/Mesh.swift": "3873f5d0a5ad23c78b947aee608a2fb066d6705da522ef8f51093f48f982fa54",
     "Packages/CADCore/Sources/CADCore/Operations.swift": "6e09f2ff12b73815e7a822bc218d6e9fb6dbb85a529678571ea73e5537ee7fde",
@@ -1036,13 +1210,14 @@
     "Packages/CADCore/Sources/CADCore/Sketch.swift": "236c122d05e82b51f026c5ea994c370851b36f64ab3731d02aa224d32a9147df",
     "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8",
     "Packages/CADCore/Tests/CADCoreTests/CADCoreTests.swift": "4cd476d752fed1d1a5ae102a1fafa6c6faceed61c580397bf1a0393c06cd07ee",
+    "Packages/CADCore/Tests/CADCoreTests/PrimitiveKernelTests.swift": "69996931532ac325c273b712fe04c904d6ce7cd98c1c0b44da4672899ef75436",
     "Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift": "65b55ff8afcb76549ebdcd1c679f75ff269fbbf8f5287f631ae7980d2002e3c2",
-    "Tests/AssistantTools/Runner.swift": "4bf411692b3afa304e44df8be2b5fd1249cc20f9db102ea203741936cb462e9e",
+    "Tests/AssistantTools/Runner.swift": "2a0ca172a145d9d6d21af4cce0a284451db258cda7133198322a49c0cdbae6a9",
     "Tests/MCPIntegration/Runner.swift": "e667d1b7e7f74d8420ef8c1983569300c6e0190f17d1ddc7469fb13d7a2a9c10",
     "Tests/OpenAIProvider/Runner.swift": "01727690c619b262c18d4052c4ac1d014dd8a34f586be77f0e9bdc6f7987391b",
     "Tests/ThreeMF/Fixture.swift": "de11cec62594ceb83a3d5736a965afebdd06f81cf958ae727f8289f443c48f9e",
     "Tools/ftk-mcp/main.swift": "dc3eba0eee1805e4b3a2fea41f13721b952c6ada6ec07c3b11956610eb2d7d98",
-    "docs/architecture/graph-spec.json": "063c443a737e82342ef1d629283079bb736cb52644e803cf84dc8c26f3f7b180",
+    "docs/architecture/graph-spec.json": "fec0e14b4e3bb383fb2ebb756c17220e2e6766f2ca7eeedfcac9a29f505cd217",
     "docs/architecture/viewer-template.html": "b7caca8064586bdd71022a6e905f6017e50355b634436cbd689a5f93c8250d9f",
     "project.yml": "c81a6860218895f1c4d9e60d97e844e528d8f5347103ab312d8f6e2095a330c0",
     "scripts/architecture_graph.py": "5821ba7c67391bdf66f7a012b244b50697ca9b1b64c91c50264e4cf34e89e36d"
@@ -1063,7 +1238,7 @@
         "line": 4,
         "endLine": 4,
         "excerpt": "struct FusionTakeoffApp: App {",
-        "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
+        "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
       }
     },
     {
@@ -1081,7 +1256,7 @@
         "line": 6,
         "endLine": 6,
         "excerpt": "struct WorkspaceView: View {",
-        "sha256": "6b69878f64412fb4a6c3c4e837d5f6bac2b90ce8321d06979af846d432176e12"
+        "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
       }
     },
     {
@@ -1099,7 +1274,7 @@
         "line": 7,
         "endLine": 7,
         "excerpt": "struct InspectorPanel: View {",
-        "sha256": "dff6a5adde115fe78edc0aa696d7863736bf30d3bcab5d8f83a095c702320018"
+        "sha256": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748"
       }
     },
     {
@@ -1117,7 +1292,7 @@
         "line": 7,
         "endLine": 7,
         "excerpt": "struct MetalViewport: NSViewRepresentable {",
-        "sha256": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012"
+        "sha256": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3"
       }
     },
     {
@@ -1132,10 +1307,10 @@
       "file": "App/Sources/Model/DesignModel.swift",
       "source": {
         "file": "App/Sources/Model/DesignModel.swift",
-        "line": 9,
-        "endLine": 9,
+        "line": 20,
+        "endLine": 20,
         "excerpt": "final class DesignModel {",
-        "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+        "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
       }
     },
     {
@@ -1671,7 +1846,7 @@
         "line": 8,
         "endLine": 8,
         "excerpt": "final class ViewportRenderer: NSObject, MTKViewDelegate {",
-        "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97"
+        "sha256": "bb54512aaf830fbba4aa6e7c0de80afcb85eaf04138bbbd9e46f6530b58a02d2"
       }
     },
     {
@@ -1811,6 +1986,312 @@
         "excerpt": "private enum StoredZIP {",
         "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
       }
+    },
+    {
+      "id": "kernel",
+      "name": "PrimitiveKernel",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+        "line": 5,
+        "endLine": 5,
+        "excerpt": "public enum PrimitiveKernel {",
+        "sha256": "90d6eaa1ffab4ac23eb0403e8c6931321dd77d99116308aaab9c42cfe078a05f"
+      }
+    },
+    {
+      "id": "brepbody",
+      "name": "BRepBody",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 75,
+        "endLine": 75,
+        "excerpt": "public struct BRepBody: Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "brepvertex",
+      "name": "BRepVertex",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 39,
+        "endLine": 39,
+        "excerpt": "public struct BRepVertex: Equatable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "brepedge",
+      "name": "BRepEdge",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 54,
+        "endLine": 54,
+        "excerpt": "public struct BRepEdge: Equatable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "brepface",
+      "name": "BRepFace",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 63,
+        "endLine": 63,
+        "excerpt": "public struct BRepFace: Equatable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "brephalfedge",
+      "name": "BRepHalfEdge",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 45,
+        "endLine": 45,
+        "excerpt": "public struct BRepHalfEdge: Equatable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "faceid",
+      "name": "FaceID",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 3,
+        "endLine": 3,
+        "excerpt": "public struct FaceID: RawRepresentable, Hashable, Codable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "edgeid",
+      "name": "EdgeID",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 8,
+        "endLine": 8,
+        "excerpt": "public struct EdgeID: RawRepresentable, Hashable, Codable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "vertexid",
+      "name": "VertexID",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 13,
+        "endLine": 13,
+        "excerpt": "public struct VertexID: RawRepresentable, Hashable, Codable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "surface",
+      "name": "SurfaceDescriptor",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+        "line": 20,
+        "endLine": 20,
+        "excerpt": "public enum SurfaceDescriptor: Equatable, Sendable {",
+        "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+      }
+    },
+    {
+      "id": "bodysnapshot",
+      "name": "BodySnapshot",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+        "line": 27,
+        "endLine": 27,
+        "excerpt": "public struct BodySnapshot: Equatable, Sendable {",
+        "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+      }
+    },
+    {
+      "id": "faceinfo",
+      "name": "FaceInfo",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+        "line": 3,
+        "endLine": 3,
+        "excerpt": "public struct FaceInfo: Equatable, Sendable {",
+        "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+      }
+    },
+    {
+      "id": "edgeinfo",
+      "name": "EdgeInfo",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+        "line": 11,
+        "endLine": 11,
+        "excerpt": "public struct EdgeInfo: Equatable, Sendable {",
+        "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+      }
+    },
+    {
+      "id": "designsnapshot",
+      "name": "DesignSnapshot",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "App/Sources/Model/DesignModel.swift",
+      "source": {
+        "file": "App/Sources/Model/DesignModel.swift",
+        "line": 7,
+        "endLine": 7,
+        "excerpt": "struct DesignSnapshot: Equatable, Sendable {",
+        "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
+      }
+    },
+    {
+      "id": "projectlibrary",
+      "name": "ProjectLibrary",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Progetti · Claude",
+      "file": "App/Sources/Integration/Projects/ProjectLibrary.swift",
+      "source": {
+        "file": "App/Sources/Integration/Projects/ProjectLibrary.swift",
+        "line": 12,
+        "endLine": 12,
+        "excerpt": "final class ProjectLibrary {",
+        "sha256": "69a4b2b5d3d4d617b0ab1a81cc241639bd0b65adbaedd65d89882f85e008280e"
+      }
+    },
+    {
+      "id": "workspacestate",
+      "name": "WorkspaceState",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Workspace/WorkspaceState.swift",
+      "source": {
+        "file": "App/Sources/UI/Workspace/WorkspaceState.swift",
+        "line": 8,
+        "endLine": 8,
+        "excerpt": "final class WorkspaceState {",
+        "sha256": "773fb5b24fec16cb6d4615f8832f4377495eec930fb4455d519ff8f46a9c6405"
+      }
+    },
+    {
+      "id": "viewportstate",
+      "name": "ViewportState",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Viewport/ViewportContainer.swift",
+      "source": {
+        "file": "App/Sources/UI/Viewport/ViewportContainer.swift",
+        "line": 8,
+        "endLine": 8,
+        "excerpt": "final class ViewportState {",
+        "sha256": "3bf4a976ff62c6e5dc5f63e1fe25602c362da78d113e564c0ee89eb7868cc761"
+      }
     }
   ],
   "edges": [
@@ -1826,7 +2307,7 @@
           "line": 5,
           "endLine": 5,
           "excerpt": "@State private var model = DesignModel()",
-          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
+          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1847,10 +2328,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 10,
-          "endLine": 10,
+          "line": 21,
+          "endLine": 21,
           "excerpt": "var document = CADDocument(features: [",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1871,10 +2352,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 29,
-          "endLine": 29,
+          "line": 66,
+          "endLine": 66,
           "excerpt": "func addBox() { add(Feature(name: \"Box \\(document.features.count + 1)\", kind: .box(width: 20, depth: 20, height: 20))) }",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1895,10 +2376,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 105,
-          "endLine": 105,
+          "line": 142,
+          "endLine": 142,
           "excerpt": "let mesh = document.buildMesh()",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1919,10 +2400,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 112,
-          "endLine": 112,
+          "line": 149,
+          "endLine": 149,
           "excerpt": "try STLExporter.binary(mesh).write(to: url)",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1943,10 +2424,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 113,
-          "endLine": 113,
+          "line": 150,
+          "endLine": 150,
           "excerpt": "let r = MeshValidator.validate(mesh)",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1967,10 +2448,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 87,
-          "endLine": 87,
+          "line": 124,
+          "endLine": 124,
           "excerpt": "try document.encoded().write(to: url)",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1991,10 +2472,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 97,
-          "endLine": 97,
+          "line": 134,
+          "endLine": 134,
           "excerpt": "document = try CADDocument.decode(Data(contentsOf: url))",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2015,10 +2496,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 112,
-          "endLine": 112,
+          "line": 149,
+          "endLine": 149,
           "excerpt": "try STLExporter.binary(mesh).write(to: url)",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2447,10 +2928,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "line": 11,
-          "endLine": 11,
+          "line": 12,
+          "endLine": 12,
           "excerpt": "WorkspaceView()",
-          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
+          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2471,10 +2952,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "line": 7,
-          "endLine": 7,
+          "line": 8,
+          "endLine": 8,
           "excerpt": "@State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider()])",
-          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
+          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2498,7 +2979,7 @@
           "line": 6,
           "endLine": 6,
           "excerpt": "@State private var mcp = MCPHost()",
-          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
+          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2519,10 +3000,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "line": 17,
-          "endLine": 17,
+          "line": 21,
+          "endLine": 21,
           "excerpt": "let tools = (model as AnyObject) as? CADToolProvider",
-          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
+          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2543,10 +3024,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
-          "line": 60,
-          "endLine": 60,
+          "line": 67,
+          "endLine": 67,
           "excerpt": "case .assistant: AssistantPanel()",
-          "sha256": "6b69878f64412fb4a6c3c4e837d5f6bac2b90ce8321d06979af846d432176e12"
+          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2570,7 +3051,7 @@
           "line": 21,
           "endLine": 21,
           "excerpt": "TextField(\"Nome\", text: $model.document.features[i].name)",
-          "sha256": "dff6a5adde115fe78edc0aa696d7863736bf30d3bcab5d8f83a095c702320018"
+          "sha256": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3047,10 +3528,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Viewport/MetalViewport.swift",
-          "line": 29,
-          "endLine": 29,
+          "line": 33,
+          "endLine": 33,
           "excerpt": "if let renderer = ViewportRenderer(view: view, camera: camera) {",
-          "sha256": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012"
+          "sha256": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3071,10 +3552,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Viewport/MetalViewport.swift",
-          "line": 31,
-          "endLine": 31,
+          "line": 35,
+          "endLine": 35,
           "excerpt": "view.delegate = renderer",
-          "sha256": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012"
+          "sha256": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3095,10 +3576,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Viewport/ViewportRenderer.swift",
-          "line": 137,
-          "endLine": 137,
+          "line": 140,
+          "endLine": 140,
           "excerpt": "let mesh = f.buildMesh()",
-          "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97"
+          "sha256": "bb54512aaf830fbba4aa6e7c0de80afcb85eaf04138bbbd9e46f6530b58a02d2"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3122,7 +3603,7 @@
           "line": 8,
           "endLine": 8,
           "excerpt": "final class ViewportRenderer: NSObject, MTKViewDelegate {",
-          "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97"
+          "sha256": "bb54512aaf830fbba4aa6e7c0de80afcb85eaf04138bbbd9e46f6530b58a02d2"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3143,10 +3624,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Viewport/MetalViewport.swift",
-          "line": 37,
-          "endLine": 37,
+          "line": 41,
+          "endLine": 41,
           "excerpt": "func updateNSView(_ view: CADMetalView, context: Context) {",
-          "sha256": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012"
+          "sha256": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3170,7 +3651,7 @@
           "line": 7,
           "endLine": 7,
           "excerpt": "struct MetalViewport: NSViewRepresentable {",
-          "sha256": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012"
+          "sha256": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3215,10 +3696,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 132,
-          "endLine": 132,
+          "line": 169,
+          "endLine": 169,
           "excerpt": "return try ThreeMFExporter.archive(parts: parts)",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3239,10 +3720,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 130,
-          "endLine": 130,
+          "line": 167,
+          "endLine": 167,
           "excerpt": "return ThreeMFPart(id: feature.id, name: feature.name, mesh: feature.buildMesh(), color: feature.color)",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3383,10 +3864,490 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 142,
-          "endLine": 142,
+          "line": 179,
+          "endLine": 179,
           "excerpt": "try data.write(to: url, options: .atomic)",
-          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K001",
+      "source": "model",
+      "target": "kernel",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "line": 54,
+          "endLine": 54,
+          "excerpt": "bodies.append(try PrimitiveKernel.build(feature).snapshot(revision: designRevision))",
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K002",
+      "source": "model",
+      "target": "designsnapshot",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "line": 59,
+          "endLine": 59,
+          "excerpt": "let result = DesignSnapshot(revision: designRevision, bodies: bodies, issues: issues)",
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K003",
+      "source": "designsnapshot",
+      "target": "bodysnapshot",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "line": 13,
+          "endLine": 13,
+          "excerpt": "let bodies: [BodySnapshot]",
+          "sha256": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K004",
+      "source": "kernel",
+      "target": "brepbody",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+          "line": 122,
+          "endLine": 122,
+          "excerpt": "let body = BRepBody(id: feature.id, vertices: vertices, edges: edges, halfEdges: halfEdges, faces: faces,",
+          "sha256": "90d6eaa1ffab4ac23eb0403e8c6931321dd77d99116308aaab9c42cfe078a05f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K005",
+      "source": "kernel",
+      "target": "profile",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+          "line": 40,
+          "endLine": 40,
+          "excerpt": "let profile = Profile2D(points: points)",
+          "sha256": "90d6eaa1ffab4ac23eb0403e8c6931321dd77d99116308aaab9c42cfe078a05f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K006",
+      "source": "brepbody",
+      "target": "brepface",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "line": 80,
+          "endLine": 80,
+          "excerpt": "public let faces: [BRepFace]",
+          "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K007",
+      "source": "brepbody",
+      "target": "brepedge",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "line": 78,
+          "endLine": 78,
+          "excerpt": "public let edges: [BRepEdge]",
+          "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K008",
+      "source": "brepbody",
+      "target": "brepvertex",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "line": 77,
+          "endLine": 77,
+          "excerpt": "public let vertices: [BRepVertex]",
+          "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K009",
+      "source": "brepbody",
+      "target": "brephalfedge",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "line": 79,
+          "endLine": 79,
+          "excerpt": "public let halfEdges: [BRepHalfEdge]",
+          "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K010",
+      "source": "brepbody",
+      "target": "mesh",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "line": 86,
+          "endLine": 86,
+          "excerpt": "Mesh(vertices: vertices.map(\\.position), indices: faceTriangles.flatMap { $0 })",
+          "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K011",
+      "source": "brepbody",
+      "target": "bodysnapshot",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "line": 101,
+          "endLine": 101,
+          "excerpt": "return BodySnapshot(bodyID: id, revision: revision, positions: positions, normals: normals,",
+          "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K012",
+      "source": "brepface",
+      "target": "surface",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "line": 70,
+          "endLine": 70,
+          "excerpt": "public let sourceSurface: SurfaceDescriptor",
+          "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K013",
+      "source": "bodysnapshot",
+      "target": "faceinfo",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "line": 37,
+          "endLine": 37,
+          "excerpt": "public let faces: [FaceInfo]",
+          "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K014",
+      "source": "bodysnapshot",
+      "target": "edgeinfo",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "line": 38,
+          "endLine": 38,
+          "excerpt": "public let edges: [EdgeInfo]",
+          "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K015",
+      "source": "faceinfo",
+      "target": "faceid",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "line": 4,
+          "endLine": 4,
+          "excerpt": "public let id: FaceID",
+          "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K016",
+      "source": "edgeinfo",
+      "target": "edgeid",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "line": 12,
+          "endLine": 12,
+          "excerpt": "public let id: EdgeID",
+          "sha256": "be867229845e4caf60b5307d1eaa399ddd10ac58a6d24cd0651a3c33c3ed3b4e"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K017",
+      "source": "brepvertex",
+      "target": "vertexid",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "line": 40,
+          "endLine": 40,
+          "excerpt": "public let id: VertexID",
+          "sha256": "dd3cbb35767875a14c5c38e57dc2a7877da957df6a35ebcc03487f7482980b8f"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K018",
+      "source": "content",
+      "target": "projectlibrary",
+      "relation": "reads_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+          "line": 8,
+          "endLine": 8,
+          "excerpt": "@Environment(ProjectLibrary.self) private var library",
+          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K019",
+      "source": "content",
+      "target": "workspacestate",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+          "line": 9,
+          "endLine": 9,
+          "excerpt": "@State private var workspace = WorkspaceState()",
+          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "K020",
+      "source": "content",
+      "target": "viewportstate",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+          "line": 10,
+          "endLine": 10,
+          "excerpt": "@State private var viewport = ViewportState()",
+          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3405,7 +4366,8 @@
     "Macro Observation, result builder SwiftUI, overload, protocol witness e internals Apple non attraversati.",
     "Nessuna prova di correttezza numerica, timing, race, performance GPU, stato disco o stampa fisica.",
     "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento.",
-    "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo."
+    "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo.",
+    "La prima base B-rep espone snapshot sul Model; integrazione renderer distinta. ID laterali di profili liberi invalidati quando cambia il profilo v1; nessun naming split/merge o Boolean kernel completo implicito."
   ],
   "probes": [
     {
@@ -3449,6 +4411,30 @@
       "category": "3mf_boundary",
       "result": "MANUAL_PARTIAL",
       "evidence": "Feature.color → PartColor; DesignModel → ThreeMFExporter → StoredZIP verificati nel sorgente. Tre profili slicer consumano file in processi esterni. ZIP/CRC/XML, volumi e GUI hanno prove separate; nessun attraversamento semantico continuo verso slicer o stampanti."
+    },
+    {
+      "id": "P08",
+      "category": "kernel_snapshot",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "PrimitiveKernel.build costruisce BRepBody; BRepBody.snapshot produce BodySnapshot; DesignModel.snapshot ha chiamata testuale e cache per revisione. Numeric tests e build separati, zero chiamanti risolti. Nessun arco UI -> snapshot inventato."
+    },
+    {
+      "id": "P09",
+      "category": "swift_classification_and_combine",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Nessun arco di ereditarietà nel dataset; NSObject/MTKView e MTKViewDelegate distinguibili nel sorgente ma non attraversati semanticamente. ThreeMFExportProfile: String è raw value, non superclass. Nessun import Combine/sink/assign trovato nei sorgenti attuali; macro Observation non espanse."
+    },
+    {
+      "id": "P10",
+      "category": "workspace_and_callback",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "WorkspaceView: DesignModel e ProjectLibrary da Environment, WorkspaceState/ViewportState da State; witness NSViewRepresentable e assegnazione view.delegate = renderer restano callback runtime. ProjectLibrary è lavoro concorrente di Claude, nessuna certificazione I/O derivata dal grafo."
+    },
+    {
+      "id": "P11",
+      "category": "sampled_edge_and_dead_code",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Campione C006 ThreeMFExporter -> StoredZIP verificato come calls_direct SYNTACTIC, non eredità; BRepBody.snapshot senza UI non è codice morto: API del Model e test la chiamano."
     }
   ]
 }</script>

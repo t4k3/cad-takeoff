@@ -50,6 +50,23 @@ flowchart LR
   threeMF["ThreeMFExporter"]
   threeMFprofile["ThreeMFExportProfile"]
   zip["StoredZIP"]
+  kernel["PrimitiveKernel"]
+  brepbody["BRepBody"]
+  brepvertex["BRepVertex"]
+  brepedge["BRepEdge"]
+  brepface["BRepFace"]
+  brephalfedge["BRepHalfEdge"]
+  faceid["FaceID"]
+  edgeid["EdgeID"]
+  vertexid["VertexID"]
+  surface["SurfaceDescriptor"]
+  bodysnapshot["BodySnapshot"]
+  faceinfo["FaceInfo"]
+  edgeinfo["EdgeInfo"]
+  designsnapshot["DesignSnapshot"]
+  projectlibrary["ProjectLibrary"]
+  workspacestate["WorkspaceState"]
+  viewportstate["ViewportState"]
   app -->|"owns_observable_state · SYNTACTIC"| model
   model -->|"owns_state · SYNTACTIC"| document
   model -->|"constructs_type · SYNTACTIC"| feature
@@ -116,6 +133,26 @@ flowchart LR
   threeMF -->|"references_symbol · SYNTACTIC"| threeMFprofile
   toolmodel -->|"calls_direct · SYNTACTIC"| model
   model -->|"persists_model · RUNTIME/EXTERNAL"| filesystem
+  model -->|"calls_direct · SYNTACTIC"| kernel
+  model -->|"constructs_type · SYNTACTIC"| designsnapshot
+  designsnapshot -->|"references_symbol · SYNTACTIC"| bodysnapshot
+  kernel -->|"constructs_type · SYNTACTIC"| brepbody
+  kernel -->|"constructs_type · SYNTACTIC"| profile
+  brepbody -->|"references_symbol · SYNTACTIC"| brepface
+  brepbody -->|"references_symbol · SYNTACTIC"| brepedge
+  brepbody -->|"references_symbol · SYNTACTIC"| brepvertex
+  brepbody -->|"references_symbol · SYNTACTIC"| brephalfedge
+  brepbody -->|"constructs_type · SYNTACTIC"| mesh
+  brepbody -->|"constructs_type · SYNTACTIC"| bodysnapshot
+  brepface -->|"references_symbol · SYNTACTIC"| surface
+  bodysnapshot -->|"references_symbol · SYNTACTIC"| faceinfo
+  bodysnapshot -->|"references_symbol · SYNTACTIC"| edgeinfo
+  faceinfo -->|"references_symbol · SYNTACTIC"| faceid
+  edgeinfo -->|"references_symbol · SYNTACTIC"| edgeid
+  brepvertex -->|"references_symbol · SYNTACTIC"| vertexid
+  content -->|"reads_state · SYNTACTIC"| projectlibrary
+  content -->|"constructs_type · SYNTACTIC"| workspacestate
+  content -->|"constructs_type · SYNTACTIC"| viewportstate
 ```
 
 ## Evidenze
@@ -123,14 +160,14 @@ flowchart LR
 | Arco | Relazione | Stato | File e riga |
 |---|---|---|---|
 | app → model | owns_observable_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:5` |
-| model → document | owns_state | SYNTACTIC | `App/Sources/Model/DesignModel.swift:10` |
-| model → feature | constructs_type | SYNTACTIC | `App/Sources/Model/DesignModel.swift:29` |
-| model → document | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:105` |
-| model → stl | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:112` |
-| model → validator | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:113` |
-| model → filesystem | persists_model | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:87` |
-| model → filesystem | loads_resource | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:97` |
-| model → filesystem | writes_export | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:112` |
+| model → document | owns_state | SYNTACTIC | `App/Sources/Model/DesignModel.swift:21` |
+| model → feature | constructs_type | SYNTACTIC | `App/Sources/Model/DesignModel.swift:66` |
+| model → document | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:142` |
+| model → stl | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:149` |
+| model → validator | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:150` |
+| model → filesystem | persists_model | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:124` |
+| model → filesystem | loads_resource | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:134` |
+| model → filesystem | writes_export | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:149` |
 | document → feature | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:52` |
 | feature → kind | owns_state | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:13` |
 | feature → primitives | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:39` |
@@ -148,11 +185,11 @@ flowchart LR
 | document → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:48` |
 | profile → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Sketch.swift:4` |
 | feature → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:4` |
-| app → content | constructs_type | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:11` |
-| app → chat | owns_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:7` |
+| app → content | constructs_type | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:12` |
+| app → chat | owns_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:8` |
 | app → mcphost | owns_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:6` |
-| app → toolprotocol | casts_protocol | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:17` |
-| content → chatui | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:60` |
+| app → toolprotocol | casts_protocol | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:21` |
+| content → chatui | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:67` |
 | inspector → model | binds_state | SYNTACTIC | `App/Sources/UI/Workspace/InspectorPanel.swift:21` |
 | chatui → chat | observes_state | SYNTACTIC | `App/Sources/UI/Assistant/AssistantPanel.swift:6` |
 | chat → assistantprotocol | protocol_dispatch | INFERRED | `App/Sources/Integration/Assistant/AssistantSession.swift:99` |
@@ -173,18 +210,38 @@ flowchart LR
 | toolmodel → toolcatalog | reads_catalog | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:18` |
 | toolmodel → toolvalidation | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:69` |
 | toolmodel → stl | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:152` |
-| viewport → renderer | constructs_type | SYNTACTIC | `App/Sources/UI/Viewport/MetalViewport.swift:29` |
-| viewport → renderer | assigns_delegate | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/MetalViewport.swift:31` |
-| renderer → feature | calls_direct | SYNTACTIC | `App/Sources/UI/Viewport/ViewportRenderer.swift:137` |
+| viewport → renderer | constructs_type | SYNTACTIC | `App/Sources/UI/Viewport/MetalViewport.swift:33` |
+| viewport → renderer | assigns_delegate | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/MetalViewport.swift:35` |
+| renderer → feature | calls_direct | SYNTACTIC | `App/Sources/UI/Viewport/ViewportRenderer.swift:140` |
 | renderer → metal | runtime_gpu_boundary | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/ViewportRenderer.swift:8` |
-| swiftui → viewport | runtime_callback | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/MetalViewport.swift:37` |
+| swiftui → viewport | runtime_callback | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/MetalViewport.swift:41` |
 | viewport → representable | type_conforms_protocol | SYNTACTIC | `App/Sources/UI/Viewport/MetalViewport.swift:7` |
 | feature → partcolor | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:16` |
-| model → threeMF | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:132` |
-| model → threeMFpart | constructs_type | SYNTACTIC | `App/Sources/Model/DesignModel.swift:130` |
+| model → threeMF | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:169` |
+| model → threeMFpart | constructs_type | SYNTACTIC | `App/Sources/Model/DesignModel.swift:167` |
 | threeMFpart → mesh | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:7` |
 | threeMFpart → partcolor | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:8` |
 | threeMF → zip | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:101` |
 | threeMF → threeMFprofile | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:30` |
 | toolmodel → model | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:172` |
-| model → filesystem | persists_model | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:142` |
+| model → filesystem | persists_model | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:179` |
+| model → kernel | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:54` |
+| model → designsnapshot | constructs_type | SYNTACTIC | `App/Sources/Model/DesignModel.swift:59` |
+| designsnapshot → bodysnapshot | references_symbol | SYNTACTIC | `App/Sources/Model/DesignModel.swift:13` |
+| kernel → brepbody | constructs_type | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift:122` |
+| kernel → profile | constructs_type | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift:40` |
+| brepbody → brepface | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:80` |
+| brepbody → brepedge | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:78` |
+| brepbody → brepvertex | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:77` |
+| brepbody → brephalfedge | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:79` |
+| brepbody → mesh | constructs_type | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:86` |
+| brepbody → bodysnapshot | constructs_type | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift:101` |
+| brepface → surface | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:70` |
+| bodysnapshot → faceinfo | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift:37` |
+| bodysnapshot → edgeinfo | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift:38` |
+| faceinfo → faceid | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift:4` |
+| edgeinfo → edgeid | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift:12` |
+| brepvertex → vertexid | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:40` |
+| content → projectlibrary | reads_state | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:8` |
+| content → workspacestate | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:9` |
+| content → viewportstate | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:10` |

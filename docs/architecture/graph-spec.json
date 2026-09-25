@@ -536,6 +536,210 @@
       "group": "Export · Codex",
       "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
       "anchor": "private enum StoredZIP {"
+    },
+    {
+      "id": "kernel",
+      "name": "PrimitiveKernel",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+      "anchor": "public enum PrimitiveKernel {"
+    },
+    {
+      "id": "brepbody",
+      "name": "BRepBody",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct BRepBody:"
+    },
+    {
+      "id": "brepvertex",
+      "name": "BRepVertex",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct BRepVertex:"
+    },
+    {
+      "id": "brepedge",
+      "name": "BRepEdge",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct BRepEdge:"
+    },
+    {
+      "id": "brepface",
+      "name": "BRepFace",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct BRepFace:"
+    },
+    {
+      "id": "brephalfedge",
+      "name": "BRepHalfEdge",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct BRepHalfEdge:"
+    },
+    {
+      "id": "faceid",
+      "name": "FaceID",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct FaceID:"
+    },
+    {
+      "id": "edgeid",
+      "name": "EdgeID",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct EdgeID:"
+    },
+    {
+      "id": "vertexid",
+      "name": "VertexID",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public struct VertexID:"
+    },
+    {
+      "id": "surface",
+      "name": "SurfaceDescriptor",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+      "anchor": "public enum SurfaceDescriptor:"
+    },
+    {
+      "id": "bodysnapshot",
+      "name": "BodySnapshot",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+      "anchor": "public struct BodySnapshot:"
+    },
+    {
+      "id": "faceinfo",
+      "name": "FaceInfo",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+      "anchor": "public struct FaceInfo:"
+    },
+    {
+      "id": "edgeinfo",
+      "name": "EdgeInfo",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Kernel · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+      "anchor": "public struct EdgeInfo:"
+    },
+    {
+      "id": "designsnapshot",
+      "name": "DesignSnapshot",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "App/Sources/Model/DesignModel.swift",
+      "anchor": "struct DesignSnapshot:"
+    },
+    {
+      "id": "projectlibrary",
+      "name": "ProjectLibrary",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Progetti · Claude",
+      "file": "App/Sources/Integration/Projects/ProjectLibrary.swift",
+      "anchor": "final class ProjectLibrary {"
+    },
+    {
+      "id": "workspacestate",
+      "name": "WorkspaceState",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Workspace/WorkspaceState.swift",
+      "anchor": "final class WorkspaceState {"
+    },
+    {
+      "id": "viewportstate",
+      "name": "ViewportState",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Viewport/ViewportContainer.swift",
+      "anchor": "final class ViewportState {"
     }
   ],
   "edges": [
@@ -1466,6 +1670,286 @@
         }
       ],
       "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "K001",
+      "source": "model",
+      "target": "kernel",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "PrimitiveKernel.build(feature).snapshot"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "K002",
+      "source": "model",
+      "target": "designsnapshot",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "let result = DesignSnapshot("
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "K003",
+      "source": "designsnapshot",
+      "target": "bodysnapshot",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "let bodies: [BodySnapshot]"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "K004",
+      "source": "kernel",
+      "target": "brepbody",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+          "anchor": "let body = BRepBody("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K005",
+      "source": "kernel",
+      "target": "profile",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/PrimitiveKernel.swift",
+          "anchor": "let profile = Profile2D(points: points)"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K006",
+      "source": "brepbody",
+      "target": "brepface",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "anchor": "public let faces: [BRepFace]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K007",
+      "source": "brepbody",
+      "target": "brepedge",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "anchor": "public let edges: [BRepEdge]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K008",
+      "source": "brepbody",
+      "target": "brepvertex",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "anchor": "public let vertices: [BRepVertex]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K009",
+      "source": "brepbody",
+      "target": "brephalfedge",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "anchor": "public let halfEdges: [BRepHalfEdge]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K010",
+      "source": "brepbody",
+      "target": "mesh",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "anchor": "Mesh(vertices: vertices.map"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K011",
+      "source": "brepbody",
+      "target": "bodysnapshot",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "anchor": "return BodySnapshot("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K012",
+      "source": "brepface",
+      "target": "surface",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "anchor": "public let sourceSurface: SurfaceDescriptor"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K013",
+      "source": "bodysnapshot",
+      "target": "faceinfo",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "anchor": "public let faces: [FaceInfo]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K014",
+      "source": "bodysnapshot",
+      "target": "edgeinfo",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "anchor": "public let edges: [EdgeInfo]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K015",
+      "source": "faceinfo",
+      "target": "faceid",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "anchor": "public let id: FaceID"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K016",
+      "source": "edgeinfo",
+      "target": "edgeid",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift",
+          "anchor": "public let id: EdgeID"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K017",
+      "source": "brepvertex",
+      "target": "vertexid",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Kernel/Topology.swift",
+          "anchor": "public let id: VertexID"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "K018",
+      "source": "content",
+      "target": "projectlibrary",
+      "relation": "reads_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+          "anchor": "@Environment(ProjectLibrary.self)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "K019",
+      "source": "content",
+      "target": "workspacestate",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+          "anchor": "@State private var workspace = WorkspaceState()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "K020",
+      "source": "content",
+      "target": "viewportstate",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+          "anchor": "@State private var viewport = ViewportState()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
     }
   ],
   "limitations": [
@@ -1474,7 +1958,8 @@
     "Macro Observation, result builder SwiftUI, overload, protocol witness e internals Apple non attraversati.",
     "Nessuna prova di correttezza numerica, timing, race, performance GPU, stato disco o stampa fisica.",
     "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento.",
-    "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo."
+    "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo.",
+    "La prima base B-rep espone snapshot sul Model; integrazione renderer distinta. ID laterali di profili liberi invalidati quando cambia il profilo v1; nessun naming split/merge o Boolean kernel completo implicito."
   ],
   "probes": [
     {
@@ -1518,6 +2003,30 @@
       "category": "3mf_boundary",
       "result": "MANUAL_PARTIAL",
       "evidence": "Feature.color → PartColor; DesignModel → ThreeMFExporter → StoredZIP verificati nel sorgente. Tre profili slicer consumano file in processi esterni. ZIP/CRC/XML, volumi e GUI hanno prove separate; nessun attraversamento semantico continuo verso slicer o stampanti."
+    },
+    {
+      "id": "P08",
+      "category": "kernel_snapshot",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "PrimitiveKernel.build costruisce BRepBody; BRepBody.snapshot produce BodySnapshot; DesignModel.snapshot ha chiamata testuale e cache per revisione. Numeric tests e build separati, zero chiamanti risolti. Nessun arco UI -> snapshot inventato."
+    },
+    {
+      "id": "P09",
+      "category": "swift_classification_and_combine",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Nessun arco di ereditarietà nel dataset; NSObject/MTKView e MTKViewDelegate distinguibili nel sorgente ma non attraversati semanticamente. ThreeMFExportProfile: String è raw value, non superclass. Nessun import Combine/sink/assign trovato nei sorgenti attuali; macro Observation non espanse."
+    },
+    {
+      "id": "P10",
+      "category": "workspace_and_callback",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "WorkspaceView: DesignModel e ProjectLibrary da Environment, WorkspaceState/ViewportState da State; witness NSViewRepresentable e assegnazione view.delegate = renderer restano callback runtime. ProjectLibrary è lavoro concorrente di Claude, nessuna certificazione I/O derivata dal grafo."
+    },
+    {
+      "id": "P11",
+      "category": "sampled_edge_and_dead_code",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Campione C006 ThreeMFExporter -> StoredZIP verificato come calls_direct SYNTACTIC, non eredità; BRepBody.snapshot senza UI non è codice morto: API del Model e test la chiamano."
     }
   ]
 }
