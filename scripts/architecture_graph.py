@@ -13,7 +13,7 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs/architecture"
 SPEC = OUT / "graph-spec.json"
-SOURCE_ROOTS = ["App/Sources", "Packages/CADCore/Sources/CADCore"]
+SOURCE_ROOTS = ["App/Sources", "Packages/CADCore/Sources/CADCore", "Tools/ftk-mcp"]
 STATES = {"RESOLVED", "SYNTACTIC", "INFERRED", "AMBIGUOUS", "RUNTIME/EXTERNAL"}
 
 
@@ -30,6 +30,7 @@ def tracked_inputs():
     files = {p for folder in SOURCE_ROOTS for p in (ROOT / folder).rglob("*")
              if p.suffix in {".swift", ".metal", ".m", ".mm", ".h", ".cpp", ".c"}}
     files.update((ROOT / "Packages/CADCore/Tests").rglob("*.swift"))
+    files.update((ROOT / "Tests").rglob("*.swift"))
     files.update([ROOT / "project.yml", ROOT / "FusionTakeoff.xcodeproj/project.pbxproj",
                   ROOT / "App/Info.plist", ROOT / "Packages/CADCore/Package.swift", SPEC,
                   Path(__file__).resolve(), OUT / "viewer-template.html"])
@@ -86,7 +87,7 @@ def build():
     for p in sources:
         text = (ROOT / p).read_text()
         inventory.append({"file": p, "sha256": before[p], "lines": len(text.splitlines()),
-                          "target": "FusionTakeoff" if p.startswith("App/") else "CADCore",
+                          "target": "FusionTakeoff" if p.startswith("App/") else ("FTKMCP" if p.startswith("Tools/") else "CADCore"),
                           "mapped": p in mapped,
                           "literalSites": {k: len(re.findall(v, text)) for k, v in patterns.items()}})
     graph = {

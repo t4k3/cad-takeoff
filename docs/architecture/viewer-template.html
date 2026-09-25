@@ -10,12 +10,13 @@
 </head>
 <body>
 <header><span class="eyebrow">FUSION TAKEOFF / CODEX ↔ CLAUDE</span><h1>Architettura condivisa</h1>
+<p><strong>Chat e MCP sono la priorità.</strong> <a href="../requirements/AI_ASSISTANT.md">Contratto assistente</a> · <a href="../requirements/DOMAIN_GRAPH.md">Grafo CAD pianificato</a></p>
 <p>Seleziona un modulo per seguirne i collegamenti. Ogni relazione conserva file, riga e livello di evidenza.</p>
 <span class="badge warning">MAPPA ESPLORATIVA · NON SEMANTICA</span> <span id="summary" class="meta"></span>
 </header>
 <div class="toolbar"><input id="search" aria-label="Cerca modulo o relazione" placeholder="Cerca modulo o relazione…"><select id="state" aria-label="Filtra stato semantico"><option value="">Tutti gli stati</option><option>RESOLVED</option><option>SYNTACTIC</option><option>INFERRED</option><option>AMBIGUOUS</option><option>RUNTIME/EXTERNAL</option></select><button id="reset">Mostra tutto</button><span id="count" class="meta"></span></div>
 <div class="legend" id="legend"></div>
-<main><div class="layout"><div class="map"><svg id="graph" role="img" aria-label="Grafo dei moduli e delle dipendenze" viewBox="0 0 1230 610"></svg></div><aside class="side" id="detail"></aside></div>
+<main><div class="layout"><div class="map"><svg id="graph" role="group" aria-label="Grafo dei moduli e delle dipendenze" viewBox="0 0 1230 610"></svg></div><aside class="side" id="detail"></aside></div>
 <div class="tableWrap"><h2>Relazioni ed evidenze</h2><table><thead><tr><th>Da → A</th><th>Relazione</th><th>Stato</th><th>Provenienza</th></tr></thead><tbody id="rows"></tbody></table><div id="empty" class="empty" hidden>Nessuna relazione corrispondente.</div></div></main>
 <footer>Snapshot <span id="timestamp"></span> · <a href="README.md">Guida</a> · <a href="RELIABILITY.md">Affidabilità</a> · <a href="../COLLAB.md">Registro condiviso</a> · <a href="../graph/GRAPH.md">Grafo task</a> · <a href="graph.json">Dataset JSON</a><p>Controllo di aggiornamento: <code>python3 scripts/architecture_graph.py check</code>. La pagina offline non controlla automaticamente i file sul disco.</p></footer>
 <script type="application/json" id="data">__GRAPH_JSON__</script>
@@ -23,8 +24,7 @@
 const data=JSON.parse(document.getElementById('data').textContent);
 const byID=new Map(data.nodes.map(n=>[n.id,n])),colors={'RESOLVED':'#5fd2a4','SYNTACTIC':'#69b9e5','INFERRED':'#d5b866','AMBIGUOUS':'#ef8b88','RUNTIME/EXTERNAL':'#c69be8'};
 const ns='http://www.w3.org/2000/svg',svg=document.getElementById('graph');
-let selected=null;const positions=new Map(),groups=[...new Set(data.nodes.map(n=>n.group))];
-groups.forEach((g,c)=>data.nodes.filter(n=>n.group===g).forEach((n,r)=>positions.set(n.id,{x:25+c*245,y:65+r*84})));
+let selected=null;const positions=new Map();
 function element(name,attrs={},text){const el=document.createElementNS(ns,name);for(const[k,v]of Object.entries(attrs))el.setAttribute(k,v);if(text!==undefined)el.textContent=text;return el;}
 function safe(value){const e=document.createElement('span');e.textContent=value;return e.innerHTML;}
 function sourceLink(e){const href='../../'+e.file.split('/').map(encodeURIComponent).join('/')+'#L'+e.line;return `<a href="${href}">${safe(e.file)}:${e.line}</a>`;}
@@ -33,14 +33,20 @@ function render(){
  const q=document.getElementById('search').value.toLowerCase(),state=document.getElementById('state').value;
  const edges=data.edges.filter(e=>(!state||e.semanticStatus===state)&&(!selected||e.source===selected||e.target===selected)&&(!q||[byID.get(e.source).name,byID.get(e.target).name,e.relation].join(' ').toLowerCase().includes(q)));
  const active=new Set(edges.flatMap(e=>[e.source,e.target]));if(selected)active.add(selected);
+ const displayNodes=(q||state||selected)?data.nodes.filter(n=>active.has(n.id)):data.nodes;
+ const order=['Chat · Claude','OpenAI · Codex','MCP · Condiviso','Model · Codex','Geometria · Codex','UX · Claude','Esterno / runtime'];
+ const groups=[...new Set(displayNodes.map(n=>n.group))].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+ const width=Math.max(270,groups.length*245+25),height=Math.max(300,65+84*Math.max(0,...groups.map(g=>displayNodes.filter(n=>n.group===g).length)));
+ svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.style.width=width+'px';positions.clear();
+ groups.forEach((g,c)=>displayNodes.filter(n=>n.group===g).forEach((n,r)=>positions.set(n.id,{x:25+c*245,y:65+r*84})));
  svg.replaceChildren();const defs=element('defs');svg.append(defs);
  for(const[s,color]of Object.entries(colors)){const marker=element('marker',{id:'arrow'+s.replaceAll('/',''),viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:6,markerHeight:6,orient:'auto-start-reverse'});marker.append(element('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:color}));defs.append(marker);}
  groups.forEach((g,c)=>svg.append(element('text',{x:25+c*245,y:32,class:'groupLabel'},g)));
  edges.forEach(e=>{const a=positions.get(e.source),b=positions.get(e.target);const forward=b.x>a.x;let x1=a.x+(forward?204:0),x2=b.x+(forward?0:204),y1=a.y+25,y2=b.y+25;const d=a.x===b.x?`M ${a.x+204} ${y1} C ${a.x+232} ${y1},${b.x+232} ${y2},${b.x+204} ${y2}`:`M ${x1} ${y1} C ${(x1+x2)/2} ${y1},${(x1+x2)/2} ${y2},${x2} ${y2}`;const path=element('path',{d,class:'edge'+(selected?' highlight':''),stroke:colors[e.semanticStatus],'marker-end':`url(#arrow${e.semanticStatus.replaceAll('/','')})`});path.append(element('title',{},`${e.id}: ${e.relation} (${e.semanticStatus})`));svg.append(path);});
- data.nodes.forEach(n=>{const p=positions.get(n.id),g=element('g',{class:'node'+(n.availability==='external'?' external':'')+(n.id===selected?' selected':'')+(!active.has(n.id)?' dim':''),tabindex:0,role:'button','aria-label':n.name,transform:`translate(${p.x} ${p.y})`});g.append(element('rect',{width:204,height:50,rx:8}));g.append(element('text',{x:12,y:22},n.name));g.append(element('text',{x:12,y:39,style:'font-size:10px;fill:#9eb4cc'},n.module+' · '+n.kind));g.addEventListener('click',()=>select(n.id));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n.id);}});svg.append(g);});
+ displayNodes.forEach(n=>{const p=positions.get(n.id),g=element('g',{class:'node'+(n.availability==='external'?' external':'')+(n.id===selected?' selected':'')+(!active.has(n.id)?' dim':''),tabindex:0,role:'button','aria-label':n.name,transform:`translate(${p.x} ${p.y})`});g.append(element('rect',{width:204,height:50,rx:8}));g.append(element('text',{x:12,y:22},n.name));g.append(element('text',{x:12,y:39,style:'font-size:10px;fill:#9eb4cc'},n.module+' · '+n.kind));g.addEventListener('click',()=>select(n.id));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n.id);}});svg.append(g);});
  document.getElementById('rows').innerHTML=edges.map(e=>`<tr><td>${safe(byID.get(e.source).name)} → ${safe(byID.get(e.target).name)}</td><td><code>${safe(e.relation)}</code></td><td style="color:${colors[e.semanticStatus]}">${safe(e.semanticStatus)}</td><td>${e.evidence.map(x=>`${sourceLink(x)}<br><code>${safe(x.excerpt)}</code>`).join('<br>')}<br><span class="meta">${safe(e.xcodeTarget)} · ${safe(e.provenance.method)}</span></td></tr>`).join('');
  document.getElementById('empty').hidden=edges.length>0;document.getElementById('count').textContent=`${edges.length} / ${data.edges.length} relazioni`;
- const n=byID.get(selected);document.getElementById('detail').innerHTML=n?`<h2>${safe(n.name)}</h2><p>${safe(n.group)}<br>${safe(n.module)} · ${safe(n.language)}</p>${n.source?`<p>${sourceLink(n.source)}</p><pre>${safe(n.source.excerpt)}</pre>`:'<p>Confine esterno. Interni e comportamento runtime non estratti.</p>'}<h2>${edges.length} collegamenti visibili</h2><p>Righe e hash verificati nello snapshot; overload e dispatch non risolti semanticamente.</p><p>Seleziona nuovamente il modulo per tornare alla vista generale.</p>`:`<h2>Come leggere la mappa</h2><p><strong>Claude</strong> gestisce UX e viewport. <strong>Codex</strong> gestisce Model, geometria ed export.</p><p>Seleziona un modulo per isolare ingressi e uscite; sotto trovi le evidenze.</p><h2>Limiti espliciti</h2><ul>${data.limitations.slice(0,3).map(x=>'<li>'+safe(x)+'</li>').join('')}</ul>`;
+ const n=byID.get(selected);document.getElementById('detail').innerHTML=n?`<h2>${safe(n.name)}</h2><p>${safe(n.group)}<br>${safe(n.module)} · ${safe(n.language)}</p>${n.source?`<p>${sourceLink(n.source)}</p><pre>${safe(n.source.excerpt)}</pre>`:'<p>Confine esterno. Interni e comportamento runtime non estratti.</p>'}<h2>${edges.length} collegamenti visibili</h2><p>Righe e hash verificati nello snapshot; overload e dispatch non risolti semanticamente.</p><p>Seleziona nuovamente il modulo per tornare alla vista generale.</p>`:`<h2>Come leggere la mappa</h2><p><strong>Claude</strong>: UX e connettore Claude. <strong>Codex</strong>: geometria, OpenAI e ChatGPT. Catalogo CAD e Model condivisi.</p><p>Seleziona un modulo per isolare ingressi e uscite; sotto trovi le evidenze.</p><h2>Limiti espliciti</h2><ul>${data.limitations.slice(0,3).map(x=>'<li>'+safe(x)+'</li>').join('')}</ul>`;
 }
 document.getElementById('summary').textContent=`${data.nodes.length} nodi · ${data.edges.length} archi · 0 RESOLVED`;
 document.getElementById('timestamp').textContent=new Date(data.generatedAt).toLocaleString('it-IT');

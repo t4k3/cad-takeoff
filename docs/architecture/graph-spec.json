@@ -15,39 +15,39 @@
     },
     {
       "id": "content",
-      "name": "ContentView",
+      "name": "WorkspaceView",
       "kind": "struct",
       "module": "FusionTakeoff",
       "target": "FusionTakeoff",
       "language": "Swift",
       "availability": "active",
       "group": "UX · Claude",
-      "file": "App/Sources/UI/Workspace/ContentView.swift",
-      "anchor": "struct ContentView:"
+      "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+      "anchor": "struct WorkspaceView:"
     },
     {
       "id": "inspector",
-      "name": "InspectorView",
+      "name": "InspectorPanel",
       "kind": "struct",
       "module": "FusionTakeoff",
       "target": "FusionTakeoff",
       "language": "Swift",
       "availability": "active",
       "group": "UX · Claude",
-      "file": "App/Sources/UI/Workspace/ContentView.swift",
-      "anchor": "struct InspectorView:"
+      "file": "App/Sources/UI/Workspace/InspectorPanel.swift",
+      "anchor": "struct InspectorPanel:"
     },
     {
       "id": "viewport",
-      "name": "ViewportView",
+      "name": "MetalViewport",
       "kind": "struct",
       "module": "FusionTakeoff",
       "target": "FusionTakeoff",
       "language": "Swift",
       "availability": "active",
       "group": "UX · Claude",
-      "file": "App/Sources/UI/Viewport/ViewportView.swift",
-      "anchor": "struct ViewportView:"
+      "file": "App/Sources/UI/Viewport/MetalViewport.swift",
+      "anchor": "struct MetalViewport:"
     },
     {
       "id": "model",
@@ -204,12 +204,12 @@
       "group": "Confini esterni"
     },
     {
-      "id": "scenekit",
-      "name": "SceneKit · GPU",
+      "id": "metal",
+      "name": "Metal / GPU",
       "kind": "framework",
-      "module": "SceneKit",
+      "module": "Metal",
       "target": "SceneKit",
-      "language": "external",
+      "language": "Swift / Metal",
       "availability": "external",
       "group": "Confini esterni"
     },
@@ -242,6 +242,240 @@
       "language": "external",
       "availability": "external",
       "group": "Confini esterni"
+    },
+    {
+      "id": "chat",
+      "name": "AssistantSession",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Chat · Claude",
+      "file": "App/Sources/Integration/Assistant/AssistantSession.swift",
+      "anchor": "final class AssistantSession"
+    },
+    {
+      "id": "chatui",
+      "name": "AssistantPanel",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Chat · Claude",
+      "file": "App/Sources/UI/Assistant/AssistantPanel.swift",
+      "anchor": "struct AssistantPanel:"
+    },
+    {
+      "id": "claude",
+      "name": "ClaudeProvider",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Chat · Claude",
+      "file": "App/Sources/Integration/Assistant/ClaudeProvider.swift",
+      "anchor": "final class ClaudeProvider:"
+    },
+    {
+      "id": "assistantprotocol",
+      "name": "AssistantProvider",
+      "kind": "protocol",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Chat · Claude",
+      "file": "App/Sources/Integration/Assistant/AssistantProvider.swift",
+      "anchor": "protocol AssistantProvider:"
+    },
+    {
+      "id": "openai",
+      "name": "OpenAIProvider",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "OpenAI · Codex",
+      "file": "App/Sources/Integration/OpenAI/OpenAIProvider.swift",
+      "anchor": "final class OpenAIProvider:"
+    },
+    {
+      "id": "openaihistory",
+      "name": "OpenAIConversation",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "OpenAI · Codex",
+      "file": "App/Sources/Integration/OpenAI/OpenAIConversation.swift",
+      "anchor": "struct OpenAIConversation"
+    },
+    {
+      "id": "openaistream",
+      "name": "OpenAIStreamAssembler",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "OpenAI · Codex",
+      "file": "App/Sources/Integration/OpenAI/OpenAIStream.swift",
+      "anchor": "struct OpenAIStreamAssembler"
+    },
+    {
+      "id": "chatgpt",
+      "name": "ChatGPTConnector",
+      "kind": "enum",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "OpenAI · Codex",
+      "file": "App/Sources/Integration/ChatGPT/ChatGPTConnector.swift",
+      "anchor": "enum ChatGPTConnector"
+    },
+    {
+      "id": "toolprotocol",
+      "name": "CADToolProvider",
+      "kind": "protocol",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "App/Sources/Integration/ToolBridge.swift",
+      "anchor": "protocol CADToolProvider:"
+    },
+    {
+      "id": "toolmodel",
+      "name": "DesignModel + tools",
+      "kind": "extension",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+      "anchor": "extension DesignModel: CADToolProvider"
+    },
+    {
+      "id": "toolcatalog",
+      "name": "CADToolCatalog",
+      "kind": "enum",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "App/Sources/Model/Tools/CADToolCatalog.swift",
+      "anchor": "enum CADToolCatalog"
+    },
+    {
+      "id": "toolvalidation",
+      "name": "CADToolValidation",
+      "kind": "enum",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "App/Sources/Model/Tools/CADToolValidation.swift",
+      "anchor": "enum CADToolValidation"
+    },
+    {
+      "id": "mcphost",
+      "name": "MCPHost",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "MCP · Condiviso",
+      "file": "App/Sources/Integration/MCP/MCPHost.swift",
+      "anchor": "final class MCPHost"
+    },
+    {
+      "id": "mcpserver",
+      "name": "MCPServer",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "MCP · Condiviso",
+      "file": "App/Sources/Integration/MCP/MCPServer.swift",
+      "anchor": "final class MCPServer"
+    },
+    {
+      "id": "http",
+      "name": "LocalHTTPTransport",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "MCP · Condiviso",
+      "file": "App/Sources/Integration/MCP/LocalHTTPTransport.swift",
+      "anchor": "final class LocalHTTPTransport:"
+    },
+    {
+      "id": "renderer",
+      "name": "ViewportRenderer",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Viewport/ViewportRenderer.swift",
+      "anchor": "final class ViewportRenderer:"
+    },
+    {
+      "id": "bridge",
+      "name": "ftk-mcp stdio bridge",
+      "kind": "executable",
+      "module": "FTKMCP",
+      "target": "FTKMCP",
+      "language": "Swift",
+      "availability": "active",
+      "group": "MCP · Condiviso",
+      "file": "Tools/ftk-mcp/main.swift",
+      "anchor": "func forward("
+    },
+    {
+      "id": "openaiapi",
+      "name": "OpenAI Responses API",
+      "kind": "external_service",
+      "module": "Network",
+      "target": "external",
+      "language": "HTTP",
+      "availability": "external",
+      "group": "Esterno / runtime"
+    },
+    {
+      "id": "anthropicapi",
+      "name": "Anthropic Messages API",
+      "kind": "external_service",
+      "module": "Network",
+      "target": "external",
+      "language": "HTTP",
+      "availability": "external",
+      "group": "Esterno / runtime"
+    },
+    {
+      "id": "tunnel",
+      "name": "Secure MCP Tunnel",
+      "kind": "external_service",
+      "module": "Network",
+      "target": "external",
+      "language": "HTTP",
+      "availability": "external",
+      "group": "Esterno / runtime"
     }
   ],
   "edges": [
@@ -255,108 +489,6 @@
         {
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
           "anchor": "@State private var model"
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
-      "id": "E002",
-      "source": "app",
-      "target": "content",
-      "relation": "constructs_type",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "anchor": "ContentView()"
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
-      "id": "E003",
-      "source": "app",
-      "target": "content",
-      "relation": "injects_environment_object",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "anchor": ".environment(model)"
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff",
-      "ambiguity": "Observation environment injection; non @EnvironmentObject/Combine."
-    },
-    {
-      "id": "E004",
-      "source": "content",
-      "target": "model",
-      "relation": "observes_object",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Workspace/ContentView.swift",
-          "anchor": "@Environment(DesignModel.self)",
-          "occurrence": 1
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
-      "id": "E005",
-      "source": "inspector",
-      "target": "model",
-      "relation": "observes_object",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Workspace/ContentView.swift",
-          "anchor": "@Environment(DesignModel.self)",
-          "occurrence": 2
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
-      "id": "E006",
-      "source": "content",
-      "target": "viewport",
-      "relation": "constructs_type",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Workspace/ContentView.swift",
-          "anchor": "ViewportView(document:"
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
-      "id": "E007",
-      "source": "content",
-      "target": "inspector",
-      "relation": "constructs_type",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Workspace/ContentView.swift",
-          "anchor": "InspectorView()."
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
-      "id": "E008",
-      "source": "inspector",
-      "target": "model",
-      "relation": "binds_state",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Workspace/ContentView.swift",
-          "anchor": "@Bindable var model",
-          "occurrence": 2
         }
       ],
       "xcodeTarget": "FusionTakeoff"
@@ -673,65 +805,6 @@
       "xcodeTarget": "CADCore"
     },
     {
-      "id": "E031",
-      "source": "viewport",
-      "target": "feature",
-      "relation": "calls_direct",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Viewport/ViewportView.swift",
-          "anchor": "f.buildMesh()"
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
-      "id": "E032",
-      "source": "viewport",
-      "target": "scenekit",
-      "relation": "bridges_to_objc",
-      "semanticStatus": "RUNTIME/EXTERNAL",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Viewport/ViewportView.swift",
-          "anchor": "SCNGeometry(sources:",
-          "occurrence": 2
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff",
-      "ambiguity": "API SceneKit esposta a Swift; nessun attraversamento interno Objective-C/GPU estratto."
-    },
-    {
-      "id": "E033",
-      "source": "swiftui",
-      "target": "viewport",
-      "relation": "runtime_callback",
-      "semanticStatus": "RUNTIME/EXTERNAL",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Viewport/ViewportView.swift",
-          "anchor": "func updateNSView("
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff",
-      "ambiguity": "Witness NSViewRepresentable invocato dal framework; non è una chiamata diretta da ContentView."
-    },
-    {
-      "id": "E034",
-      "source": "viewport",
-      "target": "representable",
-      "relation": "type_conforms_protocol",
-      "semanticStatus": "SYNTACTIC",
-      "evidence": [
-        {
-          "file": "App/Sources/UI/Viewport/ViewportView.swift",
-          "anchor": "struct ViewportView: NSViewRepresentable"
-        }
-      ],
-      "xcodeTarget": "FusionTakeoff"
-    },
-    {
       "id": "E035",
       "source": "document",
       "target": "codable",
@@ -772,6 +845,441 @@
         }
       ],
       "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "N027",
+      "source": "app",
+      "target": "content",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/FusionTakeoffApp.swift",
+          "anchor": "WorkspaceView()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N028",
+      "source": "app",
+      "target": "chat",
+      "relation": "owns_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/FusionTakeoffApp.swift",
+          "anchor": "@State private var assistant"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N029",
+      "source": "app",
+      "target": "mcphost",
+      "relation": "owns_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/FusionTakeoffApp.swift",
+          "anchor": "@State private var mcp"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N030",
+      "source": "app",
+      "target": "toolprotocol",
+      "relation": "casts_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/FusionTakeoffApp.swift",
+          "anchor": "as? CADToolProvider"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N031",
+      "source": "content",
+      "target": "chatui",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
+          "anchor": "case .assistant: AssistantPanel()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N032",
+      "source": "inspector",
+      "target": "model",
+      "relation": "binds_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/InspectorPanel.swift",
+          "anchor": "TextField(\"Nome\", text: $model.document.features[i].name)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N033",
+      "source": "chatui",
+      "target": "chat",
+      "relation": "observes_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Assistant/AssistantPanel.swift",
+          "anchor": "@Environment(AssistantSession.self)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N034",
+      "source": "chat",
+      "target": "assistantprotocol",
+      "relation": "protocol_dispatch",
+      "semanticStatus": "INFERRED",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/Assistant/AssistantSession.swift",
+          "anchor": "provider.runTurn("
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N035",
+      "source": "chat",
+      "target": "toolprotocol",
+      "relation": "protocol_dispatch",
+      "semanticStatus": "INFERRED",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/Assistant/AssistantSession.swift",
+          "anchor": "await tools.call("
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N036",
+      "source": "claude",
+      "target": "assistantprotocol",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/Assistant/ClaudeProvider.swift",
+          "anchor": "final class ClaudeProvider:"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N037",
+      "source": "openai",
+      "target": "assistantprotocol",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/OpenAI/OpenAIProvider.swift",
+          "anchor": "final class OpenAIProvider:"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N038",
+      "source": "openai",
+      "target": "openaihistory",
+      "relation": "owns_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/OpenAI/OpenAIProvider.swift",
+          "anchor": "private var conversation"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N039",
+      "source": "openai",
+      "target": "openaistream",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/OpenAI/OpenAIProvider.swift",
+          "anchor": "var assembler = OpenAIStreamAssembler()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N040",
+      "source": "openai",
+      "target": "openaiapi",
+      "relation": "http_request",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/OpenAI/OpenAIProvider.swift",
+          "anchor": "https://api.openai.com/v1/responses"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N041",
+      "source": "claude",
+      "target": "anthropicapi",
+      "relation": "http_request",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/Assistant/ClaudeProvider.swift",
+          "anchor": "https://api.anthropic.com/v1/messages"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N042",
+      "source": "chatgpt",
+      "target": "tunnel",
+      "relation": "prepares_setup_command",
+      "semanticStatus": "INFERRED",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/ChatGPT/ChatGPTConnector.swift",
+          "anchor": "sample_mcp_stdio_local"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N043",
+      "source": "mcphost",
+      "target": "mcpserver",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/MCP/MCPHost.swift",
+          "anchor": "let server = MCPServer()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N044",
+      "source": "mcphost",
+      "target": "http",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/MCP/MCPHost.swift",
+          "anchor": "LocalHTTPTransport(token:"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N045",
+      "source": "mcpserver",
+      "target": "toolprotocol",
+      "relation": "protocol_dispatch",
+      "semanticStatus": "INFERRED",
+      "evidence": [
+        {
+          "file": "App/Sources/Integration/MCP/MCPServer.swift",
+          "anchor": "await provider.call("
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N046",
+      "source": "bridge",
+      "target": "http",
+      "relation": "loopback_http_request",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "Tools/ftk-mcp/main.swift",
+          "anchor": "URLSession.shared.data(for: req)"
+        }
+      ],
+      "xcodeTarget": "FTKMCP"
+    },
+    {
+      "id": "N047",
+      "source": "toolmodel",
+      "target": "toolprotocol",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+          "anchor": "extension DesignModel: CADToolProvider"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N048",
+      "source": "toolmodel",
+      "target": "model",
+      "relation": "extends_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+          "anchor": "extension DesignModel: CADToolProvider"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N049",
+      "source": "toolmodel",
+      "target": "toolcatalog",
+      "relation": "reads_catalog",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+          "anchor": "var tools: [ToolSpec]"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N050",
+      "source": "toolmodel",
+      "target": "toolvalidation",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+          "anchor": "try CADToolValidation.feature(f)",
+          "occurrence": 1
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N051",
+      "source": "toolmodel",
+      "target": "stl",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+          "anchor": "STLExporter.binary(floatMesh)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N052",
+      "source": "viewport",
+      "target": "renderer",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/MetalViewport.swift",
+          "anchor": "if let renderer = ViewportRenderer("
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N053",
+      "source": "viewport",
+      "target": "renderer",
+      "relation": "assigns_delegate",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/MetalViewport.swift",
+          "anchor": "view.delegate = renderer"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N054",
+      "source": "renderer",
+      "target": "feature",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/ViewportRenderer.swift",
+          "anchor": "let mesh = f.buildMesh()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N055",
+      "source": "renderer",
+      "target": "metal",
+      "relation": "runtime_gpu_boundary",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/ViewportRenderer.swift",
+          "anchor": "MTKViewDelegate"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N056",
+      "source": "swiftui",
+      "target": "viewport",
+      "relation": "runtime_callback",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/MetalViewport.swift",
+          "anchor": "func updateNSView("
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "N057",
+      "source": "viewport",
+      "target": "representable",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/MetalViewport.swift",
+          "anchor": "struct MetalViewport:"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
     }
   ],
   "limitations": [
@@ -784,63 +1292,39 @@
   "probes": [
     {
       "id": "P01",
-      "category": "inheritance_conformance_raw_value",
+      "category": "types_protocol_dispatch",
       "result": "MANUAL_PARTIAL",
-      "evidence": "Tipi attivi: struct conformi, DesignModel classe senza superclass esplicita; Feature.Kind enum con payload, non raw value. Archi di conformance SYNTACTIC; nessun arco di ereditarietà inventato."
+      "evidence": "CADToolProvider e AssistantProvider dichiarati; conformità testuale. Destinazione concreta del dispatch richiede risoluzione o prova runtime separata."
     },
     {
       "id": "P02",
-      "category": "numeric_function",
+      "category": "geometry",
       "result": "MANUAL_PARTIAL",
-      "evidence": "Profile2D.triangulate -> Operations.extrude -> Primitives/Feature esaminati nel testo. Chiamanti semanticamente risolti: 0; numerica verificata separatamente dai test."
+      "evidence": "Feature, Operations, profili, mesh e STL mappati con riferimenti testuali; correttezza numerica coperta da test separati."
     },
     {
       "id": "P03",
-      "category": "observable_view",
+      "category": "observation",
       "result": "MANUAL_PARTIAL",
-      "evidence": "ContentView e InspectorView leggono DesignModel con @Environment, app lo mantiene in @State; Observation macros escluse."
+      "evidence": "SwiftUI/Observation attivi; macro e result builder non espansi."
     },
     {
       "id": "P04",
-      "category": "combine_chain",
-      "result": "NOT_PRESENT_IN_INITIAL_SNAPSHOT",
-      "evidence": "Nessuna catena sink/assign/Publisher esplicita nei file attivi letti; Observation non è una catena Combine. Ricontrollare literalSites ad ogni rigenerazione."
+      "category": "concurrency",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Task e await in AssistantSession/providers/trasporto. Nessun actor hop semanticamente risolto."
     },
     {
       "id": "P05",
-      "category": "task_await_actor",
-      "result": "NOT_PRESENT_IN_INITIAL_SNAPSHOT",
-      "evidence": "DesignModel è @MainActor; non sono presenti Task/await espliciti nel primo snapshot. Nessun actor_hop inventato."
+      "category": "external_boundaries",
+      "result": "RUNTIME_BOUNDARY",
+      "evidence": "Metal, HTTP locale, Anthropic e OpenAI sono confini esterni. Il grafo non certifica account, rete o GPU."
     },
     {
       "id": "P06",
-      "category": "delegate_protocol_witness",
-      "result": "RUNTIME_BOUNDARY",
-      "evidence": "ViewportView conforme a NSViewRepresentable; SwiftUI invoca makeNSView/updateNSView. Nessun call-site sorgente diretto certificato."
-    },
-    {
-      "id": "P07",
-      "category": "objc_c_boundary",
-      "result": "RUNTIME_BOUNDARY",
-      "evidence": "SceneKit/AppKit esposti a Swift; nessun bridging header o target C/C++ del progetto. Framework interni esclusi."
-    },
-    {
-      "id": "P08",
-      "category": "target_external_runtime",
-      "result": "MANUAL_PARTIAL",
-      "evidence": "App importa CADCore; file .ftk/.stl attraversano Foundation e disco. File esportati e slicer non provati dal grafo."
-    },
-    {
-      "id": "P09",
-      "category": "dead_code_false_positive",
+      "category": "coverage",
       "result": "CAUTION",
-      "evidence": "STLExporter.ascii non è chiamato dalla UI corrente ma ha un test e una API pubblica. Assenza di arco UI non autorizza eliminazione."
-    },
-    {
-      "id": "P10",
-      "category": "sample_edge_classification",
-      "result": "MANUAL_PARTIAL",
-      "evidence": "Campione casuale riproducibile random.Random(20260925): E022 CADDocument -> Mesh. Mesh.merged(...) letto in Document.swift riga 43 e dichiarazione static merged presente in Mesh.swift; classificazione calls_direct manuale, SYNTACTIC. Nessun arco ad alta confidenza semantica disponibile."
+      "evidence": "Tipi selezionati; file non mappati elencati. Nessuna inferenza di codice morto da un arco assente."
     }
   ]
 }

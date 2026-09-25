@@ -1,109 +1,77 @@
-# Affidabilità della mappa — T02
+# Affidabilità della mappa — T58
 
-Revisione 1 · 25 settembre 2026 · autore Codex.
-
-## Risultato e identità
+Revisione 2 · 25 settembre 2026 · Codex.
 
 **Mappa esplorativa manuale/testuale, parziale. Non è un code graph semantico.**
-La specifica è curata in `graph-spec.json`; il dataset canonico generato è
-`graph.json`, da cui derivano HTML e Mermaid.
+Specifica curata: `graph-spec.json`; dataset canonico: `graph.json`; viste
+HTML/Mermaid derivate dallo stesso dataset. Il grafo del dominio richiesto
+in `docs/requirements/` è distinto dal sorgente implementato.
 
-Checkout: `/Users/ross/APP varie/FUSION-TAKEOFF`. Progetto/scheme:
-`FusionTakeoff.xcodeproj` / `FusionTakeoff`. Configurazione osservata: Debug,
-macOS, arm64. Toolchain rilevata: Xcode 27.0 (27A266a), Swift 6.4;
-linguaggio del progetto Swift 6, deployment target macOS 14.
+## Identità e copertura
 
-Branch, commit se esistente, stato dirty, data UTC e versioni effettive sono
-registrati in `graph.json.identity`. Il repository iniziale non ha un commit
-di riferimento; gli hash SHA-256 identificano lo snapshot. I successivi commit
-non sostituiscono il controllo dei file effettivamente letti.
+Checkout `/Users/ross/APP varie/FUSION-TAKEOFF`; progetto e scheme
+`FusionTakeoff`; Debug, macOS arm64, Swift 6, deployment macOS 14.
+Commit, dirty state, data UTC, toolchain e hash sono nel dataset.
 
-## Copertura misurata nello snapshot iniziale
-
-| Misura | Risultato |
+| Misura dello snapshot T58 | Risultato |
 |---|---:|
-| File sorgente attivi trovati/inventariati | 10 / 10 |
-| File con almeno un tipo mappato | 10 |
-| Tipi/confini selezionati | 21 |
-| Archi | 37 |
-| SYNTACTIC | 31 |
-| INFERRED | 1 |
-| RUNTIME/EXTERNAL | 5 |
+| File sorgente trovati/inventariati | 49 / 49 |
+| File con simboli mappati | 28 |
+| Tipi/confini selezionati | 41 |
+| Archi | 57 |
+| SYNTACTIC | 43 |
+| INFERRED | 5 |
+| RUNTIME/EXTERNAL | 9 |
 | RESOLVED / AMBIGUOUS | 0 / 0 |
-| File analizzati da parser semantico | 0 |
+| File analizzati semanticamente | 0 |
 
-L'inventario di tutti i file **non** equivale a copertura di tutti i simboli,
-metodi, overload o dipendenze. Le conformance mostrate sono un campione.
-Non è stato eseguito un parser AST: `parseErrors: null` significa non misurato,
-non zero errori di risoluzione.
+Inclusi App, CADCore e bridge `Tools/ftk-mcp`. Test tracciati per freshness ma
+non mappati come chiamanti. I 21 file non mappati sono elencati nel JSON.
+Inventario non significa copertura completa dei simboli. `parseErrors: null`
+significa non misurato: non è stato eseguito un parser AST o SourceKit/IndexStore.
+Macro, result builder, overload, witness di protocolli e internals Apple esclusi.
 
-Inclusi: `App/Sources/**` e `Packages/CADCore/Sources/CADCore/**`. I test vengono
-tracciati per rilevare cambiamenti, ma i loro archi non sono estratti. Esclusi:
-archivio storico, codice generato dalle macro, internals dei framework Apple,
-runtime GPU, eventuali altre configurazioni e piattaforme. Per il conteggio
-aggiornato leggere `graph.json.coverage` dopo ogni rigenerazione.
+## Metodo e aggiornamento
 
-## Metodo e freschezza
+Ogni relazione conserva file, riga, hash SHA-256, target, estrazione testuale e
+incertezza. Anchor assenti o ambigui interrompono la generazione. Il controllo
+confronta anche file aggiunti/rimossi, configurazione, generatore e template,
+e verifica coerenza delle viste col dataset. I sorgenti letti due volte durante
+la generazione devono restare identici per evitare uno snapshot misto.
 
-Per ogni nodo sorgente si verifica una dichiarazione; per ogni arco si verifica
-un frammento esplicito con file/riga, SHA-256, target, stato semantico e motivo
-dell'incertezza. Un anchor assente o ambiguo interrompe la generazione.
-Le occorrenze multiple note sono indicate esplicitamente nella specifica.
+`python3 scripts/architecture_graph.py check` restituisce `FRESH_EXPLORATORY`
+oppure `STALE`. Fresco non significa semanticamente risolto. Il generatore
+rifiuta archi RESOLVED: richiederebbero un estrattore semantico successivo.
+La collaborazione parallela può rendere lo snapshot obsoleto appena un agente
+cambia sorgenti; verificare prima di usarlo per modificare API.
 
-`architecture_graph.py check` confronta inventario, hash dei sorgenti/test,
-configurazione Xcode/package, generatore, specifica e template; verifica anche
-la coerenza delle viste HTML e Mermaid col dataset. Un file aggiunto, rimosso o
-modificato produce `STALE`. Il confronto non aggiorna da solo la classificazione:
-dopo cambiamenti sostanziali occorre rileggere la specifica e le sonde.
+## Sonde aggiornate
 
-**FRESH_EXPLORATORY significa snapshot allineato, non semantica risolta.**
-Il generatore rifiuta `RESOLVED`. Per usare tale stato serve un futuro estrattore
-basato su IndexStore/SourceKit con simboli risolti e copertura dichiarata.
+- AssistantProvider/CADToolProvider: conformità testuali, dispatch inferito.
+- UI: WorkspaceView, InspectorPanel, chat e Metal sostituiscono il vecchio
+  snapshot ContentView/SceneKit. Observation e SwiftUI non espansi.
+- Task/await presenti in sessione chat, provider e trasporti; nessun actor hop
+  semanticamente ricostruito e nessuna deduzione di assenza di race.
+- Provider OpenAI presente nel sorgente; la sua registrazione nella UI resta
+  un passaggio d'integrazione di Claude. Un nodo non prova che sia selezionabile.
+- Confini HTTP OpenAI/Anthropic, tunnel, GPU e disco marcati esterni/inferiti.
+  Nessuna connessione remota o correttezza numerica viene provata dagli archi.
+- Le API pubbliche/testate senza chiamanti UI non sono considerate codice morto.
 
-## Sonde sul sorgente
+## Verifiche separate dal grafo
 
-| Sonda | Esito / limite |
-|---|---|
-| Ereditarietà, conformance, enum | `DesignModel` non dichiara superclass; i tipi struct hanno conformance. `Feature.Kind` è enum con payload, non raw value. Nessun arco di ereditarietà inventato. |
-| Funzione numerica e chiamanti | Letta la catena `Profile2D.triangulate → Operations.extrude → Primitives/Feature`; chiamanti risolti semanticamente: zero. Test numerici separati. |
-| View e stato osservabile | `ContentView`/`InspectorView` usano `@Environment` e `@Bindable`; la app mantiene `DesignModel` in `@State`. Espansioni delle macro escluse. |
-| Combine | Nessuna catena esplicita `sink/assign/Publisher` nello snapshot; Observation non è stata classificata come Combine. |
-| Task/await/actor | `@MainActor` in Model, nessuna catena esplicita `Task/await` nello snapshot; nessun actor hop dedotto. |
-| Protocol witness/delegate | `NSViewRepresentable.updateNSView` è callback del framework, rappresentata `RUNTIME/EXTERNAL`. |
-| Confine Objective-C/C | AppKit/SceneKit chiamati da Swift; nessun target C/C++ o bridging header locale. Interni del framework non ricostruiti. |
-| Target/runtime esterno | Dipendenza app → CADCore e file I/O `.ftk/.stl`; nessuna prova di scrittura disco o import slicer dal grafo. |
-| Falso positivo di codice morto | `STLExporter.ascii` non è usato nella UI, ma è API pubblica testata: nessuna conclusione di codice morto. |
-| Campione casuale di classificazione | Seed 20260925 → E022 `CADDocument → Mesh`, chiamata `Mesh.merged`. Presenza e relazione lette nel sorgente; rimane `SYNTACTIC`. Nessun arco ad alta confidenza semantica disponibile. |
+- CADCore: sei test Swift Testing passati.
+- Strumenti CAD: test su dimensioni, profili concavi/intersecanti, revisioni,
+  mutazioni atomiche, undo/redo, cambio manuale ed export STL.
+- Provider OpenAI: 23 verifiche offline, comprese chiamate incomplete, errori,
+  tool results, continuità e cifratura opaca dello stato di ragionamento.
+- MCP: 13 verifiche con vero HTTP loopback e Model isolato, inclusi creazione,
+  volume, undo, conflitto di revisione, autenticazione e Origin.
+- Xcode: build app riuscita. Nessuna chiamata ai provider remoti in queste prove.
+- Interfaccia del grafo: ricerca OpenAI e filtri controllati nel browser locale;
+  geometria della pagina verificata visivamente, dati incorporati senza CDN.
 
-Il dataset conserva anche l'inventario delle occorrenze letterali per categoria.
-Non sommarle come dipendenze uniche. Con nuovi file o feature, le sonde descritte
-come assenti vanno rieseguite: questo rapporto non copre automaticamente codice futuro.
-
-## Verifiche eseguite
-
-- `swift test --package-path Packages/CADCore`: **6 test Swift Testing passati**,
-  exit 0, eseguiti da Codex dopo la riconciliazione e dopo la separazione Model/UI.
-  Il messaggio XCTest «0 tests» è il runner separato: i sei test sono nel risultato Swift Testing.
-- T00/T16: Claude ha registrato build e avvio; Codex ha verificato il log
-  `build/xcodebuild.log` contenente `BUILD SUCCEEDED`. T02 non ha modificato app/core.
-- `python3 scripts/graph.py validate`: **24 task, nessun ciclo** al controllo.
-- Verifiche del generatore: snapshot coerente accettato; hash deliberatamente
-  stale respinto; anchor assente respinto; anchor ambiguo respinto; tentativo di
-  promuovere un arco a `RESOLVED` respinto. **5 verifiche passate** senza modificare i sorgenti.
-- HTML aperto nel browser locale e ispezionato visivamente; ricerca «STL» →
-  5 relazioni, filtro `RUNTIME/EXTERNAL` → 3, selezione `DesignModel` → 12
-  collegamenti. La pagina contiene i dati e funziona senza CDN o richieste esterne.
-
-Non eseguiti da T02: revisione UX completa dell'app, prove GPU Metal, import
-nello slicer, stampa reale, distribuzione firmata. Non sono implicati da build o test.
-
-## Usi consentiti e non dimostrati
-
-Adatto a navigazione, inventario, comunicazione tra agenti e formulazione di
-ipotesi per un'analisi d'impatto. Prima di cambiare una API, rileggere chiamanti
-e test nel sorgente; l'assenza di un arco non prova assenza di impatto.
-
-Non dimostra correttezza numerica generale, ordine temporale, assenza di race,
-gestione della memoria, prestazioni GPU, stampabilità fisica o stato dei file
-esterni. Un controllo topologico di una mesh non sostituisce booleane,
-rilevamento delle auto-intersezioni e verifica nello slicer.
+Il completamento dei task è nel registro e nel grafo attività, non in questa
+mappa. Nessuna prova fisica di stampa/lamiera, completa implementazione assiemi,
+funzionalità dello storico parametrico, pubblicazione TestFlight o disponibilità
+degli account remoti è implicita.

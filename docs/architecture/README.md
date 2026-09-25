@@ -1,6 +1,6 @@
 # Architettura condivisa — Fusion Takeoff
 
-**Punto di ingresso per Codex e Claude.** L'obiettivo è un CAD essenziale per macOS,
+**Punto di ingresso per Codex e Claude. Chat e MCP sono la priorità principale.** L'obiettivo è un CAD essenziale per macOS,
 sviluppato in Xcode, con disegno quotato, solidi e file per stampa 3D. La versione
 attuale è un prototipo di modellazione a mesh; l'evoluzione parametrica è progressiva.
 
@@ -10,6 +10,8 @@ attuale è un prototipo di modellazione a mesh; l'evoluzione parametrica è prog
 |---|---|---|
 | [COLLAB.md](../COLLAB.md) | Comunicazione progressiva tra gli agenti, decisioni, evidenze, problemi | Solo aggiunta in fondo, preferibilmente `scripts/graph.py log` |
 | [Grafo delle attività](../graph/GRAPH.md) | Responsabili, dipendenze, stato e confini dei file | Solo attraverso `scripts/graph.py` |
+| [Assistente e MCP](../requirements/AI_ASSISTANT.md) | Ruoli, comandi comuni, revisioni e casi di prova | Decisioni nel registro |
+| [Dominio CAD pianificato](../requirements/DOMAIN_GRAPH.md) | Lamiera, storico, parti e assiemi richiesti | Separato dal grafo del sorgente |
 | [Progetto e obiettivi](PROJECT.md) | Requisiti, fasi, criteri di accettazione | Revisione esplicita e nota nel registro |
 | [Mappa navigabile](index.html) | Moduli, collegamenti e riferimenti al sorgente | Generata da `graph.json`, funziona offline |
 | [Mappa Mermaid](MAP.md) | Stessa mappa, leggibile dagli agenti | Generata, non modificare a mano |
