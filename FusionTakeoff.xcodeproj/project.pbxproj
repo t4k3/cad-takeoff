@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */; };
+		15B9E5F66063E99E492FD242 /* Picking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1E9EAC4951BAF080CE4885 /* Picking.swift */; };
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
@@ -31,6 +32,7 @@
 		00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionTakeoffApp.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
+		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
@@ -68,6 +70,7 @@
 				DD59C218754E0D11BA7F1DD8 /* Camera.swift */,
 				943EB272622A8A5AAC6E74FB /* MatrixMath.swift */,
 				32F5B171C498A222AE59BB15 /* MetalViewport.swift */,
+				4A1E9EAC4951BAF080CE4885 /* Picking.swift */,
 				BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */,
 				86A604770FA67CFFA12BACDB /* ViewCube.swift */,
 				107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */,
@@ -238,6 +241,7 @@
 				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
 				F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */,
 				17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */,
+				15B9E5F66063E99E492FD242 /* Picking.swift in Sources */,
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
 				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,

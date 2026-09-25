@@ -331,7 +331,7 @@
       "id": "T19",
       "title": "Selezione ed evidenziazione nel viewport (picking)",
       "phase": "2 · UX",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T07"
       ],
@@ -339,7 +339,12 @@
         "App/Sources/UI/Viewport"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 09:51",
+      "finished": "2026-09-25 09:52",
+      "notes": [
+        "2026-09-25 09:52 claude: Picking corpi nel viewport (raggio vs triangoli, Möller–Trumbore + bbox), hover condiviso con Browser/timeline, click nel vuoto deseleziona. Estendibile a facce/spigoli quando T24 definisce gli ID topologici. Scrittura selection diretta marcata TODO(R1)."
+      ]
     },
     {
       "id": "T20",
@@ -418,6 +423,21 @@
       "suggested": "codex",
       "owner": "codex",
       "started": "2026-09-25 09:50"
+    },
+    {
+      "id": "T25",
+      "title": "Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)",
+      "phase": "2 · UX",
+      "status": "todo",
+      "deps": [
+        "T17"
+      ],
+      "paths": [
+        "App/Sources/UI/Command",
+        "App/Sources/UI/Previews"
+      ],
+      "suggested": "claude",
+      "owner": null
     }
   ]
 }

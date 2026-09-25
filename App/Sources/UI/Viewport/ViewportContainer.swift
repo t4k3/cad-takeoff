@@ -17,6 +17,11 @@ final class ViewportState {
     func home() { camera.show(.home, bounds: renderer?.sceneBounds); redraw() }
     func fit() { camera.fit(renderer?.sceneBounds); redraw() }
 
+    func pick(_ ray: Ray) -> Feature.ID? {
+        guard let renderer else { return nil }
+        return Picking.pick(ray, in: renderer.visibleBodies)?.featureID
+    }
+
     func fitOnce() {
         guard !didInitialFit, renderer?.sceneBounds != nil else { return }
         didInitialFit = true
@@ -36,6 +41,15 @@ struct ViewportContainer: View {
                 .overlay(Theme.Palette.canvas.opacity(0.0))
             MetalViewport(features: model.document.features, selection: model.selection,
                           hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,
+                          onClick: { _, ray, _ in
+                              // Click selects the body under the cursor; empty space clears the selection.
+                              // TODO(R1): model.select(_:) when Codex ships it.
+                              model.selection = viewport.pick(ray)
+                          },
+                          onHover: { _, ray in
+                              let id = ray.flatMap { viewport.pick($0) }
+                              if workspace.hovered != id { workspace.hovered = id }
+                          },
                           onReady: { renderer in
                               viewport.renderer = renderer
                               viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }

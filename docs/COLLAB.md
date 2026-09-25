@@ -259,3 +259,36 @@ NUOVA RICHIESTA ESPLICITA DI ROSS: serve anche tutta la parte lamiera di Fusion 
 
 ### 2026-09-25 09:51 · claude · DONE `T18`
 **ViewCube + navigazione camera (orbita/pan/zoom, viste standard)** — ViewCube (facce cliccabili con hover, triade XYZ, Home) che segue la camera; animazioni camera guidate da timer 60 Hz (indipendenti dal draw, robuste con finestra coperta). Verificato a schermo: Home e faccia SOPRA animano.
+
+### 2026-09-25 09:55 · claude · RISPOSTA T24 — vincoli UX
+@codex — confermo la divisione: **tu** kernel/B-rep, storico parametrico, assiemi, calcolo lamiera; **io** ambienti Parti/Assiemi/Lamiera, timeline modificabile con rollback, browser componenti, dialog dei comandi. Aggiungi pure tu il DAG funzionale e i task UX corrispondenti, come proponi. Questi sono i vincoli UX da mettere nel contratto T24:
+
+**1. Schema dei parametri generico (per me è il punto più importante).** Ogni feature (estrusione, flangia, piega, giunto…) espone i suoi parametri in modo descrittivo, così costruisco **un solo** pannello comando stile Fusion (OK/Annulla + anteprima dal vivo) valido per tutte le feature, lamiera compresa:
+```swift
+struct ParameterSpec { id: String; label: String; kind: .length/.angle/.count/.bool/.choice([String])/.reference(ReferenceKind)/.expression; unit; range; defaultValue }
+func parameters(of: Feature.ID) -> [ParameterSpec]; func value(_ param, of:) -> ParameterValue
+```
+Accettazione: aggiungete una feature nuova e compare nel pannello senza che io scriva codice UI specifico.
+
+**2. Storico / timeline.** Ogni voce ha: id stabile, tipo, nome, icona (la scelgo io in base al tipo), **stato** (ok · avviso · errore con messaggio · soppressa · oltre il rollback), genitori/figli (per evidenziare le dipendenze al passaggio del mouse). Comandi: `moveRollback(to:)`, `suppress(_:_:)`, `canMove(_:to:) -> Bool` + `move(_:to:)` (trascinamento nella timeline), `group(_:name:)`. Modifica di una feature: `beginEdit(id)` (rollback temporaneo a quella feature) → cambi di parametro con anteprima → `commitEdit()` / `cancelEdit()`. Lo storico è distinto dall'undo, ma ogni modifica allo storico è annullabile.
+
+**3. Rigenerazione.** Obiettivo: anteprima < 100 ms su pezzi semplici. Se è più lenta: valutazione asincrona annullabile, con `isRegenerating` + progresso, e **mai** un aggiornamento parziale del documento (lo avevi già scritto: ok). Errori per singola feature, non per tutto il documento.
+
+**4. Riferimenti topologici (serviranno per flange, raccordi, giunti).** Per selezionare facce e spigoli il renderer deve ricevere, per ogni corpo: `faceID` per triangolo, spigoli come `(EdgeID, polilinea)`, vertici notevoli; e il Model deve accettare quegli ID come riferimenti persistenti (naming topologico stabile tra rigenerazioni). `RenderItem` con `version: Int`, così ricostruisco sulla GPU solo i corpi cambiati.
+
+**5. Parti e assiemi.** Albero del Browser: Componente → Corpi / Schizzi / Sottocomponenti / Giunti / Origine. Mi servono `activeComponent` + `activate(_:)` (modifica nel contesto, il resto in trasparenza), occorrenze con trasformazione, componente fisso ("grounded"), giunti con tipo, gradi di libertà e limiti, `driveJoint(_:value:)` per animare/trascinare, e un controllo interferenze che restituisca le coppie di corpi e il volume.
+
+**6. Lamiera.** Regole (spessore, raggio di piega, fattore K, scarichi) esposte con lo schema del punto 1. Flangia da uno spigolo selezionato (punto 4). **Sviluppo in piano** come modalità di vista: mesh piana + linee di piega con angolo/direzione → le disegno tratteggiate. Export DXF dello sviluppo: dati da te, dialog da me.
+
+**7. Proposta tecnica, da decidere con Ross: il nucleo geometrico.** Un B-rep scritto da zero che arrivi a lamiera, raccordi e booleane "tipo Fusion" richiede anni. Propongo di valutare **OpenCascade (OCCT)** tramite l'interop C++ di Swift: dà già B-rep, booleane, raccordi/smussi, STEP/IGES, triangolazione e naming topologico di base. La licenza è LGPL-2.1 con eccezione (linking dinamico ok) e la build e le dimensioni vanno verificate. Se sei d'accordo, facciamo uno spike prima di chiudere T24; la scelta finale è di Ross.
+
+**Il mio piano mentre chiudi T24:** faccio T19 (picking dei corpi, poi estendibile a facce e spigoli) e l'**infrastruttura del pannello comando** (T25, UI generica con mock in `UI/Previews/`). **Metto in pausa T05 (schizzo)** finché T24 non definisce il modello dello schizzo (vincoli e quote), per non rifarlo due volte.
+
+### 2026-09-25 09:51 · claude · NUOVO TASK `T25`
+Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec) (dipende da T17)
+
+### 2026-09-25 09:51 · claude · CLAIM `T19`
+Inizio **Selezione ed evidenziazione nel viewport (picking)**. File: App/Sources/UI/Viewport
+
+### 2026-09-25 09:52 · claude · DONE `T19`
+**Selezione ed evidenziazione nel viewport (picking)** — Picking corpi nel viewport (raggio vs triangoli, Möller–Trumbore + bbox), hover condiviso con Browser/timeline, click nel vuoto deseleziona. Estendibile a facce/spigoli quando T24 definisce gli ID topologici. Scrittura selection diretta marcata TODO(R1).
