@@ -81,8 +81,13 @@ final class LocalHTTPTransport: @unchecked Sendable {
 
     private func respond(to r: HTTPRequest, on c: NWConnection) {
         // DNS-rebinding protection: only accept requests without Origin or from localhost.
-        if let origin = r.headers["origin"], !(origin.hasPrefix("http://localhost") || origin.hasPrefix("http://127.0.0.1")) {
-            return send(c, status: "403 Forbidden", body: Data("origin not allowed".utf8))
+        if let origin = r.headers["origin"] {
+            guard let url = URLComponents(string: origin), url.scheme == "http",
+                  url.host == "localhost" || url.host == "127.0.0.1",
+                  url.user == nil, url.password == nil,
+                  url.path.isEmpty, url.query == nil, url.fragment == nil else {
+                return send(c, status: "403 Forbidden", body: Data("origin not allowed".utf8))
+            }
         }
         guard r.path.hasPrefix("/mcp") else { return send(c, status: "404 Not Found", body: Data()) }
         guard r.headers["authorization"] == "Bearer \(token)" else {
@@ -139,7 +144,7 @@ struct HTTPRequest {
             guard let colon = line.firstIndex(of: ":") else { continue }
             headers[line[..<colon].lowercased()] = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
         }
-        let length = Int(headers["content-length"] ?? "0") ?? 0
+        guard let length = Int(headers["content-length"] ?? "0"), (0...(8 << 20)).contains(length) else { return nil }
         let bodyStart = range.upperBound
         guard data.count - bodyStart >= length else { return nil }
         method = String(parts[0]); path = String(parts[1]); self.headers = headers

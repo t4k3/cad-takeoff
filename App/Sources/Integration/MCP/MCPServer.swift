@@ -86,7 +86,11 @@ final class MCPServer {
                 "content": [["type": "text", "text": .string(r.text)]],
                 "isError": .bool(r.isError),
             ]
-            if let s = r.structured { payload["structuredContent"] = s }
+            if let s = r.structured {
+                payload["structuredContent"] = s
+                // Older MCP clients consume text only: retain IDs and revision tokens there too.
+                payload["content"] = [["type": "text", "text": .string(r.text + "\n" + s.jsonString)]]
+            }
             return result(id, .object(payload))
         default:
             return isNotification ? nil : errorResponse(id: id ?? .null, code: -32601, message: "Method not found: \(method)")
