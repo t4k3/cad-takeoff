@@ -4,14 +4,19 @@ import SwiftUI
 struct FusionTakeoffApp: App {
     @State private var model = DesignModel()
     @State private var mcp = MCPHost()
+    @State private var assistant = AssistantSession(providers: [ClaudeProvider()])
 
     var body: some Scene {
         WindowGroup("Fusion Takeoff") {
             WorkspaceView()
                 .environment(model)
                 .environment(mcp)
+                .environment(assistant)
                 .task {
-                    // TODO(T48): mcp.attach(<CADToolProvider del Model>) quando Codex lo espone.
+                    // The Model is the single CAD tool provider (T48) for MCP clients and the in-app chat.
+                    let tools = (model as AnyObject) as? CADToolProvider
+                    mcp.attach(tools)
+                    assistant.tools = tools
                     mcp.start()
                 }
                 .frame(minWidth: 1100, minHeight: 700)
@@ -25,6 +30,10 @@ struct FusionTakeoffApp: App {
                 Button("Salva…") { model.saveWithPanel() }.keyboardShortcut("s")
                 Button("Esporta STL…") { model.exportSTLWithPanel() }.keyboardShortcut("e")
             }
+        }
+        Settings {
+            AssistantSettingsView()
+                .environment(assistant)
         }
     }
 }

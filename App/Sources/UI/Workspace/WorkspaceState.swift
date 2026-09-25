@@ -16,6 +16,14 @@ final class WorkspaceState {
     var tab: Tab = .solid
     var showBrowser = true
     var showInspector = true
+    enum SideTab: String, CaseIterable, Identifiable { case parameters = "Parametri", assistant = "Assistente"; var id: String { rawValue } }
+    var sideTab: SideTab = .assistant
+
+    /// Shows the assistant tab (opening the side panel if hidden).
+    func showAssistant() {
+        showInspector = true
+        sideTab = .assistant
+    }
     /// Feature under the mouse in browser, timeline or viewport: highlighted everywhere.
     var hovered: Feature.ID?
     /// Command panel currently open (create/edit feature).

@@ -13,6 +13,11 @@ struct Ribbon: View {
                     TabButton(title: tab.rawValue, isSelected: workspace.tab == tab) { workspace.tab = tab }
                 }
                 Spacer()
+                Button { workspace.showAssistant() } label: {
+                    Label("Assistente", systemImage: "sparkles")
+                }.buttonStyle(IconButtonStyle(isActive: workspace.showInspector && workspace.sideTab == .assistant))
+                    .help("Assistente di progettazione (⌘L)")
+                    .keyboardShortcut("l", modifiers: .command)
                 Button { workspace.showBrowser.toggle() } label: {
                     Label("Browser", systemImage: "sidebar.left")
                 }.buttonStyle(IconButtonStyle(isActive: workspace.showBrowser)).help("Mostra/nascondi Browser")
