@@ -28,7 +28,7 @@ registro: Ross proverà il passo 1 più tardi e ha chiesto di avanzare al passo 
   per creare, aprire, rinominare, spostare e cercare i disegni e tenere ordinato un progetto intero.
   È la base naturale per gli assiemi (riferimenti tra file dello stesso progetto).
   Chi: Codex (struttura su disco, indice, versioni, riferimenti tra file) + Claude (dashboard, anteprime, navigazione).
-- **Import automatico da Fusion 360 (idea di Ross, 25/09)** — collegata alla Home. Note tecniche:
+- **Import automatico da Fusion 360 (idea di Ross, 25/09)** — ➜ **affidato a Claude da Ross (T74), dopo la Home (T73).** collegata alla Home. Note tecniche:
   il formato `.f3d/.f3z` è chiuso e non documentato, quindi leggerlo direttamente non è affidabile.
   Strade possibili, dalla più semplice alla più completa:
   1. import di mesh (STL/3MF/OBJ esportati da Fusion): subito fattibile, ma senza storico;

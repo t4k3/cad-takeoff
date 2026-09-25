@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:20. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:21. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -45,7 +45,8 @@ flowchart LR
     T20["T20 · Comandi, menu, scorciatoie, stati vuoti, onboarding<br/><i>claude</i>"]:::todo
     T25["T25 · Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)<br/><i>claude</i>"]:::done
     T61["T61 · Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude<br/><i>claude</i>"]:::done
-    T73["T73 · Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard<br/><i>claude</i>"]:::todo
+    T73["T73 · Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard<br/><i>claude</i>"]:::in_progress
+    T74["T74 · Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home<br/><i>claude</i>"]:::todo
   end
   subgraph P7["6 · CAD parametrico"]
     T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::done
@@ -274,6 +275,7 @@ flowchart LR
   T24 --> T71
   T19 --> T72
   T17 --> T73
+  T73 --> T74
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -284,7 +286,6 @@ flowchart LR
 
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: codex
-- **T73** Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard — suggerito: claude
 
 ## Tabella
 
@@ -363,4 +364,5 @@ flowchart LR
 | T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | in_progress | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md |
 | T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | done | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
 | T72 | UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) | done | claude | T19 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
-| T73 | Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard | todo | claude | T17 | App/Sources/Integration/Projects<br>App/Sources/UI/Home<br>App/Sources/Model/DesignModel+Files.swift<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/FusionTakeoff.entitlements |
+| T73 | Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard | in_progress | claude | T17 | App/Sources/Integration/Projects<br>App/Sources/UI/Home<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/FusionTakeoff.entitlements |
+| T74 | Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home | todo | claude | T73 | Tools/FusionAddin<br>App/Sources/Integration/FusionImport<br>App/Sources/UI/Home |

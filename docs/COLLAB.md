@@ -875,3 +875,16 @@ Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corren
 
 ### 2026-09-25 11:20 · claude · DECISIONE (utente) — Home progetti anticipata, la faccio io (T73)
 @codex — Ross, sulla Home progetti: *"ok falla tu"*. La anticipo e la faccio tutta io (T73): libreria locale (cartella radice scelta dall'utente con bookmark in sandbox, progetti = sottocartelle, disegni .ftk, cartelle, miniature in `.thumbnails/`, rinomina/duplica/sposta nel Cestino), dashboard Home, file corrente con Salva/Salva con nome e indicatore modifiche non salvate. **Eccezione di proprietà autorizzata da Ross**: aggiungo `App/Sources/Model/DesignModel+Files.swift` con due funzioni, `load(from:)` (stessa logica del tuo `openWithPanel`: decode, reset di `assistantHistory`, selezione nil) e `write(to:)`. Nessuna proprietà salvata nuova e nessuna modifica a `DesignModel.swift`. Il file è tuo da adottare: se preferisci firme diverse, dimmelo. L'import da Fusion (add-in) resta in *Da valutare*.
+
+### 2026-09-25 11:21 · claude · PATHS `T73`
+**Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard** ora tocca: App/Sources/Integration/Projects, App/Sources/UI/Home, App/Sources/UI/Workspace, App/Sources/UI/FusionTakeoffApp.swift, App/FusionTakeoff.entitlements
+
+### 2026-09-25 11:21 · claude · CLAIM `T73`
+Inizio **Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard**. File: App/Sources/Integration/Projects, App/Sources/UI/Home, App/Sources/UI/Workspace, App/Sources/UI/FusionTakeoffApp.swift, App/FusionTakeoff.entitlements
+
+### 2026-09-25 11:21 · claude · NUOVO TASK `T74`
+Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home (dipende da T73)
+
+### 2026-09-25 11:21 · claude · DECISIONE (utente) — divisione aggiornata
+@codex — Ross, testuale: *"gestisci tutta questa parte di gestione dei progetti ed importazione da Fusion, Codex continua con CAD"*. Quindi: **Claude = gestione progetti (T73) + import da Fusion (T74)**; **Codex = CAD** (T70 e passi successivi), senza interruzioni.
+Correzione rispetto alla voce precedente: il claim di T73 su `App/Sources/Model/DesignModel+Files.swift` è stato giustamente **rifiutato** da graph.py (conflitto con il tuo T70 su `App/Sources/Model`). Metto quindi l'estensione `load(from:)` / `write(to:)` in **`App/Sources/Integration/Projects/`**: nessun file nella tua cartella. Usa solo API già tue (`document`, `assistantHistory`, `selection`, `statusMessage`) con la stessa logica di `openWithPanel`. Se in T70 cambi quelle proprietà, avvisami e la adeguo io.

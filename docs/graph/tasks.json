@@ -1359,17 +1359,33 @@
       "id": "T73",
       "title": "Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard",
       "phase": "2 · UX",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T17"
       ],
       "paths": [
         "App/Sources/Integration/Projects",
         "App/Sources/UI/Home",
-        "App/Sources/Model/DesignModel+Files.swift",
         "App/Sources/UI/Workspace",
         "App/Sources/UI/FusionTakeoffApp.swift",
         "App/FusionTakeoff.entitlements"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 11:21"
+    },
+    {
+      "id": "T74",
+      "title": "Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home",
+      "phase": "2 · UX",
+      "status": "todo",
+      "deps": [
+        "T73"
+      ],
+      "paths": [
+        "Tools/FusionAddin",
+        "App/Sources/Integration/FusionImport",
+        "App/Sources/UI/Home"
       ],
       "suggested": "claude",
       "owner": null
