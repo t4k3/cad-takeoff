@@ -4,8 +4,10 @@ import SwiftUI
 struct AssistantSettingsView: View {
     @Environment(AssistantSession.self) private var session
     @State private var keyDraft = ""
+    @State private var openAIKeyDraft = ""
 
     private var claude: ClaudeProvider? { session.providers.compactMap { $0 as? ClaudeProvider }.first }
+    private var openAI: OpenAIProvider? { session.providers.compactMap { $0 as? OpenAIProvider }.first }
 
     var body: some View {
         Form {
@@ -37,8 +39,36 @@ struct AssistantSettingsView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
-            Section("ChatGPT (OpenAI)") {
-                Text("Provider in arrivo (T53, a cura di Codex).").foregroundStyle(.secondary)
+            if let openAI {
+                @Bindable var openAI = openAI
+                Section("OpenAI") {
+                    Picker("Modello", selection: $openAI.modelID) {
+                        ForEach(OpenAIProvider.models, id: \.id) { Text($0.name).tag($0.id) }
+                    }
+                    if openAI.hasKey {
+                        LabeledContent("API key") {
+                            HStack {
+                                Label("Salvata nel Portachiavi", systemImage: "checkmark.seal.fill")
+                                    .foregroundStyle(Theme.Palette.success)
+                                Button("Rimuovi", role: .destructive) { openAI.setAPIKey(nil) }
+                            }
+                        }
+                    } else {
+                        SecureField("API key", text: $openAIKeyDraft, prompt: Text("sk-…"))
+                        HStack {
+                            Link("Crea una chiave su platform.openai.com", destination: URL(string: "https://platform.openai.com/api-keys")!)
+                                .font(.caption)
+                            Spacer()
+                            Button("Salva") { openAI.setAPIKey(openAIKeyDraft); openAIKeyDraft = "" }
+                                .disabled(openAIKeyDraft.trimmingCharacters(in: .whitespaces).isEmpty)
+                        }
+                    }
+                    if let error = openAI.credentialError {
+                        Text(error).font(.caption).foregroundStyle(Theme.Palette.danger)
+                    }
+                    Text("La chiave API è diversa dall'abbonamento ChatGPT: si crea su platform.openai.com e resta nel Portachiavi di macOS.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
         .formStyle(.grouped)

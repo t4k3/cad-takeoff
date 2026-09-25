@@ -918,22 +918,21 @@
       "id": "T51",
       "title": "Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida",
       "phase": "6 · Assistente e MCP",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T49"
       ],
       "paths": [
-        "App/Sources/Integration/ChatGPT",
-        "docs/connectors/CHATGPT.md",
-        "scripts/connect-chatgpt.py",
-        "Tests/ChatGPTConnector"
+        "App/Sources/UI/Connectors"
       ],
-      "suggested": "codex",
-      "owner": null,
-      "started": "2026-09-25 10:11",
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 10:34",
       "notes": [
-        "2026-09-25 10:26 codex: Preparati helper CLI e API per UX ChatGPTConnector, guida per bundle TestFlight senza repo; commit locale. Tre test launcher e build app passati. Collegamento esterno NON attivato: mancano tunnel-client ufficiale, tunnel_id e chiave runtime/account. Prossimo passo configurare tunnel personale e verificare discovery/round-trip ChatGPT con T55; nessun endpoint pubblico aperto."
-      ]
+        "2026-09-25 10:26 codex: Preparati helper CLI e API per UX ChatGPTConnector, guida per bundle TestFlight senza repo; commit locale. Tre test launcher e build app passati. Collegamento esterno NON attivato: mancano tunnel-client ufficiale, tunnel_id e chiave runtime/account. Prossimo passo configurare tunnel personale e verificare discovery/round-trip ChatGPT con T55; nessun endpoint pubblico aperto.",
+        "2026-09-25 10:34 claude: UI ChatGPT nel pannello MCP: tunnel_id → comando 'tunnel-client init' generato da ChatGPTConnector (Codex), comandi avvio e diagnosi copiabili, link guida OpenAI, controllo bridge nel bundle. Pannello scorrevole (max 640 pt). Prova reale con account OpenAI: T55."
+      ],
+      "finished": "2026-09-25 10:34"
     },
     {
       "id": "T52",

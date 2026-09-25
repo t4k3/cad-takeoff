@@ -36,6 +36,7 @@
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
 		A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */; };
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
+		B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */; };
 		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
 		BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA251AD54A99FF5A9A16C764 /* Keychain.swift */; };
 		C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */; };
@@ -89,6 +90,7 @@
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
+		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 		57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCommands.swift; sourceTree = "<group>"; };
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 		7FE45933726A07271F041C97 /* Connectors */ = {
 			isa = PBXGroup;
 			children = (
+				4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */,
 				F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */,
 				3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */,
 			);
@@ -467,6 +470,7 @@
 				4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */,
 				9F5347637A122C50E1BABB0A /* Camera.swift in Sources */,
 				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
+				B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */,
 				89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */,
 				E91C000FA839F7AAD962F2CD /* ClaudeProvider.swift in Sources */,
 				3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */,

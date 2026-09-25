@@ -37,6 +37,7 @@ struct ConnectorsPanel: View {
 
     var body: some View {
         @Bindable var mcp = mcp
+        ScrollView {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "point.3.connected.trianglepath.dotted").foregroundStyle(Theme.Palette.accent)
@@ -105,17 +106,16 @@ struct ConnectorsPanel: View {
                         }
                     }
                 }
-                GroupBox("ChatGPT e altri client") {
+                GroupBox("ChatGPT") {
+                    ChatGPTSetupView(copy: { title, value in copyButton(title, value) })
+                }
+                GroupBox("Altri client MCP (stdio)") {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Client che avviano un server locale (stdio) usano questo comando:")
-                            .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                         if let bridge = MCPHost.bridgeURL?.path {
                             Text(bridge).font(.system(size: 10.5, design: .monospaced)).lineLimit(2).truncationMode(.middle)
                                 .textSelection(.enabled)
                             HStack { Spacer(); copyButton("Copia percorso bridge", bridge) }
                         }
-                        Text("Collegamento a ChatGPT: a cura di Codex (T51).")
-                            .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -140,6 +140,8 @@ struct ConnectorsPanel: View {
             }
         }
         .padding(16)
+        }
+        .frame(maxHeight: 640)
     }
 
     @ViewBuilder private var statusRow: some View {

@@ -619,3 +619,18 @@ Inizio **Aggiornare grafo sorgente navigabile con chat, MCP e Metal**. File: doc
 
 ### 2026-09-25 10:26 · codex · DONE `T58`
 **Aggiornare grafo sorgente navigabile con chat, MCP e Metal** — Grafo sorgente aggiornato:49 file inventariati,28 mappati,41 nodi e57 archi;0 RESOLVED. Chat/MCP/OpenAI/Metal/bridge, fonti e hash, HTML offline e Mermaid dallo stesso JSON. Filtri/ricerca/selezione verificati nel browser. Check FRESH_EXPLORATORY e59 task senza cicli; modello CAD futuro separato dal sorgente.
+
+### 2026-09-25 10:34 · claude · RIASSEGNATO `T51`
+**Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida**: codex → claude. Codex ha consegnato ChatGPTConnector (handoff): resta solo la UI nel pannello MCP.
+
+### 2026-09-25 10:34 · claude · PATHS `T51`
+**Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida** ora tocca: App/Sources/UI/Connectors
+
+### 2026-09-25 10:34 · claude · CLAIM `T51`
+Inizio **Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida**. File: App/Sources/UI/Connectors
+
+### 2026-09-25 10:34 · claude · DONE `T51`
+**Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida** — UI ChatGPT nel pannello MCP: tunnel_id → comando 'tunnel-client init' generato da ChatGPTConnector (Codex), comandi avvio e diagnosi copiabili, link guida OpenAI, controllo bridge nel bundle. Pannello scorrevole (max 640 pt). Prova reale con account OpenAI: T55.
+
+### 2026-09-25 10:55 · claude · RISPOSTA RICHIESTA-INTEGRAZIONE
+@codex — integrato: `OpenAIProvider()` registrato in `FusionTakeoffApp` (selettore Claude/OpenAI nella chat), sezione **OpenAI** nelle Impostazioni (modello, chiave nel Portachiavi, link platform.openai.com, `credentialError`). T51 UI chiusa: sezione **ChatGPT** nel pannello MCP con campo `tunnel_id` → `ChatGPTConnector.configureCommand`, comandi di avvio e diagnosi copiabili, link alla guida. Build verde. Puoi rigenerare il grafo T58. Prove reali con chiavi/account di Ross: T55.

@@ -4,7 +4,7 @@ import SwiftUI
 struct FusionTakeoffApp: App {
     @State private var model = DesignModel()
     @State private var mcp = MCPHost()
-    @State private var assistant = AssistantSession(providers: [ClaudeProvider()])
+    @State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider()])
 
     var body: some Scene {
         WindowGroup("Fusion Takeoff") {
