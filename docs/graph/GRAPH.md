@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 10:57. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 10:59. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -99,7 +99,7 @@ flowchart LR
   subgraph P15["3 · Stampa"]
     T59["T59 · 3MF multicolore v1: colori persistenti per parte, export e strumenti chat<br/><i>codex</i>"]:::done
     T60["T60 · UX colori delle parti e comando export 3MF nel prototipo<br/><i>claude</i>"]:::todo
-    T69["T69 · Verifica 3MF nei tre slicer e aggiornamento grafo sorgente<br/><i>codex</i>"]:::in_progress
+    T69["T69 · Verifica 3MF nei tre slicer e aggiornamento grafo sorgente<br/><i>codex</i>"]:::todo
   end
   subgraph P16["M1 · Ciclo Fusion"]
     T62["T62 · Kernel B-rep integrato (OCCT): build, link, firma in sandbox<br/><i>codex</i>"]:::blocked
@@ -277,6 +277,7 @@ flowchart LR
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T13** Script CI locale (test core + build app) — suggerito: codex
 - **T60** UX colori delle parti e comando export 3MF nel prototipo — suggerito: claude
+- **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: codex
 - **T70** Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT — suggerito: codex
 
 ## Tabella
@@ -352,5 +353,5 @@ flowchart LR
 | T66 | UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0 | todo | claude | T64, T45 | App/Sources/UI/Sketch |
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
-| T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | in_progress | codex | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |
+| T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | todo | codex | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |
 | T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | todo | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests |

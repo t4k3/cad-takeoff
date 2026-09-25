@@ -76,8 +76,16 @@ ancora lo stack di sessione.
   due colori rosso/blu e solidi corrispondenti visibili. Le prove CLI Orca e
   Snapmaker con configurazione vuota/minima hanno terminato con errore/crash:
   questo non costituisce verifica positiva di quei percorsi CLI.
-- Snapmaker Orca: requisito esplicito e destinatario del profilo compatibile;
-  la prova d'importazione effettiva viene registrata nel diario condiviso.
+- Snapmaker Orca GUI: importato il file finale `TwoColorParts.3mf`, base rossa e
+  inserto blu visibili, palette 1/2; il pannello informazioni conferma
+  40 × 30 × 13 mm, 6800 mm³, 24 triangoli. Bundle installato dichiara 2.3.5;
+  il suo comando `--help` dichiara internamente 01.10.01.50 (non equiparati).
+- Bambu GUI: verifica dei colori ancora da completare. La finestra esistente
+  contiene un progetto utente modificato (`Mac Stand`), lasciato intatto; il
+  tentativo di nuova finestra non ha fornito una superficie separata utilizzabile.
+
+Perciò: importazione a colori osservata in Orca/Snapmaker; Bambu verificato via
+CLI per geometria e indici delle parti, **non ancora per palette nella GUI**.
 
 Nessuna stampa fisica o validazione di bobine/testine è inclusa in queste prove.
 Parti/occorrenze del documento v2 verranno integrate in T10/T27; oggi la parte

@@ -1258,7 +1258,7 @@
       "id": "T69",
       "title": "Verifica 3MF nei tre slicer e aggiornamento grafo sorgente",
       "phase": "3 · Stampa",
-      "status": "in_progress",
+      "status": "todo",
       "deps": [
         "T59"
       ],
@@ -1270,8 +1270,11 @@
         "result.json"
       ],
       "suggested": "codex",
-      "owner": "codex",
-      "started": "2026-09-25 10:54"
+      "owner": null,
+      "started": "2026-09-25 10:54",
+      "notes": [
+        "2026-09-25 10:59 codex: Grafo aggiornato e verificato nel browser:46 nodi,66 archi,0RESOLVED; freshness OK. Import GUI colori riuscito in Orca e Snapmaker, Snapmaker conferma40×30×13mm/6800mm³/24triangoli. Bambu CLI conserva geometria e indici parti, ma ignora palette; prossima verifica: aprire TwoColorParts.3mf come progetto in una finestra Bambu libera e verificare rosso/blu. Progetto utente Mac Stand modificato lasciato intatto. PRINT_3MF.md distingue prove, limiti CLI e stampa fisica non eseguita."
+      ]
     },
     {
       "id": "T70",

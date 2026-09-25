@@ -20,7 +20,7 @@ flowchart LR
   vec2["Vec2"]
   stl["STLExporter"]
   validator["MeshValidator"]
-  filesystem["File system · .ftk / .stl"]
+  filesystem["File system · .ftk / .stl / .3mf"]
   metal["Metal / GPU"]
   swiftui["SwiftUI lifecycle"]
   representable["NSViewRepresentable"]
@@ -45,6 +45,11 @@ flowchart LR
   openaiapi["OpenAI Responses API"]
   anthropicapi["Anthropic Messages API"]
   tunnel["Secure MCP Tunnel"]
+  partcolor["PartColor"]
+  threeMFpart["ThreeMFPart"]
+  threeMF["ThreeMFExporter"]
+  threeMFprofile["ThreeMFExportProfile"]
+  zip["StoredZIP"]
   app -->|"owns_observable_state · SYNTACTIC"| model
   model -->|"owns_state · SYNTACTIC"| document
   model -->|"constructs_type · SYNTACTIC"| feature
@@ -91,7 +96,7 @@ flowchart LR
   mcphost -->|"constructs_type · SYNTACTIC"| http
   mcpserver -->|"protocol_dispatch · INFERRED"| toolprotocol
   bridge -->|"loopback_http_request · RUNTIME/EXTERNAL"| http
-  toolmodel -->|"type_conforms_protocol · SYNTACTIC"| toolprotocol
+  toolmodel -->|"extension_adds_conformance · SYNTACTIC"| toolprotocol
   toolmodel -->|"extends_type · SYNTACTIC"| model
   toolmodel -->|"reads_catalog · SYNTACTIC"| toolcatalog
   toolmodel -->|"calls_direct · SYNTACTIC"| toolvalidation
@@ -102,6 +107,15 @@ flowchart LR
   renderer -->|"runtime_gpu_boundary · RUNTIME/EXTERNAL"| metal
   swiftui -->|"runtime_callback · RUNTIME/EXTERNAL"| viewport
   viewport -->|"type_conforms_protocol · SYNTACTIC"| representable
+  feature -->|"references_symbol · SYNTACTIC"| partcolor
+  model -->|"calls_direct · SYNTACTIC"| threeMF
+  model -->|"constructs_type · SYNTACTIC"| threeMFpart
+  threeMFpart -->|"references_symbol · SYNTACTIC"| mesh
+  threeMFpart -->|"references_symbol · SYNTACTIC"| partcolor
+  threeMF -->|"calls_direct · SYNTACTIC"| zip
+  threeMF -->|"references_symbol · SYNTACTIC"| threeMFprofile
+  toolmodel -->|"calls_direct · SYNTACTIC"| model
+  model -->|"persists_model · RUNTIME/EXTERNAL"| filesystem
 ```
 
 ## Evidenze
@@ -111,18 +125,18 @@ flowchart LR
 | app → model | owns_observable_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:5` |
 | model → document | owns_state | SYNTACTIC | `App/Sources/Model/DesignModel.swift:10` |
 | model → feature | constructs_type | SYNTACTIC | `App/Sources/Model/DesignModel.swift:29` |
-| model → document | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:82` |
-| model → stl | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:89` |
-| model → validator | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:90` |
-| model → filesystem | persists_model | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:64` |
-| model → filesystem | loads_resource | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:74` |
-| model → filesystem | writes_export | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:89` |
-| document → feature | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:37` |
+| model → document | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:105` |
+| model → stl | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:112` |
+| model → validator | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:113` |
+| model → filesystem | persists_model | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:87` |
+| model → filesystem | loads_resource | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:97` |
+| model → filesystem | writes_export | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:112` |
+| document → feature | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:52` |
 | feature → kind | owns_state | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:13` |
-| feature → primitives | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:24` |
-| feature → operations | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:26` |
-| feature → mesh | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:28` |
-| document → mesh | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:43` |
+| feature → primitives | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:39` |
+| feature → operations | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:41` |
+| feature → mesh | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:43` |
+| document → mesh | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:58` |
 | primitives → operations | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Operations.swift:28` |
 | primitives → profile | references_symbol | INFERRED | `Packages/CADCore/Sources/CADCore/Operations.swift:32` |
 | operations → profile | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Operations.swift:12` |
@@ -131,7 +145,7 @@ flowchart LR
 | profile → vec2 | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Sketch.swift:5` |
 | stl → mesh | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Export.swift:13` |
 | validator → mesh | reads_state | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Export.swift:77` |
-| document → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:33` |
+| document → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:48` |
 | profile → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Sketch.swift:4` |
 | feature → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:4` |
 | app → content | constructs_type | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:11` |
@@ -154,14 +168,23 @@ flowchart LR
 | mcphost → http | constructs_type | SYNTACTIC | `App/Sources/Integration/MCP/MCPHost.swift:60` |
 | mcpserver → toolprotocol | protocol_dispatch | INFERRED | `App/Sources/Integration/MCP/MCPServer.swift:82` |
 | bridge → http | loopback_http_request | RUNTIME/EXTERNAL | `Tools/ftk-mcp/main.swift:80` |
-| toolmodel → toolprotocol | type_conforms_protocol | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:17` |
+| toolmodel → toolprotocol | extension_adds_conformance | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:17` |
 | toolmodel → model | extends_type | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:17` |
 | toolmodel → toolcatalog | reads_catalog | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:18` |
-| toolmodel → toolvalidation | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:67` |
-| toolmodel → stl | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:156` |
+| toolmodel → toolvalidation | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:69` |
+| toolmodel → stl | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:152` |
 | viewport → renderer | constructs_type | SYNTACTIC | `App/Sources/UI/Viewport/MetalViewport.swift:29` |
 | viewport → renderer | assigns_delegate | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/MetalViewport.swift:31` |
-| renderer → feature | calls_direct | SYNTACTIC | `App/Sources/UI/Viewport/ViewportRenderer.swift:131` |
+| renderer → feature | calls_direct | SYNTACTIC | `App/Sources/UI/Viewport/ViewportRenderer.swift:137` |
 | renderer → metal | runtime_gpu_boundary | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/ViewportRenderer.swift:8` |
 | swiftui → viewport | runtime_callback | RUNTIME/EXTERNAL | `App/Sources/UI/Viewport/MetalViewport.swift:37` |
 | viewport → representable | type_conforms_protocol | SYNTACTIC | `App/Sources/UI/Viewport/MetalViewport.swift:7` |
+| feature → partcolor | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:16` |
+| model → threeMF | calls_direct | SYNTACTIC | `App/Sources/Model/DesignModel.swift:132` |
+| model → threeMFpart | constructs_type | SYNTACTIC | `App/Sources/Model/DesignModel.swift:130` |
+| threeMFpart → mesh | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:7` |
+| threeMFpart → partcolor | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:8` |
+| threeMF → zip | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:101` |
+| threeMF → threeMFprofile | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift:30` |
+| toolmodel → model | calls_direct | SYNTACTIC | `App/Sources/Model/Tools/DesignModel+Tools.swift:172` |
+| model → filesystem | persists_model | RUNTIME/EXTERNAL | `App/Sources/Model/DesignModel.swift:142` |

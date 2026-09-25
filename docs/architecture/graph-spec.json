@@ -195,7 +195,7 @@
     },
     {
       "id": "filesystem",
-      "name": "File system · .ftk / .stl",
+      "name": "File system · .ftk / .stl / .3mf",
       "kind": "runtime",
       "module": "Foundation",
       "target": "Foundation",
@@ -208,7 +208,7 @@
       "name": "Metal / GPU",
       "kind": "framework",
       "module": "Metal",
-      "target": "SceneKit",
+      "target": "Metal",
       "language": "Swift / Metal",
       "availability": "external",
       "group": "Confini esterni"
@@ -476,6 +476,66 @@
       "language": "HTTP",
       "availability": "external",
       "group": "Esterno / runtime"
+    },
+    {
+      "id": "partcolor",
+      "name": "PartColor",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/PartColor.swift",
+      "anchor": "public struct PartColor:"
+    },
+    {
+      "id": "threeMFpart",
+      "name": "ThreeMFPart",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "anchor": "public struct ThreeMFPart:"
+    },
+    {
+      "id": "threeMF",
+      "name": "ThreeMFExporter",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "anchor": "public enum ThreeMFExporter {"
+    },
+    {
+      "id": "threeMFprofile",
+      "name": "ThreeMFExportProfile",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "anchor": "public enum ThreeMFExportProfile:"
+    },
+    {
+      "id": "zip",
+      "name": "StoredZIP",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "anchor": "private enum StoredZIP {"
     }
   ],
   "edges": [
@@ -1130,7 +1190,7 @@
       "id": "N047",
       "source": "toolmodel",
       "target": "toolprotocol",
-      "relation": "type_conforms_protocol",
+      "relation": "extension_adds_conformance",
       "semanticStatus": "SYNTACTIC",
       "evidence": [
         {
@@ -1280,6 +1340,132 @@
         }
       ],
       "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "C001",
+      "source": "feature",
+      "target": "partcolor",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "public var color: PartColor"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "C002",
+      "source": "model",
+      "target": "threeMF",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "return try ThreeMFExporter.archive(parts: parts)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "C003",
+      "source": "model",
+      "target": "threeMFpart",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "return ThreeMFPart(id: feature.id"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "C004",
+      "source": "threeMFpart",
+      "target": "mesh",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "anchor": "public var mesh: Mesh"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "C005",
+      "source": "threeMFpart",
+      "target": "partcolor",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "anchor": "public var color: PartColor"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "C006",
+      "source": "threeMF",
+      "target": "zip",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "anchor": "return StoredZIP.archive(files)"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "C007",
+      "source": "threeMF",
+      "target": "threeMFprofile",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "anchor": "profile: ThreeMFExportProfile = .bambuOrca"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "C008",
+      "source": "toolmodel",
+      "target": "model",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+          "anchor": "let data = try export3MFData(featureID: id)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "C009",
+      "source": "model",
+      "target": "filesystem",
+      "relation": "persists_model",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "try data.write(to: url, options: .atomic)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
     }
   ],
   "limitations": [
@@ -1287,7 +1473,8 @@
     "I nodi rappresentano tipi selezionati, non tutti i membri; assenza di arco non prova assenza di dipendenza.",
     "Macro Observation, result builder SwiftUI, overload, protocol witness e internals Apple non attraversati.",
     "Nessuna prova di correttezza numerica, timing, race, performance GPU, stato disco o stampa fisica.",
-    "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento."
+    "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento.",
+    "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo."
   ],
   "probes": [
     {
@@ -1325,6 +1512,12 @@
       "category": "coverage",
       "result": "CAUTION",
       "evidence": "Tipi selezionati; file non mappati elencati. Nessuna inferenza di codice morto da un arco assente."
+    },
+    {
+      "id": "P07",
+      "category": "3mf_boundary",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Feature.color → PartColor; DesignModel → ThreeMFExporter → StoredZIP verificati nel sorgente. Tre profili slicer consumano file in processi esterni. ZIP/CRC/XML, volumi e GUI hanno prove separate; nessun attraversamento semantico continuo verso slicer o stampanti."
     }
   ]
 }

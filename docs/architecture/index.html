@@ -22,14 +22,14 @@
 <script type="application/json" id="data">{
   "schemaVersion": 1,
   "title": "Fusion Takeoff — mappa architetturale esplorativa",
-  "generatedAt": "2026-09-25T08:25:12.084263+00:00",
+  "generatedAt": "2026-09-25T08:56:46.370489+00:00",
   "method": "MANUAL_TEXTUAL",
   "coverageState": "PARTIAL_EXPLORATORY",
   "identity": {
     "checkout": "/Users/ross/APP varie/FUSION-TAKEOFF",
     "branch": "main",
-    "commit": "73bc026ce096fa9942b0ae82728666db0d0e9643",
-    "dirtyStatus": "M App/Sources/Integration/MCP/LocalHTTPTransport.swift\n M App/Sources/Integration/MCP/MCPServer.swift\n M FusionTakeoff.xcodeproj/project.pbxproj\n M docs/COLLAB.md\n M docs/architecture/MAP.md\n M docs/architecture/README.md\n M docs/architecture/graph-spec.json\n M docs/architecture/graph.json\n M docs/architecture/index.html\n M docs/architecture/viewer-template.html\n M docs/graph/GRAPH.md\n M docs/graph/tasks.json\n M scripts/architecture_graph.py\n?? App/Sources/Integration/ChatGPT/\n?? App/Sources/Integration/OpenAI/\n?? Tests/ChatGPTConnector/\n?? Tests/MCPIntegration/\n?? Tests/OpenAIProvider/\n?? docs/connectors/CHATGPT.md\n?? scripts/connect-chatgpt.py\n?? scripts/test-mcp-integration.sh\n?? scripts/test-openai-provider.sh",
+    "commit": "a111145a5ed3e8db5fd9f46ab0b947b36df95e2d",
+    "dirtyStatus": "M docs/COLLAB.md\n M docs/architecture/graph-spec.json\n M docs/graph/GRAPH.md\n M docs/graph/tasks.json",
     "project": "FusionTakeoff.xcodeproj",
     "scheme": "FusionTakeoff",
     "configuration": "Debug",
@@ -40,9 +40,9 @@
     "python": "3.9.6"
   },
   "coverage": {
-    "sourceFilesFound": 49,
-    "sourceFilesInventoried": 49,
-    "sourceFilesWithMappedSymbols": 28,
+    "sourceFilesFound": 54,
+    "sourceFilesInventoried": 54,
+    "sourceFilesWithMappedSymbols": 30,
     "sourceFilesParsedSemantically": 0,
     "unmappedFiles": [
       "App/Sources/Integration/Assistant/AnthropicStream.swift",
@@ -51,10 +51,13 @@
       "App/Sources/UI/Command/CommandPanel.swift",
       "App/Sources/UI/Command/CommandSession.swift",
       "App/Sources/UI/Command/FeatureCommands.swift",
+      "App/Sources/UI/Connectors/ChatGPTSetupView.swift",
       "App/Sources/UI/Connectors/ClaudeDesktopSetup.swift",
       "App/Sources/UI/Connectors/ConnectorsPanel.swift",
       "App/Sources/UI/DesignSystem/Theme.swift",
       "App/Sources/UI/Previews/CommandPanelPreviews.swift",
+      "App/Sources/UI/Sketch/SketchCommands.swift",
+      "App/Sources/UI/Sketch/SketchSession.swift",
       "App/Sources/UI/Viewport/Camera.swift",
       "App/Sources/UI/Viewport/MatrixMath.swift",
       "App/Sources/UI/Viewport/Picking.swift",
@@ -69,24 +72,24 @@
     ],
     "parseErrors": null,
     "parseNote": "Nessun parser AST o semantico eseguito.",
-    "nodes": 41,
-    "edges": 57,
+    "nodes": 46,
+    "edges": 66,
     "edgesByState": {
-      "SYNTACTIC": 43,
-      "RUNTIME/EXTERNAL": 9,
+      "SYNTACTIC": 51,
+      "RUNTIME/EXTERNAL": 10,
       "INFERRED": 5
     },
     "edgesByRelation": {
       "owns_observable_state": 1,
       "owns_state": 5,
-      "constructs_type": 8,
-      "calls_direct": 13,
-      "persists_model": 1,
+      "constructs_type": 9,
+      "calls_direct": 16,
+      "persists_model": 2,
       "loads_resource": 1,
       "writes_export": 1,
-      "references_symbol": 4,
+      "references_symbol": 8,
       "reads_state": 1,
-      "type_conforms_protocol": 7,
+      "type_conforms_protocol": 6,
       "casts_protocol": 1,
       "binds_state": 1,
       "observes_state": 1,
@@ -94,6 +97,7 @@
       "http_request": 2,
       "prepares_setup_command": 1,
       "loopback_http_request": 1,
+      "extension_adds_conformance": 1,
       "extends_type": 1,
       "reads_catalog": 1,
       "assigns_delegate": 1,
@@ -319,8 +323,8 @@
     },
     {
       "file": "App/Sources/Model/DesignModel.swift",
-      "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0",
-      "lines": 95,
+      "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8",
+      "lines": 146,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -335,8 +339,8 @@
     },
     {
       "file": "App/Sources/Model/Tools/CADToolCatalog.swift",
-      "sha256": "8c86e746531ab8d8b40258f4f1ec64125362d7351762ec8615a907bd159cd574",
-      "lines": 45,
+      "sha256": "8e37b5047c3628875e2420abe7b0d7a29dfa36b30d9c9922222a39760615dce4",
+      "lines": 48,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -367,8 +371,8 @@
     },
     {
       "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
-      "sha256": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac",
-      "lines": 219,
+      "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9",
+      "lines": 232,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -399,12 +403,12 @@
     },
     {
       "file": "App/Sources/UI/Assistant/AssistantSettings.swift",
-      "sha256": "fe459ad5b487b7d3f753f7ed483f24d1f2cf988d5c1b8320bc8cdde66275291e",
-      "lines": 48,
+      "sha256": "6110760e2b2a767b016543600f3224e5235cb6ccb6e4a75d8d38598e4ab8e7ce",
+      "lines": 78,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
-        "observation": 3,
+        "observation": 5,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -462,6 +466,22 @@
       }
     },
     {
+      "file": "App/Sources/UI/Connectors/ChatGPTSetupView.swift",
+      "sha256": "62e398de236cab5324f04474ad5c09d88c0f978e9b1a26eb68703409e2f42a92",
+      "lines": 53,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
       "file": "App/Sources/UI/Connectors/ClaudeDesktopSetup.swift",
       "sha256": "6d501c71658774e4270935b5cd81f71e84159c7dd141a148bfb27726f8de84e4",
       "lines": 66,
@@ -479,8 +499,8 @@
     },
     {
       "file": "App/Sources/UI/Connectors/ConnectorsPanel.swift",
-      "sha256": "69f358016e80e9e7e799ca1e6ce59e0b115210e9b0f225fb7fef089022c017c8",
-      "lines": 188,
+      "sha256": "6304501f3a2d6dbd2c6dfba879a49faccf5b59a3f5780abec102e3a58c1fa87e",
+      "lines": 190,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -511,7 +531,7 @@
     },
     {
       "file": "App/Sources/UI/FusionTakeoffApp.swift",
-      "sha256": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e",
+      "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8",
       "lines": 39,
       "target": "FusionTakeoff",
       "mapped": true,
@@ -536,6 +556,38 @@
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/UI/Sketch/SketchCommands.swift",
+      "sha256": "a4b7d445f79ca630cf63edc0387d20f3eca00ca609994f3493d6c829ec5e1aaa",
+      "lines": 75,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 2,
+        "mainActor": 1,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/UI/Sketch/SketchSession.swift",
+      "sha256": "b449d9214a628f27d9d7e87a476058b2b832c670e6eacdbbc49b1df3a2ec32c8",
+      "lines": 269,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 1,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 1,
         "selectors": 0,
         "delegate": 0,
         "representableWitness": 0
@@ -639,8 +691,8 @@
     },
     {
       "file": "App/Sources/UI/Viewport/ViewportContainer.swift",
-      "sha256": "4fe6732182064a041228ab13c93d60a1e54afeae7633116c4b5d561814911f22",
-      "lines": 115,
+      "sha256": "00447b806b7ed2aed09f7bae01e8a59f07fa4175ddfa8f2157e8d843e149f3a1",
+      "lines": 211,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -655,8 +707,8 @@
     },
     {
       "file": "App/Sources/UI/Viewport/ViewportRenderer.swift",
-      "sha256": "390446299fbdf15577c22156cb0a4bf93469793a2b83c1603e5041aadf8ef990",
-      "lines": 261,
+      "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97",
+      "lines": 267,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
@@ -703,8 +755,8 @@
     },
     {
       "file": "App/Sources/UI/Workspace/Ribbon.swift",
-      "sha256": "f16579ee8a0c531267d2fb2fe60787bd6950dc73c7ef0318aa0e5408261a8f49",
-      "lines": 125,
+      "sha256": "31c816b243d12c8be32da7a8e611c7e447d9694a72cb71bb2d2b80bf13ef8d88",
+      "lines": 164,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -751,8 +803,8 @@
     },
     {
       "file": "App/Sources/UI/Workspace/WorkspaceState.swift",
-      "sha256": "2054aabea62b12a7c145fb82ba9bfd19eafa80bfe3d97a9cfaf7076c2a8132e3",
-      "lines": 56,
+      "sha256": "02ba785645e95df32b84adf42b7be3d9844b321b5db3e06e8822ab4b896b95b4",
+      "lines": 80,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -783,8 +835,8 @@
     },
     {
       "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-      "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440",
-      "lines": 55,
+      "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8",
+      "lines": 70,
       "target": "CADCore",
       "mapped": true,
       "literalSites": {
@@ -862,9 +914,41 @@
       }
     },
     {
+      "file": "Packages/CADCore/Sources/CADCore/PartColor.swift",
+      "sha256": "e56b70e932aa73b4be058aec049440eacda975c6f651aa931dbe59d23bf2a6c1",
+      "lines": 23,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
       "file": "Packages/CADCore/Sources/CADCore/Sketch.swift",
       "sha256": "236c122d05e82b51f026c5ea994c370851b36f64ab3731d02aa224d32a9147df",
       "lines": 74,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8",
+      "lines": 188,
       "target": "CADCore",
       "mapped": true,
       "literalSites": {
@@ -909,49 +993,56 @@
     "App/Sources/Integration/OpenAI/OpenAIProvider.swift": "29a10f519d46211dc388badc2f5d151f42d7c32cf72f41c545778c239bb026b7",
     "App/Sources/Integration/OpenAI/OpenAIStream.swift": "0d2c9812bee75ec110915dcb9f9091484070d1255933ec8ecb41528bce6e5228",
     "App/Sources/Integration/ToolBridge.swift": "695b55c1ccad50e9357d016a9acb7502491447deac7fc593db2134b22a3c0248",
-    "App/Sources/Model/DesignModel.swift": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0",
-    "App/Sources/Model/Tools/CADToolCatalog.swift": "8c86e746531ab8d8b40258f4f1ec64125362d7351762ec8615a907bd159cd574",
+    "App/Sources/Model/DesignModel.swift": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8",
+    "App/Sources/Model/Tools/CADToolCatalog.swift": "8e37b5047c3628875e2420abe7b0d7a29dfa36b30d9c9922222a39760615dce4",
     "App/Sources/Model/Tools/CADToolValidation.swift": "b29f4abaf770dc0b16c126568e346090509b9c88091abb395b5a3b6a6f179345",
-    "App/Sources/Model/Tools/DesignModel+Tools.swift": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac",
+    "App/Sources/Model/Tools/DesignModel+Tools.swift": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9",
     "App/Sources/UI/Assistant/AssistantPanel.swift": "8937b6382330f369daaf7eb43d8b8b70c6d94c4e01a6c9742e937c81f23b1cda",
-    "App/Sources/UI/Assistant/AssistantSettings.swift": "fe459ad5b487b7d3f753f7ed483f24d1f2cf988d5c1b8320bc8cdde66275291e",
+    "App/Sources/UI/Assistant/AssistantSettings.swift": "6110760e2b2a767b016543600f3224e5235cb6ccb6e4a75d8d38598e4ab8e7ce",
     "App/Sources/UI/Command/CommandPanel.swift": "54ffbdcee7bd93bde41538d0b5b6f640dfbde789fd4fea2f67a26f9944fea534",
     "App/Sources/UI/Command/CommandSession.swift": "d205a84aa47aa288340e0c892cda4375cddbd883479770a6981bfbcbb2cb0f79",
     "App/Sources/UI/Command/FeatureCommands.swift": "ec70a203c82793e7e5422189a1c381b547614f852540fa7312d90131f257daed",
+    "App/Sources/UI/Connectors/ChatGPTSetupView.swift": "62e398de236cab5324f04474ad5c09d88c0f978e9b1a26eb68703409e2f42a92",
     "App/Sources/UI/Connectors/ClaudeDesktopSetup.swift": "6d501c71658774e4270935b5cd81f71e84159c7dd141a148bfb27726f8de84e4",
-    "App/Sources/UI/Connectors/ConnectorsPanel.swift": "69f358016e80e9e7e799ca1e6ce59e0b115210e9b0f225fb7fef089022c017c8",
+    "App/Sources/UI/Connectors/ConnectorsPanel.swift": "6304501f3a2d6dbd2c6dfba879a49faccf5b59a3f5780abec102e3a58c1fa87e",
     "App/Sources/UI/DesignSystem/Theme.swift": "89e6023e512663e5cda2c370086b7ff208fe330b2fc73057af06597bbf28b049",
-    "App/Sources/UI/FusionTakeoffApp.swift": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e",
+    "App/Sources/UI/FusionTakeoffApp.swift": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8",
     "App/Sources/UI/Previews/CommandPanelPreviews.swift": "78269bea41240cb20785f5fcfae056172f2f357ec6b0bc21685674184efbfbad",
+    "App/Sources/UI/Sketch/SketchCommands.swift": "a4b7d445f79ca630cf63edc0387d20f3eca00ca609994f3493d6c829ec5e1aaa",
+    "App/Sources/UI/Sketch/SketchSession.swift": "b449d9214a628f27d9d7e87a476058b2b832c670e6eacdbbc49b1df3a2ec32c8",
     "App/Sources/UI/Viewport/Camera.swift": "0ca2b4a4881818f3408089ea45e1daa22797a24d974304460547514bd346a825",
     "App/Sources/UI/Viewport/MatrixMath.swift": "a01c828de24644854bef110c0584d6217e3d8f322f9203c0c38d0d14e4462bbf",
     "App/Sources/UI/Viewport/MetalViewport.swift": "1bdf83e8e1b785d3f972d6987a580a8fa545c94abfd790827d8e99ed27f2e012",
     "App/Sources/UI/Viewport/Picking.swift": "93cc6444367e57df86acd2a64b0e8ddb59bb27ae77fc697d407a791bbfc8a420",
     "App/Sources/UI/Viewport/ShaderSource.swift": "a7a5f4698fccd2d403e9ebead01d7b029339bf8fad69e4fc34d267dc08c4788c",
     "App/Sources/UI/Viewport/ViewCube.swift": "9348c92ef68ada28d7507dbb65f333f41c5f8d1b2cedba4479634e37e3373b74",
-    "App/Sources/UI/Viewport/ViewportContainer.swift": "4fe6732182064a041228ab13c93d60a1e54afeae7633116c4b5d561814911f22",
-    "App/Sources/UI/Viewport/ViewportRenderer.swift": "390446299fbdf15577c22156cb0a4bf93469793a2b83c1603e5041aadf8ef990",
+    "App/Sources/UI/Viewport/ViewportContainer.swift": "00447b806b7ed2aed09f7bae01e8a59f07fa4175ddfa8f2157e8d843e149f3a1",
+    "App/Sources/UI/Viewport/ViewportRenderer.swift": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97",
     "App/Sources/UI/Workspace/BrowserPanel.swift": "e0bb6c7e11d9e95de156087a7ee7e0da29ac34798b8483e6663e0d1948097e99",
     "App/Sources/UI/Workspace/InspectorPanel.swift": "dff6a5adde115fe78edc0aa696d7863736bf30d3bcab5d8f83a095c702320018",
-    "App/Sources/UI/Workspace/Ribbon.swift": "f16579ee8a0c531267d2fb2fe60787bd6950dc73c7ef0318aa0e5408261a8f49",
+    "App/Sources/UI/Workspace/Ribbon.swift": "31c816b243d12c8be32da7a8e611c7e447d9694a72cb71bb2d2b80bf13ef8d88",
     "App/Sources/UI/Workspace/StatusBar.swift": "20aa7e5dc330f507d8becae310a9d3ed949c49b309431d3c9a94f31557602f35",
     "App/Sources/UI/Workspace/TimelineBar.swift": "9ff8f5afd947e03daba9cea58dee743f0489efe6d051616b9c815271389684c5",
-    "App/Sources/UI/Workspace/WorkspaceState.swift": "2054aabea62b12a7c145fb82ba9bfd19eafa80bfe3d97a9cfaf7076c2a8132e3",
+    "App/Sources/UI/Workspace/WorkspaceState.swift": "02ba785645e95df32b84adf42b7be3d9844b321b5db3e06e8822ab4b896b95b4",
     "App/Sources/UI/Workspace/WorkspaceView.swift": "6b69878f64412fb4a6c3c4e837d5f6bac2b90ce8321d06979af846d432176e12",
-    "FusionTakeoff.xcodeproj/project.pbxproj": "e7afa4694865408994d6ab166f8529b7286df2a141c52574ee0cd32ff62f99d3",
+    "FusionTakeoff.xcodeproj/project.pbxproj": "f6e7e5bc2102e58836b713b5d214d1dd87d102f8114586b96eb944e12024d726",
     "Packages/CADCore/Package.swift": "020fcbe1497b1671441987703ac82f815719fd3c2a9a1a90b3901dbdaa46da63",
-    "Packages/CADCore/Sources/CADCore/Document.swift": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440",
+    "Packages/CADCore/Sources/CADCore/Document.swift": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8",
     "Packages/CADCore/Sources/CADCore/Export.swift": "ba2eb3b394c30b094db765e235081738c4484b5e4050c0277f2976bedd18f62d",
     "Packages/CADCore/Sources/CADCore/Math.swift": "ac1464153e9fe7a142cc9432b655d96b22c1fe87812ea3daca3175e64a74f76c",
     "Packages/CADCore/Sources/CADCore/Mesh.swift": "3873f5d0a5ad23c78b947aee608a2fb066d6705da522ef8f51093f48f982fa54",
     "Packages/CADCore/Sources/CADCore/Operations.swift": "6e09f2ff12b73815e7a822bc218d6e9fb6dbb85a529678571ea73e5537ee7fde",
+    "Packages/CADCore/Sources/CADCore/PartColor.swift": "e56b70e932aa73b4be058aec049440eacda975c6f651aa931dbe59d23bf2a6c1",
     "Packages/CADCore/Sources/CADCore/Sketch.swift": "236c122d05e82b51f026c5ea994c370851b36f64ab3731d02aa224d32a9147df",
+    "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8",
     "Packages/CADCore/Tests/CADCoreTests/CADCoreTests.swift": "4cd476d752fed1d1a5ae102a1fafa6c6faceed61c580397bf1a0393c06cd07ee",
-    "Tests/AssistantTools/Runner.swift": "63eeebcbd73eaed45dadaeecceaa4926036e41a8e68a10b57582b32fdba94275",
-    "Tests/MCPIntegration/Runner.swift": "607510ba6e746f5d56b30021afe8bae7f80b3eddef9e7d002aad63d50e509185",
+    "Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift": "65b55ff8afcb76549ebdcd1c679f75ff269fbbf8f5287f631ae7980d2002e3c2",
+    "Tests/AssistantTools/Runner.swift": "4bf411692b3afa304e44df8be2b5fd1249cc20f9db102ea203741936cb462e9e",
+    "Tests/MCPIntegration/Runner.swift": "e667d1b7e7f74d8420ef8c1983569300c6e0190f17d1ddc7469fb13d7a2a9c10",
     "Tests/OpenAIProvider/Runner.swift": "01727690c619b262c18d4052c4ac1d014dd8a34f586be77f0e9bdc6f7987391b",
+    "Tests/ThreeMF/Fixture.swift": "de11cec62594ceb83a3d5736a965afebdd06f81cf958ae727f8289f443c48f9e",
     "Tools/ftk-mcp/main.swift": "dc3eba0eee1805e4b3a2fea41f13721b952c6ada6ec07c3b11956610eb2d7d98",
-    "docs/architecture/graph-spec.json": "dc26630978fb3bc52c3a350c5bee134c8c065492a6aa9ea04ad9ba557b2d9e08",
+    "docs/architecture/graph-spec.json": "063c443a737e82342ef1d629283079bb736cb52644e803cf84dc8c26f3f7b180",
     "docs/architecture/viewer-template.html": "b7caca8064586bdd71022a6e905f6017e50355b634436cbd689a5f93c8250d9f",
     "project.yml": "c81a6860218895f1c4d9e60d97e844e528d8f5347103ab312d8f6e2095a330c0",
     "scripts/architecture_graph.py": "5821ba7c67391bdf66f7a012b244b50697ca9b1b64c91c50264e4cf34e89e36d"
@@ -972,7 +1063,7 @@
         "line": 4,
         "endLine": 4,
         "excerpt": "struct FusionTakeoffApp: App {",
-        "sha256": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e"
+        "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
       }
     },
     {
@@ -1044,7 +1135,7 @@
         "line": 9,
         "endLine": 9,
         "excerpt": "final class DesignModel {",
-        "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+        "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
       }
     },
     {
@@ -1059,10 +1150,10 @@
       "file": "Packages/CADCore/Sources/CADCore/Document.swift",
       "source": {
         "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-        "line": 33,
-        "endLine": 33,
+        "line": 48,
+        "endLine": 48,
         "excerpt": "public struct CADDocument: Codable, Sendable, Equatable {",
-        "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+        "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
       }
     },
     {
@@ -1080,7 +1171,7 @@
         "line": 4,
         "endLine": 4,
         "excerpt": "public struct Feature: Identifiable, Codable, Sendable, Equatable {",
-        "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+        "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
       }
     },
     {
@@ -1098,7 +1189,7 @@
         "line": 5,
         "endLine": 5,
         "excerpt": "public enum Kind: Codable, Sendable, Equatable {",
-        "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+        "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
       }
     },
     {
@@ -1247,7 +1338,7 @@
     },
     {
       "id": "filesystem",
-      "name": "File system · .ftk / .stl",
+      "name": "File system · .ftk / .stl / .3mf",
       "kind": "runtime",
       "module": "Foundation",
       "target": "Foundation",
@@ -1260,7 +1351,7 @@
       "name": "Metal / GPU",
       "kind": "framework",
       "module": "Metal",
-      "target": "SceneKit",
+      "target": "Metal",
       "language": "Swift / Metal",
       "availability": "external",
       "group": "Confini esterni"
@@ -1472,7 +1563,7 @@
         "line": 17,
         "endLine": 17,
         "excerpt": "extension DesignModel: CADToolProvider {",
-        "sha256": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac"
+        "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9"
       }
     },
     {
@@ -1490,7 +1581,7 @@
         "line": 4,
         "endLine": 4,
         "excerpt": "enum CADToolCatalog {",
-        "sha256": "8c86e746531ab8d8b40258f4f1ec64125362d7351762ec8615a907bd159cd574"
+        "sha256": "8e37b5047c3628875e2420abe7b0d7a29dfa36b30d9c9922222a39760615dce4"
       }
     },
     {
@@ -1580,7 +1671,7 @@
         "line": 8,
         "endLine": 8,
         "excerpt": "final class ViewportRenderer: NSObject, MTKViewDelegate {",
-        "sha256": "390446299fbdf15577c22156cb0a4bf93469793a2b83c1603e5041aadf8ef990"
+        "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97"
       }
     },
     {
@@ -1630,6 +1721,96 @@
       "language": "HTTP",
       "availability": "external",
       "group": "Esterno / runtime"
+    },
+    {
+      "id": "partcolor",
+      "name": "PartColor",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/PartColor.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/PartColor.swift",
+        "line": 4,
+        "endLine": 4,
+        "excerpt": "public struct PartColor: Hashable, Codable, Sendable {",
+        "sha256": "e56b70e932aa73b4be058aec049440eacda975c6f651aa931dbe59d23bf2a6c1"
+      }
+    },
+    {
+      "id": "threeMFpart",
+      "name": "ThreeMFPart",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+        "line": 4,
+        "endLine": 4,
+        "excerpt": "public struct ThreeMFPart: Sendable {",
+        "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+      }
+    },
+    {
+      "id": "threeMF",
+      "name": "ThreeMFExporter",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+        "line": 29,
+        "endLine": 29,
+        "excerpt": "public enum ThreeMFExporter {",
+        "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+      }
+    },
+    {
+      "id": "threeMFprofile",
+      "name": "ThreeMFExportProfile",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+        "line": 21,
+        "endLine": 21,
+        "excerpt": "public enum ThreeMFExportProfile: String, Codable, Sendable {",
+        "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+      }
+    },
+    {
+      "id": "zip",
+      "name": "StoredZIP",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+        "line": 149,
+        "endLine": 149,
+        "excerpt": "private enum StoredZIP {",
+        "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+      }
     }
   ],
   "edges": [
@@ -1645,7 +1826,7 @@
           "line": 5,
           "endLine": 5,
           "excerpt": "@State private var model = DesignModel()",
-          "sha256": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e"
+          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1669,7 +1850,7 @@
           "line": 10,
           "endLine": 10,
           "excerpt": "var document = CADDocument(features: [",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1693,7 +1874,7 @@
           "line": 29,
           "endLine": 29,
           "excerpt": "func addBox() { add(Feature(name: \"Box \\(document.features.count + 1)\", kind: .box(width: 20, depth: 20, height: 20))) }",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1714,10 +1895,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 82,
-          "endLine": 82,
+          "line": 105,
+          "endLine": 105,
           "excerpt": "let mesh = document.buildMesh()",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1738,10 +1919,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 89,
-          "endLine": 89,
+          "line": 112,
+          "endLine": 112,
           "excerpt": "try STLExporter.binary(mesh).write(to: url)",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1762,10 +1943,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 90,
-          "endLine": 90,
+          "line": 113,
+          "endLine": 113,
           "excerpt": "let r = MeshValidator.validate(mesh)",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1786,10 +1967,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 64,
-          "endLine": 64,
+          "line": 87,
+          "endLine": 87,
           "excerpt": "try document.encoded().write(to: url)",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1810,10 +1991,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 74,
-          "endLine": 74,
+          "line": 97,
+          "endLine": 97,
           "excerpt": "document = try CADDocument.decode(Data(contentsOf: url))",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1834,10 +2015,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/DesignModel.swift",
-          "line": 89,
-          "endLine": 89,
+          "line": 112,
+          "endLine": 112,
           "excerpt": "try STLExporter.binary(mesh).write(to: url)",
-          "sha256": "8d72d8feedf52f59a562011026f95c687598cf7f8e5e881c934a7ffb828a66d0"
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -1858,10 +2039,10 @@
       "evidence": [
         {
           "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-          "line": 37,
-          "endLine": 37,
+          "line": 52,
+          "endLine": 52,
           "excerpt": "public var features: [Feature] = []",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -1885,7 +2066,7 @@
           "line": 13,
           "endLine": 13,
           "excerpt": "public var kind: Kind",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -1906,10 +2087,10 @@
       "evidence": [
         {
           "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-          "line": 24,
-          "endLine": 24,
+          "line": 39,
+          "endLine": 39,
           "excerpt": "case let .box(w, d, h): local = Primitives.box(width: w, depth: d, height: h)",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -1930,10 +2111,10 @@
       "evidence": [
         {
           "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-          "line": 26,
-          "endLine": 26,
+          "line": 41,
+          "endLine": 41,
           "excerpt": "case let .extrude(profile, h): local = Operations.extrude(profile, height: h)",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -1954,10 +2135,10 @@
       "evidence": [
         {
           "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-          "line": 28,
-          "endLine": 28,
+          "line": 43,
+          "endLine": 43,
           "excerpt": "return local.translated(by: position)",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -1978,10 +2159,10 @@
       "evidence": [
         {
           "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-          "line": 43,
-          "endLine": 43,
+          "line": 58,
+          "endLine": 58,
           "excerpt": "Mesh.merged(features.filter(\\.isVisible).map { $0.buildMesh() })",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -2194,10 +2375,10 @@
       "evidence": [
         {
           "file": "Packages/CADCore/Sources/CADCore/Document.swift",
-          "line": 33,
-          "endLine": 33,
+          "line": 48,
+          "endLine": 48,
           "excerpt": "public struct CADDocument: Codable, Sendable, Equatable {",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -2245,7 +2426,7 @@
           "line": 4,
           "endLine": 4,
           "excerpt": "public struct Feature: Identifiable, Codable, Sendable, Equatable {",
-          "sha256": "e720579d0190a6f787b8a26fca2d92be6fa52a64913a57c08a27e6304fbaf440"
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
         }
       ],
       "xcodeTarget": "CADCore",
@@ -2269,7 +2450,7 @@
           "line": 11,
           "endLine": 11,
           "excerpt": "WorkspaceView()",
-          "sha256": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e"
+          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2292,8 +2473,8 @@
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
           "line": 7,
           "endLine": 7,
-          "excerpt": "@State private var assistant = AssistantSession(providers: [ClaudeProvider()])",
-          "sha256": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e"
+          "excerpt": "@State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider()])",
+          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2317,7 +2498,7 @@
           "line": 6,
           "endLine": 6,
           "excerpt": "@State private var mcp = MCPHost()",
-          "sha256": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e"
+          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2341,7 +2522,7 @@
           "line": 17,
           "endLine": 17,
           "excerpt": "let tools = (model as AnyObject) as? CADToolProvider",
-          "sha256": "a2a4d0657a43a4a42dca6342939f475443cd6aa7b1a62f3a3b3b86e8962bfd2e"
+          "sha256": "2290f43ffe40035edd1f9b9702f24543e538a8ee678026bc76101fd4970a7fe8"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2741,7 +2922,7 @@
       "id": "N047",
       "source": "toolmodel",
       "target": "toolprotocol",
-      "relation": "type_conforms_protocol",
+      "relation": "extension_adds_conformance",
       "semanticStatus": "SYNTACTIC",
       "evidence": [
         {
@@ -2749,7 +2930,7 @@
           "line": 17,
           "endLine": 17,
           "excerpt": "extension DesignModel: CADToolProvider {",
-          "sha256": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac"
+          "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2773,7 +2954,7 @@
           "line": 17,
           "endLine": 17,
           "excerpt": "extension DesignModel: CADToolProvider {",
-          "sha256": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac"
+          "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2797,7 +2978,7 @@
           "line": 18,
           "endLine": 18,
           "excerpt": "var tools: [ToolSpec] { CADToolCatalog.tools }",
-          "sha256": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac"
+          "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2818,10 +2999,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
-          "line": 67,
-          "endLine": 67,
+          "line": 69,
+          "endLine": 69,
           "excerpt": "try CADToolValidation.feature(f)",
-          "sha256": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac"
+          "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2842,10 +3023,10 @@
       "evidence": [
         {
           "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
-          "line": 156,
-          "endLine": 156,
+          "line": 152,
+          "endLine": 152,
           "excerpt": "let data = STLExporter.binary(floatMesh)",
-          "sha256": "81601ab4022c4ff27057172ea68e31d7e9353db2b86be2f1b5952bd68f9f4bac"
+          "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2914,10 +3095,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Viewport/ViewportRenderer.swift",
-          "line": 131,
-          "endLine": 131,
+          "line": 137,
+          "endLine": 137,
           "excerpt": "let mesh = f.buildMesh()",
-          "sha256": "390446299fbdf15577c22156cb0a4bf93469793a2b83c1603e5041aadf8ef990"
+          "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2941,7 +3122,7 @@
           "line": 8,
           "endLine": 8,
           "excerpt": "final class ViewportRenderer: NSObject, MTKViewDelegate {",
-          "sha256": "390446299fbdf15577c22156cb0a4bf93469793a2b83c1603e5041aadf8ef990"
+          "sha256": "9ee608d1bec95e09405628d0850d999715d3a507609a7036e785a629882a0d97"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3000,6 +3181,222 @@
       },
       "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
       "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C001",
+      "source": "feature",
+      "target": "partcolor",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "line": 16,
+          "endLine": 16,
+          "excerpt": "public var color: PartColor",
+          "sha256": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C002",
+      "source": "model",
+      "target": "threeMF",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "line": 132,
+          "endLine": 132,
+          "excerpt": "return try ThreeMFExporter.archive(parts: parts)",
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C003",
+      "source": "model",
+      "target": "threeMFpart",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "line": 130,
+          "endLine": 130,
+          "excerpt": "return ThreeMFPart(id: feature.id, name: feature.name, mesh: feature.buildMesh(), color: feature.color)",
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C004",
+      "source": "threeMFpart",
+      "target": "mesh",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "line": 7,
+          "endLine": 7,
+          "excerpt": "public var mesh: Mesh",
+          "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C005",
+      "source": "threeMFpart",
+      "target": "partcolor",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "line": 8,
+          "endLine": 8,
+          "excerpt": "public var color: PartColor",
+          "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C006",
+      "source": "threeMF",
+      "target": "zip",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "line": 101,
+          "endLine": 101,
+          "excerpt": "return StoredZIP.archive(files)",
+          "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C007",
+      "source": "threeMF",
+      "target": "threeMFprofile",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift",
+          "line": 30,
+          "endLine": 30,
+          "excerpt": "public static func archive(parts: [ThreeMFPart], profile: ThreeMFExportProfile = .bambuOrca) throws -> Data {",
+          "sha256": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C008",
+      "source": "toolmodel",
+      "target": "model",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/Tools/DesignModel+Tools.swift",
+          "line": 172,
+          "endLine": 172,
+          "excerpt": "let data = try export3MFData(featureID: id)",
+          "sha256": "d969e19a169b02edc94d696393dda29fd1e5fc7a12883c6a70e99dbe7589b5b9"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "C009",
+      "source": "model",
+      "target": "filesystem",
+      "relation": "persists_model",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "line": 142,
+          "endLine": 142,
+          "excerpt": "try data.write(to: url, options: .atomic)",
+          "sha256": "79e5a2a360a8aebbadf77163b3aa64936141d3bd795c0d1506bb33b5327094a8"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
     }
   ],
   "limitations": [
@@ -3007,7 +3404,8 @@
     "I nodi rappresentano tipi selezionati, non tutti i membri; assenza di arco non prova assenza di dipendenza.",
     "Macro Observation, result builder SwiftUI, overload, protocol witness e internals Apple non attraversati.",
     "Nessuna prova di correttezza numerica, timing, race, performance GPU, stato disco o stampa fisica.",
-    "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento."
+    "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento.",
+    "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo."
   ],
   "probes": [
     {
@@ -3045,6 +3443,12 @@
       "category": "coverage",
       "result": "CAUTION",
       "evidence": "Tipi selezionati; file non mappati elencati. Nessuna inferenza di codice morto da un arco assente."
+    },
+    {
+      "id": "P07",
+      "category": "3mf_boundary",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Feature.color → PartColor; DesignModel → ThreeMFExporter → StoredZIP verificati nel sorgente. Tre profili slicer consumano file in processi esterni. ZIP/CRC/XML, volumi e GUI hanno prove separate; nessun attraversamento semantico continuo verso slicer o stampanti."
     }
   ]
 }</script>
