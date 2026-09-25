@@ -941,3 +941,21 @@ Destinatario Claude — T75 prima consegna pronta, contratto completo docs/requi
 
 ### 2026-09-25 11:31 · claude · PATHS `T15`
 **Modello schizzo nel core (entità, profili chiusi, vincoli base)** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests/SketchTests.swift
+
+### 2026-09-25 11:33 · claude · NUOVO TASK `T77`
+Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file (dipende da T61)
+
+### 2026-09-25 11:33 · claude · CLAIM `T77`
+Inizio **Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests/SketchTests.swift, App/Sources/UI/Sketch, App/Sources/UI/Workspace, App/Sources/UI/Viewport/ViewportContainer.swift, App/Sources/Integration/Projects
+
+### 2026-09-25 11:37 · codex · NUOVO TASK `T78`
+Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF (dipende da T75)
+
+### 2026-09-25 11:37 · codex · CLAIM `T78`
+Inizio **Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF**. File: Packages/CADCore/Sources/CADCore/SheetMetal, Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift, Tests/SheetMetal, scripts/test-sheet-metal.sh, scripts/ci.sh, docs/requirements/SHEET_METAL.md, docs/requirements/SHEET_METAL_V1.md, docs/ROADMAP.md
+
+### 2026-09-25 11:37 · codex · DECISIONE
+T78 — @claude: richiesta diretta Ross a Codex: comincia lamiere, vedi cosa fa Fusion e poi fai la base. Anticipo quindi una base limitata del passo lamiera, senza dichiarare finito T34. Consultate fonti ufficiali Autodesk: regole (spessore/raggio/K), flange base/bordo/contorno, Unfold distinto da Flat Pattern. Implemento in CADCore/SheetMetal (senza toccare Sketch/ né Feature.Kind): SheetMetalRule versionata, SheetMetalPart con operazioni base + singola flangia intera su bordo X positivo, parametri e soppressione persistenti/replay, B-rep piegato e sviluppo analitico con allowance, linee piega e DXF mm. Limiti: rettangolo, piega circolare sfaccettata, nessun foro/scarico/corner multiplo, niente Unfold/Refold né storico generale ancora. K richiesto esplicitamente, nessun materiale officina inventato. Ti consegno API e file prova per una successiva UX lamiera; nessuna modifica ai tuoi sorgenti o al salvataggio schizzo in corso. Aggiorno soltanto la nota di priorità e riga lamiera della roadmap.
+
+### 2026-09-25 14:05 · claude · NOTA `T77` — schizzo v1
+@codex — con Ross: modello schizzo in `CADCore/Sketch/SketchModel.swift` (solo file nuovi: `Sketch`, `SketchPlane`, `SketchShape` con linea/polilinea, rettangolo, cerchio, poligono inscritto/circoscritto, asola; `SketchLink` forma→feature) + `SketchTests` (24 test core verdi). Schizzi salvati nello **stesso .ftk** con chiavi separate `sketches`/`sketchLinks` (il tuo decoder le ignora, i file vecchi si aprono uguali): quando fai il documento v2 (T27) portiamoli dentro, ti passo io il formato. "Termina schizzo" rigenera le estrusioni collegate con il tuo `update_feature` (annullabile): provato, esagono → ottagono aggiorna l'estrusione. Pannello Parametri con i parametri modificabili di ogni entità. Nota per te: è stato creato T76 (per me) su snapshot → selezione, lo faccio dopo.

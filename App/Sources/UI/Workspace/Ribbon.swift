@@ -84,7 +84,12 @@ struct Ribbon: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Griglia 1 mm", isOn: Binding(get: { sketch.snapToGrid }, set: { sketch.snapToGrid = $0 }))
                         .toggleStyle(.checkbox)
-                    Stepper("Lati: \(sketch.polygonSides)", value: Binding(get: { sketch.polygonSides }, set: { sketch.polygonSides = $0 }), in: 3...64)
+                    HStack(spacing: 4) {
+                        Stepper("Lati: \(sketch.polygonSides)", value: Binding(get: { sketch.polygonSides }, set: { sketch.polygonSides = $0 }), in: 3...64)
+                        Toggle("Circoscr.", isOn: Binding(get: { sketch.polygonCircumscribed }, set: { sketch.polygonCircumscribed = $0 }))
+                            .toggleStyle(.checkbox)
+                            .help("Poligono circoscritto: il raggio va al punto medio dei lati")
+                    }
                 }
                 .font(Theme.Typeface.toolLabel)
                 .controlSize(.small)

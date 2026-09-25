@@ -1429,6 +1429,48 @@
       ],
       "suggested": "claude",
       "owner": null
+    },
+    {
+      "id": "T77",
+      "title": "Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file",
+      "phase": "2 · UX",
+      "status": "in_progress",
+      "deps": [
+        "T61"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Sketch",
+        "Packages/CADCore/Tests/CADCoreTests/SketchTests.swift",
+        "App/Sources/UI/Sketch",
+        "App/Sources/UI/Workspace",
+        "App/Sources/UI/Viewport/ViewportContainer.swift",
+        "App/Sources/Integration/Projects"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 11:33"
+    },
+    {
+      "id": "T78",
+      "title": "Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF",
+      "phase": "Lamiera · prima base",
+      "status": "in_progress",
+      "deps": [
+        "T75"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/SheetMetal",
+        "Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift",
+        "Tests/SheetMetal",
+        "scripts/test-sheet-metal.sh",
+        "scripts/ci.sh",
+        "docs/requirements/SHEET_METAL.md",
+        "docs/requirements/SHEET_METAL_V1.md",
+        "docs/ROADMAP.md"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-25 11:37"
     }
   ]
 }

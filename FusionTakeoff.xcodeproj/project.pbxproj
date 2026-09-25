@@ -17,6 +17,7 @@
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
 		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
 		276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D04A4DB715945B73E88E2B /* PartColorPicker.swift */; };
+		2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */; };
@@ -60,6 +61,7 @@
 		E6A4CECA1B0657934C158404 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE04E5C771D6558145AEF42B /* OpenAIProvider.swift */; };
 		E6AEE10EBD192FD2B549A582 /* MCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2872A72642BACF8A561EBB /* MCPServer.swift */; };
 		E91C000FA839F7AAD962F2CD /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */; };
+		EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */; };
 		EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
 /* End PBXBuildFile section */
@@ -111,6 +113,7 @@
 		62D38757828F98D2737425CF /* CADToolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolCatalog.swift; sourceTree = "<group>"; };
 		642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectLibrary.swift; sourceTree = "<group>"; };
 		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
+		6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchStore.swift; sourceTree = "<group>"; };
 		6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
 		7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanelPreviews.swift; sourceTree = "<group>"; };
 		86A604770FA67CFFA12BACDB /* ViewCube.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCube.swift; sourceTree = "<group>"; };
@@ -119,6 +122,7 @@
 		8ACF2F56948E53B401DAEA56 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		8B8A33442A4596CDA241E197 /* CommandSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSession.swift; sourceTree = "<group>"; };
 		8CDAC622763B58001C57E74E /* ftk-mcp */ = {isa = PBXFileReference; includeInIndex = 0; path = "ftk-mcp"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchInspector.swift; sourceTree = "<group>"; };
 		916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolBridge.swift; sourceTree = "<group>"; };
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -205,6 +209,7 @@
 			isa = PBXGroup;
 			children = (
 				E739A2954E6A9A303F24F96F /* SketchCommands.swift */,
+				8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */,
 				55A384B92C6A6894EA9A5831 /* SketchSession.swift */,
 			);
 			path = Sketch;
@@ -383,6 +388,7 @@
 			children = (
 				C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */,
 				642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */,
+				6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */,
 				F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */,
 			);
 			path = Projects;
@@ -560,7 +566,9 @@
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
 				1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */,
+				2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */,
 				CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */,
+				EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */,
 				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,
 				95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */,
 				363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */,

@@ -39,19 +39,55 @@ final class WorkspaceState {
     var sketch: SketchSession?
     /// Asks the viewport to switch camera for sketch mode (true) or restore it (false).
     var sketchCameraRequest: Bool?
+    /// Set by WorkspaceView: saved sketches and the model (for regenerating linked extrusions).
+    @ObservationIgnored weak var sketchStore: SketchStore?
+    @ObservationIgnored weak var model: DesignModel?
 
-    func enterSketch() {
+    /// New sketch, or edit an existing saved one.
+    func enterSketch(editing existing: Sketch? = nil) {
         command?.onCancel(); command = nil
-        sketch = SketchSession()
+        if sketch != nil { exitSketch() }
+        sketch = SketchSession(sketch: existing ?? Sketch(name: sketchStore?.nextName ?? "Schizzo 1"))
         tab = .sketch
+        // Show the entity parameters while sketching.
+        showInspector = true
+        sideTab = .parameters
         sketchCameraRequest = true
     }
 
+    /// "Termina schizzo": saves the sketch (if it has entities) and regenerates the extrusions made from it.
     func exitSketch() {
         command?.onCancel(); command = nil
+        if let edited = sketch?.sketch, let store = sketchStore {
+            let before = store.sketch(edited.id)
+            if !edited.shapes.isEmpty || before != nil {
+                if before != edited { store.upsert(edited) }
+                if let model { Task { await regenerate(edited, store: store, model: model) } }
+            }
+        }
         sketch = nil
         tab = .solid
         sketchCameraRequest = false
+    }
+
+    /// Updates every extrusion linked to a shape of `sketch` through the Model's undoable `update_feature`.
+    private func regenerate(_ sketch: Sketch, store: SketchStore, model: DesignModel) async {
+        store.prune(existing: Set(model.document.features.map(\.id)))
+        var updated = 0
+        for link in store.links(of: sketch.id) {
+            guard let shape = sketch.shapes.first(where: { $0.id == link.shapeID }), let profile = shape.profile,
+                  let feature = model.document.features.first(where: { $0.id == link.featureID }),
+                  case let .extrude(current, _) = feature.kind, current != profile else { continue }
+            let r = await model.call("update_feature", arguments: [
+                "feature_id": .string(feature.id.uuidString),
+                "points": .array(shape.outline.map { ["x": .number($0.x), "y": .number($0.y)] }),
+                "expected_revision": .string(model.designRevision),
+            ])
+            if r.isError { model.statusMessage = "\(feature.name) non aggiornata: \(r.text)" } else { updated += 1 }
+        }
+        if updated > 0 {
+            model.statusMessage = "\(sketch.name): " + (updated == 1 ? "aggiornata 1 estrusione" : "aggiornate \(updated) estrusioni") + " — ⌘Z per annullare"
+        }
     }
 
     func extrudeSketch(model: DesignModel) {

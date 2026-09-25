@@ -7,7 +7,13 @@ import SwiftUI
 struct InspectorPanel: View {
     @Environment(DesignModel.self) private var model
 
+    @Environment(WorkspaceState.self) private var workspace
+
     var body: some View {
+        if let sketch = workspace.sketch { SketchInspector(sketch: sketch) } else { solidBody }
+    }
+
+    @ViewBuilder private var solidBody: some View {
         @Bindable var model = model
         VStack(spacing: 0) {
             PanelHeader("Parametri")

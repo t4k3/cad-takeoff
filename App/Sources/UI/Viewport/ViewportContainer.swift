@@ -82,6 +82,7 @@ final class ViewportState {
 struct ViewportContainer: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
+    @Environment(SketchStore.self) private var sketchStore
     @Bindable var viewport: ViewportState
 
     var body: some View {
@@ -138,14 +139,10 @@ struct ViewportContainer: View {
                           },
                           onKey: { key in
                               if let sketch = workspace.sketch, workspace.command == nil {
-                                  switch key {
-                                  case "l": sketch.tool = .line; return true
-                                  case "r": sketch.tool = .rectangle; return true
-                                  case "c": sketch.tool = .circle; return true
-                                  case "p": sketch.tool = .polygon; return true
-                                  case "e": workspace.extrudeSketch(model: model); return true
-                                  default: break
+                                  if let tool = SketchSession.Tool.allCases.first(where: { $0.key == key }) {
+                                      sketch.tool = tool; return true
                                   }
+                                  if key == "e" { workspace.extrudeSketch(model: model); return true }
                               }
                               if key == "f" { viewport.fit(); return true }
                               return false
@@ -271,9 +268,26 @@ struct ViewportContainer: View {
     // MARK: Sketch overlays
 
     private var sketchLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
-        workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
+        savedSketchLines + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
-                                  previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? []
+                                  previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
+    }
+
+    /// Visible saved sketches, faint, on their plane.
+    private var savedSketchLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
+        let editing = workspace.sketch?.sketch.id
+        let color = SIMD4<Float>(0.35, 0.69, 1, 0.45)
+        var out: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+        for sk in sketchStore.sketches where sk.isVisible && sk.id != editing {
+            for shape in sk.shapes {
+                let pts = shape.outline.map { sk.plane.world($0) }.map { SIMD3(Float($0.x), Float($0.y), Float($0.z) + 0.02) }
+                guard pts.count >= 2 else { continue }
+                for i in 0..<(shape.isClosed ? pts.count : pts.count - 1) {
+                    out.append((pts[i], pts[(i + 1) % pts.count], shape.isConstruction ? color * SIMD4(1, 1, 1, 0.5) : color))
+                }
+            }
+        }
+        return out
     }
 
     /// Live measurement next to the cursor.

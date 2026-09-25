@@ -6,6 +6,7 @@ import SwiftUI
 struct WorkspaceView: View {
     @Environment(DesignModel.self) private var model
     @Environment(ProjectLibrary.self) private var library
+    @Environment(SketchStore.self) private var sketches
     @State private var workspace = WorkspaceState()
     @State private var viewport = ViewportState()
 
@@ -38,6 +39,7 @@ struct WorkspaceView: View {
         }
         .animation(.easeOut(duration: 0.15), value: library.showHome)
         .environment(workspace)
+        .onAppear { workspace.sketchStore = sketches; workspace.model = model }
         .onChange(of: model.selection) { _, id in
             // Selecting a body from the viewport/browser shows its parameters, unless the user is chatting.
             if id != nil, workspace.sideTab == .parameters { workspace.showInspector = true }

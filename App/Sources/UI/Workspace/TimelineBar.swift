@@ -5,6 +5,7 @@ import SwiftUI
 struct TimelineBar: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
+    @Environment(SketchStore.self) private var sketches
 
     var body: some View {
         HStack(spacing: 6) {
@@ -19,8 +20,10 @@ struct TimelineBar: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 3) {
                         ForEach(Array(model.document.features.enumerated()), id: \.element.id) { index, feature in
+                            ForEach(sketchesBefore(index)) { sk in sketchChip(sk) }
                             chip(feature, index: index).id(feature.id)
                         }
+                        ForEach(unusedSketches) { sk in sketchChip(sk) }
                     }
                     .padding(.horizontal, 4)
                 }
@@ -54,6 +57,34 @@ struct TimelineBar: View {
             .onTapGesture { model.selection = feature.id }
             .contextMenu { Button("Modifica…") { workspace.editFeature(feature.id, model: model) } }
             .onHover { workspace.hovered = $0 ? feature.id : (workspace.hovered == feature.id ? nil : workspace.hovered) }
+    }
+
+    /// Sketches whose first linked feature is at `index` (so they appear right before it).
+    private func sketchesBefore(_ index: Int) -> [Sketch] {
+        let features = model.document.features
+        return sketches.sketches.filter { sk in
+            let ids = Set(sketches.links(of: sk.id).map(\.featureID))
+            return features.firstIndex { ids.contains($0.id) } == index
+        }
+    }
+
+    private var unusedSketches: [Sketch] {
+        let used = Set(model.document.features.map(\.id))
+        return sketches.sketches.filter { sk in !sketches.links(of: sk.id).contains { used.contains($0.featureID) } }
+    }
+
+    private func sketchChip(_ sk: Sketch) -> some View {
+        let editing = workspace.sketch?.sketch.id == sk.id
+        return Image(systemName: "pencil.and.outline")
+            .font(.system(size: 13))
+            .foregroundStyle(editing ? .white : Theme.Palette.sketch)
+            .frame(width: 30, height: 28)
+            .background(RoundedRectangle(cornerRadius: 5).fill(editing ? Theme.Palette.sketch : Theme.Palette.panelRaised))
+            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.Palette.sketch.opacity(0.6)))
+            .opacity(sk.isVisible ? 1 : 0.5)
+            .help("\(sk.name) — doppio clic per modificare")
+            .onTapGesture(count: 2) { workspace.enterSketch(editing: sk) }
+            .contextMenu { Button("Modifica schizzo") { workspace.enterSketch(editing: sk) } }
     }
 
     private func step(_ delta: Int) {

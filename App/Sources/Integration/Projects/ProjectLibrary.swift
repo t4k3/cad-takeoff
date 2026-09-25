@@ -31,6 +31,9 @@ final class ProjectLibrary {
     var showHome = true
     private(set) var currentURL: URL?
     private(set) var savedRevision: String?
+    /// Sketches of the open design, saved in the same file.
+    @ObservationIgnored var sketches: SketchStore?
+    private var savedSketchRevision = 0
     var lastError: String?
 
     init() { restoreRoot() }
@@ -168,11 +171,12 @@ final class ProjectLibrary {
 
     /// The design present at launch (not from a file) counts as clean until edited.
     func adoptInitialDesign(_ model: DesignModel) {
-        if currentURL == nil, savedRevision == nil { savedRevision = model.designRevision }
+        if currentURL == nil, savedRevision == nil { savedRevision = model.designRevision; savedSketchRevision = sketches?.revision ?? 0 }
     }
 
     func isDirty(_ model: DesignModel) -> Bool {
-        savedRevision == nil ? !model.document.features.isEmpty : model.designRevision != savedRevision
+        (savedRevision == nil ? !model.document.features.isEmpty : model.designRevision != savedRevision)
+            || (sketches.map { $0.revision != savedSketchRevision } ?? false)
     }
 
     var currentName: String { currentURL?.deletingPathExtension().lastPathComponent ?? "Senza titolo" }
@@ -183,7 +187,8 @@ final class ProjectLibrary {
         run {
             let url = uniqueURL(folder.appendingPathComponent("Nuovo disegno.\(Self.designExtension)"))
             model.newDesign()
-            try model.write(to: url)
+            sketches?.reset()
+            try model.write(to: url, sketches: sketches)
             markSaved(url, model: model)
             showHome = false
         }
@@ -193,7 +198,7 @@ final class ProjectLibrary {
         guard url != currentURL || !isDirty(model) else { showHome = false; return }
         guard confirmDiscard(model) else { return }
         run {
-            try model.load(from: url)
+            try model.load(from: url, sketches: sketches)
             markSaved(url, model: model)
             showHome = false
         }
@@ -210,8 +215,10 @@ final class ProjectLibrary {
     func newUntitled(model: DesignModel) {
         guard confirmDiscard(model) else { return }
         model.newDesign()
+        sketches?.reset()
         currentURL = nil
         savedRevision = model.designRevision
+        savedSketchRevision = sketches?.revision ?? 0
         showHome = false
     }
 
@@ -233,7 +240,7 @@ final class ProjectLibrary {
     }
 
     private func write(_ model: DesignModel, to url: URL) throws {
-        try model.write(to: url)
+        try model.write(to: url, sketches: sketches)
         markSaved(url, model: model)
         model.statusMessage = "Salvato \(url.deletingPathExtension().lastPathComponent)"
     }
@@ -241,6 +248,7 @@ final class ProjectLibrary {
     private func markSaved(_ url: URL, model: DesignModel) {
         currentURL = url
         savedRevision = model.designRevision
+        savedSketchRevision = sketches?.revision ?? 0
         writeThumbnail(for: model.document, design: url)
         var r = UserDefaults.standard.stringArray(forKey: Self.recentsKey) ?? []
         r.removeAll { $0 == url.path }

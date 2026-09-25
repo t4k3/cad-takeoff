@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:31. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:37. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -47,6 +47,7 @@ flowchart LR
     T61["T61 · Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude<br/><i>claude</i>"]:::done
     T73["T73 · Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard<br/><i>claude</i>"]:::in_progress
     T74["T74 · Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home<br/><i>claude</i>"]:::todo
+    T77["T77 · Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file<br/><i>claude</i>"]:::in_progress
   end
   subgraph P7["6 · CAD parametrico"]
     T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::done
@@ -118,6 +119,9 @@ flowchart LR
   end
   subgraph P17["Coordinamento"]
     T71["T71 · Allineare roadmap e regole sulle dipendenze alla richiesta di Ross<br/><i>codex</i>"]:::done
+  end
+  subgraph P18["Lamiera · prima base"]
+    T78["T78 · Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF<br/><i>codex</i>"]:::in_progress
   end
   T00 --> T02
   T00 --> T03
@@ -281,6 +285,8 @@ flowchart LR
   T24 --> T75
   T72 --> T76
   T75 --> T76
+  T61 --> T77
+  T75 --> T78
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -376,3 +382,5 @@ flowchart LR
 | T74 | Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home | todo | claude | T73 | Tools/FusionAddin<br>App/Sources/Integration/FusionImport<br>App/Sources/UI/Home |
 | T75 | Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70) | done | codex | T24 | docs/requirements/KERNEL_V1.md |
 | T76 | Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology | todo | claude | T72, T75 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
+| T77 | Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file | in_progress | claude | T61 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests/SketchTests.swift<br>App/Sources/UI/Sketch<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Sources/Integration/Projects |
+| T78 | Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF | in_progress | codex | T75 | Packages/CADCore/Sources/CADCore/SheetMetal<br>Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift<br>Tests/SheetMetal<br>scripts/test-sheet-metal.sh<br>scripts/ci.sh<br>docs/requirements/SHEET_METAL.md<br>docs/requirements/SHEET_METAL_V1.md<br>docs/ROADMAP.md |

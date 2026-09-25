@@ -1,3 +1,4 @@
+import AppKit
 import CADCore
 import SwiftUI
 
@@ -5,7 +6,9 @@ import SwiftUI
 struct BrowserPanel: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
+    @Environment(SketchStore.self) private var sketches
     @State private var originExpanded = false
+    @State private var sketchesExpanded = true
     @State private var bodiesExpanded = true
 
     var body: some View {
@@ -18,6 +21,11 @@ struct BrowserPanel: View {
                         ForEach(["Piano XY", "Piano XZ", "Piano YZ"], id: \.self) { plane in
                             TreeRow(indent: 1, symbol: "square.dashed", title: plane, isSelected: false, isHovered: false)
                         }
+                    }
+                    DisclosureRow(title: "Schizzi", symbol: "pencil.and.outline", count: sketches.sketches.count,
+                                  isExpanded: $sketchesExpanded)
+                    if sketchesExpanded {
+                        ForEach(sketches.sketches) { sk in sketchRow(sk) }
                     }
                     DisclosureRow(title: "Corpi", symbol: "shippingbox", count: model.document.features.count,
                                   isExpanded: $bodiesExpanded)
@@ -36,6 +44,37 @@ struct BrowserPanel: View {
             }
         }
         .background(Theme.Palette.panel)
+    }
+
+    private func sketchRow(_ sk: Sketch) -> some View {
+        let editing = workspace.sketch?.sketch.id == sk.id
+        return TreeRow(indent: 1, symbol: "pencil.and.outline", title: sk.name, isSelected: editing, isHovered: false,
+                       isDimmed: !sk.isVisible) {
+            Button { sketches.setVisible(sk.id, !sk.isVisible) } label: {
+                Label(sk.isVisible ? "Nascondi" : "Mostra", systemImage: sk.isVisible ? "eye" : "eye.slash")
+            }
+            .buttonStyle(IconButtonStyle())
+            .help(sk.isVisible ? "Nascondi schizzo" : "Mostra schizzo")
+        }
+        .onTapGesture(count: 2) { workspace.enterSketch(editing: sk) }
+        .help("Doppio clic per modificare lo schizzo")
+        .contextMenu {
+            Button("Modifica schizzo") { workspace.enterSketch(editing: sk) }
+            Button("Elimina schizzo", role: .destructive) { confirmDelete(sk) }
+        }
+    }
+
+    private func confirmDelete(_ sk: Sketch) {
+        let linked = sketches.links(of: sk.id).count
+        if linked > 0 {
+            let alert = NSAlert()
+            alert.messageText = "Eliminare «\(sk.name)»?"
+            alert.informativeText = "\(linked) estrusion\(linked == 1 ? "e resta" : "i restano") nel disegno ma non si aggiornerà più dallo schizzo."
+            alert.addButton(withTitle: "Elimina")
+            alert.addButton(withTitle: "Annulla")
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+        }
+        sketches.delete(sk.id)
     }
 
     private func bodyRow(_ feature: Feature) -> some View {

@@ -5,6 +5,7 @@ struct FusionTakeoffApp: App {
     @State private var model = DesignModel()
     @State private var mcp = MCPHost()
     @State private var library = ProjectLibrary()
+    @State private var sketches = SketchStore()
     @State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider()])
 
     var body: some Scene {
@@ -14,6 +15,7 @@ struct FusionTakeoffApp: App {
                 .environment(mcp)
                 .environment(assistant)
                 .environment(library)
+                .environment(sketches)
                 .navigationTitle(library.currentName + (library.isDirty(model) ? " — modificato" : ""))
                 .navigationSubtitle(library.currentURL.flatMap { library.project(of: $0) } ?? "")
                 .task {
@@ -22,6 +24,7 @@ struct FusionTakeoffApp: App {
                     mcp.attach(tools)
                     assistant.tools = tools
                     mcp.start()
+                    library.sketches = sketches
                     library.adoptInitialDesign(model)
                 }
                 .frame(minWidth: 1100, minHeight: 700)
