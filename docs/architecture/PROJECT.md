@@ -1,17 +1,22 @@
 # Fusion Takeoff — progetto progressivo
 
-Revisione 1 · 25 settembre 2026 · stato iniziale dopo riconciliazione T00.
+Revisione 2 · 25 settembre 2026 · requisiti ampliati da Ross nel task T24.
 Stato operativo aggiornato: [grafo attività](../graph/GRAPH.md).
+
+**Fondamentali: storico parametrico persistente, parti e assiemi, modulo lamiera
+completo rispetto alla matrice concordata.** Specifica autorevole della nuova
+direzione: [Requisiti CAD revisione 2](../requirements/CAD_SCOPE_V2.md).
 
 ## Prodotto
 
-Applicazione macOS per progettare piccoli componenti destinati alla stampa 3D.
-Flusso obiettivo: schizzo XY → quote e vincoli essenziali → estrusione/rivoluzione
-→ operazioni sui solidi → controllo mesh → STL/3MF → slicer esterno.
+Applicazione macOS per progettare parti meccaniche, lamiera e assiemi, con storico
+modificabile. Flusso obiettivo: schizzi/parametri → feature CAD → parti/istanze e
+assiemi → verifica → STEP, STL/3MF oppure sviluppo lamiera/DXF/tavole di piega.
 
-Il riferimento funzionale è la modellazione CAD di base di Fusion 360.
-Non sono inclusi nel primo traguardo CAM, simulazione, cloud collaborativo,
-assiemi cinematici, superfici NURBS, slicing o invio diretto alla stampante.
+Il riferimento funzionale comprende ora la lamiera di Fusion e il lavoro con
+parti/assiemi. La precedente esclusione degli assiemi cinematici è superata.
+CAM completo, FEA, cloud/PDM, nesting automatico e slicing restano fuori da questa
+revisione; le funzioni avanzano per fasi, mantenendo tutti i requisiti nel grafo.
 
 ## Base presente nello snapshot T00
 
@@ -34,7 +39,7 @@ non costituisce ancora un albero di dipendenze parametriche tra operazioni.
 | Coordinate | Millimetri, sistema destrorso, Z verticale; conversione solo nel viewport |
 | Geometria | `Vec2`, `Vec3`, `Profile2D`; mesh con vertici e indici `UInt32` |
 | Facce | Triangoli CCW visti dall'esterno, normali uscenti |
-| Modello nativo | Parametri/feature persistenti; mesh rigenerata, non fonte primaria del design |
+| Modello nativo | Storico e dipendenze persistenti, parti e istanze con ID distinti; migrazione della base iniziale da implementare |
 | Core | Nessuna dipendenza AppKit, SwiftUI, SceneKit o Metal |
 | UI | Italiano; identificatori e codice in inglese |
 | Cooperazione | Claim prima delle scritture, messaggi append-only e verifica prima di `done` |
@@ -44,8 +49,11 @@ non costituisce ancora un albero di dipendenze parametriche tra operazioni.
 | Fase | Risultato | Criterio di accettazione |
 |---|---|---|
 | Fondazione | Progetto e cooperazione riproducibili | Test core, build app, claim esclusivi, grafo aggiornato |
+| Fondazione CAD | Kernel, storico e componenti | Rebuild deterministico, riferimenti stabili, rollback e riapertura senza perdita |
 | Disegno | Rettangoli, cerchi, polilinee e quote | Profilo valido, selezione/editing, undo/redo e salvataggio senza perdita |
 | Solidi | Estrusione, rivoluzione, unione/sottrazione | Volumi e dimensioni noti, normali coerenti, gestione esplicita degli errori |
+| Assiemi | Parti riutilizzabili, sottoassiemi, vincoli/giunti e distinta | Modifica parte propagata alle istanze, DOF e riferimenti verificati |
+| Lamiera | Regole, flange/pieghe, lavorazioni, sviluppo e documenti | Matrice SM01–SM17 e corpus di accettazione verificati |
 | Stampa | STL/3MF e controllo delle dimensioni | Import nello slicer in mm, chiusura e orientamento; separare warning da errori |
 | Distribuzione | App installabile | Firma, packaging e prova su un Mac; attività di release separata |
 
@@ -57,14 +65,14 @@ esplicite prima di definire l'export pronto per produzione.
 
 ## Decisioni ancora aperte
 
-1. **Mesh o B-rep per l'evoluzione CAD.** La mesh è adatta al primo prototipo.
-   Per raccordi robusti, facce/curve esatte e STEP, valutare un kernel B-rep
+1. **Kernel per l'evoluzione CAD.** La mesh resta utile come risultato derivato.
+   Per lamiera, raccordi robusti, facce/curve esatte e STEP, verificare un kernel B-rep
    separato da UI e tessellazione. Open CASCADE offre modellazione solida,
    booleane e interscambio STEP; è un candidato, non una dipendenza già integrata.
    [Documentazione ufficiale OCCT](https://occt3d.com/dev/doc/overview/html/index.html).
-2. **Rendering.** SceneKit serve la base iniziale; Apple ne dichiara la deprecazione.
-   T07 propone Metal e richiede porting della mesh attiva e verifica UI/GPU.
-   La variante nell'archivio non è automaticamente integrabile.
+2. **Rendering.** Lo snapshot T00 sopra descriveva SceneKit. T07 è stato completato
+   da Claude con un viewport Metal; stato e prove sono nel registro. Il rendering
+   è separato dalla futura geometria CAD e non decide il modello dei documenti.
    [Indicazioni Apple](https://developer.apple.com/documentation/RealityKit/bringing-your-scenekit-projects-to-realitykit).
 3. **Formato documenti.** Validare versione, limiti dimensionali, profili e unità
    all'ingresso, prima della geometria. Definire migrazioni quando cambiano le feature.

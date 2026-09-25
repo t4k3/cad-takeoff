@@ -1,0 +1,846 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "app",
+      "name": "FusionTakeoffApp",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/FusionTakeoffApp.swift",
+      "anchor": "struct FusionTakeoffApp:"
+    },
+    {
+      "id": "content",
+      "name": "ContentView",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Workspace/ContentView.swift",
+      "anchor": "struct ContentView:"
+    },
+    {
+      "id": "inspector",
+      "name": "InspectorView",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Workspace/ContentView.swift",
+      "anchor": "struct InspectorView:"
+    },
+    {
+      "id": "viewport",
+      "name": "ViewportView",
+      "kind": "struct",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "UX · Claude",
+      "file": "App/Sources/UI/Viewport/ViewportView.swift",
+      "anchor": "struct ViewportView:"
+    },
+    {
+      "id": "model",
+      "name": "DesignModel",
+      "kind": "class",
+      "module": "FusionTakeoff",
+      "target": "FusionTakeoff",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "App/Sources/Model/DesignModel.swift",
+      "anchor": "final class DesignModel"
+    },
+    {
+      "id": "document",
+      "name": "CADCore.CADDocument",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+      "anchor": "public struct CADDocument:"
+    },
+    {
+      "id": "feature",
+      "name": "CADCore.Feature",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+      "anchor": "public struct Feature:"
+    },
+    {
+      "id": "kind",
+      "name": "Feature.Kind",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Model · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+      "anchor": "public enum Kind:"
+    },
+    {
+      "id": "profile",
+      "name": "Profile2D",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Geometria · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Sketch.swift",
+      "anchor": "public struct Profile2D:"
+    },
+    {
+      "id": "primitives",
+      "name": "Primitives",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Geometria · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Operations.swift",
+      "anchor": "public enum Primitives"
+    },
+    {
+      "id": "operations",
+      "name": "Operations",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Geometria · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Operations.swift",
+      "anchor": "public enum Operations"
+    },
+    {
+      "id": "mesh",
+      "name": "Mesh",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Geometria · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Mesh.swift",
+      "anchor": "public struct Mesh:"
+    },
+    {
+      "id": "vec3",
+      "name": "Vec3",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Geometria · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Math.swift",
+      "anchor": "public struct Vec3:"
+    },
+    {
+      "id": "vec2",
+      "name": "Vec2",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Geometria · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Math.swift",
+      "anchor": "public struct Vec2:"
+    },
+    {
+      "id": "stl",
+      "name": "STLExporter",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Export.swift",
+      "anchor": "public enum STLExporter"
+    },
+    {
+      "id": "validator",
+      "name": "MeshValidator",
+      "kind": "enum_namespace",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Export · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/Export.swift",
+      "anchor": "public enum MeshValidator"
+    },
+    {
+      "id": "filesystem",
+      "name": "File system · .ftk / .stl",
+      "kind": "runtime",
+      "module": "Foundation",
+      "target": "Foundation",
+      "language": "external",
+      "availability": "external",
+      "group": "Confini esterni"
+    },
+    {
+      "id": "scenekit",
+      "name": "SceneKit · GPU",
+      "kind": "framework",
+      "module": "SceneKit",
+      "target": "SceneKit",
+      "language": "external",
+      "availability": "external",
+      "group": "Confini esterni"
+    },
+    {
+      "id": "swiftui",
+      "name": "SwiftUI lifecycle",
+      "kind": "framework",
+      "module": "SwiftUI",
+      "target": "SwiftUI",
+      "language": "external",
+      "availability": "external",
+      "group": "Confini esterni"
+    },
+    {
+      "id": "representable",
+      "name": "NSViewRepresentable",
+      "kind": "protocol",
+      "module": "SwiftUI",
+      "target": "SwiftUI",
+      "language": "external",
+      "availability": "external",
+      "group": "Confini esterni"
+    },
+    {
+      "id": "codable",
+      "name": "Codable",
+      "kind": "protocol",
+      "module": "Swift",
+      "target": "Swift",
+      "language": "external",
+      "availability": "external",
+      "group": "Confini esterni"
+    }
+  ],
+  "edges": [
+    {
+      "id": "E001",
+      "source": "app",
+      "target": "model",
+      "relation": "owns_observable_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/FusionTakeoffApp.swift",
+          "anchor": "@State private var model"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E002",
+      "source": "app",
+      "target": "content",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/FusionTakeoffApp.swift",
+          "anchor": "ContentView()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E003",
+      "source": "app",
+      "target": "content",
+      "relation": "injects_environment_object",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/FusionTakeoffApp.swift",
+          "anchor": ".environment(model)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "ambiguity": "Observation environment injection; non @EnvironmentObject/Combine."
+    },
+    {
+      "id": "E004",
+      "source": "content",
+      "target": "model",
+      "relation": "observes_object",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/ContentView.swift",
+          "anchor": "@Environment(DesignModel.self)",
+          "occurrence": 1
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E005",
+      "source": "inspector",
+      "target": "model",
+      "relation": "observes_object",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/ContentView.swift",
+          "anchor": "@Environment(DesignModel.self)",
+          "occurrence": 2
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E006",
+      "source": "content",
+      "target": "viewport",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/ContentView.swift",
+          "anchor": "ViewportView(document:"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E007",
+      "source": "content",
+      "target": "inspector",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/ContentView.swift",
+          "anchor": "InspectorView()."
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E008",
+      "source": "inspector",
+      "target": "model",
+      "relation": "binds_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Workspace/ContentView.swift",
+          "anchor": "@Bindable var model",
+          "occurrence": 2
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E009",
+      "source": "model",
+      "target": "document",
+      "relation": "owns_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "var document = CADDocument"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E010",
+      "source": "model",
+      "target": "feature",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "func addBox()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E011",
+      "source": "model",
+      "target": "document",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "let mesh = document.buildMesh()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E012",
+      "source": "model",
+      "target": "stl",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "STLExporter.binary(mesh)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E013",
+      "source": "model",
+      "target": "validator",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "MeshValidator.validate(mesh)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E014",
+      "source": "model",
+      "target": "filesystem",
+      "relation": "persists_model",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "try document.encoded().write(to: url)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "ambiguity": "Confine Foundation/file system; successo effettivo, sandbox e disco richiedono prova runtime."
+    },
+    {
+      "id": "E015",
+      "source": "model",
+      "target": "filesystem",
+      "relation": "loads_resource",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "CADDocument.decode(Data(contentsOf: url))"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E016",
+      "source": "model",
+      "target": "filesystem",
+      "relation": "writes_export",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/Model/DesignModel.swift",
+          "anchor": "STLExporter.binary(mesh).write(to: url)"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E017",
+      "source": "document",
+      "target": "feature",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "public var features: [Feature]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E018",
+      "source": "feature",
+      "target": "kind",
+      "relation": "owns_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "public var kind: Kind"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E019",
+      "source": "feature",
+      "target": "primitives",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "Primitives.box(width:"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E020",
+      "source": "feature",
+      "target": "operations",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "Operations.extrude(profile,"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E021",
+      "source": "feature",
+      "target": "mesh",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "local.translated(by: position)"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E022",
+      "source": "document",
+      "target": "mesh",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "Mesh.merged("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E023",
+      "source": "primitives",
+      "target": "operations",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Operations.swift",
+          "anchor": "Operations.extrude(.rectangle("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E024",
+      "source": "primitives",
+      "target": "profile",
+      "relation": "references_symbol",
+      "semanticStatus": "INFERRED",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Operations.swift",
+          "anchor": "Operations.extrude(.circle("
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "ambiguity": "Destinazione del membro implicito .circle dedotta leggendo API; non risolta dal compilatore."
+    },
+    {
+      "id": "E025",
+      "source": "operations",
+      "target": "profile",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Operations.swift",
+          "anchor": "profile.triangulate()"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E026",
+      "source": "operations",
+      "target": "mesh",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Operations.swift",
+          "anchor": "var mesh = Mesh()"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E027",
+      "source": "mesh",
+      "target": "vec3",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Mesh.swift",
+          "anchor": "public var vertices: [Vec3]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E028",
+      "source": "profile",
+      "target": "vec2",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Sketch.swift",
+          "anchor": "public private(set) var points: [Vec2]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E029",
+      "source": "stl",
+      "target": "mesh",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Export.swift",
+          "anchor": "mesh.normal(ofTriangle: i)",
+          "occurrence": 1
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E030",
+      "source": "validator",
+      "target": "mesh",
+      "relation": "reads_state",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Export.swift",
+          "anchor": "volume: mesh.volume)"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E031",
+      "source": "viewport",
+      "target": "feature",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/ViewportView.swift",
+          "anchor": "f.buildMesh()"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E032",
+      "source": "viewport",
+      "target": "scenekit",
+      "relation": "bridges_to_objc",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/ViewportView.swift",
+          "anchor": "SCNGeometry(sources:",
+          "occurrence": 2
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "ambiguity": "API SceneKit esposta a Swift; nessun attraversamento interno Objective-C/GPU estratto."
+    },
+    {
+      "id": "E033",
+      "source": "swiftui",
+      "target": "viewport",
+      "relation": "runtime_callback",
+      "semanticStatus": "RUNTIME/EXTERNAL",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/ViewportView.swift",
+          "anchor": "func updateNSView("
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff",
+      "ambiguity": "Witness NSViewRepresentable invocato dal framework; non è una chiamata diretta da ContentView."
+    },
+    {
+      "id": "E034",
+      "source": "viewport",
+      "target": "representable",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "App/Sources/UI/Viewport/ViewportView.swift",
+          "anchor": "struct ViewportView: NSViewRepresentable"
+        }
+      ],
+      "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "E035",
+      "source": "document",
+      "target": "codable",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "public struct CADDocument: Codable"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E036",
+      "source": "profile",
+      "target": "codable",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Sketch.swift",
+          "anchor": "public struct Profile2D: Codable"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "E037",
+      "source": "feature",
+      "target": "codable",
+      "relation": "type_conforms_protocol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/Document.swift",
+          "anchor": "public struct Feature: Identifiable, Codable"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    }
+  ],
+  "limitations": [
+    "Mappa manuale/testuale parziale. Zero simboli o chiamanti risolti con IndexStore/SourceKit.",
+    "I nodi rappresentano tipi selezionati, non tutti i membri; assenza di arco non prova assenza di dipendenza.",
+    "Macro Observation, result builder SwiftUI, overload, protocol witness e internals Apple non attraversati.",
+    "Nessuna prova di correttezza numerica, timing, race, performance GPU, stato disco o stampa fisica.",
+    "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento."
+  ],
+  "probes": [
+    {
+      "id": "P01",
+      "category": "inheritance_conformance_raw_value",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Tipi attivi: struct conformi, DesignModel classe senza superclass esplicita; Feature.Kind enum con payload, non raw value. Archi di conformance SYNTACTIC; nessun arco di ereditarietà inventato."
+    },
+    {
+      "id": "P02",
+      "category": "numeric_function",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Profile2D.triangulate -> Operations.extrude -> Primitives/Feature esaminati nel testo. Chiamanti semanticamente risolti: 0; numerica verificata separatamente dai test."
+    },
+    {
+      "id": "P03",
+      "category": "observable_view",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "ContentView e InspectorView leggono DesignModel con @Environment, app lo mantiene in @State; Observation macros escluse."
+    },
+    {
+      "id": "P04",
+      "category": "combine_chain",
+      "result": "NOT_PRESENT_IN_INITIAL_SNAPSHOT",
+      "evidence": "Nessuna catena sink/assign/Publisher esplicita nei file attivi letti; Observation non è una catena Combine. Ricontrollare literalSites ad ogni rigenerazione."
+    },
+    {
+      "id": "P05",
+      "category": "task_await_actor",
+      "result": "NOT_PRESENT_IN_INITIAL_SNAPSHOT",
+      "evidence": "DesignModel è @MainActor; non sono presenti Task/await espliciti nel primo snapshot. Nessun actor_hop inventato."
+    },
+    {
+      "id": "P06",
+      "category": "delegate_protocol_witness",
+      "result": "RUNTIME_BOUNDARY",
+      "evidence": "ViewportView conforme a NSViewRepresentable; SwiftUI invoca makeNSView/updateNSView. Nessun call-site sorgente diretto certificato."
+    },
+    {
+      "id": "P07",
+      "category": "objc_c_boundary",
+      "result": "RUNTIME_BOUNDARY",
+      "evidence": "SceneKit/AppKit esposti a Swift; nessun bridging header o target C/C++ del progetto. Framework interni esclusi."
+    },
+    {
+      "id": "P08",
+      "category": "target_external_runtime",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "App importa CADCore; file .ftk/.stl attraversano Foundation e disco. File esportati e slicer non provati dal grafo."
+    },
+    {
+      "id": "P09",
+      "category": "dead_code_false_positive",
+      "result": "CAUTION",
+      "evidence": "STLExporter.ascii non è chiamato dalla UI corrente ma ha un test e una API pubblica. Assenza di arco UI non autorizza eliminazione."
+    },
+    {
+      "id": "P10",
+      "category": "sample_edge_classification",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "Campione casuale riproducibile random.Random(20260925): E022 CADDocument -> Mesh. Mesh.merged(...) letto in Document.swift riga 43 e dichiarazione static merged presente in Mesh.swift; classificazione calls_direct manuale, SYNTACTIC. Nessun arco ad alta confidenza semantica disponibile."
+    }
+  ]
+}

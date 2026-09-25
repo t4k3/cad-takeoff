@@ -30,7 +30,8 @@ def tracked_inputs():
     files = {p for folder in SOURCE_ROOTS for p in (ROOT / folder).rglob("*")
              if p.suffix in {".swift", ".metal", ".m", ".mm", ".h", ".cpp", ".c"}}
     files.update((ROOT / "Packages/CADCore/Tests").rglob("*.swift"))
-    files.update([ROOT / "project.yml", ROOT / "Packages/CADCore/Package.swift", SPEC,
+    files.update([ROOT / "project.yml", ROOT / "FusionTakeoff.xcodeproj/project.pbxproj",
+                  ROOT / "App/Info.plist", ROOT / "Packages/CADCore/Package.swift", SPEC,
                   Path(__file__).resolve(), OUT / "viewer-template.html"])
     return {str(p.relative_to(ROOT)): digest(p) for p in sorted(files)}
 
@@ -115,12 +116,7 @@ def build():
     return graph
 
 
-def render(graph):
-    payload = json.dumps(graph, ensure_ascii=False, indent=2)
-    (OUT / "graph.json").write_text(payload + "\n")
-    template = (OUT / "viewer-template.html").read_text()
-    # Escape '<' to prevent a source string from ending the inert JSON script block.
-    (OUT / "index.html").write_text(template.replace("__GRAPH_JSON__", payload.replace("<", "\\u003c")))
+def mermaid(graph):
     lines = ["# Mappa architetturale esplorativa", "", "Generata dal dataset `graph.json`. Metodo manuale/testuale; nessun arco RESOLVED.",
              "", "```mermaid", "flowchart LR"]
     for n in graph["nodes"]:
@@ -132,7 +128,16 @@ def render(graph):
     for e in graph["edges"]:
         refs = ", ".join(f'`{x["file"]}:{x["line"]}`' for x in e["evidence"])
         lines.append(f'| {e["source"]} → {e["target"]} | {e["relation"]} | {e["semanticStatus"]} | {refs} |')
-    (OUT / "MAP.md").write_text("\n".join(lines) + "\n")
+    return "\n".join(lines) + "\n"
+
+
+def render(graph):
+    payload = json.dumps(graph, ensure_ascii=False, indent=2)
+    (OUT / "graph.json").write_text(payload + "\n")
+    template = (OUT / "viewer-template.html").read_text()
+    # Escape '<' to prevent a source string from ending the inert JSON script block.
+    (OUT / "index.html").write_text(template.replace("__GRAPH_JSON__", payload.replace("<", "\\u003c")))
+    (OUT / "MAP.md").write_text(mermaid(graph))
 
 
 def check():
@@ -153,6 +158,9 @@ def check():
     payload = json.dumps(graph, ensure_ascii=False, indent=2).replace("<", "\\u003c")
     if (OUT / "index.html").read_text() != (OUT / "viewer-template.html").read_text().replace("__GRAPH_JSON__", payload):
         print("STALE — HTML diverso dal dataset")
+        return 1
+    if (OUT / "MAP.md").read_text() != mermaid(graph):
+        print("STALE — Mermaid diverso dal dataset")
         return 1
     print(f'FRESH_EXPLORATORY — {len(graph["nodes"])} nodi, {len(graph["edges"])} archi; 0 risolti semanticamente')
     return 0
@@ -176,4 +184,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
