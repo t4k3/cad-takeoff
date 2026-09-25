@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 10:51. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 10:57. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -50,7 +50,7 @@ flowchart LR
     T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::done
   end
   subgraph P8["7 · Fondazioni CAD"]
-    T26["T26 · Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche<br/><i>codex</i>"]:::todo
+    T26["T26 · Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche<br/><i>codex</i>"]:::blocked
     T27["T27 · Documento v2: parti, occorrenze, ID stabili, parametri e migrazione<br/><i>codex</i>"]:::todo
     T30["T30 · Riferimenti topologici stabili e snapshot CAD per il renderer<br/><i>codex</i>"]:::todo
     T28["T28 · Motore feature parametrico: DAG, rebuild deterministico e diagnosi<br/><i>codex</i>"]:::todo
@@ -97,11 +97,12 @@ flowchart LR
     T58["T58 · Aggiornare grafo sorgente navigabile con chat, MCP e Metal<br/><i>codex</i>"]:::done
   end
   subgraph P15["3 · Stampa"]
-    T59["T59 · 3MF multicolore v1: colori persistenti per parte, export e strumenti chat<br/><i>codex</i>"]:::in_progress
+    T59["T59 · 3MF multicolore v1: colori persistenti per parte, export e strumenti chat<br/><i>codex</i>"]:::done
     T60["T60 · UX colori delle parti e comando export 3MF nel prototipo<br/><i>claude</i>"]:::todo
+    T69["T69 · Verifica 3MF nei tre slicer e aggiornamento grafo sorgente<br/><i>codex</i>"]:::in_progress
   end
   subgraph P16["M1 · Ciclo Fusion"]
-    T62["T62 · Kernel B-rep integrato (OCCT): build, link, firma in sandbox<br/><i>codex</i>"]:::todo
+    T62["T62 · Kernel B-rep integrato (OCCT): build, link, firma in sandbox<br/><i>codex</i>"]:::blocked
     T63["T63 · Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza<br/><i>codex</i>"]:::todo
     T64["T64 · Schizzo persistente su piano o faccia piana + proiezione spigoli<br/><i>codex</i>"]:::todo
     T65["T65 · Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione<br/><i>codex</i>"]:::todo
@@ -167,13 +168,13 @@ flowchart LR
   T24 --> T26
   T24 --> T27
   T03 --> T27
-  T26 --> T30
+  T69 --> T30
   T27 --> T30
   T25 --> T40
   T27 --> T40
   T19 --> T45
   T30 --> T45
-  T26 --> T28
+  T69 --> T28
   T27 --> T28
   T15 --> T28
   T30 --> T28
@@ -251,7 +252,7 @@ flowchart LR
   T25 --> T61
   T07 --> T61
   T26 --> T62
-  T62 --> T63
+  T69 --> T63
   T63 --> T64
   T63 --> T65
   T64 --> T65
@@ -262,6 +263,7 @@ flowchart LR
   T65 --> T68
   T45 --> T68
   T25 --> T68
+  T59 --> T69
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -272,7 +274,7 @@ flowchart LR
 
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T13** Script CI locale (test core + build app) — suggerito: codex
-- **T26** Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche — suggerito: codex
+- **T60** UX colori delle parti e comando export 3MF nel prototipo — suggerito: claude
 
 ## Tabella
 
@@ -304,12 +306,12 @@ flowchart LR
 | T23 | Dialog di esportazione STL/3MF (formato, risoluzione, anteprima) | todo | claude | T10, T17, T27 | App/Sources/UI/Export |
 | T24 | Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi | done | codex | T02 | docs/requirements<br>docs/architecture/PROJECT.md<br>docs/architecture/API.md |
 | T25 | Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec) | done | claude | T17 | App/Sources/UI/Command<br>App/Sources/UI/Previews<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift |
-| T26 | Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche | todo | codex | T24 | Experiments/GeometryKernel<br>docs/requirements/KERNEL_SPIKE.md |
+| T26 | Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche | blocked | codex | T24 | Experiments/GeometryKernel<br>docs/requirements/KERNEL_SPIKE.md |
 | T27 | Documento v2: parti, occorrenze, ID stabili, parametri e migrazione | todo | codex | T24, T03 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
-| T30 | Riferimenti topologici stabili e snapshot CAD per il renderer | todo | codex | T26, T27 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
+| T30 | Riferimenti topologici stabili e snapshot CAD per il renderer | todo | codex | T69, T27 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T40 | UX parti e assiemi: browser gerarchico e componente attivo | todo | claude | T25, T27 | App/Sources/UI |
 | T45 | UX selezione CAD di facce-spigoli e riferimenti per istanza | todo | claude | T19, T30 | App/Sources/UI |
-| T28 | Motore feature parametrico: DAG, rebuild deterministico e diagnosi | todo | codex | T26, T27, T15, T30 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
+| T28 | Motore feature parametrico: DAG, rebuild deterministico e diagnosi | todo | codex | T69, T27, T15, T30 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T29 | Storico persistente: edit session, rollback, soppressione e riordino | todo | codex | T28, T04 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T31 | Modellazione parti B-rep: fori, raccordi, guscio, serie, sweep e loft | todo | codex | T28, T29, T06, T09 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T32 | Assiemi: occorrenze, trasformazioni, grounding, giunti e solver DOF | todo | codex | T27, T28, T30 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
@@ -337,13 +339,14 @@ flowchart LR
 | T56 | Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop | done | claude | T50 | Tools/ftk-mcp<br>project.yml<br>App/FusionTakeoff.entitlements<br>Tools/ftk-mcp.entitlements<br>App/Sources/Integration/MCP/MCPHost.swift<br>App/Sources/UI/Connectors |
 | T57 | Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP | done | codex | T48, T49 | App/Sources/Integration/MCP/MCPServer.swift<br>App/Sources/Integration/MCP/LocalHTTPTransport.swift<br>Tests/MCPIntegration<br>scripts/test-mcp-integration.sh |
 | T58 | Aggiornare grafo sorgente navigabile con chat, MCP e Metal | done | codex | T24, T48, T49 | docs/architecture<br>scripts/architecture_graph.py |
-| T59 | 3MF multicolore v1: colori persistenti per parte, export e strumenti chat | in_progress | codex | T48 | Packages/CADCore/Sources/CADCore<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>Tests/AssistantTools<br>Tests/MCPIntegration<br>Tests/ThreeMF<br>scripts/test-3mf.sh<br>docs/requirements/PRINT_3MF.md<br>docs/architecture/API.md |
+| T59 | 3MF multicolore v1: colori persistenti per parte, export e strumenti chat | done | codex | T48 | Packages/CADCore/Sources/CADCore<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>Tests/AssistantTools<br>Tests/MCPIntegration<br>Tests/ThreeMF<br>scripts/test-3mf.sh<br>docs/requirements/PRINT_3MF.md<br>docs/architecture/API.md |
 | T60 | UX colori delle parti e comando export 3MF nel prototipo | todo | claude | T59 | App/Sources/UI |
 | T61 | Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude | done | claude | T48, T25, T07 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace |
-| T62 | Kernel B-rep integrato (OCCT): build, link, firma in sandbox | todo | codex | T26 | Packages/Kernel |
-| T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | codex | T62 | Packages/CADCore<br>App/Sources/Model |
+| T62 | Kernel B-rep integrato (OCCT): build, link, firma in sandbox | blocked | codex | T26 | Packages/Kernel |
+| T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | codex | T69 | Packages/CADCore<br>App/Sources/Model |
 | T64 | Schizzo persistente su piano o faccia piana + proiezione spigoli | todo | codex | T63 | Packages/CADCore/Sources/CADCore/Sketch |
 | T65 | Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione | todo | codex | T63, T64 | Packages/CADCore/Sources/CADCore/Features |
 | T66 | UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0 | todo | claude | T64, T45 | App/Sources/UI/Sketch |
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
+| T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | in_progress | codex | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |

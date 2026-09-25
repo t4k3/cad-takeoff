@@ -473,7 +473,7 @@
       "id": "T26",
       "title": "Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche",
       "phase": "7 · Fondazioni CAD",
-      "status": "todo",
+      "status": "blocked",
       "deps": [
         "T24"
       ],
@@ -482,7 +482,10 @@
         "docs/requirements/KERNEL_SPIKE.md"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": null,
+      "notes": [
+        "2026-09-25 10:57 ?: ANNULLATO: decisione Ross 25/09, kernel proprietario (T69), niente OCCT"
+      ]
     },
     {
       "id": "T27",
@@ -507,7 +510,7 @@
       "phase": "7 · Fondazioni CAD",
       "status": "todo",
       "deps": [
-        "T26",
+        "T69",
         "T27"
       ],
       "paths": [
@@ -554,7 +557,7 @@
       "phase": "7 · Fondazioni CAD",
       "status": "todo",
       "deps": [
-        "T26",
+        "T69",
         "T27",
         "T15",
         "T30"
@@ -1082,7 +1085,7 @@
       "id": "T59",
       "title": "3MF multicolore v1: colori persistenti per parte, export e strumenti chat",
       "phase": "3 · Stampa",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T48"
       ],
@@ -1099,7 +1102,11 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 10:35"
+      "started": "2026-09-25 10:35",
+      "finished": "2026-09-25 10:54",
+      "notes": [
+        "2026-09-25 10:54 codex: Colore sRGB persistente e lettura vecchi ftk; exporter ZIP/3MF con parti, posizioni, Materials Extension e metadati colori Bambu/Orca/Snapmaker; 14 tool chat/MCP, set_color undo/redo e export_3mf. 11 test core,41 assistente,15 MCP HTTP, verifica indipendente archivio e build passati. GUI Orca campione rosso/blu verificato; QA specifica altri slicer prosegue. API pronte per T60 Claude; commit locale, nessun push."
+      ]
     },
     {
       "id": "T60",
@@ -1142,7 +1149,7 @@
       "id": "T62",
       "title": "Kernel B-rep integrato (OCCT): build, link, firma in sandbox",
       "phase": "M1 · Ciclo Fusion",
-      "status": "todo",
+      "status": "blocked",
       "deps": [
         "T26"
       ],
@@ -1150,7 +1157,10 @@
         "Packages/Kernel"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": null,
+      "notes": [
+        "2026-09-25 10:57 ?: ANNULLATO: sostituito da T69 (kernel proprietario)"
+      ]
     },
     {
       "id": "T63",
@@ -1158,7 +1168,7 @@
       "phase": "M1 · Ciclo Fusion",
       "status": "todo",
       "deps": [
-        "T62"
+        "T69"
       ],
       "paths": [
         "Packages/CADCore",
@@ -1243,6 +1253,25 @@
       ],
       "suggested": "claude",
       "owner": null
+    },
+    {
+      "id": "T69",
+      "title": "Verifica 3MF nei tre slicer e aggiornamento grafo sorgente",
+      "phase": "3 · Stampa",
+      "status": "in_progress",
+      "deps": [
+        "T59"
+      ],
+      "paths": [
+        "docs/architecture",
+        "scripts/architecture_graph.py",
+        "docs/requirements/PRINT_3MF.md",
+        "Tests/ThreeMF",
+        "result.json"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-25 10:54"
     }
   ]
 }
