@@ -64,7 +64,6 @@ final class CADMetalView: MTKView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     func redraw() {
-        isPaused = !camera.isAnimating
         needsDisplay = true
     }
 

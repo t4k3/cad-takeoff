@@ -41,7 +41,10 @@ final class CameraController {
     let fovY: Float = 35 * .pi / 180
 
     private var animation: (from: Pose, to: Pose, start: CFTimeInterval, duration: CFTimeInterval)?
+    @ObservationIgnored private var timer: Timer?
     var isAnimating: Bool { animation != nil }
+    /// Called on every camera change driven by an animation (the view redraws).
+    @ObservationIgnored var onAnimationFrame: () -> Void = {}
 
     // MARK: Derived
 
@@ -152,9 +155,22 @@ final class CameraController {
 
     private func animate(to target: Pose) {
         animation = (pose, target, CACurrentMediaTime(), 0.35)
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let running = self.tick()
+                self.onAnimationFrame()
+                if !running { self.timer?.invalidate(); self.timer = nil }
+            }
+        }
     }
 
-    private func stopAnimation() { animation = nil }
+    private func stopAnimation() {
+        animation = nil
+        timer?.invalidate()
+        timer = nil
+    }
 
     /// Advances the animation; returns true while still running.
     @discardableResult

@@ -244,3 +244,18 @@ Inizio **Viewport Metal (sostituisce SceneKit deprecato)**. File: App/Sources/UI
 
 ### 2026-09-25 09:48 · claude · DONE `T07`
 **Viewport Metal (sostituisce SceneKit deprecato)** — Viewport Metal al posto di SceneKit: CameraController (orbita Z-up, pan, zoom verso il cursore, prospettiva/ortogonale, animazioni), renderer con buffer per feature in cache, spigoli CAD (angolo diedro >25°), griglia che sfuma + assi, 3 stili di visualizzazione, barra di navigazione (Home, Adatta F). Shader compilati a runtime (ShaderSource.swift): il Metal Toolchain non è installato e così la build non lo richiede. Riusata l'idea del MetalViewport di Codex (archive), codice riscritto per Vec3/indices.
+
+### 2026-09-25 09:48 · claude · CLAIM `T18`
+Inizio **ViewCube + navigazione camera (orbita/pan/zoom, viste standard)**. File: App/Sources/UI/Viewport
+
+### 2026-09-25 09:50 · codex · NUOVO TASK `T24`
+Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi (dipende da T02)
+
+### 2026-09-25 09:50 · codex · CLAIM `T24`
+Inizio **Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi**. File: docs/requirements, docs/architecture/PROJECT.md, docs/architecture/API.md
+
+### 2026-09-25 09:50 · codex · DECISIONE
+NUOVA RICHIESTA ESPLICITA DI ROSS: serve anche tutta la parte lamiera di Fusion 360; storico delle operazioni importantissimo; progettazione di parti e assiemi fondamentale. @claude: sto formalizzando T24, con storico parametrico persistente e dipendenze separato da undo/redo, componenti/istanze/assiemi separati dai body e lamiera con regole, pieghe, sviluppo e output di produzione. Queste capacità diventano requisiti fondativi, non UI accessorie. Propongo Codex kernel/B-rep, feature history, assemblaggi e calcolo lamiera; Claude ambienti Parti/Assiemi/Lamiera, timeline modificabile/rollback e browser componenti. Conferma nel registro e segnala vincoli UX prima che chiuda T24. Per evitare task duplicati, aggiungo io il DAG funzionale e i corrispondenti task UX dopo la tua risposta.
+
+### 2026-09-25 09:51 · claude · DONE `T18`
+**ViewCube + navigazione camera (orbita/pan/zoom, viste standard)** — ViewCube (facce cliccabili con hover, triade XYZ, Home) che segue la camera; animazioni camera guidate da timer 60 Hz (indipendenti dal draw, robuste con finestra coperta). Verificato a schermo: Home e faccia SOPRA animano.

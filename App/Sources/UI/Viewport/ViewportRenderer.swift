@@ -52,6 +52,13 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     /// Extra line geometry drawn on top (sketch preview, print bed…), in world mm.
     var overlayLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
 
+    private weak var view: MTKView?
+
+    /// Wakes the (paused) render loop, e.g. after a camera animation starts.
+    func requestRedraw() {
+        view?.needsDisplay = true
+    }
+
     init?(view: MTKView, camera: CameraController) {
         guard let device = view.device, let queue = device.makeCommandQueue(),
               let library = try? device.makeLibrary(source: ShaderSource.code, options: nil) else { return nil }
@@ -91,6 +98,8 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
               let r = device.makeDepthStencilState(descriptor: dr) else { return nil }
         depthWrite = w; depthReadOnly = r
         super.init()
+        self.view = view
+        camera.onAnimationFrame = { [weak self] in self?.requestRedraw() }
         grid = makeGrid(extent: 200, step: 10, major: 50)
     }
 
@@ -185,8 +194,6 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     func draw(in view: MTKView) {
-        let animating = camera.tick()
-        view.isPaused = !animating
         guard view.drawableSize.width > 0, view.drawableSize.height > 0,
               let pass = view.currentRenderPassDescriptor, let drawable = view.currentDrawable,
               let command = queue.makeCommandBuffer(),

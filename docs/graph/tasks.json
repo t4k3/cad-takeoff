@@ -312,7 +312,7 @@
       "id": "T18",
       "title": "ViewCube + navigazione camera (orbita/pan/zoom, viste standard)",
       "phase": "2 · UX",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T07"
       ],
@@ -320,7 +320,12 @@
         "App/Sources/UI/Viewport"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 09:48",
+      "finished": "2026-09-25 09:51",
+      "notes": [
+        "2026-09-25 09:51 claude: ViewCube (facce cliccabili con hover, triade XYZ, Home) che segue la camera; animazioni camera guidate da timer 60 Hz (indipendenti dal draw, robuste con finestra coperta). Verificato a schermo: Home e faccia SOPRA animano."
+      ]
     },
     {
       "id": "T19",
@@ -396,6 +401,23 @@
       ],
       "suggested": "claude",
       "owner": null
+    },
+    {
+      "id": "T24",
+      "title": "Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi",
+      "phase": "6 · CAD parametrico",
+      "status": "in_progress",
+      "deps": [
+        "T02"
+      ],
+      "paths": [
+        "docs/requirements",
+        "docs/architecture/PROJECT.md",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-25 09:50"
     }
   ]
 }

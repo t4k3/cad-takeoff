@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 09:48. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 09:51. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -40,9 +40,12 @@ flowchart LR
   end
   subgraph P6["2 · UX"]
     T17["T17 · Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system<br/><i>claude</i>"]:::done
-    T18["T18 · ViewCube + navigazione camera (orbita/pan/zoom, viste standard)<br/><i>claude</i>"]:::todo
+    T18["T18 · ViewCube + navigazione camera (orbita/pan/zoom, viste standard)<br/><i>claude</i>"]:::done
     T19["T19 · Selezione ed evidenziazione nel viewport (picking)<br/><i>claude</i>"]:::todo
     T20["T20 · Comandi, menu, scorciatoie, stati vuoti, onboarding<br/><i>claude</i>"]:::todo
+  end
+  subgraph P7["6 · CAD parametrico"]
+    T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::in_progress
   end
   T00 --> T02
   T00 --> T03
@@ -78,6 +81,7 @@ flowchart LR
   T19 --> T22
   T10 --> T23
   T17 --> T23
+  T02 --> T24
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -90,7 +94,6 @@ flowchart LR
 - **T04** Undo/Redo sulla timeline — suggerito: codex
 - **T05** Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) — suggerito: claude
 - **T13** Script CI locale (test core + build app) — suggerito: codex
-- **T18** ViewCube + navigazione camera (orbita/pan/zoom, viste standard) — suggerito: claude
 - **T19** Selezione ed evidenziazione nel viewport (picking) — suggerito: claude
 
 ## Tabella
@@ -115,9 +118,10 @@ flowchart LR
 | T15 | Modello schizzo nel core (entità, profili chiusi, vincoli base) | todo | codex | T03 | Packages/CADCore/Sources/CADCore/SketchModel.swift<br>Packages/CADCore/Tests/CADCoreTests/SketchModelTests.swift |
 | T16 | Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh | done | claude | T00 | App/Sources<br>scripts/build.sh<br>project.yml |
 | T17 | Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system | done | claude | T16 | App/Sources/UI/Workspace<br>App/Sources/UI/DesignSystem<br>App/Sources/UI/FusionTakeoffApp.swift |
-| T18 | ViewCube + navigazione camera (orbita/pan/zoom, viste standard) | todo | claude | T07 | App/Sources/UI/Viewport |
+| T18 | ViewCube + navigazione camera (orbita/pan/zoom, viste standard) | done | claude | T07 | App/Sources/UI/Viewport |
 | T19 | Selezione ed evidenziazione nel viewport (picking) | todo | claude | T07 | App/Sources/UI/Viewport |
 | T20 | Comandi, menu, scorciatoie, stati vuoti, onboarding | todo | claude | T17, T04 | App/Sources/UI/Commands<br>App/Sources/UI/Onboarding |
 | T21 | Piatto di stampa a schermo (volume stampante, oggetto appoggiato) | todo | claude | T07, T12 | App/Sources/UI/Viewport |
 | T22 | Pannello stampabilità: report visivo, evidenzia problemi | todo | claude | T11, T19 | App/Sources/UI/Printability |
 | T23 | Dialog di esportazione STL/3MF (formato, risoluzione, anteprima) | todo | claude | T10, T17 | App/Sources/UI/Export |
+| T24 | Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi | in_progress | codex | T02 | docs/requirements<br>docs/architecture/PROJECT.md<br>docs/architecture/API.md |

@@ -11,8 +11,11 @@ final class ViewportState {
     @ObservationIgnored weak var renderer: ViewportRenderer?
     @ObservationIgnored private var didInitialFit = false
 
-    func home() { camera.show(.home, bounds: renderer?.sceneBounds) }
-    func fit() { camera.fit(renderer?.sceneBounds) }
+    /// Set by the Metal view: restarts the render loop so camera animations play.
+    @ObservationIgnored var redraw: () -> Void = {}
+
+    func home() { camera.show(.home, bounds: renderer?.sceneBounds); redraw() }
+    func fit() { camera.fit(renderer?.sceneBounds); redraw() }
 
     func fitOnce() {
         guard !didInitialFit, renderer?.sceneBounds != nil else { return }
@@ -35,10 +38,18 @@ struct ViewportContainer: View {
                           hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,
                           onReady: { renderer in
                               viewport.renderer = renderer
+                              viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
                               DispatchQueue.main.async { viewport.fitOnce() }
                           })
         }
         .overlay(alignment: .bottom) { navigationBar.padding(.bottom, 12) }
+        .overlay(alignment: .topTrailing) {
+            ViewCube(camera: viewport.camera) { view in
+                viewport.camera.show(view, bounds: viewport.renderer?.sceneBounds)
+                viewport.renderer.map { _ in viewport.redraw() }
+            }
+            .padding(8)
+        }
         .overlay(alignment: .topLeading) {
             Text("Trascina: orbita · ⇧ trascina / due dita: sposta · rotella / pizzica: zoom")
                 .font(.system(size: 10.5)).foregroundStyle(.white.opacity(0.55))

@@ -19,6 +19,7 @@
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
 		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
 		C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */; };
+		CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A604770FA67CFFA12BACDB /* ViewCube.swift */; };
 		CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */; };
 		D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */; };
 		DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */; };
@@ -34,6 +35,7 @@
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
+		86A604770FA67CFFA12BACDB /* ViewCube.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCube.swift; sourceTree = "<group>"; };
 		8A79D033E48D1FC6B0898162 /* CADCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CADCore; path = Packages/CADCore; sourceTree = SOURCE_ROOT; };
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -67,6 +69,7 @@
 				943EB272622A8A5AAC6E74FB /* MatrixMath.swift */,
 				32F5B171C498A222AE59BB15 /* MetalViewport.swift */,
 				BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */,
+				86A604770FA67CFFA12BACDB /* ViewCube.swift */,
 				107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */,
 				F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */,
 			);
@@ -240,6 +243,7 @@
 				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,
 				95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */,
 				383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */,
+				CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */,
 				CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */,
 				4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */,
 				C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */,
