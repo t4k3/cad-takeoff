@@ -9,7 +9,16 @@ import UniformTypeIdentifiers
 final class DesignModel {
     var document = CADDocument(features: [
         Feature(name: "Base", kind: .box(width: 40, depth: 30, height: 5)),
-    ])
+    ]) {
+        didSet {
+            guard document != oldValue else { return }
+            designRevision = UUID().uuidString
+            if !applyingAssistantChange { assistantHistory = AssistantHistory() }
+        }
+    }
+    private(set) var designRevision = UUID().uuidString
+    @ObservationIgnored var assistantHistory = AssistantHistory()
+    @ObservationIgnored var applyingAssistantChange = false
     var selection: Feature.ID?
     var statusMessage = "Pronto"
 
@@ -36,6 +45,7 @@ final class DesignModel {
     }
 
     func newDesign() {
+        assistantHistory = AssistantHistory()
         document = CADDocument()
         selection = nil
         statusMessage = "Nuovo design"
@@ -62,6 +72,7 @@ final class DesignModel {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             document = try CADDocument.decode(Data(contentsOf: url))
+            assistantHistory = AssistantHistory()
             selection = nil
             statusMessage = "Aperto \(url.lastPathComponent)"
         } catch { statusMessage = "Errore apertura: \(error.localizedDescription)" }
