@@ -86,7 +86,8 @@
       "owner": null,
       "suggested": "codex",
       "deps": [
-        "T16"
+        "T16",
+        "T27"
       ],
       "paths": [
         "App/Sources/Model"
@@ -100,7 +101,10 @@
       "owner": null,
       "suggested": "claude",
       "deps": [
-        "T16"
+        "T16",
+        "T24",
+        "T15",
+        "T25"
       ],
       "paths": [
         "App/Sources/UI/Sketch"
@@ -116,7 +120,8 @@
       "deps": [
         "T05",
         "T15",
-        "T03"
+        "T03",
+        "T28"
       ],
       "paths": [
         "App/Sources/Model",
@@ -151,7 +156,9 @@
       "owner": null,
       "suggested": "codex",
       "deps": [
-        "T03"
+        "T03",
+        "T26",
+        "T28"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/CSG.swift",
@@ -166,7 +173,9 @@
       "owner": null,
       "suggested": "codex",
       "deps": [
-        "T03"
+        "T03",
+        "T26",
+        "T28"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/Revolve.swift",
@@ -181,7 +190,8 @@
       "owner": null,
       "suggested": "codex",
       "deps": [
-        "T03"
+        "T03",
+        "T27"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/ThreeMF.swift",
@@ -196,7 +206,7 @@
       "owner": null,
       "suggested": "codex",
       "deps": [
-        "T08"
+        "T31"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/Printability.swift"
@@ -210,7 +220,9 @@
       "owner": null,
       "suggested": "codex",
       "deps": [
-        "T03"
+        "T03",
+        "T27",
+        "T04"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/Placement.swift",
@@ -244,7 +256,9 @@
         "T21",
         "T22",
         "T23",
-        "T13"
+        "T13",
+        "T38",
+        "T46"
       ],
       "paths": [
         "App/Resources",
@@ -257,7 +271,9 @@
       "phase": "1 · Core",
       "status": "todo",
       "deps": [
-        "T03"
+        "T03",
+        "T24",
+        "T27"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/SketchModel.swift",
@@ -399,7 +415,8 @@
       "status": "todo",
       "deps": [
         "T10",
-        "T17"
+        "T17",
+        "T27"
       ],
       "paths": [
         "App/Sources/UI/Export"
@@ -445,6 +462,507 @@
       "notes": [
         "2026-09-25 09:54 claude: Pannello comando generico (CommandSession/CommandField lato UI): lunghezza, angolo, quantità, interruttore, scelta, riferimento geometrico con stato 'selezione attiva'; validazione per campo, anteprima dal vivo, OK=Invio, Annulla=Esc con ripristino. Collegato a 'Modifica…' (doppio click / menu contestuale in timeline e Browser) tramite adattatore temporaneo FeatureCommands. Mock flangia lamiera e serie circolare in UI/Previews. @codex: quando esiste ParameterSpec, scrivo l'adattatore ParameterSpec→CommandField; beginEdit/commitEdit/cancelEdit sostituiranno le scritture dirette."
       ]
+    },
+    {
+      "id": "T26",
+      "title": "Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche",
+      "phase": "7 · Fondazioni CAD",
+      "status": "todo",
+      "deps": [
+        "T24"
+      ],
+      "paths": [
+        "Experiments/GeometryKernel",
+        "docs/requirements/KERNEL_SPIKE.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T27",
+      "title": "Documento v2: parti, occorrenze, ID stabili, parametri e migrazione",
+      "phase": "7 · Fondazioni CAD",
+      "status": "todo",
+      "deps": [
+        "T24",
+        "T03"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T30",
+      "title": "Riferimenti topologici stabili e snapshot CAD per il renderer",
+      "phase": "7 · Fondazioni CAD",
+      "status": "todo",
+      "deps": [
+        "T26",
+        "T27"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T40",
+      "title": "UX parti e assiemi: browser gerarchico e componente attivo",
+      "phase": "10 · UX CAD",
+      "status": "todo",
+      "deps": [
+        "T25",
+        "T27"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T45",
+      "title": "UX selezione CAD di facce-spigoli e riferimenti per istanza",
+      "phase": "10 · UX CAD",
+      "status": "todo",
+      "deps": [
+        "T19",
+        "T30"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T28",
+      "title": "Motore feature parametrico: DAG, rebuild deterministico e diagnosi",
+      "phase": "7 · Fondazioni CAD",
+      "status": "todo",
+      "deps": [
+        "T26",
+        "T27",
+        "T15",
+        "T30"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T29",
+      "title": "Storico persistente: edit session, rollback, soppressione e riordino",
+      "phase": "7 · Fondazioni CAD",
+      "status": "todo",
+      "deps": [
+        "T28",
+        "T04"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T31",
+      "title": "Modellazione parti B-rep: fori, raccordi, guscio, serie, sweep e loft",
+      "phase": "8 · Parti e assiemi",
+      "status": "todo",
+      "deps": [
+        "T28",
+        "T29",
+        "T06",
+        "T09"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T32",
+      "title": "Assiemi: occorrenze, trasformazioni, grounding, giunti e solver DOF",
+      "phase": "8 · Parti e assiemi",
+      "status": "todo",
+      "deps": [
+        "T27",
+        "T28",
+        "T30"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T33",
+      "title": "Assiemi: moto, interferenze, distinta e riferimenti esterni revisionati",
+      "phase": "8 · Parti e assiemi",
+      "status": "todo",
+      "deps": [
+        "T31",
+        "T32"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T34",
+      "title": "Lamiera: regole versionate, base, flange, contorno, pieghe e rip",
+      "phase": "9 · Lamiera",
+      "status": "todo",
+      "deps": [
+        "T27",
+        "T31"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T35",
+      "title": "Lamiera avanzata: hem, lofted, scarichi, chiusure, conversione e Join by Bend",
+      "phase": "9 · Lamiera",
+      "status": "todo",
+      "deps": [
+        "T34"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T36",
+      "title": "Lamiera: Unfold-Refold e lavorazioni attraverso le pieghe",
+      "phase": "9 · Lamiera",
+      "status": "todo",
+      "deps": [
+        "T29",
+        "T34"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T37",
+      "title": "Lamiera: Flat Pattern versionato, DXF e dati tavole di piega",
+      "phase": "9 · Lamiera",
+      "status": "todo",
+      "deps": [
+        "T35",
+        "T36"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T39",
+      "title": "UX storico parametrico: marker, edit, riordino, stati e dipendenze",
+      "phase": "10 · UX CAD",
+      "status": "todo",
+      "deps": [
+        "T25",
+        "T29"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T41",
+      "title": "UX giunti, DOF, movimento, interferenze e distinta",
+      "phase": "10 · UX CAD",
+      "status": "todo",
+      "deps": [
+        "T32",
+        "T33",
+        "T40"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T42",
+      "title": "UX ambiente lamiera: regole, flange e comandi avanzati",
+      "phase": "10 · UX CAD",
+      "status": "todo",
+      "deps": [
+        "T25",
+        "T34",
+        "T35",
+        "T40",
+        "T45"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T43",
+      "title": "UX Unfold-Refold e Flat Pattern con stato aggiornato-obsoleto",
+      "phase": "10 · UX CAD",
+      "status": "todo",
+      "deps": [
+        "T36",
+        "T37",
+        "T42"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T44",
+      "title": "UX documenti lamiera: tavole, note piega e dialog DXF-STEP",
+      "phase": "10 · UX CAD",
+      "status": "todo",
+      "deps": [
+        "T23",
+        "T37",
+        "T43"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T46",
+      "title": "Verifica copertura completa lamiera e integrazione storico-parti-assiemi",
+      "phase": "11 · Accettazione CAD",
+      "status": "todo",
+      "deps": [
+        "T33",
+        "T35",
+        "T37",
+        "T39",
+        "T41",
+        "T43",
+        "T44",
+        "T45"
+      ],
+      "paths": [
+        "docs/requirements",
+        "Packages/CADCore/Tests",
+        "App/Tests"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T38",
+      "title": "Prove end-to-end: salvataggio storico, assieme, lamiera e round-trip export",
+      "phase": "11 · Accettazione CAD",
+      "status": "todo",
+      "deps": [
+        "T10",
+        "T13",
+        "T29",
+        "T33",
+        "T37",
+        "T46"
+      ],
+      "paths": [
+        "Packages/CADCore/Tests",
+        "App/Tests",
+        "docs/requirements/ACCEPTANCE_RESULTS.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T47",
+      "title": "Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete",
+      "phase": "6 · Assistente e MCP",
+      "status": "done",
+      "deps": [],
+      "paths": [
+        "App/Sources/Integration/ToolBridge.swift",
+        "App/FusionTakeoff.entitlements"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 09:59",
+      "finished": "2026-09-25 09:59",
+      "notes": [
+        "2026-09-25 09:59 claude: ToolBridge.swift: JSONValue, ToolSpec, ToolResult, protocollo CADToolProvider (@MainActor, errori come valori). Entitlements: network.client + network.server. @codex: T48 sbloccato."
+      ]
+    },
+    {
+      "id": "T48",
+      "title": "Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T47"
+      ],
+      "paths": [
+        "App/Sources/Model/Tools"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T49",
+      "title": "MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T47"
+      ],
+      "paths": [
+        "App/Sources/Integration/MCP"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T50",
+      "title": "Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T49"
+      ],
+      "paths": [
+        "Tools/ftk-mcp",
+        "docs/connectors/CLAUDE.md",
+        "project.yml"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T51",
+      "title": "Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T49"
+      ],
+      "paths": [
+        "App/Sources/Integration/ChatGPT",
+        "docs/connectors/CHATGPT.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T52",
+      "title": "Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T47",
+        "T25"
+      ],
+      "paths": [
+        "App/Sources/UI/Assistant",
+        "App/Sources/Integration/Assistant"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T53",
+      "title": "Provider OpenAI per la chat in-app",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T52"
+      ],
+      "paths": [
+        "App/Sources/Integration/Assistant/OpenAIProvider.swift"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T54",
+      "title": "Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T48",
+        "T28"
+      ],
+      "paths": [
+        "App/Sources/Model/Tools"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T55",
+      "title": "Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app",
+      "phase": "6 · Assistente e MCP",
+      "status": "todo",
+      "deps": [
+        "T50",
+        "T51",
+        "T52",
+        "T53",
+        "T48"
+      ],
+      "paths": [
+        "docs/connectors/E2E.md"
+      ],
+      "suggested": "codex",
+      "owner": null
     }
   ]
 }
