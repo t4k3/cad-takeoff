@@ -9,38 +9,83 @@
 /* Begin PBXBuildFile section */
 		05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */; };
 		0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */; };
+		0E767B03A5E12FC1C9C65E1E /* AssistantSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA831E610F555E8A4BC81923 /* AssistantSession.swift */; };
 		15B9E5F66063E99E492FD242 /* Picking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1E9EAC4951BAF080CE4885 /* Picking.swift */; };
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
+		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
 		3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */; };
+		479BA7F0547BB800519289F5 /* AssistantSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */; };
 		4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */; };
+		4AF0F80F02AFC0EADE2DC571 /* CADToolCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D38757828F98D2737425CF /* CADToolCatalog.swift */; };
+		4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB8505013537F19DABD1503A /* CADToolValidation.swift */; };
 		5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BB2CC5B625AFE33908AA5 /* StatusBar.swift */; };
 		5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */; };
+		6A65AED3408C4EB0ECFB82BF /* ftk-mcp in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 8CDAC622763B58001C57E74E /* ftk-mcp */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */; };
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
+		7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */; };
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
+		89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */; };
+		8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */; };
 		9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891E4E944492E6539912AE18 /* MCPHost.swift */; };
 		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
+		A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */; };
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
 		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
+		BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA251AD54A99FF5A9A16C764 /* Keychain.swift */; };
 		C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */; };
 		CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A604770FA67CFFA12BACDB /* ViewCube.swift */; };
 		CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */; };
+		D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */; };
 		D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */; };
 		DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */; };
 		DCFE43EEC46D1E81506AAC2D /* CADCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDA8176070A4C4FA3CF13B40 /* CADCore */; };
+		DD8A6431CB4C5743F04C9097 /* OpenAIStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB6B876F0661B437E6E2EEA8 /* OpenAIStream.swift */; };
+		E4B462720F43A796681BA91D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C2A70420F010AE7D6A1393 /* main.swift */; };
+		E6A4CECA1B0657934C158404 /* OpenAIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE04E5C771D6558145AEF42B /* OpenAIProvider.swift */; };
 		E6AEE10EBD192FD2B549A582 /* MCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2872A72642BACF8A561EBB /* MCPServer.swift */; };
+		E91C000FA839F7AAD962F2CD /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */; };
 		EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		44B11B2379A8C29B924B9F58 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AEBFCDC4C367902AFEE4310B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DFCBD29B1FFBA977A3959FA1;
+			remoteInfo = "ftk-mcp";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F26181B479C639D4162F3C29 /* Embed Dependencies */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				6A65AED3408C4EB0ECFB82BF /* ftk-mcp in Embed Dependencies */,
+			);
+			name = "Embed Dependencies";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionTakeoffApp.swift; sourceTree = "<group>"; };
+		01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTConnector.swift; sourceTree = "<group>"; };
+		0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStream.swift; sourceTree = "<group>"; };
+		0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIConversation.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
 		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
+		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
@@ -48,6 +93,8 @@
 		57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCommands.swift; sourceTree = "<group>"; };
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPanel.swift; sourceTree = "<group>"; };
+		62D38757828F98D2737425CF /* CADToolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolCatalog.swift; sourceTree = "<group>"; };
 		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
 		6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
 		7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanelPreviews.swift; sourceTree = "<group>"; };
@@ -55,19 +102,30 @@
 		891E4E944492E6539912AE18 /* MCPHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHost.swift; sourceTree = "<group>"; };
 		8A79D033E48D1FC6B0898162 /* CADCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CADCore; path = Packages/CADCore; sourceTree = SOURCE_ROOT; };
 		8B8A33442A4596CDA241E197 /* CommandSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSession.swift; sourceTree = "<group>"; };
+		8CDAC622763B58001C57E74E /* ftk-mcp */ = {isa = PBXFileReference; includeInIndex = 0; path = "ftk-mcp"; sourceTree = BUILT_PRODUCTS_DIR; };
 		916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolBridge.swift; sourceTree = "<group>"; };
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
 		BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaderSource.swift; sourceTree = "<group>"; };
 		BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FusionTakeoff.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA251AD54A99FF5A9A16C764 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+		CE04E5C771D6558145AEF42B /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
 		D15DE039BD31C92AE427C66E /* TimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineBar.swift; sourceTree = "<group>"; };
 		D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceState.swift; sourceTree = "<group>"; };
+		DA831E610F555E8A4BC81923 /* AssistantSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSession.swift; sourceTree = "<group>"; };
 		DD59C218754E0D11BA7F1DD8 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
+		DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Tools.swift"; sourceTree = "<group>"; };
 		E8DCACC31C8A1D1083704390 /* Ribbon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ribbon.swift; sourceTree = "<group>"; };
+		EB6B876F0661B437E6E2EEA8 /* OpenAIStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIStream.swift; sourceTree = "<group>"; };
+		ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettings.swift; sourceTree = "<group>"; };
 		EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalHTTPTransport.swift; sourceTree = "<group>"; };
+		F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeDesktopSetup.swift; sourceTree = "<group>"; };
 		F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportRenderer.swift; sourceTree = "<group>"; };
 		F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPanel.swift; sourceTree = "<group>"; };
+		FB8505013537F19DABD1503A /* CADToolValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolValidation.swift; sourceTree = "<group>"; };
+		FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +140,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		011445657638D0CB7399DB23 /* ChatGPT */ = {
+			isa = PBXGroup;
+			children = (
+				01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */,
+			);
+			path = ChatGPT;
+			sourceTree = "<group>";
+		};
 		0ED90DE497BF835BB64B46EF /* Viewport */ = {
 			isa = PBXGroup;
 			children = (
@@ -134,6 +200,7 @@
 		61600059F9C8CAB7E834B5C3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				8CDAC622763B58001C57E74E /* ftk-mcp */,
 				BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */,
 			);
 			name = Products;
@@ -143,6 +210,7 @@
 			isa = PBXGroup;
 			children = (
 				00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */,
+				785E63BA1C7AEB7EF9F2E4AD /* Assistant */,
 				F4C74464F3687349A61C6F69 /* Command */,
 				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
@@ -153,12 +221,40 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
+		785E63BA1C7AEB7EF9F2E4AD /* Assistant */ = {
+			isa = PBXGroup;
+			children = (
+				5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */,
+				ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */,
+			);
+			path = Assistant;
+			sourceTree = "<group>";
+		};
 		7FE45933726A07271F041C97 /* Connectors */ = {
 			isa = PBXGroup;
 			children = (
+				F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */,
 				3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */,
 			);
 			path = Connectors;
+			sourceTree = "<group>";
+		};
+		9471C69835015BE9175391CA /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				62D38757828F98D2737425CF /* CADToolCatalog.swift */,
+				FB8505013537F19DABD1503A /* CADToolValidation.swift */,
+				DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		A50F4E921D0488F27C78EA67 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				F87473E6F0B837E3EAD3F6D9 /* ftk-mcp */,
+			);
+			path = Tools;
 			sourceTree = "<group>";
 		};
 		A7FBBE3A83FD516521BFF35A /* App */ = {
@@ -174,7 +270,10 @@
 			isa = PBXGroup;
 			children = (
 				916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */,
+				D28CC5D85A0D89C8D43C4863 /* Assistant */,
+				011445657638D0CB7399DB23 /* ChatGPT */,
 				D3F0123D6FED862F64A44184 /* MCP */,
+				CA34383F3429FF051303E38A /* OpenAI */,
 			);
 			path = Integration;
 			sourceTree = "<group>";
@@ -185,6 +284,28 @@
 				7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */,
 			);
 			path = Previews;
+			sourceTree = "<group>";
+		};
+		CA34383F3429FF051303E38A /* OpenAI */ = {
+			isa = PBXGroup;
+			children = (
+				0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */,
+				CE04E5C771D6558145AEF42B /* OpenAIProvider.swift */,
+				EB6B876F0661B437E6E2EEA8 /* OpenAIStream.swift */,
+			);
+			path = OpenAI;
+			sourceTree = "<group>";
+		};
+		D28CC5D85A0D89C8D43C4863 /* Assistant */ = {
+			isa = PBXGroup;
+			children = (
+				0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */,
+				FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */,
+				DA831E610F555E8A4BC81923 /* AssistantSession.swift */,
+				BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */,
+				CA251AD54A99FF5A9A16C764 /* Keychain.swift */,
+			);
+			path = Assistant;
 			sourceTree = "<group>";
 		};
 		D3F0123D6FED862F64A44184 /* MCP */ = {
@@ -201,6 +322,7 @@
 			isa = PBXGroup;
 			children = (
 				5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */,
+				9471C69835015BE9175391CA /* Tools */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -210,6 +332,7 @@
 			children = (
 				A7FBBE3A83FD516521BFF35A /* App */,
 				44C6B64A6339651A73120B39 /* Packages */,
+				A50F4E921D0488F27C78EA67 /* Tools */,
 				61600059F9C8CAB7E834B5C3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -238,6 +361,14 @@
 			path = Command;
 			sourceTree = "<group>";
 		};
+		F87473E6F0B837E3EAD3F6D9 /* ftk-mcp */ = {
+			isa = PBXGroup;
+			children = (
+				22C2A70420F010AE7D6A1393 /* main.swift */,
+			);
+			path = "ftk-mcp";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -247,10 +378,12 @@
 			buildPhases = (
 				31CEDEF2C9F90F41AD0A6EB9 /* Sources */,
 				A1B2E5B4989FE8AE9267A69F /* Frameworks */,
+				F26181B479C639D4162F3C29 /* Embed Dependencies */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				9B6230F9E12CF71E50B48D54 /* PBXTargetDependency */,
 			);
 			name = FusionTakeoff;
 			packageProductDependencies = (
@@ -259,6 +392,23 @@
 			productName = FusionTakeoff;
 			productReference = BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */;
 			productType = "com.apple.product-type.application";
+		};
+		DFCBD29B1FFBA977A3959FA1 /* ftk-mcp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 59017358A38C592CBA6081F7 /* Build configuration list for PBXNativeTarget "ftk-mcp" */;
+			buildPhases = (
+				E2688A501D4874F31F3C057F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "ftk-mcp";
+			packageProductDependencies = (
+			);
+			productName = "ftk-mcp";
+			productReference = 8CDAC622763B58001C57E74E /* ftk-mcp */;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -270,7 +420,12 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					21E18A2EAA4445205B33E5D9 = {
-						ProvisioningStyle = Automatic;
+						DevelopmentTeam = 9F8D583GBV;
+						ProvisioningStyle = Manual;
+					};
+					DFCBD29B1FFBA977A3959FA1 = {
+						DevelopmentTeam = 9F8D583GBV;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -292,6 +447,7 @@
 			projectRoot = "";
 			targets = (
 				21E18A2EAA4445205B33E5D9 /* FusionTakeoff */,
+				DFCBD29B1FFBA977A3959FA1 /* ftk-mcp */,
 			);
 		};
 /* End PBXProject section */
@@ -301,21 +457,36 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */,
+				D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */,
+				A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */,
+				0E767B03A5E12FC1C9C65E1E /* AssistantSession.swift in Sources */,
+				479BA7F0547BB800519289F5 /* AssistantSettings.swift in Sources */,
 				0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */,
+				4AF0F80F02AFC0EADE2DC571 /* CADToolCatalog.swift in Sources */,
+				4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */,
 				9F5347637A122C50E1BABB0A /* Camera.swift in Sources */,
+				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
+				89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */,
+				E91C000FA839F7AAD962F2CD /* ClaudeProvider.swift in Sources */,
 				3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */,
 				A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */,
 				865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */,
 				1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */,
+				777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
 				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
+				BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */,
 				5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */,
 				9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */,
 				E6AEE10EBD192FD2B549A582 /* MCPServer.swift in Sources */,
 				F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */,
 				17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */,
+				33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */,
+				E6A4CECA1B0657934C158404 /* OpenAIProvider.swift in Sources */,
+				DD8A6431CB4C5743F04C9097 /* OpenAIStream.swift in Sources */,
 				15B9E5F66063E99E492FD242 /* Picking.swift in Sources */,
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
@@ -331,7 +502,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E2688A501D4874F31F3C057F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4B462720F43A796681BA91D /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9B6230F9E12CF71E50B48D54 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DFCBD29B1FFBA977A3959FA1 /* ftk-mcp */;
+			targetProxy = 44B11B2379A8C29B924B9F58 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		481061AC256CB8350E35F9E0 /* Debug */ = {
@@ -339,10 +526,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/FusionTakeoff.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -386,9 +570,13 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 9F8D583GBV;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -451,9 +639,13 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 9F8D583GBV;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -481,10 +673,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/FusionTakeoff.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -495,9 +684,54 @@
 			};
 			name = Release;
 		};
+		A2F55DBE9321A3A010306F7B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Tools/ftk-mcp.entitlements";
+				COMBINE_HIDPI_IMAGES = YES;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.takeoff.fusiontakeoff.ftk-mcp";
+				PRODUCT_NAME = "ftk-mcp";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		B547439BEF07A7AA2CE6F3F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Tools/ftk-mcp.entitlements";
+				COMBINE_HIDPI_IMAGES = YES;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.takeoff.fusiontakeoff.ftk-mcp";
+				PRODUCT_NAME = "ftk-mcp";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		59017358A38C592CBA6081F7 /* Build configuration list for PBXNativeTarget "ftk-mcp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A2F55DBE9321A3A010306F7B /* Debug */,
+				B547439BEF07A7AA2CE6F3F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		5D6DD517F34C131F581C1A78 /* Build configuration list for PBXProject "FusionTakeoff" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
