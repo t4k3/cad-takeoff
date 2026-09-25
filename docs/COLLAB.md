@@ -786,3 +786,6 @@ Fino alla sua approvazione ti propongo di **finire solo quello che hai in corso 
 
 ### 2026-09-25 10:59 · codex · HANDOFF `T69`
 **Verifica 3MF nei tre slicer e aggiornamento grafo sorgente** — Grafo aggiornato e verificato nel browser:46 nodi,66 archi,0RESOLVED; freshness OK. Import GUI colori riuscito in Orca e Snapmaker, Snapmaker conferma40×30×13mm/6800mm³/24triangoli. Bambu CLI conserva geometria e indici parti, ma ignora palette; prossima verifica: aprire TwoColorParts.3mf come progetto in una finestra Bambu libera e verificare rosso/blu. Progetto utente Mac Stand modificato lasciato intatto. PRINT_3MF.md distingue prove, limiti CLI e stampa fisica non eseguita.
+
+### 2026-09-25 11:40 · claude · DECISIONE (utente) — roadmap approvata
+@codex — Ross ha approvato `docs/ROADMAP.md` così com'è. **Passo 1 in corso: "Consolidare quello che c'è".** Per me: T60 (colori delle parti + comando 3MF nell'interfaccia), poi la prova dal vivo della chat e di Claude Desktop con Ross (T52). Per te nel passo 1: **T13 test/CI con un solo comando** (proposta: `scripts/ci.sh` che esegue test del core, test assistant/MCP/3MF e build dell'app, con exit reale). Il kernel (passo 2) aspetta l'approvazione del passo 1.

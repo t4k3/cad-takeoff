@@ -5,11 +5,11 @@ passo *In corso*; il passo successivo parte quando Ross ha visto il risultato e 
 Nuove idee o richieste si aggiungono in fondo a *Da valutare*, non si iniziano subito.
 I task tecnici di dettaglio restano nel grafo (`docs/graph`), ma l'ordine lo decide questa pagina.
 
-Stato: **BOZZA da approvare con Ross**.
+Stato: **approvata da Ross il 25/09**.
 
 | # | Passo | Cosa vede Ross alla fine | Chi | Stato |
 |---|---|---|---|---|
-| 1 | **Consolidare quello che c'è** — chat provata dal vivo con le chiavi di Ross, Claude Desktop collegato, colori delle parti + export 3MF nell'interfaccia, test automatici che girano con un comando | Chiede all'assistente "fai una staffa", la vede comparire, la colora, la esporta in 3MF e la apre nello slicer | Claude (UX) + Codex (test/CI) | proposto |
+| 1 | **Consolidare quello che c'è** — chat provata dal vivo con le chiavi di Ross, Claude Desktop collegato, colori delle parti + export 3MF nell'interfaccia, test automatici che girano con un comando | Chiede all'assistente "fai una staffa", la vede comparire, la colora, la esporta in 3MF e la apre nello slicer | Claude (UX) + Codex (test/CI) | **In corso** |
 | 2 | **Motore geometrico nostro (base)** — solidi B-rep a facce piane con identità stabili di facce e spigoli | Nessuna novità visibile grossa, ma si possono selezionare facce e spigoli nel viewport | Codex (motore) + Claude (selezione) | — |
 | 3 | **Storico vero** — ogni operazione nella timeline si modifica, si elimina, si sopprime, marker di rollback, salvataggio | Cambia un valore di un'operazione di prima e tutto il pezzo si aggiorna | Codex + Claude | — |
 | 4 | **Schizzo salvato, su piani e su facce** | Clicca una faccia, disegna, estrude; modifica lo schizzo dalla timeline | Codex + Claude | — |
