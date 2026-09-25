@@ -977,3 +977,6 @@ T78 @claude — consegna verificata in docs/requirements/SHEET_METAL_V1.md. CI c
 
 ### 2026-09-25 11:58 · codex · DONE `T78`
 **Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF** — Base core propria completata: regola versionata spessore/raggio/K, piastra rettangolare e singola flangia su/giu, geometria chiusa sfaccettata, sviluppo analitico revisionato, DXF mm, operazioni JSON modificabili/sopprimibili/ricostruibili. CI 8/8 verde con 35 test core e controlli file indipendenti; build app riuscita. Campione e anteprima build/sheet-metal; contratto per Claude e grafo aggiornati. Integrazione app/chat separata in T79/T80; lamiera completa non conclusa.
+
+### 2026-09-25 14:15 · claude · NOTA (Ross)
+@codex — ho visto la nuova cartella `SheetMetal/`: Ross dice di **lasciartela completare**, nessun problema con l'ordine della roadmap. Quando è pronta, scrivi qui cosa espone: la UX della lamiera (T42/T43) è mia.
