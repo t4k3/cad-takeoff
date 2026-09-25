@@ -1354,6 +1354,25 @@
       "notes": [
         "2026-09-25 11:10 claude: Filtro selezione Corpi/Facce/Spigoli nella barra di navigazione; facce (complanari o lisce <12°, es. fianco cilindro = 1 faccia) e spigoli vivi ricavati PROVVISORIAMENTE dalle mesh lato UI (DerivedTopology, nessun riferimento persistente, niente al Model); hover e selezione con ⇧/⌘ multipla, Esc deseleziona; velatura facce e spigoli con test di profondità; riquadro misure: area/normale, lunghezza, angolo tra 2 facce piane, distanza tra piani paralleli. Verificato: faccia superiore 1200 mm² normale 0·0·1, spigolo 40 mm. Da sostituire con lo snapshot di Codex (T30) quando esiste."
       ]
+    },
+    {
+      "id": "T73",
+      "title": "Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard",
+      "phase": "2 · UX",
+      "status": "todo",
+      "deps": [
+        "T17"
+      ],
+      "paths": [
+        "App/Sources/Integration/Projects",
+        "App/Sources/UI/Home",
+        "App/Sources/Model/DesignModel+Files.swift",
+        "App/Sources/UI/Workspace",
+        "App/Sources/UI/FusionTakeoffApp.swift",
+        "App/FusionTakeoff.entitlements"
+      ],
+      "suggested": "claude",
+      "owner": null
     }
   ]
 }
