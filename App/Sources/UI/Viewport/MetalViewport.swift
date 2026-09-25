@@ -15,6 +15,8 @@ struct MetalViewport: NSViewRepresentable {
     var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
+    /// Single-letter shortcuts, only while the viewport has keyboard focus (never while typing elsewhere).
+    var onKey: (String) -> Bool = { _ in false }
     /// Receives the renderer once, so overlays (fit, picking) can query scene data.
     var onReady: (ViewportRenderer) -> Void = { _ in }
 
@@ -39,6 +41,7 @@ struct MetalViewport: NSViewRepresentable {
     func updateNSView(_ view: CADMetalView, context: Context) {
         view.onClick = onClick
         view.onHover = onHover
+        view.onKey = onKey
         guard let r = view.renderer else { return }
         r.update(features: features)
         r.selection = selection
@@ -59,6 +62,7 @@ final class CADMetalView: MTKView {
     var renderer: ViewportRenderer?
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
+    var onKey: (String) -> Bool = { _ in false }
 
     private var dragStart: CGPoint?
     private var isDragging = false
@@ -132,6 +136,12 @@ final class CADMetalView: MTKView {
     }
 
     override func mouseExited(with event: NSEvent) { onHover(nil, nil) }
+
+    override func keyDown(with event: NSEvent) {
+        let plain = event.modifierFlags.intersection([.command, .control, .option]).isEmpty
+        if plain, let chars = event.charactersIgnoringModifiers?.lowercased(), onKey(chars) { return }
+        super.keyDown(with: event)
+    }
 
     override func scrollWheel(with event: NSEvent) {
         let p = topLeft(event)

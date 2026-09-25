@@ -3,6 +3,17 @@ import CADCore
 import Observation
 import UniformTypeIdentifiers
 
+/// A revision-consistent renderer result. Invalid bodies have explicit diagnostics.
+struct DesignSnapshot: Equatable, Sendable {
+    struct Issue: Equatable, Sendable {
+        let featureID: UUID
+        let message: String
+    }
+    let revision: String
+    let bodies: [BodySnapshot]
+    let issues: [Issue]
+}
+
 /// App-level state: the current CAD document plus UI selection. All mutations go through here.
 @MainActor
 @Observable
@@ -19,10 +30,36 @@ final class DesignModel {
     private(set) var designRevision = UUID().uuidString
     @ObservationIgnored var assistantHistory = AssistantHistory()
     @ObservationIgnored var applyingAssistantChange = false
+    @ObservationIgnored private var cachedSnapshot: DesignSnapshot?
     var selection: Feature.ID?
     var statusMessage = "Pronto"
 
     var selectedIndex: Int? { document.features.firstIndex { $0.id == selection } }
+
+    /// Topology comes from feature parameters in CADCore, never from viewport triangles.
+    /// A document edit invalidates the cache through designRevision, including undo/reopen.
+    func snapshot() -> DesignSnapshot {
+        if let cachedSnapshot, cachedSnapshot.revision == designRevision { return cachedSnapshot }
+        var bodies: [BodySnapshot] = [], issues: [DesignSnapshot.Issue] = []
+        let groups = Dictionary(grouping: document.features, by: \.id)
+        var duplicateIDs = Set<UUID>()
+        for feature in document.features where feature.isVisible {
+            guard groups[feature.id]?.count == 1 else {
+                if duplicateIDs.insert(feature.id).inserted {
+                    issues.append(.init(featureID: feature.id, message: "Identificatore di parte duplicato nel documento."))
+                }
+                continue
+            }
+            do {
+                bodies.append(try PrimitiveKernel.build(feature).snapshot(revision: designRevision))
+            } catch {
+                issues.append(.init(featureID: feature.id, message: error.localizedDescription))
+            }
+        }
+        let result = DesignSnapshot(revision: designRevision, bodies: bodies, issues: issues)
+        cachedSnapshot = result
+        return result
+    }
 
     // MARK: Features
 

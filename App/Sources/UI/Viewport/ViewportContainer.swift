@@ -136,6 +136,20 @@ struct ViewportContainer: View {
                               let id = ray.flatMap { viewport.pick($0) }
                               if workspace.hovered != id { workspace.hovered = id }
                           },
+                          onKey: { key in
+                              if let sketch = workspace.sketch, workspace.command == nil {
+                                  switch key {
+                                  case "l": sketch.tool = .line; return true
+                                  case "r": sketch.tool = .rectangle; return true
+                                  case "c": sketch.tool = .circle; return true
+                                  case "p": sketch.tool = .polygon; return true
+                                  case "e": workspace.extrudeSketch(model: model); return true
+                                  default: break
+                                  }
+                              }
+                              if key == "f" { viewport.fit(); return true }
+                              return false
+                          },
                           onReady: { renderer in
                               viewport.renderer = renderer
                               viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
@@ -303,9 +317,6 @@ struct ViewportContainer: View {
                 Button("") { if !sketch.cancel() { workspace.exitSketch() } }.keyboardShortcut(.cancelAction)
                 Button("") { sketch.finish() }.keyboardShortcut(.defaultAction)
                 Button("") { sketch.deleteSelection() }.keyboardShortcut(.delete, modifiers: [])
-                Button("") { sketch.tool = .line }.keyboardShortcut("l", modifiers: [])
-                Button("") { sketch.tool = .rectangle }.keyboardShortcut("r", modifiers: [])
-                Button("") { sketch.tool = .circle }.keyboardShortcut("c", modifiers: [])
             }
             .opacity(0).frame(width: 0, height: 0).accessibilityHidden(true)
         }
@@ -323,8 +334,7 @@ struct ViewportContainer: View {
             Button { viewport.home() } label: { Label("Home", systemImage: "house") }
                 .help("Vista iniziale (Home)")
             Button { viewport.fit() } label: { Label("Adatta", systemImage: "arrow.up.left.and.down.right.magnifyingglass") }
-                .help("Adatta alla finestra (F)")
-                .keyboardShortcut("f", modifiers: [])
+                .help("Adatta alla finestra (F con il viewport attivo)")
             Divider().frame(height: 16).padding(.horizontal, 3)
             Button {
                 viewport.camera.projection = viewport.camera.projection == .perspective ? .orthographic : .perspective

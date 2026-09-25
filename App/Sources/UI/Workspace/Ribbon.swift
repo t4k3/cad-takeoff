@@ -5,10 +5,20 @@ import SwiftUI
 struct Ribbon: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
+    @Environment(ProjectLibrary.self) private var library
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 2) {
+                Button { library.showHome = true } label: { Label("Home", systemImage: "house") }
+                    .buttonStyle(IconButtonStyle())
+                    .help("Home: progetti e disegni (⇧⌘H)")
+                Text(library.currentName + (library.isDirty(model) ? " •" : ""))
+                    .font(.system(size: 11, weight: .semibold)).lineLimit(1)
+                    .foregroundStyle(Theme.Palette.textSecondary)
+                    .padding(.horizontal, 6)
+                    .help(library.currentURL?.path ?? "Disegno non ancora salvato")
+                Divider().frame(height: 14)
                 ForEach(WorkspaceState.Tab.allCases) { tab in
                     TabButton(title: tab.rawValue, isSelected: workspace.tab == tab) { workspace.tab = tab }
                 }
@@ -85,7 +95,6 @@ struct Ribbon: View {
                 Button { workspace.extrudeSketch(model: model) } label: { Label("Estrudi", systemImage: "square.stack.3d.up") }
                     .disabled(sketch.extrudeCandidate == nil || workspace.command != nil)
                     .help(sketch.extrudeCandidate == nil ? "Disegna o seleziona un profilo chiuso" : "Estrudi il profilo selezionato (E)")
-                    .keyboardShortcut("e", modifiers: [])
                 Button { sketch.deleteSelection() } label: { Label("Elimina", systemImage: "trash") }
                     .disabled(sketch.selection == nil)
             }

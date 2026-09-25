@@ -5,6 +5,7 @@ import SwiftUI
 /// inspector right, timeline and status bar at the bottom.
 struct WorkspaceView: View {
     @Environment(DesignModel.self) private var model
+    @Environment(ProjectLibrary.self) private var library
     @State private var workspace = WorkspaceState()
     @State private var viewport = ViewportState()
 
@@ -30,6 +31,12 @@ struct WorkspaceView: View {
             StatusBar()
         }
         .background(Theme.Palette.canvas)
+        .accessibilityHidden(library.showHome)
+        .overlay {
+            // Home covers the workspace but keeps its state (camera, panels) alive underneath.
+            if library.showHome { HomeView().transition(.opacity) }
+        }
+        .animation(.easeOut(duration: 0.15), value: library.showHome)
         .environment(workspace)
         .onChange(of: model.selection) { _, id in
             // Selecting a body from the viewport/browser shows its parameters, unless the user is chatting.
