@@ -23,6 +23,7 @@ struct InspectorPanel: View {
                                 Text(feature.kind.typeName).font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                             }
                         }
+                        section("Colore") { PartColorPicker(feature: feature) }
                         section("Dimensioni") { parameters(for: $model.document.features[i].kind) }
                         section("Posizione") {
                             DimensionField(title: "X", value: $model.document.features[i].position.x)

@@ -1112,15 +1112,23 @@
       "id": "T60",
       "title": "UX colori delle parti e comando export 3MF nel prototipo",
       "phase": "3 · Stampa",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T59"
       ],
       "paths": [
-        "App/Sources/UI"
+        "App/Sources/UI/Workspace",
+        "App/Sources/UI/Viewport/ViewportRenderer.swift",
+        "App/Sources/UI/FusionTakeoffApp.swift",
+        "App/Sources/UI/DesignSystem"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 11:01",
+      "finished": "2026-09-25 11:05",
+      "notes": [
+        "2026-09-25 11:05 claude: Colori parti: palette 10 colori tipo filamento + selettore libero (debounce 400 ms → 1 passo di undo) nel pannello Parametri via model.setFeatureColor; pallino colore nel Browser e barretta nella timeline; viewport con colori reali, selezione = spigoli arancioni + rim (il colore della parte resta vero); pulsante 3MF in STAMPA e File → Esporta 3MF (⇧⌘E) via export3MFWithPanel. Etichette di accessibilità sui campioni. Verificato: palette (Blu) e set_color via MCP aggiornano viewport/Browser/timeline."
+      ]
     },
     {
       "id": "T61",

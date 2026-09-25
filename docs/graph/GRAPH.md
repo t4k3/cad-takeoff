@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 10:59. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:05. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -98,7 +98,7 @@ flowchart LR
   end
   subgraph P15["3 · Stampa"]
     T59["T59 · 3MF multicolore v1: colori persistenti per parte, export e strumenti chat<br/><i>codex</i>"]:::done
-    T60["T60 · UX colori delle parti e comando export 3MF nel prototipo<br/><i>claude</i>"]:::todo
+    T60["T60 · UX colori delle parti e comando export 3MF nel prototipo<br/><i>claude</i>"]:::done
     T69["T69 · Verifica 3MF nei tre slicer e aggiornamento grafo sorgente<br/><i>codex</i>"]:::todo
   end
   subgraph P16["M1 · Ciclo Fusion"]
@@ -276,7 +276,6 @@ flowchart LR
 
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T13** Script CI locale (test core + build app) — suggerito: codex
-- **T60** UX colori delle parti e comando export 3MF nel prototipo — suggerito: claude
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: codex
 - **T70** Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT — suggerito: codex
 
@@ -344,7 +343,7 @@ flowchart LR
 | T57 | Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP | done | codex | T48, T49 | App/Sources/Integration/MCP/MCPServer.swift<br>App/Sources/Integration/MCP/LocalHTTPTransport.swift<br>Tests/MCPIntegration<br>scripts/test-mcp-integration.sh |
 | T58 | Aggiornare grafo sorgente navigabile con chat, MCP e Metal | done | codex | T24, T48, T49 | docs/architecture<br>scripts/architecture_graph.py |
 | T59 | 3MF multicolore v1: colori persistenti per parte, export e strumenti chat | done | codex | T48 | Packages/CADCore/Sources/CADCore<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>Tests/AssistantTools<br>Tests/MCPIntegration<br>Tests/ThreeMF<br>scripts/test-3mf.sh<br>docs/requirements/PRINT_3MF.md<br>docs/architecture/API.md |
-| T60 | UX colori delle parti e comando export 3MF nel prototipo | todo | claude | T59 | App/Sources/UI |
+| T60 | UX colori delle parti e comando export 3MF nel prototipo | done | claude | T59 | App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportRenderer.swift<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/DesignSystem |
 | T61 | Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude | done | claude | T48, T25, T07 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace |
 | T62 | Kernel B-rep integrato (OCCT): build, link, firma in sandbox | blocked | codex | T26 | Packages/Kernel |
 | T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | codex | T70 | Packages/CADCore<br>App/Sources/Model |

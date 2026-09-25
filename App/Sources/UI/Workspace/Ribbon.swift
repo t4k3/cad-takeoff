@@ -110,7 +110,10 @@ struct Ribbon: View {
         ToolGroup("ESPORTA") {
             Button { model.exportSTLWithPanel() } label: { Label("STL", systemImage: "square.and.arrow.up") }
                 .disabled(model.document.features.isEmpty)
-                .help("Esporta i corpi visibili in STL binario (mm)")
+                .help("Esporta i corpi visibili in STL binario (mm), senza colori")
+            Button { model.export3MFWithPanel() } label: { Label("3MF", systemImage: "paintpalette") }
+                .disabled(model.document.features.isEmpty)
+                .help("Esporta in 3MF con parti separate e colori (Bambu Studio, OrcaSlicer, Snapmaker Orca)")
         }
     }
 }

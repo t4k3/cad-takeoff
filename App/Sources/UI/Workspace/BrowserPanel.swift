@@ -42,6 +42,9 @@ struct BrowserPanel: View {
         TreeRow(indent: 1, symbol: feature.kind.symbol, title: feature.name,
                 isSelected: model.selection == feature.id, isHovered: workspace.hovered == feature.id,
                 isDimmed: !feature.isVisible) {
+            Circle().fill(feature.color.swiftUIColor).frame(width: 9, height: 9)
+                .overlay(Circle().strokeBorder(.black.opacity(0.25)))
+                .help("Colore \(feature.color.hex)")
             Button {
                 // TODO(R1): replace with model.setVisible(_:_:) when Codex ships it.
                 if let i = model.document.features.firstIndex(where: { $0.id == feature.id }) {

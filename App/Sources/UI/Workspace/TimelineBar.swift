@@ -45,6 +45,9 @@ struct TimelineBar: View {
             .background(RoundedRectangle(cornerRadius: 5)
                 .fill(selected ? Theme.Palette.accent : hovered ? Theme.Palette.hover.opacity(2.5) : Theme.Palette.panelRaised))
             .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.Palette.separator))
+            .overlay(alignment: .bottom) {
+                Capsule().fill(feature.color.swiftUIColor).frame(width: 16, height: 3).offset(y: -2)
+            }
             .opacity(feature.isVisible ? 1 : 0.45)
             .help("\(index + 1). \(feature.name) — \(feature.kind.typeName)")
             .onTapGesture(count: 2) { workspace.editFeature(feature.id, model: model) }

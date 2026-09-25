@@ -21,7 +21,7 @@ Stato: **approvata da Ross il 25/09**.
 
 ## Da valutare (non iniziati)
 
-- (vuoto)
+- Spigoli di selezione più spessi nel viewport (linee larghe via quad in Metal).
 
 ## Decisioni già prese
 

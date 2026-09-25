@@ -74,8 +74,10 @@ fragment float4 lineFragment(LineOut in [[stage_in]]) {
     return float4(in.color.rgb, in.color.a * in.fade);
 }
 
-fragment float4 edgeFragment(LineOut in [[stage_in]]) {
-    return in.color;
+fragment float4 edgeFragment(LineOut in [[stage_in]],
+                             constant DrawUniforms &draw [[buffer(2)]]) {
+    // draw.color.a > 0 overrides the baked edge colour (selection / hover highlight).
+    return draw.color.a > 0 ? draw.color : in.color;
 }
 """#
 }

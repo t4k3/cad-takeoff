@@ -15,6 +15,7 @@
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
 		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
+		276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D04A4DB715945B73E88E2B /* PartColorPicker.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
@@ -95,6 +96,7 @@
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 		55A384B92C6A6894EA9A5831 /* SketchSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchSession.swift; sourceTree = "<group>"; };
+		56D04A4DB715945B73E88E2B /* PartColorPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartColorPicker.swift; sourceTree = "<group>"; };
 		57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCommands.swift; sourceTree = "<group>"; };
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
@@ -359,6 +361,7 @@
 			children = (
 				F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */,
 				674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */,
+				56D04A4DB715945B73E88E2B /* PartColorPicker.swift */,
 				E8DCACC31C8A1D1083704390 /* Ribbon.swift */,
 				542BB2CC5B625AFE33908AA5 /* StatusBar.swift */,
 				D15DE039BD31C92AE427C66E /* TimelineBar.swift */,
@@ -505,6 +508,7 @@
 				33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */,
 				E6A4CECA1B0657934C158404 /* OpenAIProvider.swift in Sources */,
 				DD8A6431CB4C5743F04C9097 /* OpenAIStream.swift in Sources */,
+				276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */,
 				15B9E5F66063E99E492FD242 /* Picking.swift in Sources */,
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,

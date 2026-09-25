@@ -222,18 +222,21 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
             enc.setDepthBias(1, slopeScale: 1.5, clamp: 0.01)
             for b in bodies {
                 guard let buf = b.triangles else { continue }
-                var draw = DrawUniforms(color: color(for: b.feature.id))
+                var draw = DrawUniforms(color: color(for: b.feature))
                 enc.setVertexBuffer(buf, offset: 0, index: 0)
                 enc.setFragmentBytes(&draw, length: MemoryLayout<DrawUniforms>.stride, index: 2)
                 enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: b.triangleVertexCount)
             }
             enc.setDepthBias(0, slopeScale: 0, clamp: 0)
         }
-        if style != .shaded {
+        if style != .shaded || selection != nil || hovered != nil {
             enc.setRenderPipelineState(edgePipeline)
             enc.setDepthStencilState(depthReadOnly)
             for b in bodies {
                 guard let buf = b.edges else { continue }
+                if style == .shaded, b.feature.id != selection, b.feature.id != hovered { continue }
+                var tint = DrawUniforms(color: edgeTint(for: b.feature.id))
+                enc.setFragmentBytes(&tint, length: MemoryLayout<DrawUniforms>.stride, index: 2)
                 enc.setVertexBuffer(buf, offset: 0, index: 0)
                 enc.drawPrimitives(type: .line, vertexStart: 0, vertexCount: b.edgeVertexCount)
             }
@@ -248,6 +251,8 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         if !overlayLines.isEmpty {
             let v = overlayLines.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.2), LineVertex(position: SIMD4($0.1, 1), color: $0.2)] }
             if let buf = buffer(v) {
+                var none = DrawUniforms(color: .zero)
+                enc.setFragmentBytes(&none, length: MemoryLayout<DrawUniforms>.stride, index: 2)
                 enc.setRenderPipelineState(edgePipeline)
                 enc.setDepthStencilState(depthAlways)
                 enc.setVertexBuffer(buf, offset: 0, index: 0)
@@ -259,9 +264,18 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         command.commit()
     }
 
-    private func color(for id: Feature.ID) -> SIMD4<Float> {
-        if id == selection { return SIMD4(Theme.Palette.bodySelected, 0.6) }
-        if id == hovered { return SIMD4(Theme.Palette.bodyHover, 0.25) }
-        return SIMD4(Theme.Palette.body, 0)
+    /// Edge colour override: accent for the selection, light accent on hover, else baked (a = 0).
+    private func edgeTint(for id: Feature.ID) -> SIMD4<Float> {
+        if id == selection { return SIMD4(Theme.Palette.bodySelected, 1) }
+        if id == hovered { return SIMD4(Theme.Palette.bodySelected * 0.8 + 0.2, 0.9) }
+        return .zero
+    }
+
+    /// True part colour always; selection = strong orange rim + slight lift, hover = soft rim.
+    private func color(for f: Feature) -> SIMD4<Float> {
+        let base = f.color.simd
+        if f.id == selection { return SIMD4(base, 0.5) }
+        if f.id == hovered { return SIMD4(simd_mix(base, SIMD3(repeating: 1), SIMD3(repeating: 0.2)), 0.3) }
+        return SIMD4(base, 0)
     }
 }

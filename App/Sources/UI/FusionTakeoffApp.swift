@@ -29,6 +29,7 @@ struct FusionTakeoffApp: App {
             CommandGroup(replacing: .saveItem) {
                 Button("Salva…") { model.saveWithPanel() }.keyboardShortcut("s")
                 Button("Esporta STL…") { model.exportSTLWithPanel() }.keyboardShortcut("e")
+                Button("Esporta 3MF (con colori)…") { model.export3MFWithPanel() }.keyboardShortcut("e", modifiers: [.command, .shift])
             }
         }
         Settings {

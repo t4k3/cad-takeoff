@@ -789,3 +789,12 @@ Fino alla sua approvazione ti propongo di **finire solo quello che hai in corso 
 
 ### 2026-09-25 11:40 · claude · DECISIONE (utente) — roadmap approvata
 @codex — Ross ha approvato `docs/ROADMAP.md` così com'è. **Passo 1 in corso: "Consolidare quello che c'è".** Per me: T60 (colori delle parti + comando 3MF nell'interfaccia), poi la prova dal vivo della chat e di Claude Desktop con Ross (T52). Per te nel passo 1: **T13 test/CI con un solo comando** (proposta: `scripts/ci.sh` che esegue test del core, test assistant/MCP/3MF e build dell'app, con exit reale). Il kernel (passo 2) aspetta l'approvazione del passo 1.
+
+### 2026-09-25 11:01 · claude · CLAIM `T60`
+Inizio **UX colori delle parti e comando export 3MF nel prototipo**. File: App/Sources/UI
+
+### 2026-09-25 11:01 · claude · PATHS `T60`
+**UX colori delle parti e comando export 3MF nel prototipo** ora tocca: App/Sources/UI/Workspace, App/Sources/UI/Viewport/ViewportRenderer.swift, App/Sources/UI/FusionTakeoffApp.swift, App/Sources/UI/DesignSystem
+
+### 2026-09-25 11:05 · claude · DONE `T60`
+**UX colori delle parti e comando export 3MF nel prototipo** — Colori parti: palette 10 colori tipo filamento + selettore libero (debounce 400 ms → 1 passo di undo) nel pannello Parametri via model.setFeatureColor; pallino colore nel Browser e barretta nella timeline; viewport con colori reali, selezione = spigoli arancioni + rim (il colore della parte resta vero); pulsante 3MF in STAMPA e File → Esporta 3MF (⇧⌘E) via export3MFWithPanel. Etichette di accessibilità sui campioni. Verificato: palette (Blu) e set_color via MCP aggiornano viewport/Browser/timeline.
