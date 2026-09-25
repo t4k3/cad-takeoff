@@ -7,21 +7,45 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */; };
+		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
+		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
+		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
+		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
+		4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */; };
+		5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BB2CC5B625AFE33908AA5 /* StatusBar.swift */; };
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
-		8D938364604B1C4DA77BAEF0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6E97D9F5A17CD4DCF38D9A /* ContentView.swift */; };
+		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
+		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
+		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
+		C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */; };
+		CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */; };
+		D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */; };
 		DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */; };
 		DCFE43EEC46D1E81506AAC2D /* CADCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDA8176070A4C4FA3CF13B40 /* CADCore */; };
-		F350D0F5BB75912B1C156C3D /* ViewportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD8F7F61D6C228E453DB89E /* ViewportView.swift */; };
+		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionTakeoffApp.swift; sourceTree = "<group>"; };
-		4DD8F7F61D6C228E453DB89E /* ViewportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportView.swift; sourceTree = "<group>"; };
+		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
+		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
+		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
 		8A79D033E48D1FC6B0898162 /* CADCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CADCore; path = Packages/CADCore; sourceTree = SOURCE_ROOT; };
+		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
+		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaderSource.swift; sourceTree = "<group>"; };
 		BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FusionTakeoff.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		ED6E97D9F5A17CD4DCF38D9A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		D15DE039BD31C92AE427C66E /* TimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineBar.swift; sourceTree = "<group>"; };
+		D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceState.swift; sourceTree = "<group>"; };
+		DD59C218754E0D11BA7F1DD8 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
+		E8DCACC31C8A1D1083704390 /* Ribbon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ribbon.swift; sourceTree = "<group>"; };
+		F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportRenderer.swift; sourceTree = "<group>"; };
+		F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,7 +63,12 @@
 		0ED90DE497BF835BB64B46EF /* Viewport */ = {
 			isa = PBXGroup;
 			children = (
-				4DD8F7F61D6C228E453DB89E /* ViewportView.swift */,
+				DD59C218754E0D11BA7F1DD8 /* Camera.swift */,
+				943EB272622A8A5AAC6E74FB /* MatrixMath.swift */,
+				32F5B171C498A222AE59BB15 /* MetalViewport.swift */,
+				BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */,
+				107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */,
+				F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */,
 			);
 			path = Viewport;
 			sourceTree = "<group>";
@@ -69,6 +98,14 @@
 			path = Packages;
 			sourceTree = "<group>";
 		};
+		5DB1C90B5FC83D575038CE3E /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				A540789F432133B207D141A0 /* Theme.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
 		61600059F9C8CAB7E834B5C3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -81,6 +118,7 @@
 			isa = PBXGroup;
 			children = (
 				00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */,
+				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
 				0ED90DE497BF835BB64B46EF /* Viewport */,
 				EBF7FA287516A5F3EE980E3C /* Workspace */,
 			);
@@ -116,7 +154,13 @@
 		EBF7FA287516A5F3EE980E3C /* Workspace */ = {
 			isa = PBXGroup;
 			children = (
-				ED6E97D9F5A17CD4DCF38D9A /* ContentView.swift */,
+				F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */,
+				674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */,
+				E8DCACC31C8A1D1083704390 /* Ribbon.swift */,
+				542BB2CC5B625AFE33908AA5 /* StatusBar.swift */,
+				D15DE039BD31C92AE427C66E /* TimelineBar.swift */,
+				D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */,
+				B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */,
 			);
 			path = Workspace;
 			sourceTree = "<group>";
@@ -184,10 +228,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D938364604B1C4DA77BAEF0 /* ContentView.swift in Sources */,
+				0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */,
+				9F5347637A122C50E1BABB0A /* Camera.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
-				F350D0F5BB75912B1C156C3D /* ViewportView.swift in Sources */,
+				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
+				F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */,
+				17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */,
+				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
+				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
+				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,
+				95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */,
+				383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */,
+				CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */,
+				4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */,
+				C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */,
+				173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

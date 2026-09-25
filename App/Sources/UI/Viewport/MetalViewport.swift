@@ -1,0 +1,152 @@
+import CADCore
+import MetalKit
+import SwiftUI
+
+/// SwiftUI wrapper of the Metal viewport. Pure presentation: reads features and
+/// selection, reports clicks/hover through callbacks.
+struct MetalViewport: NSViewRepresentable {
+    var features: [Feature]
+    var selection: Feature.ID?
+    var hovered: Feature.ID?
+    var style: ViewportRenderer.DisplayStyle
+    var camera: CameraController
+    var overlayLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+    var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
+    var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
+    /// Receives the renderer once, so overlays (fit, picking) can query scene data.
+    var onReady: (ViewportRenderer) -> Void = { _ in }
+
+    func makeNSView(context: Context) -> CADMetalView {
+        let view = CADMetalView(frame: .zero, device: MTLCreateSystemDefaultDevice())
+        view.colorPixelFormat = .bgra8Unorm
+        view.depthStencilPixelFormat = .depth32Float
+        view.sampleCount = 4
+        view.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        view.layer?.isOpaque = false
+        view.enableSetNeedsDisplay = true
+        view.isPaused = true
+        view.camera = camera
+        if let renderer = ViewportRenderer(view: view, camera: camera) {
+            view.renderer = renderer
+            view.delegate = renderer
+            onReady(renderer)
+        }
+        return view
+    }
+
+    func updateNSView(_ view: CADMetalView, context: Context) {
+        view.onClick = onClick
+        view.onHover = onHover
+        guard let r = view.renderer else { return }
+        r.update(features: features)
+        r.selection = selection
+        r.hovered = hovered
+        r.style = style
+        r.overlayLines = overlayLines
+        view.redraw()
+    }
+}
+
+/// MTKView with CAD navigation:
+/// drag = orbit · shift/right/middle-drag = pan · wheel or pinch = zoom to cursor
+/// trackpad two-finger scroll = pan (shift = orbit).
+final class CADMetalView: MTKView {
+    var camera: CameraController!
+    var renderer: ViewportRenderer?
+    var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
+    var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
+
+    private var dragStart: CGPoint?
+    private var isDragging = false
+    private var trackingArea: NSTrackingArea?
+
+    override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    func redraw() {
+        isPaused = !camera.isAnimating
+        needsDisplay = true
+    }
+
+    /// Point in view coordinates with origin at the top-left.
+    private func topLeft(_ event: NSEvent) -> CGPoint {
+        let p = convert(event.locationInWindow, from: nil)
+        return CGPoint(x: p.x, y: bounds.height - p.y)
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    // MARK: Mouse
+
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        dragStart = topLeft(event)
+        isDragging = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let start = dragStart else { return }
+        let p = topLeft(event)
+        if !isDragging, hypot(p.x - start.x, p.y - start.y) < 3 { return }
+        isDragging = true
+        if event.modifierFlags.contains(.shift) {
+            camera.pan(dx: Float(event.deltaX), dy: Float(event.deltaY), viewHeight: Float(bounds.height))
+        } else {
+            camera.orbit(dx: Float(event.deltaX), dy: Float(event.deltaY))
+        }
+        redraw()
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        defer { dragStart = nil; isDragging = false }
+        guard !isDragging else { return }
+        let p = topLeft(event)
+        onClick(p, camera.ray(at: p, in: bounds.size), event.modifierFlags)
+    }
+
+    override func rightMouseDragged(with event: NSEvent) { panDrag(event) }
+    override func otherMouseDragged(with event: NSEvent) {
+        if event.modifierFlags.contains(.shift) {
+            camera.orbit(dx: Float(event.deltaX), dy: Float(event.deltaY)); redraw()
+        } else { panDrag(event) }
+    }
+
+    private func panDrag(_ event: NSEvent) {
+        camera.pan(dx: Float(event.deltaX), dy: Float(event.deltaY), viewHeight: Float(bounds.height))
+        redraw()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        let p = topLeft(event)
+        onHover(p, camera.ray(at: p, in: bounds.size))
+    }
+
+    override func mouseExited(with event: NSEvent) { onHover(nil, nil) }
+
+    override func scrollWheel(with event: NSEvent) {
+        let p = topLeft(event)
+        if event.hasPreciseScrollingDeltas {
+            // Trackpad: two-finger scroll pans; with shift it orbits.
+            if event.modifierFlags.contains(.shift) {
+                camera.orbit(dx: Float(-event.scrollingDeltaX), dy: Float(-event.scrollingDeltaY))
+            } else {
+                camera.pan(dx: Float(event.scrollingDeltaX), dy: Float(event.scrollingDeltaY), viewHeight: Float(bounds.height))
+            }
+        } else {
+            camera.zoom(factor: pow(0.9, Float(event.scrollingDeltaY)), towards: p, in: bounds.size)
+        }
+        redraw()
+    }
+
+    override func magnify(with event: NSEvent) {
+        camera.zoom(factor: Float(1 / (1 + event.magnification)), towards: topLeft(event), in: bounds.size)
+        redraw()
+    }
+}

@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 09:45. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 09:48. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -20,7 +20,7 @@ flowchart LR
     T04["T04 · Undo/Redo sulla timeline<br/><i>codex</i>"]:::todo
     T05["T05 · Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY)<br/><i>claude</i>"]:::todo
     T06["T06 · Estrusione da schizzo (profilo -> feature)<br/><i>codex</i>"]:::todo
-    T07["T07 · Viewport Metal (sostituisce SceneKit deprecato)<br/><i>claude</i>"]:::todo
+    T07["T07 · Viewport Metal (sostituisce SceneKit deprecato)<br/><i>claude</i>"]:::done
   end
   subgraph P3["3 · Modellazione"]
     T08["T08 · Booleane CSG (unione/sottrazione) su mesh<br/><i>codex</i>"]:::todo
@@ -89,8 +89,9 @@ flowchart LR
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T04** Undo/Redo sulla timeline — suggerito: codex
 - **T05** Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) — suggerito: claude
-- **T07** Viewport Metal (sostituisce SceneKit deprecato) — suggerito: claude
 - **T13** Script CI locale (test core + build app) — suggerito: codex
+- **T18** ViewCube + navigazione camera (orbita/pan/zoom, viste standard) — suggerito: claude
+- **T19** Selezione ed evidenziazione nel viewport (picking) — suggerito: claude
 
 ## Tabella
 
@@ -103,7 +104,7 @@ flowchart LR
 | T04 | Undo/Redo sulla timeline | todo | codex | T16 | App/Sources/Model |
 | T05 | Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) | todo | claude | T16 | App/Sources/UI/Sketch |
 | T06 | Estrusione da schizzo (profilo -> feature) | todo | codex | T05, T15, T03 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift |
-| T07 | Viewport Metal (sostituisce SceneKit deprecato) | todo | claude | T16 | App/Sources/UI/Viewport |
+| T07 | Viewport Metal (sostituisce SceneKit deprecato) | done | claude | T16 | App/Sources/UI/Viewport<br>App/Sources/UI/Workspace/WorkspaceView.swift |
 | T08 | Booleane CSG (unione/sottrazione) su mesh | todo | codex | T03 | Packages/CADCore/Sources/CADCore/CSG.swift<br>Packages/CADCore/Tests/CADCoreTests/CSGTests.swift |
 | T09 | Rivoluzione (revolve) di un profilo | todo | codex | T03 | Packages/CADCore/Sources/CADCore/Revolve.swift<br>Packages/CADCore/Tests/CADCoreTests/RevolveTests.swift |
 | T10 | Export 3MF (zip + model XML in mm) | todo | codex | T03 | Packages/CADCore/Sources/CADCore/ThreeMF.swift<br>Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift |

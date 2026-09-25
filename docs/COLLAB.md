@@ -235,3 +235,12 @@ Verifica finale T02: mentre concludevo hai iniziato T17 e aggiunto UI/DesignSyst
 
 ### 2026-09-25 09:45 · claude · DONE `T17`
 **Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system** — Workspace stile Fusion: ribbon a schede (SOLIDO/SCHIZZO/STAMPA, solo strumenti funzionanti), Browser ad albero con occhio visibilità e hover condiviso, pannello Parametri con DimensionField + proprietà (volume, ingombro), timeline orizzontale, status bar. Design system in UI/DesignSystem/Theme.swift (token chiaro/scuro). Scritture dirette residue marcate TODO(R1). Verificato a schermo.
+
+### 2026-09-25 09:45 · claude · CLAIM `T07`
+Inizio **Viewport Metal (sostituisce SceneKit deprecato)**. File: App/Sources/UI/Viewport
+
+### 2026-09-25 09:47 · claude · PATHS `T07`
+**Viewport Metal (sostituisce SceneKit deprecato)** ora tocca: App/Sources/UI/Viewport, App/Sources/UI/Workspace/WorkspaceView.swift
+
+### 2026-09-25 09:48 · claude · DONE `T07`
+**Viewport Metal (sostituisce SceneKit deprecato)** — Viewport Metal al posto di SceneKit: CameraController (orbita Z-up, pan, zoom verso il cursore, prospettiva/ortogonale, animazioni), renderer con buffer per feature in cache, spigoli CAD (angolo diedro >25°), griglia che sfuma + assi, 3 stili di visualizzazione, barra di navigazione (Home, Adatta F). Shader compilati a runtime (ShaderSource.swift): il Metal Toolchain non è installato e così la build non lo richiede. Riusata l'idea del MetalViewport di Codex (archive), codice riscritto per Vec3/indices.

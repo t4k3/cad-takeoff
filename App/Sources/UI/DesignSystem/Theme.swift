@@ -162,7 +162,7 @@ extension View {
     /// Floating translucent chip used for viewport overlays (nav bar, hints, ViewCube frame).
     func overlayChip() -> some View {
         padding(4)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .background(Theme.Palette.panelRaised.opacity(0.94), in: RoundedRectangle(cornerRadius: 8))
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.Palette.separator.opacity(0.7)))
             .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
     }

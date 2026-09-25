@@ -6,6 +6,7 @@ import SwiftUI
 struct WorkspaceView: View {
     @Environment(DesignModel.self) private var model
     @State private var workspace = WorkspaceState()
+    @State private var viewport = ViewportState()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,7 +17,7 @@ struct WorkspaceView: View {
                     BrowserPanel().frame(width: Theme.Metrics.browserWidth)
                     Divider()
                 }
-                ViewportView(document: model.document, selection: model.selection)
+                ViewportContainer(viewport: viewport)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 if workspace.showInspector {
                     Divider()

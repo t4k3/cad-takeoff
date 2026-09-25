@@ -127,14 +127,20 @@
       "id": "T07",
       "title": "Viewport Metal (sostituisce SceneKit deprecato)",
       "phase": "2 · App",
-      "status": "todo",
-      "owner": null,
+      "status": "done",
+      "owner": "claude",
       "suggested": "claude",
       "deps": [
         "T16"
       ],
       "paths": [
-        "App/Sources/UI/Viewport"
+        "App/Sources/UI/Viewport",
+        "App/Sources/UI/Workspace/WorkspaceView.swift"
+      ],
+      "started": "2026-09-25 09:45",
+      "finished": "2026-09-25 09:48",
+      "notes": [
+        "2026-09-25 09:48 claude: Viewport Metal al posto di SceneKit: CameraController (orbita Z-up, pan, zoom verso il cursore, prospettiva/ortogonale, animazioni), renderer con buffer per feature in cache, spigoli CAD (angolo diedro >25°), griglia che sfuma + assi, 3 stili di visualizzazione, barra di navigazione (Home, Adatta F). Shader compilati a runtime (ShaderSource.swift): il Metal Toolchain non è installato e così la build non lo richiede. Riusata l'idea del MetalViewport di Codex (archive), codice riscritto per Vec3/indices."
       ]
     },
     {
