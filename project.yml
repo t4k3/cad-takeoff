@@ -1,0 +1,45 @@
+# Source of truth for the Xcode project. Regenerate with: xcodegen generate
+# Do NOT hand-edit FusionTakeoff.xcodeproj — edit this file instead.
+name: FusionTakeoff
+options:
+  bundleIdPrefix: com.takeoff
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  CADCore:
+    path: Packages/CADCore
+targets:
+  FusionTakeoff:
+    type: application
+    platform: macOS
+    sources:
+      - App/Sources
+      - App/Resources
+    dependencies:
+      - package: CADCore
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Fusion Takeoff
+        LSApplicationCategoryType: public.app-category.graphics-design
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.takeoff.fusiontakeoff.design
+            UTTypeDescription: Fusion Takeoff Design
+            UTTypeConformsTo: [public.json]
+            UTTypeTagSpecification:
+              public.filename-extension: [ftk]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: App/FusionTakeoff.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+    scheme:
+      testTargets: []

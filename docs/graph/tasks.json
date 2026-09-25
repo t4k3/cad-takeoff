@@ -1,0 +1,238 @@
+{
+  "project": "Fusion Takeoff — CAD base per macOS con export per stampa 3D",
+  "tasks": [
+    {
+      "id": "T00",
+      "title": "Riconciliare scaffold doppio (core Vec3/indices, app SceneKit)",
+      "phase": "0 · Coordinamento",
+      "status": "done",
+      "owner": "claude",
+      "suggested": "claude",
+      "deps": [],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources",
+        "project.yml"
+      ],
+      "finished": "2026-09-25 09:31",
+      "notes": [
+        "2026-09-25 09:31 claude: Core riconciliato su Vec3/indices (Mesh.swift e test Claude ripristinati; copia Codex in archive/codex-seed). swift test 6/6 verde, scripts/build.sh BUILD SUCCEEDED, app avviata. @codex: T00 pronto, puoi chiudere T01 e reclamare T02/T03/T07. Nota: SceneKit resta solo fino a T07."
+      ]
+    },
+    {
+      "id": "T01",
+      "title": "Archiviare file Codex pre-coordinamento in archive/codex-seed",
+      "phase": "0 · Coordinamento",
+      "status": "in_progress",
+      "owner": "codex",
+      "suggested": "codex",
+      "deps": [],
+      "paths": [
+        "archive/codex-seed",
+        "App/TakeoffCADApp.swift",
+        "App/CADDocument.swift",
+        "App/EditorView.swift",
+        "App/SketchView.swift",
+        "App/MetalViewport.swift",
+        "App/CADShaders.metal"
+      ],
+      "started": "2026-09-25 09:30"
+    },
+    {
+      "id": "T02",
+      "title": "Mappa architetturale + report affidabilità",
+      "phase": "0 · Coordinamento",
+      "status": "todo",
+      "owner": null,
+      "suggested": "codex",
+      "deps": [
+        "T00"
+      ],
+      "paths": [
+        "docs/architecture",
+        "scripts/architecture_graph.py"
+      ]
+    },
+    {
+      "id": "T03",
+      "title": "Validazione input + CADError nel core (porta test Codex)",
+      "phase": "1 · Core",
+      "status": "todo",
+      "owner": null,
+      "suggested": "codex",
+      "deps": [
+        "T00",
+        "T01"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Validation.swift",
+        "Packages/CADCore/Tests/CADCoreTests/ValidationTests.swift"
+      ]
+    },
+    {
+      "id": "T04",
+      "title": "Undo/Redo sulla timeline",
+      "phase": "2 · App",
+      "status": "todo",
+      "owner": null,
+      "suggested": "claude",
+      "deps": [
+        "T00"
+      ],
+      "paths": [
+        "App/Sources/DesignModel.swift"
+      ]
+    },
+    {
+      "id": "T05",
+      "title": "Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY)",
+      "phase": "2 · App",
+      "status": "todo",
+      "owner": null,
+      "suggested": "claude",
+      "deps": [
+        "T00"
+      ],
+      "paths": [
+        "App/Sources/Sketch"
+      ]
+    },
+    {
+      "id": "T06",
+      "title": "Estrusione da schizzo (profilo -> feature)",
+      "phase": "2 · App",
+      "status": "todo",
+      "owner": null,
+      "suggested": "claude",
+      "deps": [
+        "T05",
+        "T03"
+      ],
+      "paths": [
+        "App/Sources/Sketch",
+        "App/Sources/ContentView.swift"
+      ]
+    },
+    {
+      "id": "T07",
+      "title": "Viewport Metal (sostituisce SceneKit deprecato)",
+      "phase": "2 · App",
+      "status": "todo",
+      "owner": null,
+      "suggested": "codex",
+      "deps": [
+        "T00",
+        "T01"
+      ],
+      "paths": [
+        "App/Sources/Viewport"
+      ]
+    },
+    {
+      "id": "T08",
+      "title": "Booleane CSG (unione/sottrazione) su mesh",
+      "phase": "3 · Modellazione",
+      "status": "todo",
+      "owner": null,
+      "suggested": "claude",
+      "deps": [
+        "T03"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/CSG.swift",
+        "Packages/CADCore/Tests/CADCoreTests/CSGTests.swift"
+      ]
+    },
+    {
+      "id": "T09",
+      "title": "Rivoluzione (revolve) di un profilo",
+      "phase": "3 · Modellazione",
+      "status": "todo",
+      "owner": null,
+      "suggested": "codex",
+      "deps": [
+        "T03"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Revolve.swift",
+        "Packages/CADCore/Tests/CADCoreTests/RevolveTests.swift"
+      ]
+    },
+    {
+      "id": "T10",
+      "title": "Export 3MF (zip + model XML in mm)",
+      "phase": "4 · Stampa 3D",
+      "status": "todo",
+      "owner": null,
+      "suggested": "codex",
+      "deps": [
+        "T03"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/ThreeMF.swift",
+        "Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift"
+      ]
+    },
+    {
+      "id": "T11",
+      "title": "Controllo stampabilità (chiusura, sbalzi, volume piatto)",
+      "phase": "4 · Stampa 3D",
+      "status": "todo",
+      "owner": null,
+      "suggested": "claude",
+      "deps": [
+        "T08"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Printability.swift"
+      ]
+    },
+    {
+      "id": "T12",
+      "title": "Piatto di stampa: appoggia, centra, dimensioni stampante",
+      "phase": "4 · Stampa 3D",
+      "status": "todo",
+      "owner": null,
+      "suggested": "any",
+      "deps": [
+        "T07"
+      ],
+      "paths": [
+        "App/Sources/Viewport"
+      ]
+    },
+    {
+      "id": "T13",
+      "title": "Script CI locale (test core + build app)",
+      "phase": "5 · Qualità",
+      "status": "todo",
+      "owner": null,
+      "suggested": "any",
+      "deps": [
+        "T00"
+      ],
+      "paths": [
+        "scripts/ci.sh"
+      ]
+    },
+    {
+      "id": "T14",
+      "title": "Release 0.1 (icona, firma, .dmg)",
+      "phase": "5 · Qualità",
+      "status": "todo",
+      "owner": null,
+      "suggested": "user",
+      "deps": [
+        "T06",
+        "T10",
+        "T11",
+        "T12",
+        "T13"
+      ],
+      "paths": [
+        "App/Resources",
+        "project.yml"
+      ]
+    }
+  ]
+}
