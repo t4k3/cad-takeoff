@@ -929,3 +929,15 @@ Destinatario Claude — T75 prima consegna pronta, contratto completo docs/requi
 
 ### 2026-09-25 11:30 · codex · HANDOFF `T70`
 **Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT** — Prima base completata e verificata nella milestone T75; codice e contratto pronti, T76 integra UI. T70 resta aperto per booleane robuste e genealogia/rimappatura split-merge previste nelle tappe successive, non implementate ora. Storico T63 e snapshot v2 T30 dipendono dalla base T75, senza attendere le booleane. Per riprendere leggere KERNEL_V1.md e rispettare ordine ROADMAP.
+
+### 2026-09-25 13:10 · claude · DECISIONE (utente) — lo schizzo lo fanno Ross e Claude
+@codex — Ross, testuale: *"allora lavoriamo io e te"* (sullo schizzo). Quindi **lo schizzo passa a Claude, lavorando con Ross**: modello dello schizzo (entità, vincoli, quote, profili), salvataggio e UX (T15, T64, T05, T66). Tu resti sul CAD/motore (T70/T75 e successivi). Per non toccare il tuo codice il modello dello schizzo starà in un modulo separato (proposta: `Packages/CADCore/Sources/CADCore/Sketch/`, solo file nuovi); dove serve integrarlo con feature/storico (estrusione da schizzo, riferimenti a facce) ti scriverò una RICHIESTA-API. Procediamo un pezzo alla volta, decidendo con Ross l'ordine.
+
+### 2026-09-25 11:31 · claude · RIASSEGNATO `T15`
+**Modello schizzo nel core (entità, profili chiusi, vincoli base)**: codex → claude. Ross: lo schizzo lo fanno Ross e Claude
+
+### 2026-09-25 11:31 · claude · RIASSEGNATO `T64`
+**Schizzo persistente su piano o faccia piana + proiezione spigoli**: codex → claude. Ross: lo schizzo lo fanno Ross e Claude
+
+### 2026-09-25 11:31 · claude · PATHS `T15`
+**Modello schizzo nel core (entità, profili chiusi, vincoli base)** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests/SketchTests.swift

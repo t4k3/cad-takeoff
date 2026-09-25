@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:30. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:31. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -14,7 +14,7 @@ flowchart LR
   end
   subgraph P1["1 · Core"]
     T03["T03 · Validazione input + CADError nel core (porta test Codex)<br/><i>codex</i>"]:::todo
-    T15["T15 · Modello schizzo nel core (entità, profili chiusi, vincoli base)<br/><i>codex</i>"]:::todo
+    T15["T15 · Modello schizzo nel core (entità, profili chiusi, vincoli base)<br/><i>claude</i>"]:::todo
   end
   subgraph P2["2 · App"]
     T04["T04 · Undo/Redo sulla timeline<br/><i>codex</i>"]:::todo
@@ -106,7 +106,7 @@ flowchart LR
   subgraph P16["M1 · Ciclo Fusion"]
     T62["T62 · Kernel B-rep integrato (OCCT): build, link, firma in sandbox<br/><i>codex</i>"]:::blocked
     T63["T63 · Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza<br/><i>codex</i>"]:::todo
-    T64["T64 · Schizzo persistente su piano o faccia piana + proiezione spigoli<br/><i>codex</i>"]:::todo
+    T64["T64 · Schizzo persistente su piano o faccia piana + proiezione spigoli<br/><i>claude</i>"]:::todo
     T65["T65 · Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione<br/><i>codex</i>"]:::todo
     T66["T66 · UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0<br/><i>claude</i>"]:::todo
     T67["T67 · UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore<br/><i>claude</i>"]:::todo
@@ -314,7 +314,7 @@ flowchart LR
 | T12 | Piatto di stampa: appoggia, centra, dimensioni stampante | todo | codex | T03, T27, T04 | Packages/CADCore/Sources/CADCore/Placement.swift<br>Packages/CADCore/Tests/CADCoreTests/PlacementTests.swift |
 | T13 | Script CI locale (test core + build app) | done | codex | T00 | scripts/ci.sh |
 | T14 | Release 0.1 (icona, firma, .dmg) | todo | user | T06, T20, T21, T22, T23, T13, T38, T46, T55 | App/Resources<br>project.yml |
-| T15 | Modello schizzo nel core (entità, profili chiusi, vincoli base) | todo | codex | T03, T24, T27 | Packages/CADCore/Sources/CADCore/SketchModel.swift<br>Packages/CADCore/Tests/CADCoreTests/SketchModelTests.swift |
+| T15 | Modello schizzo nel core (entità, profili chiusi, vincoli base) | todo | claude | T03, T24, T27 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests/SketchTests.swift |
 | T16 | Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh | done | claude | T00 | App/Sources<br>scripts/build.sh<br>project.yml |
 | T17 | Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system | done | claude | T16 | App/Sources/UI/Workspace<br>App/Sources/UI/DesignSystem<br>App/Sources/UI/FusionTakeoffApp.swift |
 | T18 | ViewCube + navigazione camera (orbita/pan/zoom, viste standard) | done | claude | T07 | App/Sources/UI/Viewport |
@@ -363,7 +363,7 @@ flowchart LR
 | T61 | Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude | done | claude | T48, T25, T07 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace |
 | T62 | Kernel B-rep integrato (OCCT): build, link, firma in sandbox | blocked | codex | T26 | Packages/Kernel |
 | T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | codex | T75 | Packages/CADCore<br>App/Sources/Model |
-| T64 | Schizzo persistente su piano o faccia piana + proiezione spigoli | todo | codex | T63 | Packages/CADCore/Sources/CADCore/Sketch |
+| T64 | Schizzo persistente su piano o faccia piana + proiezione spigoli | todo | claude | T63 | Packages/CADCore/Sources/CADCore/Sketch |
 | T65 | Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione | todo | codex | T63, T64 | Packages/CADCore/Sources/CADCore/Features |
 | T66 | UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0 | todo | claude | T64, T45 | App/Sources/UI/Sketch |
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |

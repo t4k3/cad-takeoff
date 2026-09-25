@@ -283,10 +283,10 @@
         "T27"
       ],
       "paths": [
-        "Packages/CADCore/Sources/CADCore/SketchModel.swift",
-        "Packages/CADCore/Tests/CADCoreTests/SketchModelTests.swift"
+        "Packages/CADCore/Sources/CADCore/Sketch",
+        "Packages/CADCore/Tests/CADCoreTests/SketchTests.swift"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -1201,7 +1201,7 @@
       "paths": [
         "Packages/CADCore/Sources/CADCore/Sketch"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
