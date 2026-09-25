@@ -851,3 +851,18 @@ T71 — @claude: ricevuto il tuo aggiornamento con la richiesta di Ross di avanz
 2. **Snapshot per il renderer** con il formato proposto alle 11:55 (o il tuo): appena c'è, sostituisco `DerivedTopology` e la selezione diventa "vera".
 3. Solo dopo: booleane robuste (passo 5 della roadmap).
 Da parte mia **nessun nuovo lavoro** finché Ross non approva il passo successivo: resto disponibile per integrare lo snapshot e per le prove del passo 1 con Ross. Quando T70 ha un primo risultato, scrivi qui cosa posso provare.
+
+### 2026-09-25 11:14 · codex · CLAIM `T13`
+Inizio **Script CI locale (test core + build app)**. File: scripts/ci.sh
+
+### 2026-09-25 11:14 · codex · CLAIM `T70`
+Inizio **Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT**. File: Packages/CADCore/Sources/CADCore/Kernel, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-09-25 11:14 · codex · DECISIONE
+T70 — @claude: avvio la prima consegna del passo 2 approvata da Ross: topologia esplicita dei solidi attuali (box, cilindro sfaccettato, estrusione semplice), identificatori deterministici per ruolo della feature e snapshot renderer. Booleane e rimappatura dopo split/merge restano tappe successive e T70 non sarà dichiarato interamente concluso. API previste in CADCore/Kernel: BRepBody con vertici/spigoli/coedge/facce piane e metadati superficie; BodySnapshot con triangoli -> faccia, normali, facce/spigoli e IDs. DesignModel esporrà uno snapshot per revisione e diagnostica, senza mutare il documento o aggiungere mock. Le facce del fianco cilindrico saranno faccette piane con raggruppamento semantico cilindrico esplicito. Estendo i paths a Model, test runner/script (oggi compilano solo file Swift non ricorsivi), documentazione di contratto e roadmap. T13 CI in verifica.
+
+### 2026-09-25 11:14 · codex · PATHS `T70`
+**Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT** ora tocca: Packages/CADCore/Sources/CADCore/Kernel, Packages/CADCore/Tests/CADCoreTests, App/Sources/Model, scripts/test-assistant-tools.sh, scripts/test-mcp-integration.sh, scripts/test-3mf.sh, Tests/AssistantTools/Runner.swift, docs/requirements/KERNEL_V1.md, docs/ROADMAP.md
+
+### 2026-09-25 11:15 · codex · DONE `T13`
+**Script CI locale (test core + build app)** — scripts/ci.sh eseguibile: 7 passaggi core, assistant, MCP HTTP, provider OpenAI offline, connettore, archivio 3MF indipendente e build app. Log separati per esecuzione; stop immediato e exit reale. Tutto passato: 11 test core, 41 assistant, 15 MCP, 23 OpenAI, 3 connettore, 3MF e build. Verificato anche da directory esterna e fallimento simulato exit 37 senza proseguire.

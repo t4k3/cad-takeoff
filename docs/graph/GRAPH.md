@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:10. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:15. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -35,7 +35,7 @@ flowchart LR
     T23["T23 · Dialog di esportazione STL/3MF (formato, risoluzione, anteprima)<br/><i>claude</i>"]:::todo
   end
   subgraph P5["5 · Qualità"]
-    T13["T13 · Script CI locale (test core + build app)<br/><i>codex</i>"]:::todo
+    T13["T13 · Script CI locale (test core + build app)<br/><i>codex</i>"]:::done
     T14["T14 · Release 0.1 (icona, firma, .dmg)<br/><i>user</i>"]:::todo
   end
   subgraph P6["2 · UX"]
@@ -109,7 +109,7 @@ flowchart LR
     T66["T66 · UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0<br/><i>claude</i>"]:::todo
     T67["T67 · UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore<br/><i>claude</i>"]:::todo
     T68["T68 · UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione<br/><i>claude</i>"]:::todo
-    T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>codex</i>"]:::todo
+    T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>codex</i>"]:::in_progress
     T72["T72 · UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)<br/><i>claude</i>"]:::done
   end
   subgraph P17["Coordinamento"]
@@ -281,9 +281,7 @@ flowchart LR
 ## Pronti da iniziare
 
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
-- **T13** Script CI locale (test core + build app) — suggerito: codex
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: codex
-- **T70** Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT — suggerito: codex
 
 ## Tabella
 
@@ -302,7 +300,7 @@ flowchart LR
 | T10 | Export 3MF (zip + model XML in mm) | todo | codex | T03, T27, T59 | Packages/CADCore/Sources/CADCore/ThreeMF.swift<br>Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift |
 | T11 | Controllo stampabilità (chiusura, sbalzi, volume piatto) | todo | codex | T31 | Packages/CADCore/Sources/CADCore/Printability.swift |
 | T12 | Piatto di stampa: appoggia, centra, dimensioni stampante | todo | codex | T03, T27, T04 | Packages/CADCore/Sources/CADCore/Placement.swift<br>Packages/CADCore/Tests/CADCoreTests/PlacementTests.swift |
-| T13 | Script CI locale (test core + build app) | todo | codex | T00 | scripts/ci.sh |
+| T13 | Script CI locale (test core + build app) | done | codex | T00 | scripts/ci.sh |
 | T14 | Release 0.1 (icona, firma, .dmg) | todo | user | T06, T20, T21, T22, T23, T13, T38, T46, T55 | App/Resources<br>project.yml |
 | T15 | Modello schizzo nel core (entità, profili chiusi, vincoli base) | todo | codex | T03, T24, T27 | Packages/CADCore/Sources/CADCore/SketchModel.swift<br>Packages/CADCore/Tests/CADCoreTests/SketchModelTests.swift |
 | T16 | Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh | done | claude | T00 | App/Sources<br>scripts/build.sh<br>project.yml |
@@ -359,6 +357,6 @@ flowchart LR
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
 | T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | todo | codex | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |
-| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | todo | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests |
+| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | in_progress | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md |
 | T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | done | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
 | T72 | UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) | done | claude | T19 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |

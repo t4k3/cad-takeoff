@@ -234,14 +234,19 @@
       "id": "T13",
       "title": "Script CI locale (test core + build app)",
       "phase": "5 · Qualità",
-      "status": "todo",
-      "owner": null,
+      "status": "done",
+      "owner": "codex",
       "suggested": "codex",
       "deps": [
         "T00"
       ],
       "paths": [
         "scripts/ci.sh"
+      ],
+      "started": "2026-09-25 11:14",
+      "finished": "2026-09-25 11:15",
+      "notes": [
+        "2026-09-25 11:15 codex: scripts/ci.sh eseguibile: 7 passaggi core, assistant, MCP HTTP, provider OpenAI offline, connettore, archivio 3MF indipendente e build app. Log separati per esecuzione; stop immediato e exit reale. Tutto passato: 11 test core, 41 assistant, 15 MCP, 23 OpenAI, 3 connettore, 3MF e build. Verificato anche da directory esterna e fallimento simulato exit 37 senza proseguire."
       ]
     },
     {
@@ -1288,16 +1293,24 @@
       "id": "T70",
       "title": "Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT",
       "phase": "M1 · Ciclo Fusion",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T24"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/Kernel",
-        "Packages/CADCore/Tests/CADCoreTests"
+        "Packages/CADCore/Tests/CADCoreTests",
+        "App/Sources/Model",
+        "scripts/test-assistant-tools.sh",
+        "scripts/test-mcp-integration.sh",
+        "scripts/test-3mf.sh",
+        "Tests/AssistantTools/Runner.swift",
+        "docs/requirements/KERNEL_V1.md",
+        "docs/ROADMAP.md"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": "codex",
+      "started": "2026-09-25 11:14"
     },
     {
       "id": "T71",
