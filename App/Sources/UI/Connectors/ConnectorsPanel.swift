@@ -74,8 +74,20 @@ struct ConnectorsPanel: View {
                         }
                     }
                 }
-                GroupBox("Claude Desktop e ChatGPT") {
-                    Text("Claude Desktop: bridge `ftk-mcp` (in arrivo, T50). ChatGPT: connettore remoto a cura di Codex (T51).")
+                GroupBox("Claude Desktop") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("1. Nel Terminale, dalla cartella del progetto: `scripts/install-claude-connector.sh`\n2. Aggiungi a claude_desktop_config.json la voce qui sotto e riavvia Claude Desktop. Il bridge apre l'app da solo se è chiusa.")
+                            .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        let home = FileManager.default.homeDirectoryForCurrentUser.path
+                            .replacingOccurrences(of: "/Library/Containers/com.takeoff.fusiontakeoff/Data", with: "")
+                        let snippet = "\"fusion-takeoff\": { \"command\": \"\(home)/.local/bin/ftk-mcp\" }"
+                        Text(snippet).font(.system(size: 10.5, design: .monospaced)).textSelection(.enabled)
+                        HStack { Spacer(); copyButton("Copia voce", snippet) }
+                    }
+                }
+                GroupBox("ChatGPT") {
+                    Text("Connettore a cura di Codex (T51).")
                         .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

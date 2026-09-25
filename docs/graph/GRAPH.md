@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 10:02. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 10:09. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -81,11 +81,11 @@ flowchart LR
   end
   subgraph P13["6 · Assistente e MCP"]
     T47["T47 · Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete<br/><i>claude</i>"]:::done
-    T48["T48 · Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)<br/><i>codex</i>"]:::todo
+    T48["T48 · Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)<br/><i>codex</i>"]:::in_progress
     T49["T49 · MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI<br/><i>claude</i>"]:::done
-    T50["T50 · Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida<br/><i>claude</i>"]:::todo
+    T50["T50 · Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida<br/><i>claude</i>"]:::done
     T51["T51 · Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida<br/><i>codex</i>"]:::todo
-    T52["T52 · Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude<br/><i>claude</i>"]:::todo
+    T52["T52 · Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude<br/><i>claude</i>"]:::in_progress
     T53["T53 · Provider OpenAI per la chat in-app<br/><i>codex</i>"]:::todo
     T54["T54 · Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente<br/><i>codex</i>"]:::todo
     T55["T55 · Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app<br/><i>codex</i>"]:::todo
@@ -228,10 +228,7 @@ flowchart LR
 
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T13** Script CI locale (test core + build app) — suggerito: codex
-- **T48** Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata) — suggerito: codex
-- **T50** Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida — suggerito: claude
 - **T51** Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida — suggerito: codex
-- **T52** Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude — suggerito: claude
 
 ## Tabella
 
@@ -285,11 +282,11 @@ flowchart LR
 | T46 | Verifica copertura completa lamiera e integrazione storico-parti-assiemi | todo | codex | T33, T35, T37, T39, T41, T43, T44, T45 | docs/requirements<br>Packages/CADCore/Tests<br>App/Tests |
 | T38 | Prove end-to-end: salvataggio storico, assieme, lamiera e round-trip export | todo | codex | T10, T13, T29, T33, T37, T46 | Packages/CADCore/Tests<br>App/Tests<br>docs/requirements/ACCEPTANCE_RESULTS.md |
 | T47 | Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete | done | claude | — | App/Sources/Integration/ToolBridge.swift<br>App/FusionTakeoff.entitlements |
-| T48 | Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata) | todo | codex | T47 | App/Sources/Model/Tools |
+| T48 | Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata) | in_progress | codex | T47 | App/Sources/Model/Tools<br>App/Sources/Model/DesignModel.swift<br>Tests/AssistantTools<br>scripts/test-assistant-tools.sh |
 | T49 | MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI | done | claude | T47 | App/Sources/Integration/MCP<br>App/Sources/UI/Connectors<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Workspace/StatusBar.swift |
-| T50 | Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida | todo | claude | T49 | Tools/ftk-mcp<br>docs/connectors/CLAUDE.md<br>project.yml |
+| T50 | Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida | done | claude | T49 | Tools/ftk-mcp<br>docs/connectors/CLAUDE.md<br>project.yml<br>scripts/install-claude-connector.sh<br>App/Sources/UI/Connectors |
 | T51 | Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida | todo | codex | T49 | App/Sources/Integration/ChatGPT<br>docs/connectors/CHATGPT.md |
-| T52 | Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude | todo | claude | T47, T25 | App/Sources/UI/Assistant<br>App/Sources/Integration/Assistant |
+| T52 | Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude | in_progress | claude | T47, T25 | App/Sources/UI/Assistant<br>App/Sources/Integration/Assistant<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Previews |
 | T53 | Provider OpenAI per la chat in-app | todo | codex | T52 | App/Sources/Integration/Assistant/OpenAIProvider.swift |
 | T54 | Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente | todo | codex | T48, T28 | App/Sources/Model/Tools |
 | T55 | Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app | todo | codex | T50, T51, T52, T53, T48 | docs/connectors/E2E.md |

@@ -846,15 +846,19 @@
       "id": "T48",
       "title": "Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)",
       "phase": "6 · Assistente e MCP",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T47"
       ],
       "paths": [
-        "App/Sources/Model/Tools"
+        "App/Sources/Model/Tools",
+        "App/Sources/Model/DesignModel.swift",
+        "Tests/AssistantTools",
+        "scripts/test-assistant-tools.sh"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": "codex",
+      "started": "2026-09-25 10:03"
     },
     {
       "id": "T49",
@@ -882,17 +886,24 @@
       "id": "T50",
       "title": "Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida",
       "phase": "6 · Assistente e MCP",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T49"
       ],
       "paths": [
         "Tools/ftk-mcp",
         "docs/connectors/CLAUDE.md",
-        "project.yml"
+        "project.yml",
+        "scripts/install-claude-connector.sh",
+        "App/Sources/UI/Connectors"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 10:07",
+      "finished": "2026-09-25 10:09",
+      "notes": [
+        "2026-09-25 10:09 claude: Bridge stdio→HTTP Tools/ftk-mcp (legge endpoint+token dal file di discovery, avvia l'app se chiusa, rilegge il token su 401, errori JSON-RPC leggibili), scripts/install-claude-connector.sh (non tocca la config di Claude salvo --write-desktop-config, con backup), guida docs/connectors/CLAUDE.md, istruzioni nel pannello Connettori. Verificato: initialize/tools-list/ping via stdio; avvio automatico app in 0,7 s. Prova dentro Claude Desktop reale: da fare con Ross (serve modificare la sua config)."
+      ]
     },
     {
       "id": "T51",
@@ -913,17 +924,21 @@
       "id": "T52",
       "title": "Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude",
       "phase": "6 · Assistente e MCP",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T47",
         "T25"
       ],
       "paths": [
         "App/Sources/UI/Assistant",
-        "App/Sources/Integration/Assistant"
+        "App/Sources/Integration/Assistant",
+        "App/Sources/UI/Workspace",
+        "App/Sources/UI/FusionTakeoffApp.swift",
+        "App/Sources/UI/Previews"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 10:03"
     },
     {
       "id": "T53",
