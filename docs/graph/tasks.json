@@ -510,7 +510,7 @@
       "phase": "7 · Fondazioni CAD",
       "status": "todo",
       "deps": [
-        "T69",
+        "T70",
         "T27"
       ],
       "paths": [
@@ -557,7 +557,7 @@
       "phase": "7 · Fondazioni CAD",
       "status": "todo",
       "deps": [
-        "T69",
+        "T70",
         "T27",
         "T15",
         "T30"
@@ -1168,7 +1168,7 @@
       "phase": "M1 · Ciclo Fusion",
       "status": "todo",
       "deps": [
-        "T69"
+        "T70"
       ],
       "paths": [
         "Packages/CADCore",
@@ -1272,6 +1272,21 @@
       "suggested": "codex",
       "owner": "codex",
       "started": "2026-09-25 10:54"
+    },
+    {
+      "id": "T70",
+      "title": "Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T24"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Kernel",
+        "Packages/CADCore/Tests/CADCoreTests"
+      ],
+      "suggested": "codex",
+      "owner": null
     }
   ]
 }
