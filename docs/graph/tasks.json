@@ -23,7 +23,7 @@
       "id": "T01",
       "title": "Archiviare file Codex pre-coordinamento in archive/codex-seed",
       "phase": "0 · Coordinamento",
-      "status": "in_progress",
+      "status": "done",
       "owner": "codex",
       "suggested": "codex",
       "deps": [],
@@ -36,7 +36,11 @@
         "App/MetalViewport.swift",
         "App/CADShaders.metal"
       ],
-      "started": "2026-09-25 09:30"
+      "started": "2026-09-25 09:30",
+      "finished": "2026-09-25 09:34",
+      "notes": [
+        "2026-09-25 09:34 codex: Archivio storico conservato in archive/codex-seed (11 sorgenti e README), escluso dai target attivi. Verifica Codex: swift test --package-path Packages/CADCore, 6 test Swift Testing passati, exit 0. Nessun file attivo modificato da T01."
+      ]
     },
     {
       "id": "T02",

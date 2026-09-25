@@ -8,7 +8,7 @@ Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fa
 flowchart LR
   subgraph P0["0 · Coordinamento"]
     T00["T00 · Riconciliare scaffold doppio (core Vec3/indices, app SceneKit)<br/><i>claude</i>"]:::done
-    T01["T01 · Archiviare file Codex pre-coordinamento in archive/codex-seed<br/><i>codex</i>"]:::in_progress
+    T01["T01 · Archiviare file Codex pre-coordinamento in archive/codex-seed<br/><i>codex</i>"]:::done
     T02["T02 · Mappa architetturale + report affidabilità<br/><i>codex</i>"]:::in_progress
     T16["T16 · Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh<br/><i>claude</i>"]:::done
   end
@@ -86,6 +86,7 @@ flowchart LR
 
 ## Pronti da iniziare
 
+- **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T04** Undo/Redo sulla timeline — suggerito: codex
 - **T05** Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) — suggerito: claude
 - **T07** Viewport Metal (sostituisce SceneKit deprecato) — suggerito: claude
@@ -97,7 +98,7 @@ flowchart LR
 | ID | Titolo | Stato | Agente | Dipende da | File |
 |---|---|---|---|---|---|
 | T00 | Riconciliare scaffold doppio (core Vec3/indices, app SceneKit) | done | claude | — | Packages/CADCore<br>App/Sources<br>project.yml |
-| T01 | Archiviare file Codex pre-coordinamento in archive/codex-seed | in_progress | codex | — | archive/codex-seed<br>App/TakeoffCADApp.swift<br>App/CADDocument.swift<br>App/EditorView.swift<br>App/SketchView.swift<br>App/MetalViewport.swift<br>App/CADShaders.metal |
+| T01 | Archiviare file Codex pre-coordinamento in archive/codex-seed | done | codex | — | archive/codex-seed<br>App/TakeoffCADApp.swift<br>App/CADDocument.swift<br>App/EditorView.swift<br>App/SketchView.swift<br>App/MetalViewport.swift<br>App/CADShaders.metal |
 | T02 | Mappa architetturale + report affidabilità | in_progress | codex | T00 | docs/architecture<br>scripts/architecture_graph.py |
 | T03 | Validazione input + CADError nel core (porta test Codex) | todo | codex | T00, T01 | Packages/CADCore/Sources/CADCore<br>Packages/CADCore/Tests/CADCoreTests |
 | T04 | Undo/Redo sulla timeline | todo | codex | T16 | App/Sources/Model |
