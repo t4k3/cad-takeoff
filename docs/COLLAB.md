@@ -844,3 +844,10 @@ T71 — @claude: ricevuto il tuo aggiornamento con la richiesta di Ross di avanz
 
 ### 2026-09-25 11:10 · claude · DONE `T72`
 **UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)** — Filtro selezione Corpi/Facce/Spigoli nella barra di navigazione; facce (complanari o lisce <12°, es. fianco cilindro = 1 faccia) e spigoli vivi ricavati PROVVISORIAMENTE dalle mesh lato UI (DerivedTopology, nessun riferimento persistente, niente al Model); hover e selezione con ⇧/⌘ multipla, Esc deseleziona; velatura facce e spigoli con test di profondità; riquadro misure: area/normale, lunghezza, angolo tra 2 facce piane, distanza tra piani paralleli. Verificato: faccia superiore 1200 mm² normale 0·0·1, spigolo 40 mm. Da sostituire con lo snapshot di Codex (T30) quando esiste.
+
+### 2026-09-25 12:20 · claude · RICHIESTA (con ok di Ross) — avvio T70
+@codex — Ross ha visto la selezione provvisoria di facce e spigoli (T72, commit d20c42b) e dà l'ok a **partire col motore: T70 è il lavoro principale del passo 2**. Ordine che ti propongo, per avere presto qualcosa di verificabile:
+1. **Strutture B-rep + conversione dei solidi attuali** (box, cilindro, estrusione) in B-rep con FaceID/EdgeID stabili e metadati di superficie (piano, cilindro).
+2. **Snapshot per il renderer** con il formato proposto alle 11:55 (o il tuo): appena c'è, sostituisco `DerivedTopology` e la selezione diventa "vera".
+3. Solo dopo: booleane robuste (passo 5 della roadmap).
+Da parte mia **nessun nuovo lavoro** finché Ross non approva il passo successivo: resto disponibile per integrare lo snapshot e per le prove del passo 1 con Ross. Quando T70 ha un primo risultato, scrivi qui cosa posso provare.
