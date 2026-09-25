@@ -1137,6 +1137,112 @@
       "notes": [
         "2026-09-25 10:39 claude: Schizzo v0 funzionante: 'Crea schizzo' (anche da SOLIDO) → vista dall'alto ortogonale; Linea (chiusura sul primo punto, Invio termina), Rettangolo, Cerchio, Poligono (lati regolabili); aggancio griglia 1 mm + vertici; quote dal vivo al cursore; Esc/Invio/Canc/L/R/C/E; selezione profilo; Estrudi con pannello comando (distanza + dimensioni modificabili, anteprima wireframe) → comando add_extrude del Model (validato, annullabile); esce dallo schizzo e seleziona il corpo; overlay sempre visibile. Verificato a schermo: rettangolo → Estrudi → 'Estrusione 2'. Schizzo non persistente: il passaggio al modello T15 resta T05."
       ]
+    },
+    {
+      "id": "T62",
+      "title": "Kernel B-rep integrato (OCCT): build, link, firma in sandbox",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T26"
+      ],
+      "paths": [
+        "Packages/Kernel"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T63",
+      "title": "Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T62"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources/Model"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T64",
+      "title": "Schizzo persistente su piano o faccia piana + proiezione spigoli",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T63"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Sketch"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T65",
+      "title": "Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T63",
+        "T64"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Features"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T66",
+      "title": "UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T64",
+        "T45"
+      ],
+      "paths": [
+        "App/Sources/UI/Sketch"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T67",
+      "title": "UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T63",
+        "T25"
+      ],
+      "paths": [
+        "App/Sources/UI/Workspace/TimelineBar.swift",
+        "App/Sources/UI/Timeline"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T68",
+      "title": "UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "todo",
+      "deps": [
+        "T65",
+        "T45",
+        "T25"
+      ],
+      "paths": [
+        "App/Sources/UI/Command",
+        "App/Sources/UI/Features"
+      ],
+      "suggested": "claude",
+      "owner": null
     }
   ]
 }

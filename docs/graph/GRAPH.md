@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 10:39. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 10:51. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -99,6 +99,15 @@ flowchart LR
   subgraph P15["3 · Stampa"]
     T59["T59 · 3MF multicolore v1: colori persistenti per parte, export e strumenti chat<br/><i>codex</i>"]:::in_progress
     T60["T60 · UX colori delle parti e comando export 3MF nel prototipo<br/><i>claude</i>"]:::todo
+  end
+  subgraph P16["M1 · Ciclo Fusion"]
+    T62["T62 · Kernel B-rep integrato (OCCT): build, link, firma in sandbox<br/><i>codex</i>"]:::todo
+    T63["T63 · Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza<br/><i>codex</i>"]:::todo
+    T64["T64 · Schizzo persistente su piano o faccia piana + proiezione spigoli<br/><i>codex</i>"]:::todo
+    T65["T65 · Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione<br/><i>codex</i>"]:::todo
+    T66["T66 · UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0<br/><i>claude</i>"]:::todo
+    T67["T67 · UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore<br/><i>claude</i>"]:::todo
+    T68["T68 · UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione<br/><i>claude</i>"]:::todo
   end
   T00 --> T02
   T00 --> T03
@@ -241,6 +250,18 @@ flowchart LR
   T48 --> T61
   T25 --> T61
   T07 --> T61
+  T26 --> T62
+  T62 --> T63
+  T63 --> T64
+  T63 --> T65
+  T64 --> T65
+  T64 --> T66
+  T45 --> T66
+  T63 --> T67
+  T25 --> T67
+  T65 --> T68
+  T45 --> T68
+  T25 --> T68
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -319,3 +340,10 @@ flowchart LR
 | T59 | 3MF multicolore v1: colori persistenti per parte, export e strumenti chat | in_progress | codex | T48 | Packages/CADCore/Sources/CADCore<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>Tests/AssistantTools<br>Tests/MCPIntegration<br>Tests/ThreeMF<br>scripts/test-3mf.sh<br>docs/requirements/PRINT_3MF.md<br>docs/architecture/API.md |
 | T60 | UX colori delle parti e comando export 3MF nel prototipo | todo | claude | T59 | App/Sources/UI |
 | T61 | Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude | done | claude | T48, T25, T07 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace |
+| T62 | Kernel B-rep integrato (OCCT): build, link, firma in sandbox | todo | codex | T26 | Packages/Kernel |
+| T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | codex | T62 | Packages/CADCore<br>App/Sources/Model |
+| T64 | Schizzo persistente su piano o faccia piana + proiezione spigoli | todo | codex | T63 | Packages/CADCore/Sources/CADCore/Sketch |
+| T65 | Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione | todo | codex | T63, T64 | Packages/CADCore/Sources/CADCore/Features |
+| T66 | UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0 | todo | claude | T64, T45 | App/Sources/UI/Sketch |
+| T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
+| T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
