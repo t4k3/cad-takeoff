@@ -46,7 +46,7 @@
       "id": "T02",
       "title": "Mappa architetturale + report affidabilità",
       "phase": "0 · Coordinamento",
-      "status": "in_progress",
+      "status": "done",
       "owner": "codex",
       "suggested": "codex",
       "deps": [
@@ -56,7 +56,11 @@
         "docs/architecture",
         "scripts/architecture_graph.py"
       ],
-      "started": "2026-09-25 09:31"
+      "started": "2026-09-25 09:31",
+      "finished": "2026-09-25 09:42",
+      "notes": [
+        "2026-09-25 09:42 codex: Consegnati documento di progetto, contratto API, dataset canonico 21 nodi/37 archi, HTML offline navigabile, Mermaid e rapporto di affidabilità. Metodo manuale/testuale esplicito: 31 SYNTACTIC, 1 INFERRED, 5 RUNTIME/EXTERNAL, zero RESOLVED. Check freshness OK, 5 verifiche generatore OK, browser: ricerca/filtri/selezione OK, 6 test core passati. Ruoli Claude UX / Codex funzionalità recepiti."
+      ]
     },
     {
       "id": "T03",
@@ -281,16 +285,22 @@
       "id": "T17",
       "title": "Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system",
       "phase": "2 · UX",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T16"
       ],
       "paths": [
         "App/Sources/UI/Workspace",
-        "App/Sources/UI/DesignSystem"
+        "App/Sources/UI/DesignSystem",
+        "App/Sources/UI/FusionTakeoffApp.swift"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 09:42",
+      "finished": "2026-09-25 09:45",
+      "notes": [
+        "2026-09-25 09:45 claude: Workspace stile Fusion: ribbon a schede (SOLIDO/SCHIZZO/STAMPA, solo strumenti funzionanti), Browser ad albero con occhio visibilità e hover condiviso, pannello Parametri con DimensionField + proprietà (volume, ingombro), timeline orizzontale, status bar. Design system in UI/DesignSystem/Theme.swift (token chiaro/scuro). Scritture dirette residue marcate TODO(R1). Verificato a schermo."
+      ]
     },
     {
       "id": "T18",

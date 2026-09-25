@@ -6,9 +6,9 @@ struct FusionTakeoffApp: App {
 
     var body: some Scene {
         WindowGroup("Fusion Takeoff") {
-            ContentView()
+            WorkspaceView()
                 .environment(model)
-                .frame(minWidth: 1000, minHeight: 650)
+                .frame(minWidth: 1100, minHeight: 700)
         }
         .commands {
             CommandGroup(replacing: .newItem) {

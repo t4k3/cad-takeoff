@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 09:34. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 09:45. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -9,7 +9,7 @@ flowchart LR
   subgraph P0["0 · Coordinamento"]
     T00["T00 · Riconciliare scaffold doppio (core Vec3/indices, app SceneKit)<br/><i>claude</i>"]:::done
     T01["T01 · Archiviare file Codex pre-coordinamento in archive/codex-seed<br/><i>codex</i>"]:::done
-    T02["T02 · Mappa architetturale + report affidabilità<br/><i>codex</i>"]:::in_progress
+    T02["T02 · Mappa architetturale + report affidabilità<br/><i>codex</i>"]:::done
     T16["T16 · Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh<br/><i>claude</i>"]:::done
   end
   subgraph P1["1 · Core"]
@@ -39,7 +39,7 @@ flowchart LR
     T14["T14 · Release 0.1 (icona, firma, .dmg)<br/><i>user</i>"]:::todo
   end
   subgraph P6["2 · UX"]
-    T17["T17 · Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system<br/><i>claude</i>"]:::todo
+    T17["T17 · Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system<br/><i>claude</i>"]:::done
     T18["T18 · ViewCube + navigazione camera (orbita/pan/zoom, viste standard)<br/><i>claude</i>"]:::todo
     T19["T19 · Selezione ed evidenziazione nel viewport (picking)<br/><i>claude</i>"]:::todo
     T20["T20 · Comandi, menu, scorciatoie, stati vuoti, onboarding<br/><i>claude</i>"]:::todo
@@ -91,7 +91,6 @@ flowchart LR
 - **T05** Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) — suggerito: claude
 - **T07** Viewport Metal (sostituisce SceneKit deprecato) — suggerito: claude
 - **T13** Script CI locale (test core + build app) — suggerito: codex
-- **T17** Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system — suggerito: claude
 
 ## Tabella
 
@@ -99,7 +98,7 @@ flowchart LR
 |---|---|---|---|---|---|
 | T00 | Riconciliare scaffold doppio (core Vec3/indices, app SceneKit) | done | claude | — | Packages/CADCore<br>App/Sources<br>project.yml |
 | T01 | Archiviare file Codex pre-coordinamento in archive/codex-seed | done | codex | — | archive/codex-seed<br>App/TakeoffCADApp.swift<br>App/CADDocument.swift<br>App/EditorView.swift<br>App/SketchView.swift<br>App/MetalViewport.swift<br>App/CADShaders.metal |
-| T02 | Mappa architetturale + report affidabilità | in_progress | codex | T00 | docs/architecture<br>scripts/architecture_graph.py |
+| T02 | Mappa architetturale + report affidabilità | done | codex | T00 | docs/architecture<br>scripts/architecture_graph.py |
 | T03 | Validazione input + CADError nel core (porta test Codex) | todo | codex | T00, T01 | Packages/CADCore/Sources/CADCore<br>Packages/CADCore/Tests/CADCoreTests |
 | T04 | Undo/Redo sulla timeline | todo | codex | T16 | App/Sources/Model |
 | T05 | Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) | todo | claude | T16 | App/Sources/UI/Sketch |
@@ -114,7 +113,7 @@ flowchart LR
 | T14 | Release 0.1 (icona, firma, .dmg) | todo | user | T06, T20, T21, T22, T23, T13 | App/Resources<br>project.yml |
 | T15 | Modello schizzo nel core (entità, profili chiusi, vincoli base) | todo | codex | T03 | Packages/CADCore/Sources/CADCore/SketchModel.swift<br>Packages/CADCore/Tests/CADCoreTests/SketchModelTests.swift |
 | T16 | Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh | done | claude | T00 | App/Sources<br>scripts/build.sh<br>project.yml |
-| T17 | Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system | todo | claude | T16 | App/Sources/UI/Workspace<br>App/Sources/UI/DesignSystem |
+| T17 | Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system | done | claude | T16 | App/Sources/UI/Workspace<br>App/Sources/UI/DesignSystem<br>App/Sources/UI/FusionTakeoffApp.swift |
 | T18 | ViewCube + navigazione camera (orbita/pan/zoom, viste standard) | todo | claude | T07 | App/Sources/UI/Viewport |
 | T19 | Selezione ed evidenziazione nel viewport (picking) | todo | claude | T07 | App/Sources/UI/Viewport |
 | T20 | Comandi, menu, scorciatoie, stati vuoti, onboarding | todo | claude | T17, T04 | App/Sources/UI/Commands<br>App/Sources/UI/Onboarding |
