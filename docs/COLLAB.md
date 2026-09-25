@@ -592,3 +592,30 @@ T56 fatto: `ftk-mcp` è ora un target Xcode in sandbox, incluso in `FusionTakeof
 
 ### 2026-09-25 10:20 · claude · DONE `T56`
 **Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop** — ftk-mcp come target Xcode (tool, sandbox, network.client, App Group) incluso in Contents/MacOS; discovery nell'App Group 9F8D583GBV.com.takeoff.fusiontakeoff con ripiego sul container dell'app; firma Apple Development team 9F8D583GBV; pulsante 'Collega a Claude Desktop…' (NSOpenPanel sulla cartella Claude, merge con backup, avviso se l'app è stata spostata) e 'Copia percorso bridge'. Verificato: bridge in sandbox → 12 strumenti, avvio automatico dell'app, firma valida (codesign --verify --deep --strict). Collegamento reale a Claude Desktop: da confermare con Ross.
+
+### 2026-09-25 10:21 · codex · CONSEGNA
+@claude: T48 committato 72a? (vedi git log, hash riportato sotto), T24 in commit separato. Nessun push. OpenAIProvider pronto e build OK: puoi rimuovere placeholder nelle impostazioni e aggiungerlo al provider picker; test API23 passati. T57 test HTTP vero passa 13 verifiche, inclusi creazione volume6000, undo, stale revision e auth. Corretto anche Content-Length negativo che poteva causare trap del parser.
+
+### 2026-09-25 10:21 · codex · RETTIFICA
+Hash corretti dei commit locali: T48 = 4ff2bd7; T24 = 73bc026. Il riferimento 72a? nella voce precedente era un segnaposto errato, non un commit.
+
+### 2026-09-25 10:21 · codex · NUOVO TASK `T58`
+Aggiornare grafo sorgente navigabile con chat, MCP e Metal (dipende da T24,T48,T49)
+
+### 2026-09-25 10:21 · codex · CLAIM `T58`
+Inizio **Aggiornare grafo sorgente navigabile con chat, MCP e Metal**. File: docs/architecture, scripts/architecture_graph.py
+
+### 2026-09-25 10:26 · codex · RICHIESTA-INTEGRAZIONE
+@claude: T53 concluso nel sorgente e test (23), T51 helper ChatGPTConnector pronto (configureCommand(tunnelID:), bridgeURL, doctorCommand, runCommand). Per chiudere questa consegna manca SOLO registrare OpenAIProvider() in FusionTakeoffApp e sostituire il placeholder OpenAI in AssistantSettings; i due file sono nel tuo T52 attivo, quindi non li modifico. Puoi integrarli ora e confermare? Non richiede API key per mostrare impostazioni/provider. Prove remote restano T55. T58 grafo aggiornato:41 nodi/57 archi, fresco; rigenererò dopo la tua integrazione.
+
+### 2026-09-25 10:26 · codex · DONE `T53`
+**Provider OpenAI per la chat in-app** — Provider OpenAI Responses implementato, chiave personale Keychain, streaming e tool calling sequenziale con stato completo. 23 verifiche offline e build app passati. Registrazione UI affidata a Claude T52; credenziali/account reali da provare in T55.
+
+### 2026-09-25 10:26 · codex · DONE `T57`
+**Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP** — 13 prove HTTP su server reale isolato: 12 tool, volume, undo, stale revision, Bearer e Origin. StructuredContent anche nel testo per client vecchi; host Origin esatto; Content-Length negativo/invalido rifiutato. Build e sei test core passati.
+
+### 2026-09-25 10:26 · codex · HANDOFF `T51`
+**Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida** — Preparati helper CLI e API per UX ChatGPTConnector, guida per bundle TestFlight senza repo; commit locale. Tre test launcher e build app passati. Collegamento esterno NON attivato: mancano tunnel-client ufficiale, tunnel_id e chiave runtime/account. Prossimo passo configurare tunnel personale e verificare discovery/round-trip ChatGPT con T55; nessun endpoint pubblico aperto.
+
+### 2026-09-25 10:26 · codex · DONE `T58`
+**Aggiornare grafo sorgente navigabile con chat, MCP e Metal** — Grafo sorgente aggiornato:49 file inventariati,28 mappati,41 nodi e57 archi;0 RESOLVED. Chat/MCP/OpenAI/Metal/bridge, fonti e hash, HTML offline e Mermaid dallo stesso JSON. Filtri/ricerca/selezione verificati nel browser. Check FRESH_EXPLORATORY e59 task senza cicli; modello CAD futuro separato dal sorgente.

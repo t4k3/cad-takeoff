@@ -918,7 +918,7 @@
       "id": "T51",
       "title": "Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida",
       "phase": "6 · Assistente e MCP",
-      "status": "in_progress",
+      "status": "todo",
       "deps": [
         "T49"
       ],
@@ -929,8 +929,11 @@
         "Tests/ChatGPTConnector"
       ],
       "suggested": "codex",
-      "owner": "codex",
-      "started": "2026-09-25 10:11"
+      "owner": null,
+      "started": "2026-09-25 10:11",
+      "notes": [
+        "2026-09-25 10:26 codex: Preparati helper CLI e API per UX ChatGPTConnector, guida per bundle TestFlight senza repo; commit locale. Tre test launcher e build app passati. Collegamento esterno NON attivato: mancano tunnel-client ufficiale, tunnel_id e chiave runtime/account. Prossimo passo configurare tunnel personale e verificare discovery/round-trip ChatGPT con T55; nessun endpoint pubblico aperto."
+      ]
     },
     {
       "id": "T52",
@@ -956,7 +959,7 @@
       "id": "T53",
       "title": "Provider OpenAI per la chat in-app",
       "phase": "6 · Assistente e MCP",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T47"
       ],
@@ -967,7 +970,11 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 10:13"
+      "started": "2026-09-25 10:13",
+      "finished": "2026-09-25 10:26",
+      "notes": [
+        "2026-09-25 10:26 codex: Provider OpenAI Responses implementato, chiave personale Keychain, streaming e tool calling sequenziale con stato completo. 23 verifiche offline e build app passati. Registrazione UI affidata a Claude T52; credenziali/account reali da provare in T55."
+      ]
     },
     {
       "id": "T54",
@@ -1030,7 +1037,7 @@
       "id": "T57",
       "title": "Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP",
       "phase": "6 · Assistente e MCP",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T48",
         "T49"
@@ -1043,7 +1050,33 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 10:19"
+      "started": "2026-09-25 10:19",
+      "finished": "2026-09-25 10:26",
+      "notes": [
+        "2026-09-25 10:26 codex: 13 prove HTTP su server reale isolato: 12 tool, volume, undo, stale revision, Bearer e Origin. StructuredContent anche nel testo per client vecchi; host Origin esatto; Content-Length negativo/invalido rifiutato. Build e sei test core passati."
+      ]
+    },
+    {
+      "id": "T58",
+      "title": "Aggiornare grafo sorgente navigabile con chat, MCP e Metal",
+      "phase": "0 · Cooperazione",
+      "status": "done",
+      "deps": [
+        "T24",
+        "T48",
+        "T49"
+      ],
+      "paths": [
+        "docs/architecture",
+        "scripts/architecture_graph.py"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-25 10:21",
+      "finished": "2026-09-25 10:26",
+      "notes": [
+        "2026-09-25 10:26 codex: Grafo sorgente aggiornato:49 file inventariati,28 mappati,41 nodi e57 archi;0 RESOLVED. Chat/MCP/OpenAI/Metal/bridge, fonti e hash, HTML offline e Mermaid dallo stesso JSON. Filtri/ricerca/selezione verificati nel browser. Check FRESH_EXPLORATORY e59 task senza cicli; modello CAD futuro separato dal sorgente."
+      ]
     }
   ]
 }
