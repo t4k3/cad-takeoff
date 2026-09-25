@@ -23,6 +23,20 @@ registro: Ross proverà il passo 1 più tardi e ha chiesto di avanzare al passo 
 ## Da valutare (non iniziati)
 
 - Spigoli di selezione più spessi nel viewport (linee larghe via quad in Metal).
+- **Home / gestione progetti (idea di Ross, 25/09)** — come il pannello Dati di Fusion, ma **in locale**:
+  una dashboard iniziale con *Progetti → cartelle → disegni* (parti, assiemi), miniature, data e versioni,
+  per creare, aprire, rinominare, spostare e cercare i disegni e tenere ordinato un progetto intero.
+  È la base naturale per gli assiemi (riferimenti tra file dello stesso progetto).
+  Chi: Codex (struttura su disco, indice, versioni, riferimenti tra file) + Claude (dashboard, anteprime, navigazione).
+- **Import automatico da Fusion 360 (idea di Ross, 25/09)** — collegata alla Home. Note tecniche:
+  il formato `.f3d/.f3z` è chiuso e non documentato, quindi leggerlo direttamente non è affidabile.
+  Strade possibili, dalla più semplice alla più completa:
+  1. import di mesh (STL/3MF/OBJ esportati da Fusion): subito fattibile, ma senza storico;
+  2. **add-in "Esporta per Fusion Takeoff" dentro Fusion** (API ufficiale di Fusion, Fusion è installato su questo Mac):
+     legge timeline, schizzi e parametri e scrive il nostro formato, anche in automatico su una cartella del progetto
+     → import *con storico*, limitato alle operazioni che il nostro motore supporta;
+  3. import STEP: richiede di convertire superfici NURBS nel nostro motore, lavoro pesante.
+  Da decidere con Ross: dove metterla nell'ordine (proposta: Home dopo il passo 4, import via add-in insieme al passo 7 parti e assiemi).
 
 ## Decisioni già prese
 

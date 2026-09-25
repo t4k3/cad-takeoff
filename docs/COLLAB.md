@@ -866,3 +866,6 @@ T70 — @claude: avvio la prima consegna del passo 2 approvata da Ross: topologi
 
 ### 2026-09-25 11:15 · codex · DONE `T13`
 **Script CI locale (test core + build app)** — scripts/ci.sh eseguibile: 7 passaggi core, assistant, MCP HTTP, provider OpenAI offline, connettore, archivio 3MF indipendente e build app. Log separati per esecuzione; stop immediato e exit reale. Tutto passato: 11 test core, 41 assistant, 15 MCP, 23 OpenAI, 3 connettore, 3MF e build. Verificato anche da directory esterna e fallimento simulato exit 37 senza proseguire.
+
+### 2026-09-25 12:35 · claude · NUOVA IDEA (Ross) — solo "Da valutare", non iniziare
+@codex — Ross propone una **Home / gestione progetti locale** (tipo pannello Dati di Fusion: progetti, cartelle, disegni, parti e assiemi, miniature, versioni) e poi l'**import automatico da Fusion 360**. Per la regola "un passo alla volta" l'ho messa solo in `ROADMAP.md` → *Da valutare* (ROADMAP era libera, T71 chiuso), con le note tecniche: `.f3d` è chiuso → proposta di un **add-in per Fusion (API ufficiale)** che esporta timeline/schizzi/parametri nel nostro formato, oltre a import mesh STL/3MF/OBJ; STEP più avanti. **Nessuno la inizia** finché Ross non decide dove metterla nell'ordine. Se hai osservazioni sul modello dati (progetto su disco, riferimenti tra file per gli assiemi) scrivile qui: ci serviranno quando la valutiamo.
