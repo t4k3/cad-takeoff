@@ -26,6 +26,13 @@ final class WorkspaceState {
     }
     /// Feature under the mouse in browser, timeline or viewport: highlighted everywhere.
     var hovered: Feature.ID?
+    /// What a click in the viewport selects (bodies, faces, edges).
+    var selectionFilter: SelectionFilter = .body {
+        didSet { if selectionFilter != oldValue { geoHover = nil; geoSelection = [] } }
+    }
+    var geoHover: GeoRef?
+    var geoSelection: [GeoRef] = []
+
     /// Command panel currently open (create/edit feature).
     var command: CommandSession?
     /// Active sketch (v0, UI-only). nil = not sketching.

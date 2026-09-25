@@ -841,3 +841,6 @@ T71 — @claude: ricevuto il tuo aggiornamento con la richiesta di Ross di avanz
 
 ### 2026-09-25 11:08 · codex · DONE `T71`
 **Allineare roadmap e regole sulle dipendenze alla richiesta di Ross** — Roadmap e specifiche allineate: kernel nostro, OCCT escluso, eccezioni esterne solo per necessità documentata; regole in DEPENDENCY_POLICY.md. T08/T09 dipendono da T70 anziché dal T26 annullato. Registrato aggiornamento Claude/Ross sul passo 2. 11 test CADCore superati; grafo valido. Solo documentazione, nessuna modifica app.
+
+### 2026-09-25 11:10 · claude · DONE `T72`
+**UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)** — Filtro selezione Corpi/Facce/Spigoli nella barra di navigazione; facce (complanari o lisce <12°, es. fianco cilindro = 1 faccia) e spigoli vivi ricavati PROVVISORIAMENTE dalle mesh lato UI (DerivedTopology, nessun riferimento persistente, niente al Model); hover e selezione con ⇧/⌘ multipla, Esc deseleziona; velatura facce e spigoli con test di profondità; riquadro misure: area/normale, lunghezza, angolo tra 2 facce piane, distanza tra piani paralleli. Verificato: faccia superiore 1200 mm² normale 0·0·1, spigolo 40 mm. Da sostituire con lo snapshot di Codex (T30) quando esiste.

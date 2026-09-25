@@ -10,6 +10,7 @@
 		05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */; };
 		0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */; };
 		0E767B03A5E12FC1C9C65E1E /* AssistantSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA831E610F555E8A4BC81923 /* AssistantSession.swift */; };
+		13A90DD582DD0DFADFC02690 /* GeoSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B072E2898F0A20B8861C13F8 /* GeoSelection.swift */; };
 		15B9E5F66063E99E492FD242 /* Picking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1E9EAC4951BAF080CE4885 /* Picking.swift */; };
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
@@ -33,6 +34,7 @@
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
 		89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */; };
 		8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */; };
+		910716B033642A8AAC278D65 /* DerivedTopology.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445542A3EE5F7AD6E9698285 /* DerivedTopology.swift */; };
 		9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891E4E944492E6539912AE18 /* MCPHost.swift */; };
 		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
@@ -92,6 +94,7 @@
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
+		445542A3EE5F7AD6E9698285 /* DerivedTopology.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DerivedTopology.swift; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
@@ -113,6 +116,7 @@
 		916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolBridge.swift; sourceTree = "<group>"; };
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B072E2898F0A20B8861C13F8 /* GeoSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoSelection.swift; sourceTree = "<group>"; };
 		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
 		BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaderSource.swift; sourceTree = "<group>"; };
@@ -232,6 +236,7 @@
 				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
 				AFDE5F6EC0E12C1023FBFC61 /* Previews */,
+				A3A5D1508574B5B604AD5C7B /* Selection */,
 				3DDE5FAF77543C0C903FC4AC /* Sketch */,
 				0ED90DE497BF835BB64B46EF /* Viewport */,
 				EBF7FA287516A5F3EE980E3C /* Workspace */,
@@ -266,6 +271,15 @@
 				DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */,
 			);
 			path = Tools;
+			sourceTree = "<group>";
+		};
+		A3A5D1508574B5B604AD5C7B /* Selection */ = {
+			isa = PBXGroup;
+			children = (
+				445542A3EE5F7AD6E9698285 /* DerivedTopology.swift */,
+				B072E2898F0A20B8861C13F8 /* GeoSelection.swift */,
+			);
+			path = Selection;
 			sourceTree = "<group>";
 		};
 		A50F4E921D0488F27C78EA67 /* Tools */ = {
@@ -494,10 +508,12 @@
 				A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */,
 				865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */,
 				1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */,
+				910716B033642A8AAC278D65 /* DerivedTopology.swift in Sources */,
 				777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
+				13A90DD582DD0DFADFC02690 /* GeoSelection.swift in Sources */,
 				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
 				BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */,
 				5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */,

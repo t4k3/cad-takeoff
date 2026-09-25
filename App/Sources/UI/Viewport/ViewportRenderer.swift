@@ -53,6 +53,9 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     var style: DisplayStyle = .shadedEdges
     /// Extra line geometry drawn on top (sketch preview, print bed…), in world mm.
     var overlayLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+    /// Face/edge highlights (depth-tested, pulled slightly towards the camera).
+    var highlightTriangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+    var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
 
     private weak var view: MTKView?
 
@@ -247,6 +250,27 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
             enc.setDepthStencilState(depthReadOnly)
             enc.setVertexBuffer(grid.buffer, offset: 0, index: 0)
             enc.drawPrimitives(type: .line, vertexStart: 0, vertexCount: grid.count)
+        }
+        if !highlightTriangles.isEmpty || !highlightLines.isEmpty {
+            var none = DrawUniforms(color: .zero)
+            enc.setFragmentBytes(&none, length: MemoryLayout<DrawUniforms>.stride, index: 2)
+            enc.setRenderPipelineState(edgePipeline)
+            enc.setDepthStencilState(depthReadOnly)
+            enc.setDepthBias(-4, slopeScale: -2, clamp: 0.01)
+            let tris = highlightTriangles.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.3),
+                                                     LineVertex(position: SIMD4($0.1, 1), color: $0.3),
+                                                     LineVertex(position: SIMD4($0.2, 1), color: $0.3)] }
+            if let buf = buffer(tris) {
+                enc.setVertexBuffer(buf, offset: 0, index: 0)
+                enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: tris.count)
+            }
+            let lines = highlightLines.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.2),
+                                                  LineVertex(position: SIMD4($0.1, 1), color: $0.2)] }
+            if let buf = buffer(lines) {
+                enc.setVertexBuffer(buf, offset: 0, index: 0)
+                enc.drawPrimitives(type: .line, vertexStart: 0, vertexCount: lines.count)
+            }
+            enc.setDepthBias(0, slopeScale: 0, clamp: 0)
         }
         if !overlayLines.isEmpty {
             let v = overlayLines.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.2), LineVertex(position: SIMD4($0.1, 1), color: $0.2)] }

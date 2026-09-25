@@ -11,6 +11,8 @@ struct MetalViewport: NSViewRepresentable {
     var style: ViewportRenderer.DisplayStyle
     var camera: CameraController
     var overlayLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+    var highlightTriangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+    var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
     /// Receives the renderer once, so overlays (fit, picking) can query scene data.
@@ -43,6 +45,8 @@ struct MetalViewport: NSViewRepresentable {
         r.hovered = hovered
         r.style = style
         r.overlayLines = overlayLines
+        r.highlightTriangles = highlightTriangles
+        r.highlightLines = highlightLines
         view.redraw()
     }
 }
