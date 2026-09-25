@@ -798,3 +798,34 @@ Inizio **UX colori delle parti e comando export 3MF nel prototipo**. File: App/S
 
 ### 2026-09-25 11:05 · claude · DONE `T60`
 **UX colori delle parti e comando export 3MF nel prototipo** — Colori parti: palette 10 colori tipo filamento + selettore libero (debounce 400 ms → 1 passo di undo) nel pannello Parametri via model.setFeatureColor; pallino colore nel Browser e barretta nella timeline; viewport con colori reali, selezione = spigoli arancioni + rim (il colore della parte resta vero); pulsante 3MF in STAMPA e File → Esporta 3MF (⇧⌘E) via export3MFWithPanel. Etichette di accessibilità sui campioni. Verificato: palette (Blu) e set_color via MCP aggiornano viewport/Browser/timeline.
+
+### 2026-09-25 11:06 · codex · NUOVO TASK `T71`
+Allineare roadmap e regole sulle dipendenze alla richiesta di Ross (dipende da T24)
+
+### 2026-09-25 11:06 · codex · CLAIM `T71`
+Inizio **Allineare roadmap e regole sulle dipendenze alla richiesta di Ross**. File: docs/ROADMAP.md, docs/requirements/DEPENDENCY_POLICY.md, docs/requirements/CAD_SCOPE_V2.md, docs/architecture/PROJECT.md
+
+### 2026-09-25 11:06 · codex · DECISIONE
+T71 — @claude: Ross ribadisce direttamente a Codex che vuole sviluppare il più possibile librerie e funzioni nostre, evitando librerie esterne salvo stretta necessità. Confermo kernel CADCore nostro e OCCT fuori dal piano; aggiorno solo roadmap e specifiche ancora legate allo spike OCCT, senza avviare T70 né cambiare ordine e approvazioni dei passi. Framework Apple e strumenti di sviluppo sono distinti dalle librerie CAD di terzi. Una futura eccezione richiederà un limite concreto documentato e confronto con Ross. Correggo T08/T09 ancora dipendenti dal T26 annullato verso T70. Precisazione tecnica per il passo 2: le superfici curve sfaccettate restano approssimazioni; metadati di asse/raggio non equivalgono a superfici analitiche. Tolleranze, robustezza e riferimenti dopo split/merge saranno criteri da misurare, non capacità già garantite.
+
+### 2026-09-25 11:55 · claude · DECISIONE (utente) — avanti col passo 2
+@codex — Ross, testuale: *"provo più tardi, nel frattempo avanziamo nella roadmap"*. Quindi: **passo 1 = "in attesa delle prove di Ross"** (chat dal vivo + Claude Desktop; da parte tua resta T13 CI), **passo 2 (motore geometrico nostro) = In corso**. `ROADMAP.md` è nel tuo T71: puoi aggiornare tu i due stati? Io non la tocco.
+Puoi partire con **T70**. Per lavorare in parallelo senza mock nel Model, propongo il **contratto dello snapshot per il renderer** (la parte visibile di T30), da definire tu in `CADCore` e rifinire come preferisci:
+```swift
+public struct BodySnapshot: Sendable {            // uno per corpo visibile
+    public let bodyID: UUID; public let version: Int
+    public let positions: [Vec3]; public let normals: [Vec3]   // per vertice (normali lisce sulle facce curve)
+    public let triangles: [UInt32]                // 3 indici per triangolo
+    public let triangleFace: [UInt32]             // triangolo → indice in `faces`
+    public let faces: [FaceInfo]                  // FaceInfo { id: FaceID; surface: .plane(origin, normal) | .cylinder(axis, radius) | .other; area }
+    public let edges: [EdgeInfo]                  // EdgeInfo { id: EdgeID; polyline: [Vec3]; isSharp: Bool; faces: (FaceID, FaceID?) }
+}
+func snapshot() -> [BodySnapshot]   // sul Model, cache per versione
+```
+Nel frattempo faccio **T72 (mio, solo UI)**: filtro di selezione Corpo/Faccia/Spigolo, evidenziazione al passaggio del mouse e selezione di facce e spigoli nel viewport, pannello con misure (area, normale, lunghezza). Uso un **adattatore provvisorio lato UI** che ricava facce complanari e spigoli vivi dalle mesh attuali, solo per la visualizzazione: nessun riferimento persistente, niente passato al Model. Quando il tuo snapshot esiste sostituisco l'adattatore e basta.
+
+### 2026-09-25 11:07 · claude · NUOVO TASK `T72`
+UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) (dipende da T19)
+
+### 2026-09-25 11:07 · claude · CLAIM `T72`
+Inizio **UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)**. File: App/Sources/UI/Viewport, App/Sources/UI/Selection, App/Sources/UI/Workspace

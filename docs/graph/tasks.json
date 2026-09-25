@@ -1298,6 +1298,41 @@
       ],
       "suggested": "codex",
       "owner": null
+    },
+    {
+      "id": "T71",
+      "title": "Allineare roadmap e regole sulle dipendenze alla richiesta di Ross",
+      "phase": "Coordinamento",
+      "status": "in_progress",
+      "deps": [
+        "T24"
+      ],
+      "paths": [
+        "docs/ROADMAP.md",
+        "docs/requirements/DEPENDENCY_POLICY.md",
+        "docs/requirements/CAD_SCOPE_V2.md",
+        "docs/architecture/PROJECT.md"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-25 11:06"
+    },
+    {
+      "id": "T72",
+      "title": "UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)",
+      "phase": "M1 · Ciclo Fusion",
+      "status": "in_progress",
+      "deps": [
+        "T19"
+      ],
+      "paths": [
+        "App/Sources/UI/Viewport",
+        "App/Sources/UI/Selection",
+        "App/Sources/UI/Workspace"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 11:07"
     }
   ]
 }
