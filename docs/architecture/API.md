@@ -15,6 +15,8 @@ Le firme attuali sono nel sorgente e nel dataset della mappa.
 ## Estensione fondamentale R7–R9 · 25 settembre 2026
 
 Requisiti di Ross: [storico, parti/assiemi e lamiera](../requirements/CAD_SCOPE_V2.md).
+Contratto dettagliato concordato con Claude, incluso il modello schizzo:
+[UX / Core revisione 2](../requirements/UX_CORE_CONTRACT.md).
 
 - **R7 — storico:** snapshot della timeline con `FeatureID`, componente,
   dipendenze, parametri, stato e diagnostica; comandi edit/suppress/reorder/rollback
@@ -79,3 +81,12 @@ solo perché è presente nel file.
 
 Questi punti hanno valore di requisiti; non aggiungono overload né promesse di
 compatibilità alle API attualmente implementate.
+
+## R10 — Assistente e MCP (T47–T55)
+
+`DesignModel: CADToolProvider` espone il catalogo condiviso (mm, Z-up), risultati
+strutturati, feature interessate e token di revisione. Mutazioni con
+`expected_revision`, validation-before-commit e undo di sessione.
+`AssistantProvider` isola i formati Anthropic e OpenAI dalla UX.
+Il [contratto completo](../requirements/AI_ASSISTANT.md) distingue queste API
+dallo storico parametrico persistente pianificato in T29.

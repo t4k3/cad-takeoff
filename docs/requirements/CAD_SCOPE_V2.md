@@ -1,6 +1,10 @@
-# Requisiti CAD — revisione 2
+# Requisiti CAD — revisione 3
 
 25 settembre 2026 · richiesta diretta di Ross · coordinamento T24.
+
+**La chat che sviluppa geometrie e i connettori Claude/ChatGPT hanno priorità principale.**
+[Contratto assistente](AI_ASSISTANT.md): Claude cura UX e connettore Claude;
+Codex strumenti geometrici, OpenAI e connettore ChatGPT.
 
 **Lamiera completa, storico parametrico, progettazione di parti e assiemi sono
 requisiti fondamentali del prodotto.** La precedente esclusione degli assiemi
@@ -18,6 +22,7 @@ presenza di pulsanti o di una timeline visiva.
 
 | Priorità | Fondazione | Cosa deve garantire |
 |---|---|---|
+| P0 · prima consegna | Chat e MCP | Un catalogo CAD comune, operazioni reali, revisioni, errori e annullamento; T47–T55 |
 | P0 | Storico e dipendenze | Modifica di un'operazione precedente, rigenerazione, errori espliciti e persistenza |
 | P0 | Parti e istanze | Separazione tra definizione della parte, corpi, occorrenze e assiemi |
 | P0 | Kernel geometrico | Geometria e topologia adatte a pieghe, riferimenti stabili, STEP e sviluppi |
@@ -63,8 +68,9 @@ Le operazioni CSG su mesh del vecchio T08 possono essere ausiliarie. Non devono
 diventare il vincolo architetturale che impedisce lamiera, STEP o riferimenti di
 faccia persistenti. Eventuali cambi delle API passano dal registro condiviso.
 
-## Tre documenti complementari
+## Documenti complementari
 
+- [Assistente e MCP](AI_ASSISTANT.md): priorità, ruoli e criteri di esecuzione.
 - [Storico, parti e assiemi](PARAMETRIC_ASSEMBLIES.md): modello di dominio,
   dipendenze, ricostruzione, documenti e casi di accettazione.
 - [Lamiera](SHEET_METAL.md): matrice delle capacità, stati geometrici e test.

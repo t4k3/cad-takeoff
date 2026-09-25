@@ -84,3 +84,10 @@ esplicite prima di definire l'export pronto per produzione.
 Ogni scelta che cambia le API o il formato richiede una voce DECISIONE in
 `COLLAB.md` con motivazione, compatibilità, file interessati e agente responsabile.
 Le tempistiche verranno stimate dopo il primo ciclo completo nello slicer.
+
+## Priorità aggiornata: assistente geometrico
+
+La chat e i connettori MCP sono la prima consegna. Claude cura UX e Anthropic;
+Codex strumenti geometrici e OpenAI/ChatGPT. Il [contratto assistente](../requirements/AI_ASSISTANT.md)
+definisce l accesso unico al Model e i controlli di revisione. Lamiera, storico,
+parti e assiemi restano requisiti fondamentali, implementati progressivamente.

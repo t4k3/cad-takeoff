@@ -1,0 +1,955 @@
+{
+  "schemaVersion": 1,
+  "revision": 3,
+  "generatedAt": "2026-09-25T08:11:24.890424+00:00",
+  "artifactType": "PROPOSED_DOMAIN_ARCHITECTURE",
+  "scope": "Architettura richiesta, non grafo del codice esistente",
+  "sourceTask": "T24",
+  "nodes": [
+    {
+      "id": "ux",
+      "name": "UX Parti / Assiemi / Lamiera",
+      "owner": "Claude",
+      "plannedTarget": "FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/UX_CORE_CONTRACT.md",
+        "line": 7,
+        "excerpt": "## Identità e selezione",
+        "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+      }
+    },
+    {
+      "id": "model",
+      "name": "Model e comandi transazionali",
+      "owner": "Codex",
+      "plannedTarget": "FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/UX_CORE_CONTRACT.md",
+        "line": 33,
+        "excerpt": "## Sessione di comando e ricostruzione",
+        "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+      }
+    },
+    {
+      "id": "history",
+      "name": "Storico e motore di ricostruzione",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+        "line": 6,
+        "excerpt": "## Storico come fondazione",
+        "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+      }
+    },
+    {
+      "id": "params",
+      "name": "Parametri, espressioni e unità",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/UX_CORE_CONTRACT.md",
+        "line": 21,
+        "excerpt": "## Schema dei parametri",
+        "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+      }
+    },
+    {
+      "id": "sketch",
+      "name": "Schizzi e vincoli",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/UX_CORE_CONTRACT.md",
+        "line": 64,
+        "excerpt": "## Schizzi: contratto per T15/T05",
+        "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+      }
+    },
+    {
+      "id": "kernel",
+      "name": "GeometryKernel / B-rep",
+      "owner": "Codex",
+      "plannedTarget": "KernelAdapter da definire",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/CAD_SCOPE_V2.md",
+        "line": 60,
+        "excerpt": "Serve un contratto `GeometryKernel` con forme opache e identità stabili, isolamento",
+        "sha256": "0c2d7448c852f3f5eb7b4ce1d4db072dca7189efada2aa39eed5761178a91ac7"
+      }
+    },
+    {
+      "id": "topology",
+      "name": "Riferimenti facce / spigoli",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+        "line": 29,
+        "excerpt": "| H07 | Riferimenti a facce/spigoli robusti al rebuild | Cambiare una quota non ricollega un foro a una faccia casuale; riferimenti ambigui richiedono riparazione |",
+        "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+      }
+    },
+    {
+      "id": "parts",
+      "name": "Definizioni di parti e corpi",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+        "line": 39,
+        "excerpt": "## Parti, corpi e occorrenze",
+        "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+      }
+    },
+    {
+      "id": "assembly",
+      "name": "Occorrenze, assiemi e giunti",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+        "line": 57,
+        "excerpt": "## Assiemi e relazioni",
+        "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+      }
+    },
+    {
+      "id": "sheet",
+      "name": "Lamiera e regole di piega",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/SHEET_METAL.md",
+        "line": 10,
+        "excerpt": "## Matrice funzionale",
+        "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+      }
+    },
+    {
+      "id": "flat",
+      "name": "Flat Pattern revisionato",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/SHEET_METAL.md",
+        "line": 45,
+        "excerpt": "## Stati geometrici distinti",
+        "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+      }
+    },
+    {
+      "id": "export",
+      "name": "STEP / STL / 3MF / DXF / tavole",
+      "owner": "Codex + UX Claude",
+      "plannedTarget": "CADCore + FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/SHEET_METAL.md",
+        "line": 28,
+        "excerpt": "| SM15 | DXF e documenti di piega | Contorni, fori, layer separati per pieghe su/giù, unità, angoli, raggi, note e identificazione parte | File riaperto in un lettore indipendente, quote e layer verificati; tavola piegato + piatto |",
+        "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+      }
+    },
+    {
+      "id": "store",
+      "name": "Documento e migrazioni",
+      "owner": "Codex",
+      "plannedTarget": "CADCore",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+        "line": 32,
+        "excerpt": "| H10 | Persistenza con schema e migrazioni testate | Lettura del formato iniziale `.ftk`, migrazione su copia e riapertura; versione futura non supportata produce errore esplicito |",
+        "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+      }
+    },
+    {
+      "id": "render",
+      "name": "Mesh derivate e selection map",
+      "owner": "Codex dati / Claude rendering",
+      "plannedTarget": "CADCore + FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/UX_CORE_CONTRACT.md",
+        "line": 16,
+        "excerpt": "- Codex fornisce snapshot per il renderer con mappa triangolo → faccia,",
+        "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+      }
+    },
+    {
+      "id": "chat",
+      "name": "Chat geometrica principale",
+      "owner": "Claude",
+      "plannedTarget": "FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/AI_ASSISTANT.md",
+        "line": 36,
+        "excerpt": "## Contratto di esecuzione",
+        "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+      }
+    },
+    {
+      "id": "claude",
+      "name": "Provider e connettore Claude",
+      "owner": "Claude",
+      "plannedTarget": "FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/AI_ASSISTANT.md",
+        "line": 20,
+        "excerpt": "## Percorsi di accesso",
+        "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+      }
+    },
+    {
+      "id": "openai",
+      "name": "Provider OpenAI e ChatGPT MCP",
+      "owner": "Codex",
+      "plannedTarget": "FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/AI_ASSISTANT.md",
+        "line": 20,
+        "excerpt": "## Percorsi di accesso",
+        "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+      }
+    },
+    {
+      "id": "mcp",
+      "name": "MCP locale e bridge privato",
+      "owner": "Condiviso",
+      "plannedTarget": "FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/AI_ASSISTANT.md",
+        "line": 20,
+        "excerpt": "## Percorsi di accesso",
+        "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+      }
+    },
+    {
+      "id": "tools",
+      "name": "Catalogo CADToolProvider",
+      "owner": "Codex",
+      "plannedTarget": "FusionTakeoff",
+      "lifecycle": "PLANNED",
+      "sourceType": "REQUIREMENT_NOT_CODE",
+      "evidence": {
+        "file": "docs/requirements/AI_ASSISTANT.md",
+        "line": 36,
+        "excerpt": "## Contratto di esecuzione",
+        "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "D01",
+      "source": "ux",
+      "target": "model",
+      "relation": "invoca comandi",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 7,
+          "excerpt": "## Identità e selezione",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        },
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 33,
+          "excerpt": "## Sessione di comando e ricostruzione",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        }
+      ]
+    },
+    {
+      "id": "D02",
+      "source": "model",
+      "target": "history",
+      "relation": "modifica e valuta",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 33,
+          "excerpt": "## Sessione di comando e ricostruzione",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D03",
+      "source": "history",
+      "target": "params",
+      "relation": "valuta espressioni",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 21,
+          "excerpt": "## Schema dei parametri",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        }
+      ]
+    },
+    {
+      "id": "D04",
+      "source": "history",
+      "target": "sketch",
+      "relation": "ricostruisce schizzi",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 64,
+          "excerpt": "## Schizzi: contratto per T15/T05",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        }
+      ]
+    },
+    {
+      "id": "D05",
+      "source": "history",
+      "target": "kernel",
+      "relation": "valuta operazioni geometriche",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/CAD_SCOPE_V2.md",
+          "line": 60,
+          "excerpt": "Serve un contratto `GeometryKernel` con forme opache e identità stabili, isolamento",
+          "sha256": "0c2d7448c852f3f5eb7b4ce1d4db072dca7189efada2aa39eed5761178a91ac7"
+        }
+      ]
+    },
+    {
+      "id": "D06",
+      "source": "history",
+      "target": "topology",
+      "relation": "risolve riferimenti",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 29,
+          "excerpt": "| H07 | Riferimenti a facce/spigoli robusti al rebuild | Cambiare una quota non ricollega un foro a una faccia casuale; riferimenti ambigui richiedono riparazione |",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D07",
+      "source": "parts",
+      "target": "history",
+      "relation": "possiede feature",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 39,
+          "excerpt": "## Parti, corpi e occorrenze",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D08",
+      "source": "assembly",
+      "target": "parts",
+      "relation": "istanzia definizioni",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 57,
+          "excerpt": "## Assiemi e relazioni",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 39,
+          "excerpt": "## Parti, corpi e occorrenze",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D09",
+      "source": "assembly",
+      "target": "topology",
+      "relation": "riferisce geometria nei giunti",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 57,
+          "excerpt": "## Assiemi e relazioni",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 29,
+          "excerpt": "| H07 | Riferimenti a facce/spigoli robusti al rebuild | Cambiare una quota non ricollega un foro a una faccia casuale; riferimenti ambigui richiedono riparazione |",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D10",
+      "source": "sheet",
+      "target": "parts",
+      "relation": "appartiene a un componente",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 10,
+          "excerpt": "## Matrice funzionale",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 39,
+          "excerpt": "## Parti, corpi e occorrenze",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D11",
+      "source": "sheet",
+      "target": "kernel",
+      "relation": "calcola pieghe e forme",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 10,
+          "excerpt": "## Matrice funzionale",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        },
+        {
+          "file": "docs/requirements/CAD_SCOPE_V2.md",
+          "line": 60,
+          "excerpt": "Serve un contratto `GeometryKernel` con forme opache e identità stabili, isolamento",
+          "sha256": "0c2d7448c852f3f5eb7b4ce1d4db072dca7189efada2aa39eed5761178a91ac7"
+        }
+      ]
+    },
+    {
+      "id": "D12",
+      "source": "sheet",
+      "target": "history",
+      "relation": "registra operazioni",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 10,
+          "excerpt": "## Matrice funzionale",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D13",
+      "source": "sheet",
+      "target": "flat",
+      "relation": "genera derivato revisionato",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 10,
+          "excerpt": "## Matrice funzionale",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        },
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 45,
+          "excerpt": "## Stati geometrici distinti",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        }
+      ]
+    },
+    {
+      "id": "D14",
+      "source": "flat",
+      "target": "export",
+      "relation": "fornisce sagoma e pieghe",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 45,
+          "excerpt": "## Stati geometrici distinti",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        },
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 28,
+          "excerpt": "| SM15 | DXF e documenti di piega | Contorni, fori, layer separati per pieghe su/giù, unità, angoli, raggi, note e identificazione parte | File riaperto in un lettore indipendente, quote e layer verificati; tavola piegato + piatto |",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        }
+      ]
+    },
+    {
+      "id": "D15",
+      "source": "parts",
+      "target": "export",
+      "relation": "fornisce forme e mesh",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 39,
+          "excerpt": "## Parti, corpi e occorrenze",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 28,
+          "excerpt": "| SM15 | DXF e documenti di piega | Contorni, fori, layer separati per pieghe su/giù, unità, angoli, raggi, note e identificazione parte | File riaperto in un lettore indipendente, quote e layer verificati; tavola piegato + piatto |",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        }
+      ]
+    },
+    {
+      "id": "D16",
+      "source": "kernel",
+      "target": "render",
+      "relation": "genera tessellazione",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/CAD_SCOPE_V2.md",
+          "line": 60,
+          "excerpt": "Serve un contratto `GeometryKernel` con forme opache e identità stabili, isolamento",
+          "sha256": "0c2d7448c852f3f5eb7b4ce1d4db072dca7189efada2aa39eed5761178a91ac7"
+        },
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 16,
+          "excerpt": "- Codex fornisce snapshot per il renderer con mappa triangolo → faccia,",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        }
+      ]
+    },
+    {
+      "id": "D17",
+      "source": "topology",
+      "target": "render",
+      "relation": "fornisce selection map",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 29,
+          "excerpt": "| H07 | Riferimenti a facce/spigoli robusti al rebuild | Cambiare una quota non ricollega un foro a una faccia casuale; riferimenti ambigui richiedono riparazione |",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 16,
+          "excerpt": "- Codex fornisce snapshot per il renderer con mappa triangolo → faccia,",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        }
+      ]
+    },
+    {
+      "id": "D18",
+      "source": "render",
+      "target": "ux",
+      "relation": "visualizza snapshot",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 16,
+          "excerpt": "- Codex fornisce snapshot per il renderer con mappa triangolo → faccia,",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        },
+        {
+          "file": "docs/requirements/UX_CORE_CONTRACT.md",
+          "line": 7,
+          "excerpt": "## Identità e selezione",
+          "sha256": "d8c82d9458110988c956ba57d5ac92bdcbc5c93cf41e5572895d3562179359f9"
+        }
+      ]
+    },
+    {
+      "id": "D19",
+      "source": "store",
+      "target": "history",
+      "relation": "persiste feature e parametri",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 32,
+          "excerpt": "| H10 | Persistenza con schema e migrazioni testate | Lettura del formato iniziale `.ftk`, migrazione su copia e riapertura; versione futura non supportata produce errore esplicito |",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 6,
+          "excerpt": "## Storico come fondazione",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D20",
+      "source": "store",
+      "target": "parts",
+      "relation": "persiste definizioni",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 32,
+          "excerpt": "| H10 | Persistenza con schema e migrazioni testate | Lettura del formato iniziale `.ftk`, migrazione su copia e riapertura; versione futura non supportata produce errore esplicito |",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 39,
+          "excerpt": "## Parti, corpi e occorrenze",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D21",
+      "source": "store",
+      "target": "assembly",
+      "relation": "persiste istanze e relazioni",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 32,
+          "excerpt": "| H10 | Persistenza con schema e migrazioni testate | Lettura del formato iniziale `.ftk`, migrazione su copia e riapertura; versione futura non supportata produce errore esplicito |",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 57,
+          "excerpt": "## Assiemi e relazioni",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        }
+      ]
+    },
+    {
+      "id": "D22",
+      "source": "store",
+      "target": "flat",
+      "relation": "persiste provenienza e stato",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "not implemented / no compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/PARAMETRIC_ASSEMBLIES.md",
+          "line": 32,
+          "excerpt": "| H10 | Persistenza con schema e migrazioni testate | Lettura del formato iniziale `.ftk`, migrazione su copia e riapertura; versione futura non supportata produce errore esplicito |",
+          "sha256": "fc45f41ddbb8cf6b79505cba84f07d6341afe489626afc9365a0b40168992138"
+        },
+        {
+          "file": "docs/requirements/SHEET_METAL.md",
+          "line": 45,
+          "excerpt": "## Stati geometrici distinti",
+          "sha256": "508c39e78a1e0cc6265c52709e77ddee39248249202e2442767c9b4c231cdc1c"
+        }
+      ]
+    },
+    {
+      "id": "D23",
+      "source": "chat",
+      "target": "claude",
+      "relation": "usa provider",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    },
+    {
+      "id": "D24",
+      "source": "chat",
+      "target": "openai",
+      "relation": "usa provider",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    },
+    {
+      "id": "D25",
+      "source": "claude",
+      "target": "mcp",
+      "relation": "collega client esterno",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    },
+    {
+      "id": "D26",
+      "source": "openai",
+      "target": "mcp",
+      "relation": "collega ChatGPT esterno",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    },
+    {
+      "id": "D27",
+      "source": "chat",
+      "target": "tools",
+      "relation": "invoca comandi locali",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    },
+    {
+      "id": "D28",
+      "source": "mcp",
+      "target": "tools",
+      "relation": "espone stessi strumenti",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    },
+    {
+      "id": "D29",
+      "source": "tools",
+      "target": "model",
+      "relation": "valida e applica",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    },
+    {
+      "id": "D30",
+      "source": "tools",
+      "target": "history",
+      "relation": "registra operazioni future",
+      "semanticStatus": "INFERRED",
+      "lifecycle": "PLANNED",
+      "method": "MANUAL_ARCHITECTURAL_DESIGN",
+      "configuration": "architecture contract; not compiler resolution",
+      "evidence": [
+        {
+          "file": "docs/requirements/AI_ASSISTANT.md",
+          "line": 36,
+          "excerpt": "## Contratto di esecuzione",
+          "sha256": "b57139387e6295b97d9b2436f962e28b99d9586751052345167a42516ad4e045"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Grafo dei contratti di progetto: anche dove esiste una v1 non prova la realizzazione completa. Stato implementazione nel grafo task.",
+    "Nessun arco semanticamente risolto; nessuna prova numerica o runtime.",
+    "Stato attività autorevole in docs/graph/tasks.json; non confondere done della specifica con done dell implementazione."
+  ]
+}
