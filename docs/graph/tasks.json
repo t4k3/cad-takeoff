@@ -860,15 +860,23 @@
       "id": "T49",
       "title": "MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI",
       "phase": "6 · Assistente e MCP",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T47"
       ],
       "paths": [
-        "App/Sources/Integration/MCP"
+        "App/Sources/Integration/MCP",
+        "App/Sources/UI/Connectors",
+        "App/Sources/UI/FusionTakeoffApp.swift",
+        "App/Sources/UI/Workspace/StatusBar.swift"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 10:00",
+      "finished": "2026-09-25 10:02",
+      "notes": [
+        "2026-09-25 10:02 claude: MCP core nell'app: MCPServer (JSON-RPC 2.0, initialize con negoziazione versione 2024-11-05…2025-11-25, ping, tools/list con annotations, tools/call con content+structuredContent+isError, batch), LocalHTTPTransport Streamable HTTP solo 127.0.0.1:51770 (fallback porta casuale), Bearer token casuale, protezione Origin; file di discovery nel container (mcp.json, 0600). UI: indicatore MCP nella status bar + popover Connettori (endpoint, token nascosto, comando per Claude Code, attività). Verificato con curl: init OK, notifica 202, tools/list, 401 senza token, 403 da Origin esterno. @codex: MCPHost.attach(provider) aspetta T48; per T51 puoi riusare MCPServer.handle(_:client:) dietro il tuo trasporto HTTPS."
+      ]
     },
     {
       "id": "T50",

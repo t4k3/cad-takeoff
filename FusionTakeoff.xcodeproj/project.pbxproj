@@ -12,13 +12,16 @@
 		15B9E5F66063E99E492FD242 /* Picking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1E9EAC4951BAF080CE4885 /* Picking.swift */; };
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
+		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
 		3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */; };
 		4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */; };
 		5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BB2CC5B625AFE33908AA5 /* StatusBar.swift */; };
+		5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */; };
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
+		9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891E4E944492E6539912AE18 /* MCPHost.swift */; };
 		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
@@ -29,13 +32,17 @@
 		D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */; };
 		DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */; };
 		DCFE43EEC46D1E81506AAC2D /* CADCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDA8176070A4C4FA3CF13B40 /* CADCore */; };
+		E6AEE10EBD192FD2B549A582 /* MCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2872A72642BACF8A561EBB /* MCPServer.swift */; };
+		EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionTakeoffApp.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
+		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
+		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 		57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCommands.swift; sourceTree = "<group>"; };
@@ -45,8 +52,10 @@
 		6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
 		7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanelPreviews.swift; sourceTree = "<group>"; };
 		86A604770FA67CFFA12BACDB /* ViewCube.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCube.swift; sourceTree = "<group>"; };
+		891E4E944492E6539912AE18 /* MCPHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHost.swift; sourceTree = "<group>"; };
 		8A79D033E48D1FC6B0898162 /* CADCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CADCore; path = Packages/CADCore; sourceTree = SOURCE_ROOT; };
 		8B8A33442A4596CDA241E197 /* CommandSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSession.swift; sourceTree = "<group>"; };
+		916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolBridge.swift; sourceTree = "<group>"; };
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
@@ -56,6 +65,7 @@
 		D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceState.swift; sourceTree = "<group>"; };
 		DD59C218754E0D11BA7F1DD8 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		E8DCACC31C8A1D1083704390 /* Ribbon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ribbon.swift; sourceTree = "<group>"; };
+		EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalHTTPTransport.swift; sourceTree = "<group>"; };
 		F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportRenderer.swift; sourceTree = "<group>"; };
 		F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -98,6 +108,7 @@
 		39B53D46C97E3206C9264EE3 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				AA8D95774AF47AE5E3C3E599 /* Integration */,
 				E472DF5F5C48EA9E07E6CFC4 /* Model */,
 				7318D4B52E83AA93AF080D4A /* UI */,
 			);
@@ -133,12 +144,21 @@
 			children = (
 				00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */,
 				F4C74464F3687349A61C6F69 /* Command */,
+				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
 				AFDE5F6EC0E12C1023FBFC61 /* Previews */,
 				0ED90DE497BF835BB64B46EF /* Viewport */,
 				EBF7FA287516A5F3EE980E3C /* Workspace */,
 			);
 			path = UI;
+			sourceTree = "<group>";
+		};
+		7FE45933726A07271F041C97 /* Connectors */ = {
+			isa = PBXGroup;
+			children = (
+				3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */,
+			);
+			path = Connectors;
 			sourceTree = "<group>";
 		};
 		A7FBBE3A83FD516521BFF35A /* App */ = {
@@ -150,12 +170,31 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		AA8D95774AF47AE5E3C3E599 /* Integration */ = {
+			isa = PBXGroup;
+			children = (
+				916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */,
+				D3F0123D6FED862F64A44184 /* MCP */,
+			);
+			path = Integration;
+			sourceTree = "<group>";
+		};
 		AFDE5F6EC0E12C1023FBFC61 /* Previews */ = {
 			isa = PBXGroup;
 			children = (
 				7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */,
 			);
 			path = Previews;
+			sourceTree = "<group>";
+		};
+		D3F0123D6FED862F64A44184 /* MCP */ = {
+			isa = PBXGroup;
+			children = (
+				EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */,
+				891E4E944492E6539912AE18 /* MCPHost.swift */,
+				1D2872A72642BACF8A561EBB /* MCPServer.swift */,
+			);
+			path = MCP;
 			sourceTree = "<group>";
 		};
 		E472DF5F5C48EA9E07E6CFC4 /* Model */ = {
@@ -267,10 +306,14 @@
 				3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */,
 				A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */,
 				865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */,
+				1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
 				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
+				5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */,
+				9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */,
+				E6AEE10EBD192FD2B549A582 /* MCPServer.swift in Sources */,
 				F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */,
 				17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */,
 				15B9E5F66063E99E492FD242 /* Picking.swift in Sources */,
@@ -279,6 +322,7 @@
 				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,
 				95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */,
 				383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */,
+				EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */,
 				CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */,
 				CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */,
 				4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */,

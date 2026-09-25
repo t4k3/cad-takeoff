@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 09:59. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 10:02. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -82,7 +82,7 @@ flowchart LR
   subgraph P13["6 · Assistente e MCP"]
     T47["T47 · Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete<br/><i>claude</i>"]:::done
     T48["T48 · Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)<br/><i>codex</i>"]:::todo
-    T49["T49 · MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI<br/><i>claude</i>"]:::todo
+    T49["T49 · MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI<br/><i>claude</i>"]:::done
     T50["T50 · Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida<br/><i>claude</i>"]:::todo
     T51["T51 · Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida<br/><i>codex</i>"]:::todo
     T52["T52 · Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude<br/><i>claude</i>"]:::todo
@@ -229,7 +229,8 @@ flowchart LR
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T13** Script CI locale (test core + build app) — suggerito: codex
 - **T48** Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata) — suggerito: codex
-- **T49** MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI — suggerito: claude
+- **T50** Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida — suggerito: claude
+- **T51** Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida — suggerito: codex
 - **T52** Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude — suggerito: claude
 
 ## Tabella
@@ -285,7 +286,7 @@ flowchart LR
 | T38 | Prove end-to-end: salvataggio storico, assieme, lamiera e round-trip export | todo | codex | T10, T13, T29, T33, T37, T46 | Packages/CADCore/Tests<br>App/Tests<br>docs/requirements/ACCEPTANCE_RESULTS.md |
 | T47 | Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete | done | claude | — | App/Sources/Integration/ToolBridge.swift<br>App/FusionTakeoff.entitlements |
 | T48 | Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata) | todo | codex | T47 | App/Sources/Model/Tools |
-| T49 | MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI | todo | claude | T47 | App/Sources/Integration/MCP |
+| T49 | MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI | done | claude | T47 | App/Sources/Integration/MCP<br>App/Sources/UI/Connectors<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Workspace/StatusBar.swift |
 | T50 | Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida | todo | claude | T49 | Tools/ftk-mcp<br>docs/connectors/CLAUDE.md<br>project.yml |
 | T51 | Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida | todo | codex | T49 | App/Sources/Integration/ChatGPT<br>docs/connectors/CHATGPT.md |
 | T52 | Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude | todo | claude | T47, T25 | App/Sources/UI/Assistant<br>App/Sources/Integration/Assistant |

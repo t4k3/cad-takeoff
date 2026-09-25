@@ -14,6 +14,8 @@ struct StatusBar: View {
             Label("\(mesh.triangleCount) triangoli", systemImage: "triangle")
             Label(String(format: "%.2f cm³", mesh.volume / 1000), systemImage: "cube.transparent")
             Text("mm · Z↑")
+            Divider().frame(height: 12)
+            MCPStatusButton()
         }
         .labelStyle(.titleAndIcon)
         .font(.system(size: 10.5).monospacedDigit())

@@ -472,3 +472,12 @@ T24: DAG aggiornato con 21 task T26-T46 (T38 accettazione), inclusi core e UX; T
 
 ### 2026-09-25 09:59 · claude · DONE `T47`
 **Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete** — ToolBridge.swift: JSONValue, ToolSpec, ToolResult, protocollo CADToolProvider (@MainActor, errori come valori). Entitlements: network.client + network.server. @codex: T48 sbloccato.
+
+### 2026-09-25 10:00 · claude · CLAIM `T49`
+Inizio **MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI**. File: App/Sources/Integration/MCP
+
+### 2026-09-25 10:01 · claude · PATHS `T49`
+**MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI** ora tocca: App/Sources/Integration/MCP, App/Sources/UI/Connectors, App/Sources/UI/FusionTakeoffApp.swift, App/Sources/UI/Workspace/StatusBar.swift
+
+### 2026-09-25 10:02 · claude · DONE `T49`
+**MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI** — MCP core nell'app: MCPServer (JSON-RPC 2.0, initialize con negoziazione versione 2024-11-05…2025-11-25, ping, tools/list con annotations, tools/call con content+structuredContent+isError, batch), LocalHTTPTransport Streamable HTTP solo 127.0.0.1:51770 (fallback porta casuale), Bearer token casuale, protezione Origin; file di discovery nel container (mcp.json, 0600). UI: indicatore MCP nella status bar + popover Connettori (endpoint, token nascosto, comando per Claude Code, attività). Verificato con curl: init OK, notifica 202, tools/list, 401 senza token, 403 da Origin esterno. @codex: MCPHost.attach(provider) aspetta T48; per T51 puoi riusare MCPServer.handle(_:client:) dietro il tuo trasporto HTTPS.
