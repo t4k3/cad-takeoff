@@ -42,8 +42,8 @@
       "id": "T02",
       "title": "Mappa architetturale + report affidabilità",
       "phase": "0 · Coordinamento",
-      "status": "todo",
-      "owner": null,
+      "status": "in_progress",
+      "owner": "codex",
       "suggested": "codex",
       "deps": [
         "T00"
@@ -51,7 +51,8 @@
       "paths": [
         "docs/architecture",
         "scripts/architecture_graph.py"
-      ]
+      ],
+      "started": "2026-09-25 09:31"
     },
     {
       "id": "T03",
@@ -65,8 +66,8 @@
         "T01"
       ],
       "paths": [
-        "Packages/CADCore/Sources/CADCore/Validation.swift",
-        "Packages/CADCore/Tests/CADCoreTests/ValidationTests.swift"
+        "Packages/CADCore/Sources/CADCore",
+        "Packages/CADCore/Tests/CADCoreTests"
       ]
     },
     {
@@ -75,12 +76,12 @@
       "phase": "2 · App",
       "status": "todo",
       "owner": null,
-      "suggested": "claude",
+      "suggested": "codex",
       "deps": [
-        "T00"
+        "T16"
       ],
       "paths": [
-        "App/Sources/DesignModel.swift"
+        "App/Sources/Model"
       ]
     },
     {
@@ -91,10 +92,10 @@
       "owner": null,
       "suggested": "claude",
       "deps": [
-        "T00"
+        "T16"
       ],
       "paths": [
-        "App/Sources/Sketch"
+        "App/Sources/UI/Sketch"
       ]
     },
     {
@@ -103,14 +104,15 @@
       "phase": "2 · App",
       "status": "todo",
       "owner": null,
-      "suggested": "claude",
+      "suggested": "codex",
       "deps": [
         "T05",
+        "T15",
         "T03"
       ],
       "paths": [
-        "App/Sources/Sketch",
-        "App/Sources/ContentView.swift"
+        "App/Sources/Model",
+        "Packages/CADCore/Sources/CADCore/Document.swift"
       ]
     },
     {
@@ -119,13 +121,12 @@
       "phase": "2 · App",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
-        "T00",
-        "T01"
+        "T16"
       ],
       "paths": [
-        "App/Sources/Viewport"
+        "App/Sources/UI/Viewport"
       ]
     },
     {
@@ -134,7 +135,7 @@
       "phase": "3 · Modellazione",
       "status": "todo",
       "owner": null,
-      "suggested": "claude",
+      "suggested": "codex",
       "deps": [
         "T03"
       ],
@@ -179,7 +180,7 @@
       "phase": "4 · Stampa 3D",
       "status": "todo",
       "owner": null,
-      "suggested": "claude",
+      "suggested": "codex",
       "deps": [
         "T08"
       ],
@@ -193,12 +194,13 @@
       "phase": "4 · Stampa 3D",
       "status": "todo",
       "owner": null,
-      "suggested": "any",
+      "suggested": "codex",
       "deps": [
-        "T07"
+        "T03"
       ],
       "paths": [
-        "App/Sources/Viewport"
+        "Packages/CADCore/Sources/CADCore/Placement.swift",
+        "Packages/CADCore/Tests/CADCoreTests/PlacementTests.swift"
       ]
     },
     {
@@ -207,7 +209,7 @@
       "phase": "5 · Qualità",
       "status": "todo",
       "owner": null,
-      "suggested": "any",
+      "suggested": "codex",
       "deps": [
         "T00"
       ],
@@ -224,15 +226,156 @@
       "suggested": "user",
       "deps": [
         "T06",
-        "T10",
-        "T11",
-        "T12",
+        "T20",
+        "T21",
+        "T22",
+        "T23",
         "T13"
       ],
       "paths": [
         "App/Resources",
         "project.yml"
       ]
+    },
+    {
+      "id": "T15",
+      "title": "Modello schizzo nel core (entità, profili chiusi, vincoli base)",
+      "phase": "1 · Core",
+      "status": "todo",
+      "deps": [
+        "T03"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/SketchModel.swift",
+        "Packages/CADCore/Tests/CADCoreTests/SketchModelTests.swift"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T16",
+      "title": "Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh",
+      "phase": "0 · Coordinamento",
+      "status": "done",
+      "deps": [
+        "T00"
+      ],
+      "paths": [
+        "App/Sources",
+        "scripts/build.sh",
+        "project.yml"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 09:34",
+      "finished": "2026-09-25 09:34",
+      "notes": [
+        "2026-09-25 09:34 claude: App/Sources ora = Model/ (DesignModel.swift, di Codex da ora) + UI/{FusionTakeoffApp, Workspace/ContentView, Viewport/ViewportView}. Nessuna modifica di logica. build.sh ora esce con lo status reale di xcodebuild (log in build/xcodebuild.log). Build OK, swift test 6/6."
+      ]
+    },
+    {
+      "id": "T17",
+      "title": "Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system",
+      "phase": "2 · UX",
+      "status": "todo",
+      "deps": [
+        "T16"
+      ],
+      "paths": [
+        "App/Sources/UI/Workspace",
+        "App/Sources/UI/DesignSystem"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T18",
+      "title": "ViewCube + navigazione camera (orbita/pan/zoom, viste standard)",
+      "phase": "2 · UX",
+      "status": "todo",
+      "deps": [
+        "T07"
+      ],
+      "paths": [
+        "App/Sources/UI/Viewport"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T19",
+      "title": "Selezione ed evidenziazione nel viewport (picking)",
+      "phase": "2 · UX",
+      "status": "todo",
+      "deps": [
+        "T07"
+      ],
+      "paths": [
+        "App/Sources/UI/Viewport"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T20",
+      "title": "Comandi, menu, scorciatoie, stati vuoti, onboarding",
+      "phase": "2 · UX",
+      "status": "todo",
+      "deps": [
+        "T17",
+        "T04"
+      ],
+      "paths": [
+        "App/Sources/UI/Commands",
+        "App/Sources/UI/Onboarding"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T21",
+      "title": "Piatto di stampa a schermo (volume stampante, oggetto appoggiato)",
+      "phase": "4 · Stampa 3D",
+      "status": "todo",
+      "deps": [
+        "T07",
+        "T12"
+      ],
+      "paths": [
+        "App/Sources/UI/Viewport"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T22",
+      "title": "Pannello stampabilità: report visivo, evidenzia problemi",
+      "phase": "4 · Stampa 3D",
+      "status": "todo",
+      "deps": [
+        "T11",
+        "T19"
+      ],
+      "paths": [
+        "App/Sources/UI/Printability"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T23",
+      "title": "Dialog di esportazione STL/3MF (formato, risoluzione, anteprima)",
+      "phase": "4 · Stampa 3D",
+      "status": "todo",
+      "deps": [
+        "T10",
+        "T17"
+      ],
+      "paths": [
+        "App/Sources/UI/Export"
+      ],
+      "suggested": "claude",
+      "owner": null
     }
   ]
 }

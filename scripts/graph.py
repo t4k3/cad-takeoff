@@ -12,6 +12,9 @@ Commands:
   handoff ID [--note TEXT]       release a task in progress, back to todo, with notes
   block ID --note TEXT           mark blocked (needs user decision)
   add ID TITLE --deps A,B --paths p1,p2 [--agent A] [--phase P]
+  assign ID AGENT --by WHO [--note TEXT]   change the suggested agent of a task
+  deps ID A,B --by WHO                     change prerequisites
+  paths ID p1,p2 --by WHO                  change the files a task owns
   log AGENT TYPE TEXT            free entry in COLLAB.md (TYPE: NOTA|DECISIONE|CONFLITTO|DOMANDA)
   render                         regenerate GRAPH.md
   validate                       check ids, deps, cycles
@@ -159,6 +162,12 @@ def main():
     a.add_argument("id"); a.add_argument("title")
     a.add_argument("--deps", default=""); a.add_argument("--paths", default="")
     a.add_argument("--agent", default=""); a.add_argument("--phase", default="Altro")
+    s = sub.add_parser("assign"); s.add_argument("id"); s.add_argument("agent", choices=sorted(AGENTS | {"any"}))
+    s.add_argument("--by", required=True, choices=sorted(AGENTS)); s.add_argument("--note", default="")
+    s = sub.add_parser("deps"); s.add_argument("id"); s.add_argument("deps")
+    s.add_argument("--by", required=True, choices=sorted(AGENTS))
+    s = sub.add_parser("paths"); s.add_argument("id"); s.add_argument("paths")
+    s.add_argument("--by", required=True, choices=sorted(AGENTS))
     l = sub.add_parser("log"); l.add_argument("agent"); l.add_argument("type"); l.add_argument("text")
     sub.add_parser("render"); sub.add_parser("validate")
     args = p.parse_args()
@@ -217,6 +226,25 @@ def main():
             validate(data, quiet=True)
             save(data)
             append_log(args.agent or "?", "NUOVO TASK", f"{args.title} (dipende da {args.deps or '—'})", args.id)
+        elif args.cmd == "assign":
+            t = get(data, args.id)
+            if t["status"] == "in_progress" and t.get("owner") != args.agent:
+                sys.exit(f"{t['id']} è in corso da {t['owner']}: prima serve un handoff")
+            old = t.get("suggested")
+            t["suggested"] = args.agent
+            save(data)
+            append_log(args.by, "RIASSEGNATO", f"**{t['title']}**: {old} → {args.agent}. {args.note}", t["id"])
+        elif args.cmd == "deps":
+            t = get(data, args.id)
+            t["deps"] = [x for x in args.deps.split(",") if x]
+            validate(data, quiet=True)
+            save(data)
+            append_log(args.by, "DIPENDENZE", f"**{t['title']}** dipende da: {', '.join(t['deps']) or '—'}", t["id"])
+        elif args.cmd == "paths":
+            t = get(data, args.id)
+            t["paths"] = [x for x in args.paths.split(",") if x]
+            save(data)
+            append_log(args.by, "PATHS", f"**{t['title']}** ora tocca: {', '.join(t['paths'])}", t["id"])
         elif args.cmd == "log":
             append_log(args.agent, args.type.upper(), args.text)
         elif args.cmd == "render":
