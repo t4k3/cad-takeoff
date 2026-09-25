@@ -1,6 +1,6 @@
-# Requisiti CAD — revisione 3
+# Requisiti CAD — revisione 4
 
-25 settembre 2026 · richiesta diretta di Ross · coordinamento T24.
+25 settembre 2026 · richiesta diretta di Ross · coordinamento T24, aggiornamento dipendenze T71.
 
 **La chat che sviluppa geometrie e i connettori Claude/ChatGPT hanno priorità principale.**
 [Contratto assistente](AI_ASSISTANT.md): Claude cura UX e connettore Claude;
@@ -30,8 +30,9 @@ presenza di pulsanti o di una timeline visiva.
 | P1 | Assiemi | Sottoassiemi, posizionamento, giunti/vincoli, distinta e interferenze |
 | P1 | Consegna | Documenti riapribili con storico; STL/3MF, STEP, DXF e documentazione di piega |
 
-Le priorità stabiliscono l'ordine tecnico: non eliminano le funzioni delle fasi
-successive dalla richiesta. CAM completo, nesting automatico, simulazione FEA,
+Le priorità descrivono le fondazioni tecniche; l'ordine operativo è quello della
+[roadmap approvata](../ROADMAP.md), un passo alla volta. Non eliminano le funzioni
+delle fasi successive dalla richiesta. CAM completo, nesting automatico, simulazione FEA,
 cloud/PDM e slicing restano fuori da questa revisione; tavole e dati di produzione
 della lamiera, distinta e assiemi sono invece inclusi.
 
@@ -57,12 +58,17 @@ supportare il prototipo, ma non costituisce il modello geometrico definitivo
 per questi requisiti. La mesh sarà una rappresentazione derivata per viewport,
 stampa e controlli preliminari, separata da forme CAD e riferimenti topologici.
 
-Serve un contratto `GeometryKernel` con forme opache e identità stabili, isolamento
-degli errori e tolleranze esplicite. Open CASCADE è un candidato B-rep da verificare
-con un prototipo macOS, gestione della memoria, distribuzione e casi geometrici;
-nessuna libreria viene dichiarata scelta/installata da questo documento. Il kernel
-da solo non fornisce automaticamente storico affidabile, solver assiemi o tutto
-il modulo lamiera: sono sottosistemi da implementare e provare.
+Il motore sarà sviluppato da noi in `CADCore` (T70), inizialmente con solidi a facce
+piane. OpenCascade/OCCT è escluso dal piano; T26/T62 sono annullati. Le librerie
+esterne restano eccezioni solo se strettamente necessarie, secondo le
+[regole sulle dipendenze](DEPENDENCY_POLICY.md).
+
+Serve un contratto `GeometryKernel` con forme opache, gestione dei riferimenti
+topologici, isolamento degli errori e tolleranze esplicite. Le superfici curve
+sfaccettate sono approssimazioni, anche in presenza di metadati analitici;
+precisione, robustezza e rimappatura dei riferimenti dopo modifiche vanno provate.
+Il kernel da solo non fornisce storico affidabile, solver assiemi o tutto il
+modulo lamiera: sono sottosistemi da implementare e provare.
 
 Le operazioni CSG su mesh del vecchio T08 possono essere ausiliarie. Non devono
 diventare il vincolo architetturale che impedisce lamiera, STEP o riferimenti di
@@ -71,6 +77,7 @@ faccia persistenti. Eventuali cambi delle API passano dal registro condiviso.
 ## Documenti complementari
 
 - [Assistente e MCP](AI_ASSISTANT.md): priorità, ruoli e criteri di esecuzione.
+- [Librerie nostre e dipendenze](DEPENDENCY_POLICY.md): scelta del motore e criteri per eventuali eccezioni.
 - [Storico, parti e assiemi](PARAMETRIC_ASSEMBLIES.md): modello di dominio,
   dipendenze, ricostruzione, documenti e casi di accettazione.
 - [Lamiera](SHEET_METAL.md): matrice delle capacità, stati geometrici e test.
@@ -102,5 +109,3 @@ modello dati sono proposte progettuali, non una descrizione degli interni Autode
 - [Timeline Autodesk](https://help.autodesk.com/cloudhelp/ENU/Fusion-Designs/files/ASM-USE-TIMELINE.htm).
 - [Componenti Autodesk](https://help.autodesk.com/cloudhelp/ENU/Fusion-Assemble/files/ASM-COMPONENTS.htm).
 - [Relazioni d'assieme Autodesk](https://help.autodesk.com/cloudhelp/ENU/Fusion-Assemble/files/ASM-JOINTS.htm).
-- [Kernel OCCT: modellazione e interscambio](https://occt3d.com/dev/doc/overview/html/index.html).
-

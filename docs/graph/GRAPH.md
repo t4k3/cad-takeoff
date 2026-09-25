@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:07. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:08. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -113,7 +113,7 @@ flowchart LR
     T72["T72 · UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)<br/><i>claude</i>"]:::in_progress
   end
   subgraph P17["Coordinamento"]
-    T71["T71 · Allineare roadmap e regole sulle dipendenze alla richiesta di Ross<br/><i>codex</i>"]:::in_progress
+    T71["T71 · Allineare roadmap e regole sulle dipendenze alla richiesta di Ross<br/><i>codex</i>"]:::done
   end
   T00 --> T02
   T00 --> T03
@@ -130,10 +130,10 @@ flowchart LR
   T28 --> T06
   T16 --> T07
   T03 --> T08
-  T26 --> T08
+  T70 --> T08
   T28 --> T08
   T03 --> T09
-  T26 --> T09
+  T70 --> T09
   T28 --> T09
   T03 --> T10
   T27 --> T10
@@ -297,8 +297,8 @@ flowchart LR
 | T05 | Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) | todo | claude | T16, T24, T15, T25 | App/Sources/UI/Sketch |
 | T06 | Estrusione da schizzo (profilo -> feature) | todo | codex | T05, T15, T03, T28 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift |
 | T07 | Viewport Metal (sostituisce SceneKit deprecato) | done | claude | T16 | App/Sources/UI/Viewport<br>App/Sources/UI/Workspace/WorkspaceView.swift |
-| T08 | Booleane CSG (unione/sottrazione) su mesh | todo | codex | T03, T26, T28 | Packages/CADCore/Sources/CADCore/CSG.swift<br>Packages/CADCore/Tests/CADCoreTests/CSGTests.swift |
-| T09 | Rivoluzione (revolve) di un profilo | todo | codex | T03, T26, T28 | Packages/CADCore/Sources/CADCore/Revolve.swift<br>Packages/CADCore/Tests/CADCoreTests/RevolveTests.swift |
+| T08 | Booleane CSG (unione/sottrazione) su mesh | todo | codex | T03, T70, T28 | Packages/CADCore/Sources/CADCore/CSG.swift<br>Packages/CADCore/Tests/CADCoreTests/CSGTests.swift |
+| T09 | Rivoluzione (revolve) di un profilo | todo | codex | T03, T70, T28 | Packages/CADCore/Sources/CADCore/Revolve.swift<br>Packages/CADCore/Tests/CADCoreTests/RevolveTests.swift |
 | T10 | Export 3MF (zip + model XML in mm) | todo | codex | T03, T27, T59 | Packages/CADCore/Sources/CADCore/ThreeMF.swift<br>Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift |
 | T11 | Controllo stampabilità (chiusura, sbalzi, volume piatto) | todo | codex | T31 | Packages/CADCore/Sources/CADCore/Printability.swift |
 | T12 | Piatto di stampa: appoggia, centra, dimensioni stampante | todo | codex | T03, T27, T04 | Packages/CADCore/Sources/CADCore/Placement.swift<br>Packages/CADCore/Tests/CADCoreTests/PlacementTests.swift |
@@ -360,5 +360,5 @@ flowchart LR
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
 | T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | todo | codex | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |
 | T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | todo | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests |
-| T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | in_progress | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
+| T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | done | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
 | T72 | UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) | in_progress | claude | T19 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |

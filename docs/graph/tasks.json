@@ -157,7 +157,7 @@
       "suggested": "codex",
       "deps": [
         "T03",
-        "T26",
+        "T70",
         "T28"
       ],
       "paths": [
@@ -174,7 +174,7 @@
       "suggested": "codex",
       "deps": [
         "T03",
-        "T26",
+        "T70",
         "T28"
       ],
       "paths": [
@@ -1303,7 +1303,7 @@
       "id": "T71",
       "title": "Allineare roadmap e regole sulle dipendenze alla richiesta di Ross",
       "phase": "Coordinamento",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T24"
       ],
@@ -1315,7 +1315,11 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 11:06"
+      "started": "2026-09-25 11:06",
+      "finished": "2026-09-25 11:08",
+      "notes": [
+        "2026-09-25 11:08 codex: Roadmap e specifiche allineate: kernel nostro, OCCT escluso, eccezioni esterne solo per necessità documentata; regole in DEPENDENCY_POLICY.md. T08/T09 dipendono da T70 anziché dal T26 annullato. Registrato aggiornamento Claude/Ross sul passo 2. 11 test CADCore superati; grafo valido. Solo documentazione, nessuna modifica app."
+      ]
     },
     {
       "id": "T72",

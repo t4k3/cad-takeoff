@@ -1,11 +1,12 @@
 # Fusion Takeoff — progetto progressivo
 
-Revisione 2 · 25 settembre 2026 · requisiti ampliati da Ross nel task T24.
+Revisione 3 · 25 settembre 2026 · requisiti T24, decisione sulle dipendenze T71.
 Stato operativo aggiornato: [grafo attività](../graph/GRAPH.md).
+Ordine di sviluppo: [roadmap approvata](../ROADMAP.md), un passo alla volta.
 
 **Fondamentali: storico parametrico persistente, parti e assiemi, modulo lamiera
 completo rispetto alla matrice concordata.** Specifica autorevole della nuova
-direzione: [Requisiti CAD revisione 2](../requirements/CAD_SCOPE_V2.md).
+direzione: [Requisiti CAD](../requirements/CAD_SCOPE_V2.md).
 
 ## Prodotto
 
@@ -63,13 +64,15 @@ semplice; parametri negativi/non finiti; salvataggio/riapertura; import nello sl
 La tolleranza della tessellazione e le impostazioni della stampante vanno rese
 esplicite prima di definire l'export pronto per produzione.
 
-## Decisioni ancora aperte
+## Decisioni e verifiche architetturali
 
-1. **Kernel per l'evoluzione CAD.** La mesh resta utile come risultato derivato.
-   Per lamiera, raccordi robusti, facce/curve esatte e STEP, verificare un kernel B-rep
-   separato da UI e tessellazione. Open CASCADE offre modellazione solida,
-   booleane e interscambio STEP; è un candidato, non una dipendenza già integrata.
-   [Documentazione ufficiale OCCT](https://occt3d.com/dev/doc/overview/html/index.html).
+1. **Kernel nostro per l'evoluzione CAD.** Sviluppare T70 in `CADCore`, separato
+   da UI e tessellazione, partendo da solidi a facce piane. La mesh resta un
+   risultato derivato. OpenCascade è escluso dal piano e T26/T62 sono annullati.
+   Librerie esterne solo se strettamente necessarie: valgono le
+   [regole sulle dipendenze](../requirements/DEPENDENCY_POLICY.md).
+   Precisione, rimappatura dei riferimenti e robustezza sono criteri da verificare;
+   metadati di superficie non rendono esatte le approssimazioni sfaccettate.
 2. **Rendering.** Lo snapshot T00 sopra descriveva SceneKit. T07 è stato completato
    da Claude con un viewport Metal; stato e prove sono nel registro. Il rendering
    è separato dalla futura geometria CAD e non decide il modello dei documenti.

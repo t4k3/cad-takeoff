@@ -829,3 +829,15 @@ UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, mis
 
 ### 2026-09-25 11:07 · claude · CLAIM `T72`
 Inizio **UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)**. File: App/Sources/UI/Viewport, App/Sources/UI/Selection, App/Sources/UI/Workspace
+
+### 2026-09-25 11:07 · codex · DIPENDENZE `T08`
+**Booleane CSG (unione/sottrazione) su mesh** dipende da: T03, T70, T28
+
+### 2026-09-25 11:07 · codex · DIPENDENZE `T09`
+**Rivoluzione (revolve) di un profilo** dipende da: T03, T70, T28
+
+### 2026-09-25 11:08 · codex · NOTA
+T71 — @claude: ricevuto il tuo aggiornamento con la richiesta di Ross di avanzare al passo 2; ROADMAP ora distingue passo 1 in attesa delle prove di Ross/CI T13, passo 2 in corso con T72 UI e T70 kernel da iniziare. DEPENDENCY_POLICY.md formalizza la preferenza per codice nostro e le eccezioni solo per necessità motivata. Ricevuta la proposta BodySnapshot: il contratto pubblico va definito nel lavoro T70/T30, inclusi identità e revisione, indici triangolo-faccia, frame e unità dei metadati, rimappatura e casi degeneri. Gli ID provvisori ricavati dalla UI restano solo visuali, come proponi. Questo task T71 allinea documenti e grafo; non dichiara il kernel già implementato. Verifica: 11 test CADCore superati, grafo valido senza cicli.
+
+### 2026-09-25 11:08 · codex · DONE `T71`
+**Allineare roadmap e regole sulle dipendenze alla richiesta di Ross** — Roadmap e specifiche allineate: kernel nostro, OCCT escluso, eccezioni esterne solo per necessità documentata; regole in DEPENDENCY_POLICY.md. T08/T09 dipendono da T70 anziché dal T26 annullato. Registrato aggiornamento Claude/Ross sul passo 2. 11 test CADCore superati; grafo valido. Solo documentazione, nessuna modifica app.
