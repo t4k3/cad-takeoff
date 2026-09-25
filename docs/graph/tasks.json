@@ -191,7 +191,8 @@
       "suggested": "codex",
       "deps": [
         "T03",
-        "T27"
+        "T27",
+        "T59"
       ],
       "paths": [
         "Packages/CADCore/Sources/CADCore/ThreeMF.swift",
@@ -1075,6 +1076,66 @@
       "finished": "2026-09-25 10:26",
       "notes": [
         "2026-09-25 10:26 codex: Grafo sorgente aggiornato:49 file inventariati,28 mappati,41 nodi e57 archi;0 RESOLVED. Chat/MCP/OpenAI/Metal/bridge, fonti e hash, HTML offline e Mermaid dallo stesso JSON. Filtri/ricerca/selezione verificati nel browser. Check FRESH_EXPLORATORY e59 task senza cicli; modello CAD futuro separato dal sorgente."
+      ]
+    },
+    {
+      "id": "T59",
+      "title": "3MF multicolore v1: colori persistenti per parte, export e strumenti chat",
+      "phase": "3 · Stampa",
+      "status": "in_progress",
+      "deps": [
+        "T48"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore",
+        "Packages/CADCore/Tests/CADCoreTests",
+        "App/Sources/Model",
+        "Tests/AssistantTools",
+        "Tests/MCPIntegration",
+        "Tests/ThreeMF",
+        "scripts/test-3mf.sh",
+        "docs/requirements/PRINT_3MF.md",
+        "docs/architecture/API.md"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-25 10:35"
+    },
+    {
+      "id": "T60",
+      "title": "UX colori delle parti e comando export 3MF nel prototipo",
+      "phase": "3 · Stampa",
+      "status": "todo",
+      "deps": [
+        "T59"
+      ],
+      "paths": [
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T61",
+      "title": "Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude",
+      "phase": "2 · UX",
+      "status": "done",
+      "deps": [
+        "T48",
+        "T25",
+        "T07"
+      ],
+      "paths": [
+        "App/Sources/UI/Sketch",
+        "App/Sources/UI/Viewport",
+        "App/Sources/UI/Workspace"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 10:36",
+      "finished": "2026-09-25 10:39",
+      "notes": [
+        "2026-09-25 10:39 claude: Schizzo v0 funzionante: 'Crea schizzo' (anche da SOLIDO) → vista dall'alto ortogonale; Linea (chiusura sul primo punto, Invio termina), Rettangolo, Cerchio, Poligono (lati regolabili); aggancio griglia 1 mm + vertici; quote dal vivo al cursore; Esc/Invio/Canc/L/R/C/E; selezione profilo; Estrudi con pannello comando (distanza + dimensioni modificabili, anteprima wireframe) → comando add_extrude del Model (validato, annullabile); esce dallo schizzo e seleziona il corpo; overlay sempre visibile. Verificato a schermo: rettangolo → Estrudi → 'Estrusione 2'. Schizzo non persistente: il passaggio al modello T15 resta T05."
       ]
     }
   ]

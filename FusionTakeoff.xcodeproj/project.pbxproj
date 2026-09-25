@@ -14,6 +14,7 @@
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
+		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
@@ -42,6 +43,7 @@
 		C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */; };
 		CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A604770FA67CFFA12BACDB /* ViewCube.swift */; };
 		CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */; };
+		CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A384B92C6A6894EA9A5831 /* SketchSession.swift */; };
 		D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */; };
 		D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */; };
 		DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */; };
@@ -92,6 +94,7 @@
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
+		55A384B92C6A6894EA9A5831 /* SketchSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchSession.swift; sourceTree = "<group>"; };
 		57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCommands.swift; sourceTree = "<group>"; };
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
@@ -119,6 +122,7 @@
 		DA831E610F555E8A4BC81923 /* AssistantSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSession.swift; sourceTree = "<group>"; };
 		DD59C218754E0D11BA7F1DD8 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Tools.swift"; sourceTree = "<group>"; };
+		E739A2954E6A9A303F24F96F /* SketchCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchCommands.swift; sourceTree = "<group>"; };
 		E8DCACC31C8A1D1083704390 /* Ribbon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ribbon.swift; sourceTree = "<group>"; };
 		EB6B876F0661B437E6E2EEA8 /* OpenAIStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIStream.swift; sourceTree = "<group>"; };
 		ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettings.swift; sourceTree = "<group>"; };
@@ -183,6 +187,15 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
+		3DDE5FAF77543C0C903FC4AC /* Sketch */ = {
+			isa = PBXGroup;
+			children = (
+				E739A2954E6A9A303F24F96F /* SketchCommands.swift */,
+				55A384B92C6A6894EA9A5831 /* SketchSession.swift */,
+			);
+			path = Sketch;
+			sourceTree = "<group>";
+		};
 		44C6B64A6339651A73120B39 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
@@ -217,6 +230,7 @@
 				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
 				AFDE5F6EC0E12C1023FBFC61 /* Previews */,
+				3DDE5FAF77543C0C903FC4AC /* Sketch */,
 				0ED90DE497BF835BB64B46EF /* Viewport */,
 				EBF7FA287516A5F3EE980E3C /* Workspace */,
 			);
@@ -494,6 +508,8 @@
 				15B9E5F66063E99E492FD242 /* Picking.swift in Sources */,
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
+				1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */,
+				CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */,
 				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,
 				95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */,
 				383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */,

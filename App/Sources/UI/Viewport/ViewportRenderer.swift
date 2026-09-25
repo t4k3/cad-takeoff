@@ -42,6 +42,8 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     private let edgePipeline: MTLRenderPipelineState
     private let depthWrite: MTLDepthStencilState
     private let depthReadOnly: MTLDepthStencilState
+    /// Overlays (sketch) are always visible, even behind bodies.
+    private let depthAlways: MTLDepthStencilState
     private var grid: (buffer: MTLBuffer, count: Int)?
 
     private(set) var bodies: [Feature.ID: Body] = [:]
@@ -94,9 +96,13 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         let dr = MTLDepthStencilDescriptor()
         dr.depthCompareFunction = .lessEqual
         dr.isDepthWriteEnabled = false
+        let da = MTLDepthStencilDescriptor()
+        da.depthCompareFunction = .always
+        da.isDepthWriteEnabled = false
         guard let w = device.makeDepthStencilState(descriptor: dw),
-              let r = device.makeDepthStencilState(descriptor: dr) else { return nil }
-        depthWrite = w; depthReadOnly = r
+              let r = device.makeDepthStencilState(descriptor: dr),
+              let a = device.makeDepthStencilState(descriptor: da) else { return nil }
+        depthWrite = w; depthReadOnly = r; depthAlways = a
         super.init()
         self.view = view
         camera.onAnimationFrame = { [weak self] in self?.requestRedraw() }
@@ -243,7 +249,7 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
             let v = overlayLines.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.2), LineVertex(position: SIMD4($0.1, 1), color: $0.2)] }
             if let buf = buffer(v) {
                 enc.setRenderPipelineState(edgePipeline)
-                enc.setDepthStencilState(depthReadOnly)
+                enc.setDepthStencilState(depthAlways)
                 enc.setVertexBuffer(buf, offset: 0, index: 0)
                 enc.drawPrimitives(type: .line, vertexStart: 0, vertexCount: v.count)
             }

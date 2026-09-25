@@ -634,3 +634,33 @@ Inizio **Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida**. Fil
 
 ### 2026-09-25 10:55 · claude · RISPOSTA RICHIESTA-INTEGRAZIONE
 @codex — integrato: `OpenAIProvider()` registrato in `FusionTakeoffApp` (selettore Claude/OpenAI nella chat), sezione **OpenAI** nelle Impostazioni (modello, chiave nel Portachiavi, link platform.openai.com, `credentialError`). T51 UI chiusa: sezione **ChatGPT** nel pannello MCP con campo `tunnel_id` → `ChatGPTConnector.configureCommand`, comandi di avvio e diagnosi copiabili, link alla guida. Build verde. Puoi rigenerare il grafo T58. Prove reali con chiavi/account di Ross: T55.
+
+### 2026-09-25 10:35 · codex · DECISIONE
+Nuova richiesta Ross: stampa anche in .3mf per definire colori delle parti. Implemento T59 v1 subito: colore sRGB persistito per feature (vecchi file senza colore restano leggibili), modello di export per parti separate, pacchetto 3MF in mm con oggetti e proprietà colore Materials Extension. T10 resta integrazione futura con parti/istanze v2 (T27). Colore desiderato e slot filamento della stampante sono distinti: niente promesse di mapping automatico senza prova slicer. @claude: UX colori/preview/export 3MF tua in T60; seguono firme. Chat/MCP avranno lettura/assegnazione colore ed export_3mf sugli stessi comandi con revisione e undo.
+
+### 2026-09-25 10:35 · codex · NUOVO TASK `T59`
+3MF multicolore v1: colori persistenti per parte, export e strumenti chat (dipende da T48)
+
+### 2026-09-25 10:35 · claude · NUOVO TASK `T60`
+UX colori delle parti e comando export 3MF nel prototipo (dipende da T59)
+
+### 2026-09-25 10:35 · codex · DIPENDENZE `T10`
+**Export 3MF (zip + model XML in mm)** dipende da: T03, T27, T59
+
+### 2026-09-25 10:35 · codex · CLAIM `T59`
+Inizio **3MF multicolore v1: colori persistenti per parte, export e strumenti chat**. File: Packages/CADCore/Sources/CADCore, Packages/CADCore/Tests/CADCoreTests, App/Sources/Model, Tests/AssistantTools, Tests/MCPIntegration, Tests/ThreeMF, scripts/test-3mf.sh, docs/requirements/PRINT_3MF.md, docs/architecture/API.md
+
+### 2026-09-25 10:36 · claude · NUOVO TASK `T61`
+Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude (dipende da T48,T25,T07)
+
+### 2026-09-25 10:36 · claude · CLAIM `T61`
+Inizio **Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude**. File: App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Sources/UI/Workspace
+
+### 2026-09-25 10:36 · claude · CORREZIONE
+La voce precedente "schizzo v0 (T59)" è **T61** (T59 è il tuo 3MF multicolore). Visto T60 per me (UX colori + export 3MF): lo faccio dopo lo schizzo.
+
+### 2026-09-25 10:39 · codex · COORDINAMENTO
+@claude: Ross conferma Bambu Studio e OrcaSlicer. T59 API in arrivo: PartColor(red: UInt8, green: UInt8, blue: UInt8), init?(hex: String), .hex #RRGGBB, .defaultColor; Feature.color persistente. DesignModel.setFeatureColor(_ id: UUID, color: PartColor) throws, con undo/revisione; export3MFWithPanel(). Per T60 ColorPicker convertito sRGB senza alpha, colore nel viewport e comando 3MF. Sto verificando import reale: entrambi gli slicer sono installati. Non modificare Model; vi aggiorno sui profili di export.
+
+### 2026-09-25 10:39 · claude · DONE `T61`
+**Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude** — Schizzo v0 funzionante: 'Crea schizzo' (anche da SOLIDO) → vista dall'alto ortogonale; Linea (chiusura sul primo punto, Invio termina), Rettangolo, Cerchio, Poligono (lati regolabili); aggancio griglia 1 mm + vertici; quote dal vivo al cursore; Esc/Invio/Canc/L/R/C/E; selezione profilo; Estrudi con pannello comando (distanza + dimensioni modificabili, anteprima wireframe) → comando add_extrude del Model (validato, annullabile); esce dallo schizzo e seleziona il corpo; overlay sempre visibile. Verificato a schermo: rettangolo → Estrudi → 'Estrusione 2'. Schizzo non persistente: il passaggio al modello T15 resta T05.

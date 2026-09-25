@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 10:34. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 10:39. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -44,6 +44,7 @@ flowchart LR
     T19["T19 · Selezione ed evidenziazione nel viewport (picking)<br/><i>claude</i>"]:::done
     T20["T20 · Comandi, menu, scorciatoie, stati vuoti, onboarding<br/><i>claude</i>"]:::todo
     T25["T25 · Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)<br/><i>claude</i>"]:::done
+    T61["T61 · Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude<br/><i>claude</i>"]:::done
   end
   subgraph P7["6 · CAD parametrico"]
     T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::done
@@ -95,6 +96,10 @@ flowchart LR
   subgraph P14["0 · Cooperazione"]
     T58["T58 · Aggiornare grafo sorgente navigabile con chat, MCP e Metal<br/><i>codex</i>"]:::done
   end
+  subgraph P15["3 · Stampa"]
+    T59["T59 · 3MF multicolore v1: colori persistenti per parte, export e strumenti chat<br/><i>codex</i>"]:::in_progress
+    T60["T60 · UX colori delle parti e comando export 3MF nel prototipo<br/><i>claude</i>"]:::todo
+  end
   T00 --> T02
   T00 --> T03
   T01 --> T03
@@ -117,6 +122,7 @@ flowchart LR
   T28 --> T09
   T03 --> T10
   T27 --> T10
+  T59 --> T10
   T31 --> T11
   T03 --> T12
   T27 --> T12
@@ -230,6 +236,11 @@ flowchart LR
   T24 --> T58
   T48 --> T58
   T49 --> T58
+  T48 --> T59
+  T59 --> T60
+  T48 --> T61
+  T25 --> T61
+  T07 --> T61
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -256,7 +267,7 @@ flowchart LR
 | T07 | Viewport Metal (sostituisce SceneKit deprecato) | done | claude | T16 | App/Sources/UI/Viewport<br>App/Sources/UI/Workspace/WorkspaceView.swift |
 | T08 | Booleane CSG (unione/sottrazione) su mesh | todo | codex | T03, T26, T28 | Packages/CADCore/Sources/CADCore/CSG.swift<br>Packages/CADCore/Tests/CADCoreTests/CSGTests.swift |
 | T09 | Rivoluzione (revolve) di un profilo | todo | codex | T03, T26, T28 | Packages/CADCore/Sources/CADCore/Revolve.swift<br>Packages/CADCore/Tests/CADCoreTests/RevolveTests.swift |
-| T10 | Export 3MF (zip + model XML in mm) | todo | codex | T03, T27 | Packages/CADCore/Sources/CADCore/ThreeMF.swift<br>Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift |
+| T10 | Export 3MF (zip + model XML in mm) | todo | codex | T03, T27, T59 | Packages/CADCore/Sources/CADCore/ThreeMF.swift<br>Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift |
 | T11 | Controllo stampabilità (chiusura, sbalzi, volume piatto) | todo | codex | T31 | Packages/CADCore/Sources/CADCore/Printability.swift |
 | T12 | Piatto di stampa: appoggia, centra, dimensioni stampante | todo | codex | T03, T27, T04 | Packages/CADCore/Sources/CADCore/Placement.swift<br>Packages/CADCore/Tests/CADCoreTests/PlacementTests.swift |
 | T13 | Script CI locale (test core + build app) | todo | codex | T00 | scripts/ci.sh |
@@ -305,3 +316,6 @@ flowchart LR
 | T56 | Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop | done | claude | T50 | Tools/ftk-mcp<br>project.yml<br>App/FusionTakeoff.entitlements<br>Tools/ftk-mcp.entitlements<br>App/Sources/Integration/MCP/MCPHost.swift<br>App/Sources/UI/Connectors |
 | T57 | Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP | done | codex | T48, T49 | App/Sources/Integration/MCP/MCPServer.swift<br>App/Sources/Integration/MCP/LocalHTTPTransport.swift<br>Tests/MCPIntegration<br>scripts/test-mcp-integration.sh |
 | T58 | Aggiornare grafo sorgente navigabile con chat, MCP e Metal | done | codex | T24, T48, T49 | docs/architecture<br>scripts/architecture_graph.py |
+| T59 | 3MF multicolore v1: colori persistenti per parte, export e strumenti chat | in_progress | codex | T48 | Packages/CADCore/Sources/CADCore<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>Tests/AssistantTools<br>Tests/MCPIntegration<br>Tests/ThreeMF<br>scripts/test-3mf.sh<br>docs/requirements/PRINT_3MF.md<br>docs/architecture/API.md |
+| T60 | UX colori delle parti e comando export 3MF nel prototipo | todo | claude | T59 | App/Sources/UI |
+| T61 | Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude | done | claude | T48, T25, T07 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace |

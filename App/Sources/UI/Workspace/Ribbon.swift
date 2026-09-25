@@ -45,6 +45,8 @@ struct Ribbon: View {
 
     @ViewBuilder private var solidTools: some View {
         ToolGroup("CREA") {
+            Button { workspace.enterSketch() } label: { Label("Schizzo", systemImage: "pencil.and.outline") }
+                .help("Nuovo schizzo sul piano XY")
             Button { model.addBox() } label: { Label("Box", systemImage: "cube") }
                 .help("Nuovo parallelepipedo 20×20×20 mm")
             Button { model.addCylinder() } label: { Label("Cilindro", systemImage: "cylinder") }
@@ -60,10 +62,47 @@ struct Ribbon: View {
     }
 
     @ViewBuilder private var sketchTools: some View {
-        ToolGroup("SCHIZZO") {
-            Text("Gli strumenti di schizzo arrivano con T05")
-                .font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
+        if let sketch = workspace.sketch {
+            ToolGroup("DISEGNA") {
+                ForEach(SketchSession.Tool.allCases) { tool in
+                    Button { sketch.tool = tool } label: { Label(tool.rawValue, systemImage: tool.symbol) }
+                        .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool, tint: Theme.Palette.sketch))
+                        .help(tool.hint)
+                }
+            }
+            ToolGroup("OPZIONI") {
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Griglia 1 mm", isOn: Binding(get: { sketch.snapToGrid }, set: { sketch.snapToGrid = $0 }))
+                        .toggleStyle(.checkbox)
+                    Stepper("Lati: \(sketch.polygonSides)", value: Binding(get: { sketch.polygonSides }, set: { sketch.polygonSides = $0 }), in: 3...64)
+                }
+                .font(Theme.Typeface.toolLabel)
+                .controlSize(.small)
                 .frame(height: 50)
+                .padding(.horizontal, 4)
+            }
+            ToolGroup("CREA") {
+                Button { workspace.extrudeSketch(model: model) } label: { Label("Estrudi", systemImage: "square.stack.3d.up") }
+                    .disabled(sketch.extrudeCandidate == nil || workspace.command != nil)
+                    .help(sketch.extrudeCandidate == nil ? "Disegna o seleziona un profilo chiuso" : "Estrudi il profilo selezionato (E)")
+                    .keyboardShortcut("e", modifiers: [])
+                Button { sketch.deleteSelection() } label: { Label("Elimina", systemImage: "trash") }
+                    .disabled(sketch.selection == nil)
+            }
+            ToolGroup("SCHIZZO") {
+                Button { workspace.exitSketch() } label: { Label("Termina", systemImage: "checkmark.circle") }
+                    .buttonStyle(RibbonButtonStyle(tint: Theme.Palette.sketch))
+                    .help("Termina schizzo")
+            }
+        } else {
+            ToolGroup("SCHIZZO") {
+                Button { workspace.enterSketch() } label: { Label("Crea schizzo", systemImage: "pencil.and.outline") }
+                    .buttonStyle(RibbonButtonStyle(tint: Theme.Palette.sketch))
+                    .help("Nuovo schizzo sul piano XY (piatto di stampa)")
+            }
+            Text("Disegna un profilo sul piano XY e trasformalo in un solido con Estrudi.")
+                .font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
+                .frame(height: 50).padding(.leading, 8)
         }
     }
 

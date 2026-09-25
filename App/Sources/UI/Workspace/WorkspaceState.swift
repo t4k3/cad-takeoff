@@ -28,6 +28,30 @@ final class WorkspaceState {
     var hovered: Feature.ID?
     /// Command panel currently open (create/edit feature).
     var command: CommandSession?
+    /// Active sketch (v0, UI-only). nil = not sketching.
+    var sketch: SketchSession?
+    /// Asks the viewport to switch camera for sketch mode (true) or restore it (false).
+    var sketchCameraRequest: Bool?
+
+    func enterSketch() {
+        command?.onCancel(); command = nil
+        sketch = SketchSession()
+        tab = .sketch
+        sketchCameraRequest = true
+    }
+
+    func exitSketch() {
+        command?.onCancel(); command = nil
+        sketch = nil
+        tab = .solid
+        sketchCameraRequest = false
+    }
+
+    func extrudeSketch(model: DesignModel) {
+        guard let sketch else { return }
+        command?.onCancel()
+        command = SketchCommands.extrude(sketch: sketch, model: model, workspace: self)
+    }
 
     /// Opens the edit panel for a feature, cancelling any command already running.
     func editFeature(_ id: Feature.ID, model: DesignModel) {
