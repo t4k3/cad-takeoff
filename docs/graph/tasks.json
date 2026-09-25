@@ -258,7 +258,8 @@
         "T23",
         "T13",
         "T38",
-        "T46"
+        "T46",
+        "T55"
       ],
       "paths": [
         "App/Resources",
@@ -428,7 +429,7 @@
       "id": "T24",
       "title": "Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi",
       "phase": "6 · CAD parametrico",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T02"
       ],
@@ -439,7 +440,11 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 09:50"
+      "started": "2026-09-25 09:50",
+      "finished": "2026-09-25 10:12",
+      "notes": [
+        "2026-09-25 10:12 codex: Requisiti completi storico/parti/assiemi/lamiera, contratto UX-Core e priorità chat/MCP concordati con Claude. Matrice SM01-SM17; grafo dominio 19 nodi/30 archi inferiti con evidenze e hash. Roadmap T26-T55 e gate release; sei test core passati. Documento completato, funzionalità avanzate non ancora implementate."
+      ]
     },
     {
       "id": "T25",
@@ -846,7 +851,7 @@
       "id": "T48",
       "title": "Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)",
       "phase": "6 · Assistente e MCP",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T47"
       ],
@@ -858,7 +863,11 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 10:03"
+      "started": "2026-09-25 10:03",
+      "finished": "2026-09-25 10:12",
+      "notes": [
+        "2026-09-25 10:12 codex: 12 strumenti condivisi MCP/chat nel DesignModel. Validazione, revisione, transazioni, undo/redo di sessione, STL base64. 25 verifiche scripts/test-assistant-tools.sh, 6 test CADCore e build app riusciti. Prova LLM remoto distinta in T55."
+      ]
     },
     {
       "id": "T49",
@@ -909,16 +918,19 @@
       "id": "T51",
       "title": "Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida",
       "phase": "6 · Assistente e MCP",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T49"
       ],
       "paths": [
         "App/Sources/Integration/ChatGPT",
-        "docs/connectors/CHATGPT.md"
+        "docs/connectors/CHATGPT.md",
+        "scripts/connect-chatgpt.py",
+        "Tests/ChatGPTConnector"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": "codex",
+      "started": "2026-09-25 10:11"
     },
     {
       "id": "T52",
@@ -944,15 +956,18 @@
       "id": "T53",
       "title": "Provider OpenAI per la chat in-app",
       "phase": "6 · Assistente e MCP",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
-        "T52"
+        "T47"
       ],
       "paths": [
-        "App/Sources/Integration/Assistant/OpenAIProvider.swift"
+        "App/Sources/Integration/OpenAI",
+        "Tests/OpenAIProvider",
+        "scripts/test-openai-provider.sh"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": "codex",
+      "started": "2026-09-25 10:13"
     },
     {
       "id": "T54",
@@ -986,6 +1001,49 @@
       ],
       "suggested": "codex",
       "owner": null
+    },
+    {
+      "id": "T56",
+      "title": "Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop",
+      "phase": "6 · Assistente e MCP",
+      "status": "done",
+      "deps": [
+        "T50"
+      ],
+      "paths": [
+        "Tools/ftk-mcp",
+        "project.yml",
+        "App/FusionTakeoff.entitlements",
+        "Tools/ftk-mcp.entitlements",
+        "App/Sources/Integration/MCP/MCPHost.swift",
+        "App/Sources/UI/Connectors"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-25 10:15",
+      "finished": "2026-09-25 10:20",
+      "notes": [
+        "2026-09-25 10:20 claude: ftk-mcp come target Xcode (tool, sandbox, network.client, App Group) incluso in Contents/MacOS; discovery nell'App Group 9F8D583GBV.com.takeoff.fusiontakeoff con ripiego sul container dell'app; firma Apple Development team 9F8D583GBV; pulsante 'Collega a Claude Desktop…' (NSOpenPanel sulla cartella Claude, merge con backup, avviso se l'app è stata spostata) e 'Copia percorso bridge'. Verificato: bridge in sandbox → 12 strumenti, avvio automatico dell'app, firma valida (codesign --verify --deep --strict). Collegamento reale a Claude Desktop: da confermare con Ross."
+      ]
+    },
+    {
+      "id": "T57",
+      "title": "Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP",
+      "phase": "6 · Assistente e MCP",
+      "status": "in_progress",
+      "deps": [
+        "T48",
+        "T49"
+      ],
+      "paths": [
+        "App/Sources/Integration/MCP/MCPServer.swift",
+        "App/Sources/Integration/MCP/LocalHTTPTransport.swift",
+        "Tests/MCPIntegration",
+        "scripts/test-mcp-integration.sh"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-25 10:19"
     }
   ]
 }

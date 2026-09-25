@@ -11,6 +11,13 @@ settings:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+    # Signed with Ross's Apple Development identity (team 9F8D583GBV): needed for the
+    # App Group shared by the app and the ftk-mcp bridge. For TestFlight, archive in Xcode
+    # with automatic signing (Distribution).
+    DEVELOPMENT_TEAM: 9F8D583GBV
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Development"
+    ENABLE_HARDENED_RUNTIME: YES
 packages:
   CADCore:
     path: Packages/CADCore
@@ -23,6 +30,12 @@ targets:
       - App/Resources
     dependencies:
       - package: CADCore
+      # MCP bridge shipped inside the app: Contents/MacOS/ftk-mcp (Claude Desktop, ChatGPT tunnel).
+      - target: ftk-mcp
+        embed: true
+        codeSign: false
+        copy:
+          destination: executables
     info:
       path: App/Info.plist
       properties:
@@ -37,9 +50,19 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff
-        ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_ENTITLEMENTS: App/FusionTakeoff.entitlements
-        CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: "-"
     scheme:
       testTargets: []
+  ftk-mcp:
+    type: tool
+    platform: macOS
+    sources:
+      - Tools/ftk-mcp
+    settings:
+      base:
+        PRODUCT_NAME: ftk-mcp
+        PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff.ftk-mcp
+        CODE_SIGN_ENTITLEMENTS: Tools/ftk-mcp.entitlements
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        SKIP_INSTALL: YES

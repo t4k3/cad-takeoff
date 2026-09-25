@@ -8,18 +8,35 @@ import AppKit
 import Foundation
 
 let bundleID = "com.takeoff.fusiontakeoff"
-let discovery = FileManager.default.homeDirectoryForCurrentUser
-    .appendingPathComponent("Library/Containers/\(bundleID)/Data/Library/Application Support/FusionTakeoff/mcp.json")
+let appGroup = "9F8D583GBV.com.takeoff.fusiontakeoff"
+
+/// Real home directory (inside the sandbox NSHomeDirectory() points at our own container).
+let realHome = URL(fileURLWithPath: String(cString: getpwuid(getuid()).pointee.pw_dir))
+
+/// Where the app publishes url+token: App Group container (TestFlight / signed builds),
+/// then the app's own container (local builds without the App Group).
+let discoveryCandidates: [URL] = [
+    FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?.appendingPathComponent("mcp.json"),
+    realHome.appendingPathComponent("Library/Group Containers/\(appGroup)/mcp.json"),
+    realHome.appendingPathComponent("Library/Containers/\(bundleID)/Data/Library/Application Support/FusionTakeoff/mcp.json"),
+].compactMap { $0 }
 
 struct Endpoint { let url: URL; let token: String }
 
 func log(_ s: String) { FileHandle.standardError.write(Data("ftk-mcp: \(s)\n".utf8)) }
 
 func readEndpoint() -> Endpoint? {
-    guard let data = try? Data(contentsOf: discovery),
+    var found: Data?
+    for url in discoveryCandidates {
+        do { found = try Data(contentsOf: url); break }
+        catch { if ProcessInfo.processInfo.environment["FTK_MCP_DEBUG"] != nil { log("\(url.path): \(error.localizedDescription)") } }
+    }
+    guard let data = found,
           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
           let u = obj["url"] as? String, let url = URL(string: u), let token = obj["token"] as? String else { return nil }
-    if let pid = obj["pid"] as? Int, kill(pid_t(pid), 0) != 0 { return nil } // stale file from a dead app
+    // Stale file from a dead app? Inside the sandbox kill(pid, 0) may fail with EPERM for a
+    // live process, so only ESRCH ("no such process") means the app is gone.
+    if let pid = obj["pid"] as? Int, kill(pid_t(pid), 0) != 0, errno == ESRCH { return nil }
     return Endpoint(url: url, token: token)
 }
 

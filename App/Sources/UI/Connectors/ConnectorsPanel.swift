@@ -33,6 +33,7 @@ struct ConnectorsPanel: View {
     @Environment(MCPHost.self) private var mcp
     @State private var revealToken = false
     @State private var copied: String?
+    @State private var setupMessage: String?
 
     var body: some View {
         @Bindable var mcp = mcp
@@ -75,21 +76,48 @@ struct ConnectorsPanel: View {
                     }
                 }
                 GroupBox("Claude Desktop") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("1. Nel Terminale, dalla cartella del progetto: `scripts/install-claude-connector.sh`\n2. Aggiungi a claude_desktop_config.json la voce qui sotto e riavvia Claude Desktop. Il bridge apre l'app da solo se è chiusa.")
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Usa il tuo Claude Desktop (il tuo account) per progettare in questo design. Il collegamento aggiunge la voce «fusion-takeoff» alla configurazione di Claude, con backup.")
                             .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        let home = FileManager.default.homeDirectoryForCurrentUser.path
-                            .replacingOccurrences(of: "/Library/Containers/com.takeoff.fusiontakeoff/Data", with: "")
-                        let snippet = "\"fusion-takeoff\": { \"command\": \"\(home)/.local/bin/ftk-mcp\" }"
-                        Text(snippet).font(.system(size: 10.5, design: .monospaced)).textSelection(.enabled)
-                        HStack { Spacer(); copyButton("Copia voce", snippet) }
+                        HStack {
+                            if let path = ClaudeDesktopSetup.configuredBridgePath, !ClaudeDesktopSetup.needsUpdate {
+                                Label("Collegato", systemImage: "checkmark.circle.fill")
+                                    .font(.caption).foregroundStyle(Theme.Palette.success)
+                                    .help(path)
+                            } else if ClaudeDesktopSetup.needsUpdate {
+                                Label("L'app è stata spostata: aggiorna il collegamento", systemImage: "exclamationmark.triangle.fill")
+                                    .font(.caption).foregroundStyle(.orange)
+                            }
+                            Spacer()
+                            Button(ClaudeDesktopSetup.configuredBridgePath == nil ? "Collega a Claude Desktop…" : "Ricollega…") {
+                                switch ClaudeDesktopSetup.connect() {
+                                case let .configured(backup):
+                                    setupMessage = "Fatto. Riavvia Claude Desktop: troverai gli strumenti «fusion-takeoff»." + (backup != nil ? " Configurazione precedente salvata come backup." : "")
+                                case .cancelled: setupMessage = nil
+                                case let .failed(msg): setupMessage = msg
+                                }
+                            }
+                            .controlSize(.small)
+                        }
+                        if let setupMessage {
+                            Text(setupMessage).font(.caption).fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
-                GroupBox("ChatGPT") {
-                    Text("Connettore a cura di Codex (T51).")
-                        .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                GroupBox("ChatGPT e altri client") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Client che avviano un server locale (stdio) usano questo comando:")
+                            .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                        if let bridge = MCPHost.bridgeURL?.path {
+                            Text(bridge).font(.system(size: 10.5, design: .monospaced)).lineLimit(2).truncationMode(.middle)
+                                .textSelection(.enabled)
+                            HStack { Spacer(); copyButton("Copia percorso bridge", bridge) }
+                        }
+                        Text("Collegamento a ChatGPT: a cura di Codex (T51).")
+                            .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 

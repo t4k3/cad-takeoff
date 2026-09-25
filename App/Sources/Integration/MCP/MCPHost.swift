@@ -35,12 +35,21 @@ final class MCPHost {
 
     var url: String? { if case let .running(url) = state { url } else { nil } }
 
-    /// Discovery file, inside the app container (sandbox):
-    /// ~/Library/Containers/com.takeoff.fusiontakeoff/Data/Library/Application Support/FusionTakeoff/mcp.json
+    /// App Group shared with the sandboxed ftk-mcp bridge (team 9F8D583GBV).
+    static let appGroup = "9F8D583GBV.com.takeoff.fusiontakeoff"
+
+    /// Discovery file: ~/Library/Group Containers/<appGroup>/mcp.json. Builds without the
+    /// App Group entitlement fall back to the app's own container (the bridge reads both).
     static var discoveryURL: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        if let group = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) {
+            return group.appendingPathComponent("mcp.json")
+        }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("FusionTakeoff/mcp.json")
     }
+
+    /// The bridge inside this app bundle (Contents/MacOS/ftk-mcp).
+    static var bridgeURL: URL? { Bundle.main.url(forAuxiliaryExecutable: "ftk-mcp") }
 
     func attach(_ provider: CADToolProvider?) { server.provider = provider }
 

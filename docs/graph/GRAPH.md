@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 10:09. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 10:20. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -46,7 +46,7 @@ flowchart LR
     T25["T25 · Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)<br/><i>claude</i>"]:::done
   end
   subgraph P7["6 · CAD parametrico"]
-    T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::in_progress
+    T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::done
   end
   subgraph P8["7 · Fondazioni CAD"]
     T26["T26 · Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche<br/><i>codex</i>"]:::todo
@@ -81,14 +81,16 @@ flowchart LR
   end
   subgraph P13["6 · Assistente e MCP"]
     T47["T47 · Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete<br/><i>claude</i>"]:::done
-    T48["T48 · Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)<br/><i>codex</i>"]:::in_progress
+    T48["T48 · Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata)<br/><i>codex</i>"]:::done
     T49["T49 · MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI<br/><i>claude</i>"]:::done
     T50["T50 · Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida<br/><i>claude</i>"]:::done
-    T51["T51 · Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida<br/><i>codex</i>"]:::todo
+    T51["T51 · Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida<br/><i>codex</i>"]:::in_progress
     T52["T52 · Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude<br/><i>claude</i>"]:::in_progress
-    T53["T53 · Provider OpenAI per la chat in-app<br/><i>codex</i>"]:::todo
+    T53["T53 · Provider OpenAI per la chat in-app<br/><i>codex</i>"]:::in_progress
     T54["T54 · Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente<br/><i>codex</i>"]:::todo
     T55["T55 · Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app<br/><i>codex</i>"]:::todo
+    T56["T56 · Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop<br/><i>claude</i>"]:::done
+    T57["T57 · Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP<br/><i>codex</i>"]:::in_progress
   end
   T00 --> T02
   T00 --> T03
@@ -125,6 +127,7 @@ flowchart LR
   T13 --> T14
   T38 --> T14
   T46 --> T14
+  T55 --> T14
   T03 --> T15
   T24 --> T15
   T27 --> T15
@@ -210,7 +213,7 @@ flowchart LR
   T49 --> T51
   T47 --> T52
   T25 --> T52
-  T52 --> T53
+  T47 --> T53
   T48 --> T54
   T28 --> T54
   T50 --> T55
@@ -218,6 +221,9 @@ flowchart LR
   T52 --> T55
   T53 --> T55
   T48 --> T55
+  T50 --> T56
+  T48 --> T57
+  T49 --> T57
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -228,7 +234,7 @@ flowchart LR
 
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: codex
 - **T13** Script CI locale (test core + build app) — suggerito: codex
-- **T51** Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida — suggerito: codex
+- **T26** Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche — suggerito: codex
 
 ## Tabella
 
@@ -248,7 +254,7 @@ flowchart LR
 | T11 | Controllo stampabilità (chiusura, sbalzi, volume piatto) | todo | codex | T31 | Packages/CADCore/Sources/CADCore/Printability.swift |
 | T12 | Piatto di stampa: appoggia, centra, dimensioni stampante | todo | codex | T03, T27, T04 | Packages/CADCore/Sources/CADCore/Placement.swift<br>Packages/CADCore/Tests/CADCoreTests/PlacementTests.swift |
 | T13 | Script CI locale (test core + build app) | todo | codex | T00 | scripts/ci.sh |
-| T14 | Release 0.1 (icona, firma, .dmg) | todo | user | T06, T20, T21, T22, T23, T13, T38, T46 | App/Resources<br>project.yml |
+| T14 | Release 0.1 (icona, firma, .dmg) | todo | user | T06, T20, T21, T22, T23, T13, T38, T46, T55 | App/Resources<br>project.yml |
 | T15 | Modello schizzo nel core (entità, profili chiusi, vincoli base) | todo | codex | T03, T24, T27 | Packages/CADCore/Sources/CADCore/SketchModel.swift<br>Packages/CADCore/Tests/CADCoreTests/SketchModelTests.swift |
 | T16 | Separare App/Sources in Model/ (codex) e UI/ (claude) + fix build.sh | done | claude | T00 | App/Sources<br>scripts/build.sh<br>project.yml |
 | T17 | Workspace stile Fusion: toolbar a schede, browser, timeline in basso, design system | done | claude | T16 | App/Sources/UI/Workspace<br>App/Sources/UI/DesignSystem<br>App/Sources/UI/FusionTakeoffApp.swift |
@@ -258,7 +264,7 @@ flowchart LR
 | T21 | Piatto di stampa a schermo (volume stampante, oggetto appoggiato) | todo | claude | T07, T12 | App/Sources/UI/Viewport |
 | T22 | Pannello stampabilità: report visivo, evidenzia problemi | todo | claude | T11, T19 | App/Sources/UI/Printability |
 | T23 | Dialog di esportazione STL/3MF (formato, risoluzione, anteprima) | todo | claude | T10, T17, T27 | App/Sources/UI/Export |
-| T24 | Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi | in_progress | codex | T02 | docs/requirements<br>docs/architecture/PROJECT.md<br>docs/architecture/API.md |
+| T24 | Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi | done | codex | T02 | docs/requirements<br>docs/architecture/PROJECT.md<br>docs/architecture/API.md |
 | T25 | Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec) | done | claude | T17 | App/Sources/UI/Command<br>App/Sources/UI/Previews<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift |
 | T26 | Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche | todo | codex | T24 | Experiments/GeometryKernel<br>docs/requirements/KERNEL_SPIKE.md |
 | T27 | Documento v2: parti, occorrenze, ID stabili, parametri e migrazione | todo | codex | T24, T03 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
@@ -282,11 +288,13 @@ flowchart LR
 | T46 | Verifica copertura completa lamiera e integrazione storico-parti-assiemi | todo | codex | T33, T35, T37, T39, T41, T43, T44, T45 | docs/requirements<br>Packages/CADCore/Tests<br>App/Tests |
 | T38 | Prove end-to-end: salvataggio storico, assieme, lamiera e round-trip export | todo | codex | T10, T13, T29, T33, T37, T46 | Packages/CADCore/Tests<br>App/Tests<br>docs/requirements/ACCEPTANCE_RESULTS.md |
 | T47 | Integrazione: protocollo CADToolProvider/JSONValue + entitlements rete | done | claude | — | App/Sources/Integration/ToolBridge.swift<br>App/FusionTakeoff.entitlements |
-| T48 | Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata) | in_progress | codex | T47 | App/Sources/Model/Tools<br>App/Sources/Model/DesignModel.swift<br>Tests/AssistantTools<br>scripts/test-assistant-tools.sh |
+| T48 | Strumenti CAD v1 per assistente e MCP (CADToolProvider sul Model, undo per chiamata) | done | codex | T47 | App/Sources/Model/Tools<br>App/Sources/Model/DesignModel.swift<br>Tests/AssistantTools<br>scripts/test-assistant-tools.sh |
 | T49 | MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI | done | claude | T47 | App/Sources/Integration/MCP<br>App/Sources/UI/Connectors<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Workspace/StatusBar.swift |
 | T50 | Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida | done | claude | T49 | Tools/ftk-mcp<br>docs/connectors/CLAUDE.md<br>project.yml<br>scripts/install-claude-connector.sh<br>App/Sources/UI/Connectors |
-| T51 | Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida | todo | codex | T49 | App/Sources/Integration/ChatGPT<br>docs/connectors/CHATGPT.md |
+| T51 | Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida | in_progress | codex | T49 | App/Sources/Integration/ChatGPT<br>docs/connectors/CHATGPT.md<br>scripts/connect-chatgpt.py<br>Tests/ChatGPTConnector |
 | T52 | Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude | in_progress | claude | T47, T25 | App/Sources/UI/Assistant<br>App/Sources/Integration/Assistant<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Previews |
-| T53 | Provider OpenAI per la chat in-app | todo | codex | T52 | App/Sources/Integration/Assistant/OpenAIProvider.swift |
+| T53 | Provider OpenAI per la chat in-app | in_progress | codex | T47 | App/Sources/Integration/OpenAI<br>Tests/OpenAIProvider<br>scripts/test-openai-provider.sh |
 | T54 | Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente | todo | codex | T48, T28 | App/Sources/Model/Tools |
 | T55 | Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app | todo | codex | T50, T51, T52, T53, T48 | docs/connectors/E2E.md |
+| T56 | Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop | done | claude | T50 | Tools/ftk-mcp<br>project.yml<br>App/FusionTakeoff.entitlements<br>Tools/ftk-mcp.entitlements<br>App/Sources/Integration/MCP/MCPHost.swift<br>App/Sources/UI/Connectors |
+| T57 | Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP | in_progress | codex | T48, T49 | App/Sources/Integration/MCP/MCPServer.swift<br>App/Sources/Integration/MCP/LocalHTTPTransport.swift<br>Tests/MCPIntegration<br>scripts/test-mcp-integration.sh |
