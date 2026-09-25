@@ -101,6 +101,30 @@ struct AssistantToolsTests {
         let updatedColour = await edit("update_feature", ["feature_id": colouredBox.structured!["feature_id"]!, "color": "#123456"])
         expect(!updatedColour.isError && m.document.features.last?.color.hex == "#123456", "update with colour")
         expect(try CADDocument.decode(m.document.encoded()) == m.document, "colours survive document save/reopen")
+        // Renderer snapshot is read-only, revision-consistent and comes from the kernel.
+        let snapshotRevision = m.designRevision
+        let snapshot = m.snapshot()
+        expect(snapshot.issues.isEmpty && snapshot.bodies.count == m.document.features.filter(\.isVisible).count, "visible kernel bodies")
+        expect(snapshot.bodies.allSatisfy { $0.revision == snapshotRevision }, "one revision per renderer result")
+        expect(m.snapshot() == snapshot && m.designRevision == snapshotRevision, "cached snapshot is read only")
+        let visibleID = m.document.features.last!.id
+        let originalFaces = snapshot.bodies.first { $0.bodyID == visibleID }!.faces.map(\.id)
+        _ = await edit("update_feature", ["feature_id": .string(visibleID.uuidString), "height": 17])
+        let resized = m.snapshot()
+        expect(resized.revision != snapshot.revision, "editing invalidates snapshot cache")
+        expect(resized.bodies.first { $0.bodyID == visibleID }!.faces.map(\.id) == originalFaces, "box references survive resize")
+        _ = await edit("undo", [:])
+        let restored = m.snapshot().bodies.first { $0.bodyID == visibleID }!
+        expect(restored.positions == snapshot.bodies.first { $0.bodyID == visibleID }!.positions, "undo restores snapshot geometry")
+        let validDocument = m.document
+        m.document.features.append(Feature(name: "Invalid", kind: .box(width: -1, depth: 2, height: 3)))
+        let diagnosed = m.snapshot()
+        expect(diagnosed.issues.count == 1 && diagnosed.bodies.count == snapshot.bodies.count, "bad body reported, valid bodies retained")
+        m.document = validDocument
+        m.document.features.append(m.document.features.last!)
+        expect(m.snapshot().issues.count == 1 && !m.snapshot().bodies.contains { $0.bodyID == visibleID }, "duplicate IDs cannot create ambiguous renderer references")
+        m.newDesign()
+        expect(m.snapshot().bodies.isEmpty && m.snapshot().issues.isEmpty, "new document clears cached bodies")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

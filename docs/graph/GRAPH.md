@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:21. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:26. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -113,6 +113,7 @@ flowchart LR
     T68["T68 · UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione<br/><i>claude</i>"]:::todo
     T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>codex</i>"]:::in_progress
     T72["T72 · UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)<br/><i>claude</i>"]:::done
+    T75["T75 · Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70)<br/><i>codex</i>"]:::in_progress
   end
   subgraph P17["Coordinamento"]
     T71["T71 · Allineare roadmap e regole sulle dipendenze alla richiesta di Ross<br/><i>codex</i>"]:::done
@@ -175,13 +176,13 @@ flowchart LR
   T24 --> T26
   T24 --> T27
   T03 --> T27
-  T70 --> T30
+  T75 --> T30
   T27 --> T30
   T25 --> T40
   T27 --> T40
   T19 --> T45
   T30 --> T45
-  T70 --> T28
+  T75 --> T28
   T27 --> T28
   T15 --> T28
   T30 --> T28
@@ -259,7 +260,7 @@ flowchart LR
   T25 --> T61
   T07 --> T61
   T26 --> T62
-  T70 --> T63
+  T75 --> T63
   T63 --> T64
   T63 --> T65
   T64 --> T65
@@ -276,6 +277,7 @@ flowchart LR
   T19 --> T72
   T17 --> T73
   T73 --> T74
+  T24 --> T75
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -319,10 +321,10 @@ flowchart LR
 | T25 | Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec) | done | claude | T17 | App/Sources/UI/Command<br>App/Sources/UI/Previews<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift |
 | T26 | Spike kernel B-rep macOS: OCCT, bridge Swift e prove topologiche | blocked | codex | T24 | Experiments/GeometryKernel<br>docs/requirements/KERNEL_SPIKE.md |
 | T27 | Documento v2: parti, occorrenze, ID stabili, parametri e migrazione | todo | codex | T24, T03 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
-| T30 | Riferimenti topologici stabili e snapshot CAD per il renderer | todo | codex | T70, T27 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
+| T30 | Riferimenti topologici stabili e snapshot CAD per il renderer | todo | codex | T75, T27 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T40 | UX parti e assiemi: browser gerarchico e componente attivo | todo | claude | T25, T27 | App/Sources/UI |
 | T45 | UX selezione CAD di facce-spigoli e riferimenti per istanza | todo | claude | T19, T30 | App/Sources/UI |
-| T28 | Motore feature parametrico: DAG, rebuild deterministico e diagnosi | todo | codex | T70, T27, T15, T30 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
+| T28 | Motore feature parametrico: DAG, rebuild deterministico e diagnosi | todo | codex | T75, T27, T15, T30 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T29 | Storico persistente: edit session, rollback, soppressione e riordino | todo | codex | T28, T04 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T31 | Modellazione parti B-rep: fori, raccordi, guscio, serie, sweep e loft | todo | codex | T28, T29, T06, T09 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
 | T32 | Assiemi: occorrenze, trasformazioni, grounding, giunti e solver DOF | todo | codex | T27, T28, T30 | Packages/CADCore<br>App/Sources/Model<br>docs/architecture/API.md |
@@ -354,15 +356,16 @@ flowchart LR
 | T60 | UX colori delle parti e comando export 3MF nel prototipo | done | claude | T59 | App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportRenderer.swift<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/DesignSystem |
 | T61 | Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude | done | claude | T48, T25, T07 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace |
 | T62 | Kernel B-rep integrato (OCCT): build, link, firma in sandbox | blocked | codex | T26 | Packages/Kernel |
-| T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | codex | T70 | Packages/CADCore<br>App/Sources/Model |
+| T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | codex | T75 | Packages/CADCore<br>App/Sources/Model |
 | T64 | Schizzo persistente su piano o faccia piana + proiezione spigoli | todo | codex | T63 | Packages/CADCore/Sources/CADCore/Sketch |
 | T65 | Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione | todo | codex | T63, T64 | Packages/CADCore/Sources/CADCore/Features |
 | T66 | UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0 | todo | claude | T64, T45 | App/Sources/UI/Sketch |
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
 | T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | todo | codex | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |
-| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | in_progress | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md |
+| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | in_progress | codex | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
 | T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | done | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
 | T72 | UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) | done | claude | T19 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T73 | Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard | in_progress | claude | T17 | App/Sources/Integration/Projects<br>App/Sources/UI/Home<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/FusionTakeoff.entitlements |
 | T74 | Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home | todo | claude | T73 | Tools/FusionAddin<br>App/Sources/Integration/FusionImport<br>App/Sources/UI/Home |
+| T75 | Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70) | in_progress | codex | T24 | docs/requirements/KERNEL_V1.md |

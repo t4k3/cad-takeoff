@@ -2,7 +2,8 @@
 
 **Punto di ingresso per Codex e Claude. Chat e MCP sono la priorità principale.** L'obiettivo è un CAD essenziale per macOS,
 sviluppato in Xcode, con disegno quotato, solidi e file per stampa 3D. La versione
-attuale è un prototipo di modellazione a mesh; l'evoluzione parametrica è progressiva.
+attuale include una prima topologia B-rep delle primitive, esposta al renderer
+tramite snapshot; l'evoluzione parametrica e l'integrazione UI sono progressive.
 
 ## Documenti autorevoli
 
@@ -12,6 +13,7 @@ attuale è un prototipo di modellazione a mesh; l'evoluzione parametrica è prog
 | [Grafo delle attività](../graph/GRAPH.md) | Responsabili, dipendenze, stato e confini dei file | Solo attraverso `scripts/graph.py` |
 | [Assistente e MCP](../requirements/AI_ASSISTANT.md) | Ruoli, comandi comuni, revisioni e casi di prova | Decisioni nel registro |
 | [Dominio CAD pianificato](../requirements/DOMAIN_GRAPH.md) | Lamiera, storico, parti e assiemi richiesti | Separato dal grafo del sorgente |
+| [Prima base del kernel](../requirements/KERNEL_V1.md) | B-rep primitive, ID, snapshot renderer e limiti verificati | Contratto condiviso T70/T75 |
 | [Progetto e obiettivi](PROJECT.md) | Requisiti, fasi, criteri di accettazione | Revisione esplicita e nota nel registro |
 | [Mappa navigabile](index.html) | Moduli, collegamenti e riferimenti al sorgente | Generata da `graph.json`, funziona offline |
 | [Mappa Mermaid](MAP.md) | Stessa mappa, leggibile dagli agenti | Generata, non modificare a mano |
@@ -69,4 +71,3 @@ testuale a `RESOLVED`: ciò richiede un successivo estrattore IndexStore/SourceK
 
 Revisioni: 2026-09-25, v1, Codex, task T02. Le revisioni successive si registrano
 in `COLLAB.md`, mantenendo distinguibili implementazione, build, UI e stampa reale.
-
