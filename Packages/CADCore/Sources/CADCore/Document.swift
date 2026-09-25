@@ -13,9 +13,24 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public var kind: Kind
     public var position: Vec3
     public var isVisible: Bool
+    public var color: PartColor
 
-    public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true) {
+    public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true, color: PartColor = .defaultColor) {
         self.id = id; self.name = name; self.kind = kind; self.position = position; self.isVisible = isVisible
+        self.color = color
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        kind = try c.decode(Kind.self, forKey: .kind)
+        position = try c.decode(Vec3.self, forKey: .position)
+        isVisible = try c.decode(Bool.self, forKey: .isVisible)
+        // Existing v1 documents have no colour field. Invalid supplied colours still fail decoding.
+        color = try c.decodeIfPresent(PartColor.self, forKey: .color) ?? .defaultColor
     }
 
     public func buildMesh() -> Mesh {

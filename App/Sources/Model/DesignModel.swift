@@ -44,6 +44,29 @@ final class DesignModel {
         selection = nil
     }
 
+    /// The inspector and the assistant use the same transaction history for colour edits.
+    func setFeatureColor(_ id: UUID, color: PartColor) throws {
+        guard let i = document.features.firstIndex(where: { $0.id == id }) else {
+            throw CADToolFailure("Geometria non trovata.")
+        }
+        var next = document
+        next.features[i].color = color
+        commitEdit(next, selected: selection, title: "Colore: \(next.features[i].name)", changed: [id])
+    }
+
+    func commitEdit(_ next: CADDocument, selected: UUID?, title: String, changed: [UUID]) {
+        guard next != document else { return }
+        let entry = AssistantHistory.Entry(before: document, after: next, selectionBefore: selection,
+                                           selectionAfter: selected, title: title, changed: changed)
+        applyingAssistantChange = true
+        document = next; selection = selected
+        applyingAssistantChange = false
+        assistantHistory.undo.append(entry)
+        if assistantHistory.undo.count > 50 { assistantHistory.undo.removeFirst() }
+        assistantHistory.redo.removeAll()
+        statusMessage = title
+    }
+
     func newDesign() {
         assistantHistory = AssistantHistory()
         document = CADDocument()
@@ -91,5 +114,33 @@ final class DesignModel {
             statusMessage = "Esportato \(url.lastPathComponent) — \(mesh.triangleCount) triangoli, "
                 + (r.isWatertight ? "chiuso ✓" : "NON chiuso (\(r.boundaryEdges) bordi aperti)")
         } catch { statusMessage = "Errore export: \(error.localizedDescription)" }
+    }
+
+    /// Export visible parts, or the explicit feature even when hidden. Does not change the scene.
+    func export3MFData(featureID: UUID? = nil) throws -> Data {
+        let features: [Feature]
+        if let featureID {
+            guard let feature = document.features.first(where: { $0.id == featureID }) else {
+                throw CADToolFailure("Geometria non trovata.")
+            }
+            features = [feature]
+        } else { features = document.features.filter(\.isVisible) }
+        let parts = try features.map { feature -> ThreeMFPart in
+            try CADToolValidation.feature(feature)
+            return ThreeMFPart(id: feature.id, name: feature.name, mesh: feature.buildMesh(), color: feature.color)
+        }
+        return try ThreeMFExporter.archive(parts: parts)
+    }
+
+    func export3MFWithPanel() {
+        do {
+            let data = try export3MFData()
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [UTType(filenameExtension: "3mf") ?? UTType(importedAs: "org.3mfconsortium.3mf", conformingTo: .data)]
+            panel.nameFieldStringValue = "Design.3mf"
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            try data.write(to: url, options: .atomic)
+            statusMessage = "Esportato \(url.lastPathComponent) — parti e colori; verificare i filamenti nello slicer"
+        } catch { statusMessage = "Errore export 3MF: \(error.localizedDescription)" }
     }
 }

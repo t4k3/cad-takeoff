@@ -6,7 +6,8 @@ struct AssistantToolsTests {
     @MainActor static func main() async throws {
         let m = DesignModel()
         m.newDesign()
-        func expect(_ condition: Bool, _ message: String) { precondition(condition, message) }
+        var checks = 0
+        func expect(_ condition: Bool, _ message: String) { checks += 1; precondition(condition, message) }
         func edit(_ tool: String, _ args: [String: JSONValue]) async -> ToolResult {
             var a = args; a["expected_revision"] = .string(m.designRevision)
             return await m.call(tool, arguments: .object(a))
@@ -67,7 +68,39 @@ struct AssistantToolsTests {
         expect(invalidShape.isError, "JSON shape validation")
         let missing = await m.call("get_feature", arguments: ["feature_id": .string(UUID().uuidString)])
         expect(missing.isError, "unknown ID")
-        expect(Set(m.tools.map(\.name)).count == 12, "12 unique tools")
-        print("PASS: 25 CAD assistant assertions (geometry, revisions, atomic edits, undo/redo, validation, STL)")
+        expect(Set(m.tools.map(\.name)).count == 14, "14 unique tools")
+        let partID = m.document.features[0].id
+        let beforeColour = m.document
+        let coloured = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "#E53935"])
+        expect(!coloured.isError && m.document.features[0].color.hex == "#E53935", "assistant sets colour")
+        let get = await m.call("get_feature", arguments: ["feature_id": .string(partID.uuidString)])
+        expect(get.structured?["feature"]?["color"]?.string == "#E53935", "MCP reads colour")
+        let afterColour = m.document
+        let badColour = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "red"])
+        expect(badColour.isError && m.document == afterColour, "bad colour rejected atomically")
+        _ = await edit("undo", [:])
+        expect(m.document == beforeColour, "undo restores exact previous colour")
+        _ = await edit("redo", [:])
+        expect(m.document == afterColour, "redo colour")
+        try m.setFeatureColor(partID, color: PartColor(hex: "#1E88E5")!)
+        expect(m.document.features[0].color.hex == "#1E88E5", "inspector shares colour transaction")
+        _ = await edit("undo", [:])
+        expect(m.document == afterColour, "inspector colour has undo too")
+        let printRevision = m.designRevision
+        let threeMF = await m.call("export_3mf", arguments: ["feature_id": .string(partID.uuidString)])
+        let bytes = Data(base64Encoded: threeMF.structured?["data"]?.string ?? "") ?? Data()
+        expect(!threeMF.isError && bytes.prefix(4) == Data([0x50, 0x4B, 0x03, 0x04]), "3MF package via chat")
+        expect(String(decoding: bytes, as: UTF8.self).contains("#E53935FF"), "colour in exported package")
+        expect(printRevision == m.designRevision, "export is read only")
+        let visibleData = try m.export3MFData()
+        expect(!String(decoding: visibleData, as: UTF8.self).contains(partID.uuidString), "whole export omits hidden parts")
+        let noPaths = await m.call("export_3mf", arguments: ["path": "/tmp/should-not-write.3mf"])
+        expect(noPaths.isError, "3MF rejects arbitrary file paths")
+        let colouredBox = await edit("add_box", ["width": 10, "depth": 10, "height": 10, "color": "#ABCDEF"])
+        expect(!colouredBox.isError && m.document.features.last?.color.hex == "#ABCDEF", "create with colour")
+        let updatedColour = await edit("update_feature", ["feature_id": colouredBox.structured!["feature_id"]!, "color": "#123456"])
+        expect(!updatedColour.isError && m.document.features.last?.color.hex == "#123456", "update with colour")
+        expect(try CADDocument.decode(m.document.encoded()) == m.document, "colours survive document save/reopen")
+        print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

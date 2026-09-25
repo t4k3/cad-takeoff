@@ -40,6 +40,7 @@ extension DesignModel: CADToolProvider {
                 return result("Parametri geometria", ["feature": describe(document.features[try index(args)])])
             case "scene_info": return try sceneInfo()
             case "export_stl": return try export(args)
+            case "export_3mf": return try export3MF(args)
             case "undo": return try restore(redo: false)
             case "redo": return try restore(redo: true)
             default: return try mutate(name, args: args, title: spec.title)
@@ -63,7 +64,8 @@ extension DesignModel: CADToolProvider {
             default: throw CADToolFailure("Comando non supportato.")
             }
             let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "\(title) \(next.features.count + 1)",
-                            kind: kind, position: try position(args) ?? .zero)
+                            kind: kind, position: try position(args) ?? .zero,
+                            color: try args["color"].map { _ in try color(args) } ?? .defaultColor)
             try CADToolValidation.feature(f)
             try CADToolValidation.mesh(f.buildMesh())
             next.features.append(f); changed = f.id; selected = f.id
@@ -72,12 +74,14 @@ extension DesignModel: CADToolProvider {
             changed = next.features[i].id
             switch name {
             case "delete_feature": next.features.remove(at: i); if selected == changed { selected = nil }
+            case "set_color": next.features[i].color = try color(args)
             case "set_visibility":
                 guard let visible = args["visible"]?.bool else { throw CADToolFailure("visible deve essere booleano.") }
                 next.features[i].isVisible = visible
             case "update_feature":
                 var f = next.features[i]
                 if args["name"] != nil { f.name = try string(args, "name") }
+                if args["color"] != nil { f.color = try color(args) }
                 if let p = try position(args) { f.position = p }
                 let legal: Set<String>
                 switch f.kind {
@@ -91,7 +95,7 @@ extension DesignModel: CADToolProvider {
                     legal = ["points", "height"]
                     f.kind = .extrude(profile: args["points"] == nil ? p : Profile2D(points: try points(args)), height: try optionalNumber(args, "height", h))
                 }
-                let supplied = Set(args.keys).subtracting(["name", "position", "feature_id", "expected_revision"])
+                let supplied = Set(args.keys).subtracting(["name", "position", "color", "feature_id", "expected_revision"])
                 guard supplied.isSubset(of: legal) else { throw CADToolFailure("Parametro non applicabile al tipo di geometria selezionato.") }
                 try CADToolValidation.feature(f)
                 try CADToolValidation.mesh(f.buildMesh())
@@ -100,16 +104,8 @@ extension DesignModel: CADToolProvider {
             }
         }
         guard next != document else { return result("Nessuna modifica necessaria", ["changed": false]) }
-        let entry = AssistantHistory.Entry(before: document, after: next, selectionBefore: selection,
-                                           selectionAfter: selected, title: "Assistente: \(title)", changed: [changed])
-        applyingAssistantChange = true
-        document = next; selection = selected
-        applyingAssistantChange = false
-        assistantHistory.undo.append(entry)
-        if assistantHistory.undo.count > 50 { assistantHistory.undo.removeFirst() }
-        assistantHistory.redo.removeAll()
-        statusMessage = entry.title
-        return result(entry.title, ["changed": true, "feature_id": .string(changed.uuidString)], changed: [changed])
+        commitEdit(next, selected: selected, title: "Assistente: \(title)", changed: [changed])
+        return result(statusMessage, ["changed": true, "feature_id": .string(changed.uuidString)], changed: [changed])
     }
 
     private func restore(redo: Bool) throws -> ToolResult {
@@ -139,7 +135,7 @@ extension DesignModel: CADToolProvider {
             "mesh_volume_mm3": .number(mesh.volume), "bounds": bounds(mesh.bounds),
             "edge_closed": report.map { .bool($0.isWatertight) } ?? .null,
             "warning": "Solidi indipendenti: volume sommato, nessuna unione booleana; chiusura dei bordi non certifica stampabilità.",
-            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "parameter_update", "session_undo", "stl"],
+            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "parameter_update", "session_undo", "stl", "part_color", "3mf"],
             "unavailable": ["boolean", "persistent_parametric_history", "sheet_metal", "assemblies", "step", "dxf"]
         ])
     }
@@ -171,8 +167,19 @@ extension DesignModel: CADToolProvider {
         return ToolResult(text: text, structured: .object(data), isError: error, changedFeatures: changed)
     }
 
+    private func export3MF(_ args: [String: JSONValue]) throws -> ToolResult {
+        let id = args["feature_id"] == nil ? nil : document.features[try index(args)].id
+        let data = try export3MFData(featureID: id)
+        guard data.count <= 8 * 1024 * 1024 else { throw CADToolFailure("Export troppo grande per la chat (8 MiB). Usare il pannello esportazione.") }
+        return result("3MF pronto: parti separate con colori sRGB", [
+            "filename": "Design.3mf", "mime_type": "model/3mf", "encoding": "base64", "data": .string(data.base64EncodedString()),
+            "bytes": .number(Double(data.count)), "coordinate_units": "mm",
+            "warning": "Colori per parte, senza profili stampante o G-code. Verificare l'assegnazione ai filamenti in Bambu Studio/OrcaSlicer. Nessuna unione booleana."
+        ])
+    }
+
     private func describe(_ f: Feature) -> JSONValue {
-        var value: [String: JSONValue] = ["id": .string(f.id.uuidString), "name": .string(f.name), "position": vector(f.position), "visible": .bool(f.isVisible)]
+        var value: [String: JSONValue] = ["id": .string(f.id.uuidString), "name": .string(f.name), "position": vector(f.position), "visible": .bool(f.isVisible), "color": .string(f.color.hex)]
         switch f.kind {
         case let .box(w, d, h): value.merge(["kind": "box", "width": .number(w), "depth": .number(d), "height": .number(h)]) { _, b in b }
         case let .cylinder(r, h): value.merge(["kind": "cylinder", "radius": .number(r), "height": .number(h)]) { _, b in b }
@@ -201,6 +208,12 @@ extension DesignModel: CADToolProvider {
     }
     private func optionalNumber(_ args: [String: JSONValue], _ key: String, _ fallback: Double) throws -> Double {
         args[key] == nil ? fallback : try number(args, key)
+    }
+    private func color(_ args: [String: JSONValue]) throws -> PartColor {
+        guard let color = PartColor(hex: try string(args, "color")) else {
+            throw CADToolFailure("color deve essere un colore sRGB opaco nel formato #RRGGBB.")
+        }
+        return color
     }
     private func position(_ args: [String: JSONValue]) throws -> Vec3? {
         guard let value = args["position"] else { return nil }

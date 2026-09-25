@@ -90,3 +90,24 @@ strutturati, feature interessate e token di revisione. Mutazioni con
 `AssistantProvider` isola i formati Anthropic e OpenAI dalla UX.
 Il [contratto completo](../requirements/AI_ASSISTANT.md) distingue queste API
 dallo storico parametrico persistente pianificato in T29.
+
+## Stampa a colori — API T59
+
+`PartColor(red: UInt8, green: UInt8, blue: UInt8)`, `init?(hex: String)` (`#RRGGBB`),
+`.hex` e `.defaultColor`. `Feature.color` viene codificato nel `.ftk`; i file
+precedenti senza questo campo ricevono il valore predefinito.
+
+`DesignModel.setFeatureColor(_ id: UUID, color: PartColor) throws` esegue una
+transazione con revisione e undo condiviso con gli strumenti dell'assistente.
+Il selettore UI converte il colore in **sRGB** a 8 bit, senza alpha, e usa questo
+comando; non scrive direttamente in `document.features[i].color`.
+
+`export3MFData(featureID: UUID? = nil) throws -> Data` e `export3MFWithPanel()`
+esportano le parti visibili (o quella identificata) con nomi, colori e posizioni.
+Il core espone `ThreeMFPart`, `ThreeMFExporter.archive(parts:profile:)` e
+`ThreeMFExportProfile.standard / .bambuOrca` (predefinito, anche Snapmaker Orca).
+Il profilo di compatibilità aggiunge solo nomi/indici delle parti e palette colore;
+la stampante e i parametri di stampa vengono scelti nello slicer.
+
+Catalogo condiviso chat/MCP: 14 strumenti, inclusi `set_color` ed `export_3mf`.
+Dettagli e prove: [stampa 3MF](../requirements/PRINT_3MF.md).

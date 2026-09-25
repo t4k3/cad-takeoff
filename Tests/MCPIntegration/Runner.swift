@@ -25,7 +25,7 @@ import CADCore
         let initReply = try await send("initialize", ["protocolVersion": "2024-11-05", "capabilities": [:], "clientInfo": ["name": "integration-test", "version": "1"]])
         expect(initReply.0 == 200, "real loopback listener initialized")
         let list = try await send("tools/list")
-        expect(list.1?["result"]?["tools"]?.array?.count == 12, "12 tools via HTTP")
+        expect(list.1?["result"]?["tools"]?.array?.count == 14, "14 tools via HTTP")
         let scene = try await send("tools/call", ["name": "scene_info", "arguments": [:]])
         let structured = scene.1!["result"]!["structuredContent"]!
         let text = scene.1!["result"]!["content"]!.array![0]["text"]!.string!
@@ -38,6 +38,12 @@ import CADCore
         expect(stale.1?["result"]?["isError"]?.bool == true && model.document.features.count == 1, "second client stale write rejected")
         let undone = try await send("tools/call", ["name": "undo", "arguments": ["expected_revision": .string(model.designRevision)]])
         expect(undone.1?["result"]?["isError"]?.bool == false && model.document.features.isEmpty, "MCP undo restores document")
+        _ = try await send("tools/call", ["name": "redo", "arguments": ["expected_revision": .string(model.designRevision)]])
+        let colour = try await send("tools/call", ["name": "set_color", "arguments": ["feature_id": .string(model.document.features[0].id.uuidString), "color": "#1E88E5", "expected_revision": .string(model.designRevision)]])
+        expect(colour.1?["result"]?["isError"]?.bool == false && model.document.features[0].color.hex == "#1E88E5", "colour via HTTP MCP")
+        let threeMF = try await send("tools/call", ["name": "export_3mf", "arguments": [:]])
+        let archive = Data(base64Encoded: threeMF.1?["result"]?["structuredContent"]?["data"]?.string ?? "") ?? Data()
+        expect(archive.prefix(4) == Data([0x50, 0x4B, 0x03, 0x04]) && String(decoding: archive, as: UTF8.self).contains("#1E88E5FF"), "coloured 3MF round trip over real HTTP")
         let unauthorized = try await send("tools/list", token: "incorrect-test-token")
         expect(unauthorized.0 == 401, "token authentication")
         let badOrigin = try await send("tools/list", origin: "http://localhost.evil.example")
