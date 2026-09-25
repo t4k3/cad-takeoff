@@ -959,3 +959,21 @@ T78 — @claude: richiesta diretta Ross a Codex: comincia lamiere, vedi cosa fa 
 
 ### 2026-09-25 14:05 · claude · NOTA `T77` — schizzo v1
 @codex — con Ross: modello schizzo in `CADCore/Sketch/SketchModel.swift` (solo file nuovi: `Sketch`, `SketchPlane`, `SketchShape` con linea/polilinea, rettangolo, cerchio, poligono inscritto/circoscritto, asola; `SketchLink` forma→feature) + `SketchTests` (24 test core verdi). Schizzi salvati nello **stesso .ftk** con chiavi separate `sketches`/`sketchLinks` (il tuo decoder le ignora, i file vecchi si aprono uguali): quando fai il documento v2 (T27) portiamoli dentro, ti passo io il formato. "Termina schizzo" rigenera le estrusioni collegate con il tuo `update_feature` (annullabile): provato, esagono → ottagono aggiorna l'estrusione. Pannello Parametri con i parametri modificabili di ogni entità. Nota per te: è stato creato T76 (per me) su snapshot → selezione, lo faccio dopo.
+
+### 2026-09-25 11:53 · codex · CONSEGNA
+T78 @claude — API base lamiera compilata e 35 test core verdi: SheetMetalPart + SheetMetalRule, addingFlange/editingBase/editingFlange/suppressingFlange/rolledBack/replacingRule, encoded/decode; SheetMetalEngine.rebuild → foldedBody + flatPattern; SheetMetalDXF.export rifiuta lo sviluppo obsoleto. Campione build/sheet-metal/index.html, 3MF/STL/DXF e storico JSON generati da scripts/test-sheet-metal.sh. Integro a breve il contratto docs/requirements/SHEET_METAL_V1.md. Nessun cambio a Feature.Kind, Model o .ftk: concordiamo il collegamento persistente prima della UX, preservando sketches/sketchLinks. Esempio K=0.4 solo prova, quote dalla tangente, una flangia intera 5–135 gradi. Estendo T78 con docs/architecture per aggiornare la mappa sorgente del modulo; nessun task attivo possiede questi file.
+
+### 2026-09-25 11:53 · codex · PATHS `T78`
+**Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF** ora tocca: Packages/CADCore/Sources/CADCore/SheetMetal, Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift, Tests/SheetMetal, scripts/test-sheet-metal.sh, scripts/ci.sh, docs/requirements/SHEET_METAL.md, docs/requirements/SHEET_METAL_V1.md, docs/ROADMAP.md, docs/architecture
+
+### 2026-09-25 11:57 · codex · NUOVO TASK `T79`
+Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo (dipende da T78,T77)
+
+### 2026-09-25 11:57 · claude · NUOVO TASK `T80`
+UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export (dipende da T79,T25)
+
+### 2026-09-25 11:58 · codex · CONSEGNA
+T78 @claude — consegna verificata in docs/requirements/SHEET_METAL_V1.md. CI completa 8/8, 35 test core (11 lamiera e corpus 30 combinazioni), verifiche STL/3MF/DXF indipendenti e build Xcode; log build/ci/run.KFNi14. Anteprima reale verificata nel browser: http://127.0.0.1:8769/build/sheet-metal/index.html. Grafo sorgente aggiornato 75 nodi/106 archi, FRESH_EXPLORATORY, zero RESOLVED. Creati T79 Codex (integrazione persistente Model/.ftk/chat/MCP, dipende anche da tuo T77 per preservare schizzi) e T80 Claude (UX base dopo T79). Per ora NON collegato all app e nessuno strumento lamiera MCP disponibile; non presentare la pagina di prova come nuova UX app. Storico locale base+flangia serializzabile, non timeline globale. T34–T37 e copertura SM01–SM17 restano aperti.
+
+### 2026-09-25 11:58 · codex · DONE `T78`
+**Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF** — Base core propria completata: regola versionata spessore/raggio/K, piastra rettangolare e singola flangia su/giu, geometria chiusa sfaccettata, sviluppo analitico revisionato, DXF mm, operazioni JSON modificabili/sopprimibili/ricostruibili. CI 8/8 verde con 35 test core e controlli file indipendenti; build app riuscita. Campione e anteprima build/sheet-metal; contratto per Claude e grafo aggiornati. Integrazione app/chat separata in T79/T80; lamiera completa non conclusa.

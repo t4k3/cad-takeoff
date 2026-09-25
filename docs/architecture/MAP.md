@@ -67,6 +67,18 @@ flowchart LR
   projectlibrary["ProjectLibrary"]
   workspacestate["WorkspaceState"]
   viewportstate["ViewportState"]
+  smrule["SheetMetalRule"]
+  smpart["SheetMetalPart"]
+  smoperation["SheetMetalOperation"]
+  smbase["SheetMetalBase"]
+  smflange["SheetMetalFlange"]
+  smdirection["SheetMetalBendDirection"]
+  smerror["SheetMetalError"]
+  smbendzone["SheetMetalBendZone"]
+  smflat["SheetMetalFlatPattern"]
+  smbuild["SheetMetalBuild"]
+  smengine["SheetMetalEngine"]
+  smdxf["SheetMetalDXF"]
   app -->|"owns_observable_state · SYNTACTIC"| model
   model -->|"owns_state · SYNTACTIC"| document
   model -->|"constructs_type · SYNTACTIC"| feature
@@ -153,6 +165,26 @@ flowchart LR
   content -->|"reads_state · SYNTACTIC"| projectlibrary
   content -->|"constructs_type · SYNTACTIC"| workspacestate
   content -->|"constructs_type · SYNTACTIC"| viewportstate
+  smpart -->|"references_symbol · SYNTACTIC"| smrule
+  smpart -->|"references_symbol · SYNTACTIC"| smoperation
+  smoperation -->|"references_symbol · SYNTACTIC"| smbase
+  smoperation -->|"references_symbol · SYNTACTIC"| smflange
+  smflange -->|"references_symbol · SYNTACTIC"| smdirection
+  smengine -->|"references_symbol · SYNTACTIC"| smpart
+  smengine -->|"calls_direct · SYNTACTIC"| kernel
+  smengine -->|"constructs_type · SYNTACTIC"| brepbody
+  smengine -->|"constructs_type · SYNTACTIC"| smflat
+  smengine -->|"constructs_type · SYNTACTIC"| smbuild
+  smengine -->|"references_symbol · SYNTACTIC"| smbendzone
+  smbuild -->|"references_symbol · SYNTACTIC"| brepbody
+  smbuild -->|"references_symbol · SYNTACTIC"| smflat
+  smflat -->|"references_symbol · SYNTACTIC"| smpart
+  smflat -->|"references_symbol · SYNTACTIC"| profile
+  smflat -->|"calls_direct · SYNTACTIC"| operations
+  smdxf -->|"references_symbol · SYNTACTIC"| smflat
+  smdxf -->|"references_symbol · SYNTACTIC"| smpart
+  smdxf -->|"references_symbol · SYNTACTIC"| smerror
+  smrule -->|"references_symbol · SYNTACTIC"| smerror
 ```
 
 ## Evidenze
@@ -185,12 +217,12 @@ flowchart LR
 | document → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:48` |
 | profile → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Sketch.swift:4` |
 | feature → codable | type_conforms_protocol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Document.swift:4` |
-| app → content | constructs_type | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:12` |
-| app → chat | owns_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:8` |
+| app → content | constructs_type | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:13` |
+| app → chat | owns_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:9` |
 | app → mcphost | owns_state | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:6` |
-| app → toolprotocol | casts_protocol | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:21` |
-| content → chatui | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:67` |
-| inspector → model | binds_state | SYNTACTIC | `App/Sources/UI/Workspace/InspectorPanel.swift:21` |
+| app → toolprotocol | casts_protocol | SYNTACTIC | `App/Sources/UI/FusionTakeoffApp.swift:23` |
+| content → chatui | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:69` |
+| inspector → model | binds_state | SYNTACTIC | `App/Sources/UI/Workspace/InspectorPanel.swift:27` |
 | chatui → chat | observes_state | SYNTACTIC | `App/Sources/UI/Assistant/AssistantPanel.swift:6` |
 | chat → assistantprotocol | protocol_dispatch | INFERRED | `App/Sources/Integration/Assistant/AssistantSession.swift:99` |
 | chat → toolprotocol | protocol_dispatch | INFERRED | `App/Sources/Integration/Assistant/AssistantSession.swift:174` |
@@ -243,5 +275,25 @@ flowchart LR
 | edgeinfo → edgeid | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/BodySnapshot.swift:12` |
 | brepvertex → vertexid | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/Kernel/Topology.swift:40` |
 | content → projectlibrary | reads_state | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:8` |
-| content → workspacestate | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:9` |
-| content → viewportstate | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:10` |
+| content → workspacestate | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:10` |
+| content → viewportstate | constructs_type | SYNTACTIC | `App/Sources/UI/Workspace/WorkspaceView.swift:11` |
+| smpart → smrule | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift:92` |
+| smpart → smoperation | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift:93` |
+| smoperation → smbase | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift:73` |
+| smoperation → smflange | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift:74` |
+| smflange → smdirection | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift:64` |
+| smengine → smpart | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:59` |
+| smengine → kernel | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:89` |
+| smengine → brepbody | constructs_type | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:100` |
+| smengine → smflat | constructs_type | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:106` |
+| smengine → smbuild | constructs_type | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:108` |
+| smengine → smbendzone | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:63` |
+| smbuild → brepbody | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:43` |
+| smbuild → smflat | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:44` |
+| smflat → smpart | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:25` |
+| smflat → profile | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:20` |
+| smflat → operations | calls_direct | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift:38` |
+| smdxf → smflat | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift:6` |
+| smdxf → smpart | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift:6` |
+| smdxf → smerror | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift:8` |
+| smrule → smerror | references_symbol | SYNTACTIC | `Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift:38` |

@@ -740,6 +740,150 @@
       "group": "UX · Claude",
       "file": "App/Sources/UI/Viewport/ViewportContainer.swift",
       "anchor": "final class ViewportState {"
+    },
+    {
+      "id": "smrule",
+      "name": "SheetMetalRule",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "anchor": "public struct SheetMetalRule"
+    },
+    {
+      "id": "smpart",
+      "name": "SheetMetalPart",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "anchor": "public struct SheetMetalPart"
+    },
+    {
+      "id": "smoperation",
+      "name": "SheetMetalOperation",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "anchor": "public struct SheetMetalOperation"
+    },
+    {
+      "id": "smbase",
+      "name": "SheetMetalBase",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "anchor": "public struct SheetMetalBase"
+    },
+    {
+      "id": "smflange",
+      "name": "SheetMetalFlange",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "anchor": "public struct SheetMetalFlange"
+    },
+    {
+      "id": "smdirection",
+      "name": "SheetMetalBendDirection",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "anchor": "public enum SheetMetalBendDirection"
+    },
+    {
+      "id": "smerror",
+      "name": "SheetMetalError",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "anchor": "public enum SheetMetalError"
+    },
+    {
+      "id": "smbendzone",
+      "name": "SheetMetalBendZone",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "anchor": "public struct SheetMetalBendZone"
+    },
+    {
+      "id": "smflat",
+      "name": "SheetMetalFlatPattern",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "anchor": "public struct SheetMetalFlatPattern"
+    },
+    {
+      "id": "smbuild",
+      "name": "SheetMetalBuild",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "anchor": "public struct SheetMetalBuild"
+    },
+    {
+      "id": "smengine",
+      "name": "SheetMetalEngine",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "anchor": "public enum SheetMetalEngine"
+    },
+    {
+      "id": "smdxf",
+      "name": "SheetMetalDXF",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+      "anchor": "public enum SheetMetalDXF"
     }
   ],
   "edges": [
@@ -1950,6 +2094,286 @@
         }
       ],
       "xcodeTarget": "FusionTakeoff"
+    },
+    {
+      "id": "SM001",
+      "source": "smpart",
+      "target": "smrule",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "anchor": "public private(set) var rule: SheetMetalRule"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM002",
+      "source": "smpart",
+      "target": "smoperation",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "anchor": "public private(set) var operations: [SheetMetalOperation]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM003",
+      "source": "smoperation",
+      "target": "smbase",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "anchor": "case base(SheetMetalBase)"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM004",
+      "source": "smoperation",
+      "target": "smflange",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "anchor": "case edgeFlange(SheetMetalFlange)"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM005",
+      "source": "smflange",
+      "target": "smdirection",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "anchor": "public let direction: SheetMetalBendDirection"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM006",
+      "source": "smengine",
+      "target": "smpart",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "public static func rebuild(_ part: SheetMetalPart)"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM007",
+      "source": "smengine",
+      "target": "kernel",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "let raw = try PrimitiveKernel.build("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM008",
+      "source": "smengine",
+      "target": "brepbody",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "let folded = BRepBody("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM009",
+      "source": "smengine",
+      "target": "smflat",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "let flat = SheetMetalFlatPattern("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM010",
+      "source": "smengine",
+      "target": "smbuild",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "return SheetMetalBuild("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM011",
+      "source": "smengine",
+      "target": "smbendzone",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "var zones: [SheetMetalBendZone]"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM012",
+      "source": "smbuild",
+      "target": "brepbody",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "public let foldedBody: BRepBody"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM013",
+      "source": "smbuild",
+      "target": "smflat",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "public let flatPattern: SheetMetalFlatPattern"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM014",
+      "source": "smflat",
+      "target": "smpart",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "private let source: SheetMetalPart"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM015",
+      "source": "smflat",
+      "target": "profile",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "public let outline: Profile2D"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM016",
+      "source": "smflat",
+      "target": "operations",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "anchor": "public var mesh: Mesh { Operations.extrude("
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM017",
+      "source": "smdxf",
+      "target": "smflat",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+          "anchor": "public static func export(_ pattern: SheetMetalFlatPattern"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM018",
+      "source": "smdxf",
+      "target": "smpart",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+          "anchor": "public static func export(_ pattern: SheetMetalFlatPattern"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM019",
+      "source": "smdxf",
+      "target": "smerror",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+          "anchor": "throw SheetMetalError.staleFlatPattern"
+        }
+      ],
+      "xcodeTarget": "CADCore"
+    },
+    {
+      "id": "SM020",
+      "source": "smrule",
+      "target": "smerror",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "anchor": "throw SheetMetalError.invalidParameter(\"regola:"
+        }
+      ],
+      "xcodeTarget": "CADCore"
     }
   ],
   "limitations": [
@@ -1959,7 +2383,8 @@
     "Nessuna prova di correttezza numerica, timing, race, performance GPU, stato disco o stampa fisica.",
     "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento.",
     "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo.",
-    "La prima base B-rep espone snapshot sul Model; integrazione renderer distinta. ID laterali di profili liberi invalidati quando cambia il profilo v1; nessun naming split/merge o Boolean kernel completo implicito."
+    "La prima base B-rep espone snapshot sul Model; integrazione renderer distinta. ID laterali di profili liberi invalidati quando cambia il profilo v1; nessun naming split/merge o Boolean kernel completo implicito.",
+    "Lamiera T78 è una base core autonoma: piastra e singola flangia, sviluppo analitico, DXF e operazioni JSON. Nessuna integrazione UI/Model/.ftk/chat, lamiera completa o collaudo officina implicito nel grafo."
   ],
   "probes": [
     {
@@ -2027,6 +2452,12 @@
       "category": "sampled_edge_and_dead_code",
       "result": "MANUAL_PARTIAL",
       "evidence": "Campione C006 ThreeMFExporter -> StoredZIP verificato come calls_direct SYNTACTIC, non eredità; BRepBody.snapshot senza UI non è codice morto: API del Model e test la chiamano."
+    },
+    {
+      "id": "P12",
+      "category": "sheet_metal",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "SheetMetalEngine.rebuild costruisce BRepBody tramite PrimitiveKernel e uno SheetMetalFlatPattern separato. SheetMetalDXF verifica isCurrent prima di esportare. Solo ancoraggi testuali, nessun chiamante UI o AI inventato; fixture Swift e lettore Python separati dimostrano i risultati numerici supportati."
     }
   ]
 }

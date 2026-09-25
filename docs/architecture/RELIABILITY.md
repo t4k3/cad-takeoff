@@ -1,6 +1,6 @@
-# Affidabilità della mappa — T70/T75
+# Affidabilità della mappa — T78
 
-Revisione 3 · 25 settembre 2026 · Codex.
+Revisione 4 · 25 settembre 2026 · Codex.
 
 **Mappa esplorativa manuale/testuale, parziale. Non è un code graph semantico.**
 Specifica curata: `graph-spec.json`; dataset canonico: `graph.json`; viste
@@ -13,20 +13,20 @@ Checkout `/Users/ross/APP varie/FUSION-TAKEOFF`; progetto e scheme
 `FusionTakeoff`; Debug, macOS arm64, Swift 6, deployment macOS 14.
 Commit, dirty state, data UTC, toolchain e hash sono nel dataset.
 
-| Misura dello snapshot T70/T75 | Risultato |
+| Misura dello snapshot T78 | Risultato |
 |---|---:|
-| File sorgente trovati/inventariati | 64 / 64 |
-| File con simboli mappati | 36 |
-| Tipi/confini selezionati | 63 |
-| Archi | 86 |
-| SYNTACTIC | 71 |
+| File sorgente trovati/inventariati | 70 / 70 |
+| File con simboli mappati | 39 |
+| Tipi/confini selezionati | 75 |
+| Archi | 106 |
+| SYNTACTIC | 91 |
 | INFERRED | 5 |
 | RUNTIME/EXTERNAL | 10 |
 | RESOLVED / AMBIGUOUS | 0 / 0 |
 | File analizzati semanticamente | 0 |
 
 Inclusi App, CADCore e bridge `Tools/ftk-mcp`. Test tracciati per freshness ma
-non mappati come chiamanti. I 28 file non mappati sono elencati nel JSON.
+non mappati come chiamanti. I 31 file non mappati sono elencati nel JSON.
 Inventario non significa copertura completa dei simboli. `parseErrors: null`
 significa non misurato: non è stato eseguito un parser AST o SourceKit/IndexStore.
 Macro, result builder, overload, witness di protocolli e internals Apple esclusi.
@@ -68,13 +68,22 @@ cambia sorgenti; verificare prima di usarlo per modificare API.
 - Confini HTTP OpenAI/Anthropic, tunnel, GPU e disco marcati esterni/inferiti.
   Nessuna connessione remota o correttezza numerica viene provata dagli archi.
 - Le API pubbliche/testate senza chiamanti UI non sono considerate codice morto.
+- Lamiera: 12 tipi e 20 relazioni testuali aggiunti. Il motore chiama il kernel
+  ed espone piegato e sviluppo separati; il DXF verifica la revisione. Nessun
+  collegamento UI/Model/chat inventato: l’integrazione è ancora da sviluppare.
+  Schizzi concorrenti di Claude inventariati ma non attraversati semanticamente.
 - Campione casuale riproducibile (seed 70): E027, `Mesh.vertices: [Vec3]`,
   verificato come `references_symbol` SYNTACTIC, non chiamata né ereditarietà.
 
 ## Verifiche separate dal grafo
 
-- CADCore: 19 test Swift Testing passati, incluso corpus di 80 profili semplici;
+- CADCore: 35 test Swift Testing passati, incluso corpus di 80 profili semplici;
   incidenza, volume, ID e mappe dello snapshot verificati separatamente dal grafo.
+- Lamiera: 11 dei 35 test, con 30 combinazioni angolo/verso/K. Salvataggio e
+  replay, chiusura, volumi, sviluppo analitico, edit e obsolescenza verificati.
+  Lettore Python indipendente controlla STL/3MF/DXF generati dal JSON riaperto.
+  Anteprima tecnica derivata dai file verificata visivamente nel browser;
+  nessun import CAD/CAM o pezzo fabbricato usato come prova.
 - Strumenti CAD/Model: 50 verifiche su geometria, revisioni, undo/redo, colore,
   3MF e snapshot, invalidazione cache e geometrie invalide/ID duplicati.
 - Provider OpenAI: 23 verifiche offline, comprese chiamate incomplete, errori,
@@ -83,10 +92,10 @@ cambia sorgenti; verificare prima di usarlo per modificare API.
   volume, undo, conflitto di revisione, autenticazione, Origin e 3MF.
 - Connettore: 3 test Python; archivio 3MF verificato con parser ZIP/XML indipendente.
 - Xcode: build app riuscita. Nessuna chiamata ai provider remoti in queste prove.
-- Interfaccia del grafo: pagina locale ricaricata, 63 nodi/86 archi visibili;
-  ricerca BodySnapshot verificata (4 relazioni). Coerenza HTML/JSON/Mermaid
+- Interfaccia del grafo: pagina locale ricaricata, 75 nodi/106 archi visibili;
+  ricerca SheetMetalEngine verificata (6 relazioni). Coerenza HTML/JSON/Mermaid
   verificata dal generatore.
-- Comando unico: `scripts/ci.sh`. Log della consegna: `build/ci/run.ZUUwHC/`.
+- Comando unico: `scripts/ci.sh`, 8 passaggi. Log della consegna: `build/ci/run.KFNi14/`.
 
 Il completamento dei task è nel registro e nel grafo attività, non in questa
 mappa. Nessuna prova fisica di stampa/lamiera, completa implementazione assiemi,

@@ -34,5 +34,6 @@ run_step 03-mcp bash scripts/test-mcp-integration.sh
 run_step 04-openai bash scripts/test-openai-provider.sh
 run_step 05-connector python3 -m unittest discover -s Tests/ChatGPTConnector -v
 run_step 06-3mf bash scripts/test-3mf.sh
-run_step 07-app bash scripts/build.sh
-printf '\nVerifica completa: 7 passaggi riusciti. Log: %s\n' "$ci_run_dir"
+run_step 07-sheet-metal bash scripts/test-sheet-metal.sh
+run_step 08-app bash scripts/build.sh
+printf '\nVerifica completa: 8 passaggi riusciti. Log: %s\n' "$ci_run_dir"

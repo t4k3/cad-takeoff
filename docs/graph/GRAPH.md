@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 11:37. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 11:58. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -121,7 +121,11 @@ flowchart LR
     T71["T71 · Allineare roadmap e regole sulle dipendenze alla richiesta di Ross<br/><i>codex</i>"]:::done
   end
   subgraph P18["Lamiera · prima base"]
-    T78["T78 · Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF<br/><i>codex</i>"]:::in_progress
+    T78["T78 · Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF<br/><i>codex</i>"]:::done
+  end
+  subgraph P19["Altro"]
+    T79["T79 · Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo<br/><i>codex</i>"]:::todo
+    T80["T80 · UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export<br/><i>claude</i>"]:::todo
   end
   T00 --> T02
   T00 --> T03
@@ -287,6 +291,10 @@ flowchart LR
   T75 --> T76
   T61 --> T77
   T75 --> T78
+  T78 --> T79
+  T77 --> T79
+  T79 --> T80
+  T25 --> T80
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -383,4 +391,6 @@ flowchart LR
 | T75 | Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70) | done | codex | T24 | docs/requirements/KERNEL_V1.md |
 | T76 | Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology | todo | claude | T72, T75 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T77 | Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file | in_progress | claude | T61 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests/SketchTests.swift<br>App/Sources/UI/Sketch<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Sources/Integration/Projects |
-| T78 | Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF | in_progress | codex | T75 | Packages/CADCore/Sources/CADCore/SheetMetal<br>Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift<br>Tests/SheetMetal<br>scripts/test-sheet-metal.sh<br>scripts/ci.sh<br>docs/requirements/SHEET_METAL.md<br>docs/requirements/SHEET_METAL_V1.md<br>docs/ROADMAP.md |
+| T78 | Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF | done | codex | T75 | Packages/CADCore/Sources/CADCore/SheetMetal<br>Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift<br>Tests/SheetMetal<br>scripts/test-sheet-metal.sh<br>scripts/ci.sh<br>docs/requirements/SHEET_METAL.md<br>docs/requirements/SHEET_METAL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
+| T79 | Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo | todo | codex | T78, T77 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>Tests/SheetMetalIntegration<br>scripts/test-sheet-metal-integration.sh<br>docs/requirements/SHEET_METAL_V1.md |
+| T80 | UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export | todo | claude | T79, T25 | App/Sources/UI/SheetMetal<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport<br>App/Sources/Integration/Projects |

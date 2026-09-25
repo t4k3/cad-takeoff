@@ -1,7 +1,16 @@
 # Lamiera — copertura funzionale richiesta
 
-Revisione 2 · 25 settembre 2026 · requisito Ross: «tutta la parte lamiera di Fusion 360».
-Stato iniziale di ogni voce: **richiesta, non ancora implementata/verificata**.
+Revisione 3 · 25 settembre 2026 · requisito Ross: «tutta la parte lamiera di Fusion 360».
+T78 consegna una **prima base parziale nel core**, descritta in
+[SHEET_METAL_V1.md](SHEET_METAL_V1.md). Nessuna voce della matrice completa è chiusa.
+
+Implementati e testati: regola spessore/raggio/K revisionata (parte di SM01),
+piastra rettangolare (SM02), singola flangia intera su/giù (SM03), sviluppo
+analitico revisionato (SM13), contorno e linee DXF (SM15), validazioni e rigetto
+dello sviluppo obsoleto (SM16). Le due operazioni si salvano e rigenerano in
+un documento lamiera autonomo: l’integrazione nello storico generale e negli
+assiemi SM17, l’interfaccia e gli strumenti AI restano da fare.
+Tutte le altre capacità sotto restano **richieste, non implementate**.
 
 La copertura viene verificata per capacità e casi geometrici, non per somiglianza
 dell'interfaccia. Le forme avanzate mantengono una voce propria: non vengono

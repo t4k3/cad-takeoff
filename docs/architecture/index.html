@@ -22,14 +22,14 @@
 <script type="application/json" id="data">{
   "schemaVersion": 1,
   "title": "Fusion Takeoff — mappa architetturale esplorativa",
-  "generatedAt": "2026-09-25T09:28:25.738420+00:00",
+  "generatedAt": "2026-09-25T09:56:41.537304+00:00",
   "method": "MANUAL_TEXTUAL",
   "coverageState": "PARTIAL_EXPLORATORY",
   "identity": {
     "checkout": "/Users/ross/APP varie/FUSION-TAKEOFF",
     "branch": "main",
-    "commit": "68076f2304b6decc3f7d770e6f25f720d6b5ea3c",
-    "dirtyStatus": "M docs/architecture/graph-spec.json",
+    "commit": "4955204a9c4d2deaecf24e9230a77361431c65bc",
+    "dirtyStatus": "M docs/COLLAB.md\n M docs/ROADMAP.md\n M docs/architecture/graph-spec.json\n M docs/graph/GRAPH.md\n M docs/graph/tasks.json\n M docs/requirements/SHEET_METAL.md\n M scripts/ci.sh\n?? Packages/CADCore/Sources/CADCore/SheetMetal/\n?? Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift\n?? Tests/SheetMetal/\n?? docs/requirements/SHEET_METAL_V1.md\n?? scripts/test-sheet-metal.sh",
     "project": "FusionTakeoff.xcodeproj",
     "scheme": "FusionTakeoff",
     "configuration": "Debug",
@@ -40,14 +40,15 @@
     "python": "3.9.6"
   },
   "coverage": {
-    "sourceFilesFound": 64,
-    "sourceFilesInventoried": 64,
-    "sourceFilesWithMappedSymbols": 36,
+    "sourceFilesFound": 70,
+    "sourceFilesInventoried": 70,
+    "sourceFilesWithMappedSymbols": 39,
     "sourceFilesParsedSemantically": 0,
     "unmappedFiles": [
       "App/Sources/Integration/Assistant/AnthropicStream.swift",
       "App/Sources/Integration/Assistant/Keychain.swift",
       "App/Sources/Integration/Projects/DesignModel+Files.swift",
+      "App/Sources/Integration/Projects/SketchStore.swift",
       "App/Sources/Integration/Projects/ThumbnailRenderer.swift",
       "App/Sources/UI/Assistant/AssistantSettings.swift",
       "App/Sources/UI/Command/CommandPanel.swift",
@@ -62,6 +63,7 @@
       "App/Sources/UI/Selection/DerivedTopology.swift",
       "App/Sources/UI/Selection/GeoSelection.swift",
       "App/Sources/UI/Sketch/SketchCommands.swift",
+      "App/Sources/UI/Sketch/SketchInspector.swift",
       "App/Sources/UI/Sketch/SketchSession.swift",
       "App/Sources/UI/Viewport/Camera.swift",
       "App/Sources/UI/Viewport/MatrixMath.swift",
@@ -72,26 +74,27 @@
       "App/Sources/UI/Workspace/PartColorPicker.swift",
       "App/Sources/UI/Workspace/Ribbon.swift",
       "App/Sources/UI/Workspace/StatusBar.swift",
-      "App/Sources/UI/Workspace/TimelineBar.swift"
+      "App/Sources/UI/Workspace/TimelineBar.swift",
+      "Packages/CADCore/Sources/CADCore/Sketch/SketchModel.swift"
     ],
     "parseErrors": null,
     "parseNote": "Nessun parser AST o semantico eseguito.",
-    "nodes": 63,
-    "edges": 86,
+    "nodes": 75,
+    "edges": 106,
     "edgesByState": {
-      "SYNTACTIC": 71,
+      "SYNTACTIC": 91,
       "RUNTIME/EXTERNAL": 10,
       "INFERRED": 5
     },
     "edgesByRelation": {
       "owns_observable_state": 1,
       "owns_state": 5,
-      "constructs_type": 16,
-      "calls_direct": 17,
+      "constructs_type": 19,
+      "calls_direct": 19,
       "persists_model": 2,
       "loads_resource": 1,
       "writes_export": 1,
-      "references_symbol": 19,
+      "references_symbol": 34,
       "reads_state": 2,
       "type_conforms_protocol": 6,
       "casts_protocol": 1,
@@ -311,8 +314,8 @@
     },
     {
       "file": "App/Sources/Integration/Projects/DesignModel+Files.swift",
-      "sha256": "f4d08b69acf2d4c43a8c6b9894edf8d1307c107fcc5d6d5d7e768f8b2a1c8ac2",
-      "lines": 19,
+      "sha256": "d0d9e198e8b7176383f646e54fe35d67211df078c141e7d758fd6f3315f4c81b",
+      "lines": 22,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -327,10 +330,26 @@
     },
     {
       "file": "App/Sources/Integration/Projects/ProjectLibrary.swift",
-      "sha256": "69a4b2b5d3d4d617b0ab1a81cc241639bd0b65adbaedd65d89882f85e008280e",
-      "lines": 307,
+      "sha256": "cabfe70366d17209b6d4c22e90b4f26dd9ac497c539d8445d4b805793bda3ce9",
+      "lines": 315,
       "target": "FusionTakeoff",
       "mapped": true,
+      "literalSites": {
+        "observation": 1,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 1,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "App/Sources/Integration/Projects/SketchStore.swift",
+      "sha256": "a2b581cb7f02753af061131cb3ab91d867c4bc093b14b8ac91d3fdad6ac5ebcd",
+      "lines": 88,
+      "target": "FusionTakeoff",
+      "mapped": false,
       "literalSites": {
         "observation": 1,
         "combine": 0,
@@ -583,12 +602,12 @@
     },
     {
       "file": "App/Sources/UI/FusionTakeoffApp.swift",
-      "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a",
-      "lines": 47,
+      "sha256": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923",
+      "lines": 50,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
-        "observation": 4,
+        "observation": 5,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -663,8 +682,8 @@
     },
     {
       "file": "App/Sources/UI/Sketch/SketchCommands.swift",
-      "sha256": "a4b7d445f79ca630cf63edc0387d20f3eca00ca609994f3493d6c829ec5e1aaa",
-      "lines": 75,
+      "sha256": "154f88cb1895cefbb2d3669594a1a24ed6f04f0f500c204519cebb932e5276b3",
+      "lines": 45,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -678,9 +697,25 @@
       }
     },
     {
+      "file": "App/Sources/UI/Sketch/SketchInspector.swift",
+      "sha256": "b6e950c720b7ecbc4f71a13b68b841cbd723ab52c3d2dc4fd394dd71baed90f7",
+      "lines": 189,
+      "target": "FusionTakeoff",
+      "mapped": false,
+      "literalSites": {
+        "observation": 1,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
       "file": "App/Sources/UI/Sketch/SketchSession.swift",
-      "sha256": "b449d9214a628f27d9d7e87a476058b2b832c670e6eacdbbc49b1df3a2ec32c8",
-      "lines": 269,
+      "sha256": "a1638830442d817fc145930d5eabfdb3f84e4beb21ae0addd7feb7915285d0e6",
+      "lines": 287,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -791,12 +826,12 @@
     },
     {
       "file": "App/Sources/UI/Viewport/ViewportContainer.swift",
-      "sha256": "3bf4a976ff62c6e5dc5f63e1fe25602c362da78d113e564c0ee89eb7868cc761",
-      "lines": 368,
+      "sha256": "308d86f2e14bf8af5ac134d615fdade231d0d29c4e2ea6ba6f2be74d902829e6",
+      "lines": 382,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
-        "observation": 4,
+        "observation": 5,
         "combine": 0,
         "concurrency": 1,
         "mainActor": 1,
@@ -823,12 +858,12 @@
     },
     {
       "file": "App/Sources/UI/Workspace/BrowserPanel.swift",
-      "sha256": "89a592b9bbf5e1d3a54490f79655e72148b7eb1e9091c857e8353cd6320f1458",
-      "lines": 127,
+      "sha256": "6ec62378d59d5099b3cb3233d229dade2dd23255134d7693fc47b58b76aa2368",
+      "lines": 166,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
-        "observation": 4,
+        "observation": 6,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -839,12 +874,12 @@
     },
     {
       "file": "App/Sources/UI/Workspace/InspectorPanel.swift",
-      "sha256": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748",
-      "lines": 89,
+      "sha256": "cd75508d6b42a42e2b49593fe04acb55dc63af214f5ae757a2d58fe452558540",
+      "lines": 95,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
-        "observation": 2,
+        "observation": 3,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -871,8 +906,8 @@
     },
     {
       "file": "App/Sources/UI/Workspace/Ribbon.swift",
-      "sha256": "e5c70d5e72b83c1b1a42cce8ddb280bb19a465c47039aeaca51134ed6f6bc801",
-      "lines": 176,
+      "sha256": "6e12f15a00cc6fe2f609b32682306c1e9b833cc1acf1b4e8e8b04fc3100d2861",
+      "lines": 181,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
@@ -903,12 +938,12 @@
     },
     {
       "file": "App/Sources/UI/Workspace/TimelineBar.swift",
-      "sha256": "0932a7bdfedd91a371f2c54ba151889a9e56edd7554dd5f126009ac68b219833",
-      "lines": 65,
+      "sha256": "9fe6337faf8ff3861063a45d5b241a351b0e292b6a00cfb19298f039eb18c52d",
+      "lines": 96,
       "target": "FusionTakeoff",
       "mapped": false,
       "literalSites": {
-        "observation": 2,
+        "observation": 3,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -919,14 +954,14 @@
     },
     {
       "file": "App/Sources/UI/Workspace/WorkspaceState.swift",
-      "sha256": "773fb5b24fec16cb6d4615f8832f4377495eec930fb4455d519ff8f46a9c6405",
-      "lines": 87,
+      "sha256": "002a5cd1cdba3605123c3601afeff3667e161d3e0633b4245af4d6871dd77794",
+      "lines": 123,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
         "observation": 1,
         "combine": 0,
-        "concurrency": 0,
+        "concurrency": 4,
         "mainActor": 1,
         "selectors": 0,
         "delegate": 0,
@@ -935,12 +970,12 @@
     },
     {
       "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
-      "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76",
-      "lines": 71,
+      "sha256": "57383937492a074952c5168dce8c67a020829ace0e84c759343491078895e62b",
+      "lines": 73,
       "target": "FusionTakeoff",
       "mapped": true,
       "literalSites": {
-        "observation": 6,
+        "observation": 7,
         "combine": 0,
         "concurrency": 0,
         "mainActor": 0,
@@ -1094,6 +1129,70 @@
       }
     },
     {
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+      "sha256": "bb69ef99ae64043f1c9c786c93ab0b3ac3d1c7803f15d2d999a06eb33fae41f9",
+      "lines": 49,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28",
+      "lines": 110,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545",
+      "lines": 206,
+      "target": "CADCore",
+      "mapped": true,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
+      "file": "Packages/CADCore/Sources/CADCore/Sketch/SketchModel.swift",
+      "sha256": "56104b78eb01bb0c83847a2caf5a115af667f3720f5a757961bf2903676c1885",
+      "lines": 167,
+      "target": "CADCore",
+      "mapped": false,
+      "literalSites": {
+        "observation": 0,
+        "combine": 0,
+        "concurrency": 0,
+        "mainActor": 0,
+        "selectors": 0,
+        "delegate": 0,
+        "representableWitness": 0
+      }
+    },
+    {
       "file": "Packages/CADCore/Sources/CADCore/Sketch.swift",
       "sha256": "236c122d05e82b51f026c5ea994c370851b36f64ab3731d02aa224d32a9147df",
       "lines": 74,
@@ -1156,8 +1255,9 @@
     "App/Sources/Integration/OpenAI/OpenAIConversation.swift": "7ecde36830d2ec5b207282f93418d4eed7d40dbc921721f7f5a756eba9e2b1a8",
     "App/Sources/Integration/OpenAI/OpenAIProvider.swift": "29a10f519d46211dc388badc2f5d151f42d7c32cf72f41c545778c239bb026b7",
     "App/Sources/Integration/OpenAI/OpenAIStream.swift": "0d2c9812bee75ec110915dcb9f9091484070d1255933ec8ecb41528bce6e5228",
-    "App/Sources/Integration/Projects/DesignModel+Files.swift": "f4d08b69acf2d4c43a8c6b9894edf8d1307c107fcc5d6d5d7e768f8b2a1c8ac2",
-    "App/Sources/Integration/Projects/ProjectLibrary.swift": "69a4b2b5d3d4d617b0ab1a81cc241639bd0b65adbaedd65d89882f85e008280e",
+    "App/Sources/Integration/Projects/DesignModel+Files.swift": "d0d9e198e8b7176383f646e54fe35d67211df078c141e7d758fd6f3315f4c81b",
+    "App/Sources/Integration/Projects/ProjectLibrary.swift": "cabfe70366d17209b6d4c22e90b4f26dd9ac497c539d8445d4b805793bda3ce9",
+    "App/Sources/Integration/Projects/SketchStore.swift": "a2b581cb7f02753af061131cb3ab91d867c4bc093b14b8ac91d3fdad6ac5ebcd",
     "App/Sources/Integration/Projects/ThumbnailRenderer.swift": "01230ee6eada5d246569c157e2bfbc517f9a4f63bb9ecc57f4e597a3cb43f7bd",
     "App/Sources/Integration/ToolBridge.swift": "695b55c1ccad50e9357d016a9acb7502491447deac7fc593db2134b22a3c0248",
     "App/Sources/Model/DesignModel.swift": "baecf1d9a2a2ce62f81883ab29efc55e4bf1e92a6676d99ff3adb49c6ae4be17",
@@ -1173,30 +1273,31 @@
     "App/Sources/UI/Connectors/ClaudeDesktopSetup.swift": "6d501c71658774e4270935b5cd81f71e84159c7dd141a148bfb27726f8de84e4",
     "App/Sources/UI/Connectors/ConnectorsPanel.swift": "6304501f3a2d6dbd2c6dfba879a49faccf5b59a3f5780abec102e3a58c1fa87e",
     "App/Sources/UI/DesignSystem/Theme.swift": "89e6023e512663e5cda2c370086b7ff208fe330b2fc73057af06597bbf28b049",
-    "App/Sources/UI/FusionTakeoffApp.swift": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a",
+    "App/Sources/UI/FusionTakeoffApp.swift": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923",
     "App/Sources/UI/Home/HomeView.swift": "f556787903a62c8184efda819394aaf64073e600e6add18200a3460aabcf1103",
     "App/Sources/UI/Previews/CommandPanelPreviews.swift": "78269bea41240cb20785f5fcfae056172f2f357ec6b0bc21685674184efbfbad",
     "App/Sources/UI/Selection/DerivedTopology.swift": "982628058d3ed4633970c671040e6f76690c383cb5f1ecfc5bb02c40337c16a8",
     "App/Sources/UI/Selection/GeoSelection.swift": "00aa95ab479d21d2920d4c084264aeeae3502b2c9bfb2d637d568e81fd6745d2",
-    "App/Sources/UI/Sketch/SketchCommands.swift": "a4b7d445f79ca630cf63edc0387d20f3eca00ca609994f3493d6c829ec5e1aaa",
-    "App/Sources/UI/Sketch/SketchSession.swift": "b449d9214a628f27d9d7e87a476058b2b832c670e6eacdbbc49b1df3a2ec32c8",
+    "App/Sources/UI/Sketch/SketchCommands.swift": "154f88cb1895cefbb2d3669594a1a24ed6f04f0f500c204519cebb932e5276b3",
+    "App/Sources/UI/Sketch/SketchInspector.swift": "b6e950c720b7ecbc4f71a13b68b841cbd723ab52c3d2dc4fd394dd71baed90f7",
+    "App/Sources/UI/Sketch/SketchSession.swift": "a1638830442d817fc145930d5eabfdb3f84e4beb21ae0addd7feb7915285d0e6",
     "App/Sources/UI/Viewport/Camera.swift": "0ca2b4a4881818f3408089ea45e1daa22797a24d974304460547514bd346a825",
     "App/Sources/UI/Viewport/MatrixMath.swift": "a01c828de24644854bef110c0584d6217e3d8f322f9203c0c38d0d14e4462bbf",
     "App/Sources/UI/Viewport/MetalViewport.swift": "b3f816e972f483faf2cbed03230fc127a474caae3e5e3ea748a04f0be58f63e3",
     "App/Sources/UI/Viewport/Picking.swift": "93cc6444367e57df86acd2a64b0e8ddb59bb27ae77fc697d407a791bbfc8a420",
     "App/Sources/UI/Viewport/ShaderSource.swift": "468bb2e41e1c5bb5ff6ea62b73140339380ba3a362a9753c2218d319521d2700",
     "App/Sources/UI/Viewport/ViewCube.swift": "9348c92ef68ada28d7507dbb65f333f41c5f8d1b2cedba4479634e37e3373b74",
-    "App/Sources/UI/Viewport/ViewportContainer.swift": "3bf4a976ff62c6e5dc5f63e1fe25602c362da78d113e564c0ee89eb7868cc761",
+    "App/Sources/UI/Viewport/ViewportContainer.swift": "308d86f2e14bf8af5ac134d615fdade231d0d29c4e2ea6ba6f2be74d902829e6",
     "App/Sources/UI/Viewport/ViewportRenderer.swift": "bb54512aaf830fbba4aa6e7c0de80afcb85eaf04138bbbd9e46f6530b58a02d2",
-    "App/Sources/UI/Workspace/BrowserPanel.swift": "89a592b9bbf5e1d3a54490f79655e72148b7eb1e9091c857e8353cd6320f1458",
-    "App/Sources/UI/Workspace/InspectorPanel.swift": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748",
+    "App/Sources/UI/Workspace/BrowserPanel.swift": "6ec62378d59d5099b3cb3233d229dade2dd23255134d7693fc47b58b76aa2368",
+    "App/Sources/UI/Workspace/InspectorPanel.swift": "cd75508d6b42a42e2b49593fe04acb55dc63af214f5ae757a2d58fe452558540",
     "App/Sources/UI/Workspace/PartColorPicker.swift": "1bbd78add262ae8d9a13a0a81005fc06843b46882caf21ccb947e0eb40cfb521",
-    "App/Sources/UI/Workspace/Ribbon.swift": "e5c70d5e72b83c1b1a42cce8ddb280bb19a465c47039aeaca51134ed6f6bc801",
+    "App/Sources/UI/Workspace/Ribbon.swift": "6e12f15a00cc6fe2f609b32682306c1e9b833cc1acf1b4e8e8b04fc3100d2861",
     "App/Sources/UI/Workspace/StatusBar.swift": "20aa7e5dc330f507d8becae310a9d3ed949c49b309431d3c9a94f31557602f35",
-    "App/Sources/UI/Workspace/TimelineBar.swift": "0932a7bdfedd91a371f2c54ba151889a9e56edd7554dd5f126009ac68b219833",
-    "App/Sources/UI/Workspace/WorkspaceState.swift": "773fb5b24fec16cb6d4615f8832f4377495eec930fb4455d519ff8f46a9c6405",
-    "App/Sources/UI/Workspace/WorkspaceView.swift": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76",
-    "FusionTakeoff.xcodeproj/project.pbxproj": "802b17805e68f2a1b8807be19df18e216f1fe9bb9a6315b437dcff7a77051fbb",
+    "App/Sources/UI/Workspace/TimelineBar.swift": "9fe6337faf8ff3861063a45d5b241a351b0e292b6a00cfb19298f039eb18c52d",
+    "App/Sources/UI/Workspace/WorkspaceState.swift": "002a5cd1cdba3605123c3601afeff3667e161d3e0633b4245af4d6871dd77794",
+    "App/Sources/UI/Workspace/WorkspaceView.swift": "57383937492a074952c5168dce8c67a020829ace0e84c759343491078895e62b",
+    "FusionTakeoff.xcodeproj/project.pbxproj": "e12a259a44453f066ab3be9dc7fc44b0de64d298cac027c42a9b337e7a11f099",
     "Packages/CADCore/Package.swift": "020fcbe1497b1671441987703ac82f815719fd3c2a9a1a90b3901dbdaa46da63",
     "Packages/CADCore/Sources/CADCore/Document.swift": "1c6115b9da9d87d8c1c1aa5f3ee0928cb1409c24acea4178a395d0874a879dc8",
     "Packages/CADCore/Sources/CADCore/Export.swift": "ba2eb3b394c30b094db765e235081738c4484b5e4050c0277f2976bedd18f62d",
@@ -1207,17 +1308,24 @@
     "Packages/CADCore/Sources/CADCore/Mesh.swift": "3873f5d0a5ad23c78b947aee608a2fb066d6705da522ef8f51093f48f982fa54",
     "Packages/CADCore/Sources/CADCore/Operations.swift": "6e09f2ff12b73815e7a822bc218d6e9fb6dbb85a529678571ea73e5537ee7fde",
     "Packages/CADCore/Sources/CADCore/PartColor.swift": "e56b70e932aa73b4be058aec049440eacda975c6f651aa931dbe59d23bf2a6c1",
+    "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift": "bb69ef99ae64043f1c9c786c93ab0b3ac3d1c7803f15d2d999a06eb33fae41f9",
+    "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28",
+    "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545",
+    "Packages/CADCore/Sources/CADCore/Sketch/SketchModel.swift": "56104b78eb01bb0c83847a2caf5a115af667f3720f5a757961bf2903676c1885",
     "Packages/CADCore/Sources/CADCore/Sketch.swift": "236c122d05e82b51f026c5ea994c370851b36f64ab3731d02aa224d32a9147df",
     "Packages/CADCore/Sources/CADCore/ThreeMFExporter.swift": "f935132f2ac95fa88cb462f774d7c94abb2e78020da15b609e2a7d3d6974e7b8",
     "Packages/CADCore/Tests/CADCoreTests/CADCoreTests.swift": "4cd476d752fed1d1a5ae102a1fafa6c6faceed61c580397bf1a0393c06cd07ee",
     "Packages/CADCore/Tests/CADCoreTests/PrimitiveKernelTests.swift": "69996931532ac325c273b712fe04c904d6ce7cd98c1c0b44da4672899ef75436",
+    "Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift": "a7386d36107cc7ba4b326464e32037b4a4af3b88a6fa256202d5e2b932a28f43",
+    "Packages/CADCore/Tests/CADCoreTests/SketchTests.swift": "fc1364d6d4b981a633702a70db1a9f946ec60e883631dd87e1a92cb1335bdd52",
     "Packages/CADCore/Tests/CADCoreTests/ThreeMFTests.swift": "65b55ff8afcb76549ebdcd1c679f75ff269fbbf8f5287f631ae7980d2002e3c2",
     "Tests/AssistantTools/Runner.swift": "2a0ca172a145d9d6d21af4cce0a284451db258cda7133198322a49c0cdbae6a9",
     "Tests/MCPIntegration/Runner.swift": "e667d1b7e7f74d8420ef8c1983569300c6e0190f17d1ddc7469fb13d7a2a9c10",
     "Tests/OpenAIProvider/Runner.swift": "01727690c619b262c18d4052c4ac1d014dd8a34f586be77f0e9bdc6f7987391b",
+    "Tests/SheetMetal/Fixture.swift": "9eee1ce28c3ab09eb4335464bd38f5618605e8f6dc829a6f7297624e6d4d5bcb",
     "Tests/ThreeMF/Fixture.swift": "de11cec62594ceb83a3d5736a965afebdd06f81cf958ae727f8289f443c48f9e",
     "Tools/ftk-mcp/main.swift": "dc3eba0eee1805e4b3a2fea41f13721b952c6ada6ec07c3b11956610eb2d7d98",
-    "docs/architecture/graph-spec.json": "fec0e14b4e3bb383fb2ebb756c17220e2e6766f2ca7eeedfcac9a29f505cd217",
+    "docs/architecture/graph-spec.json": "32d1a138e3b888d7a8b8547f6d3255f6b29c78b622e2d7598ee700826e17e12a",
     "docs/architecture/viewer-template.html": "b7caca8064586bdd71022a6e905f6017e50355b634436cbd689a5f93c8250d9f",
     "project.yml": "c81a6860218895f1c4d9e60d97e844e528d8f5347103ab312d8f6e2095a330c0",
     "scripts/architecture_graph.py": "5821ba7c67391bdf66f7a012b244b50697ca9b1b64c91c50264e4cf34e89e36d"
@@ -1238,7 +1346,7 @@
         "line": 4,
         "endLine": 4,
         "excerpt": "struct FusionTakeoffApp: App {",
-        "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
+        "sha256": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923"
       }
     },
     {
@@ -1256,7 +1364,7 @@
         "line": 6,
         "endLine": 6,
         "excerpt": "struct WorkspaceView: View {",
-        "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
+        "sha256": "57383937492a074952c5168dce8c67a020829ace0e84c759343491078895e62b"
       }
     },
     {
@@ -1274,7 +1382,7 @@
         "line": 7,
         "endLine": 7,
         "excerpt": "struct InspectorPanel: View {",
-        "sha256": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748"
+        "sha256": "cd75508d6b42a42e2b49593fe04acb55dc63af214f5ae757a2d58fe452558540"
       }
     },
     {
@@ -2254,7 +2362,7 @@
         "line": 12,
         "endLine": 12,
         "excerpt": "final class ProjectLibrary {",
-        "sha256": "69a4b2b5d3d4d617b0ab1a81cc241639bd0b65adbaedd65d89882f85e008280e"
+        "sha256": "cabfe70366d17209b6d4c22e90b4f26dd9ac497c539d8445d4b805793bda3ce9"
       }
     },
     {
@@ -2272,7 +2380,7 @@
         "line": 8,
         "endLine": 8,
         "excerpt": "final class WorkspaceState {",
-        "sha256": "773fb5b24fec16cb6d4615f8832f4377495eec930fb4455d519ff8f46a9c6405"
+        "sha256": "002a5cd1cdba3605123c3601afeff3667e161d3e0633b4245af4d6871dd77794"
       }
     },
     {
@@ -2290,7 +2398,223 @@
         "line": 8,
         "endLine": 8,
         "excerpt": "final class ViewportState {",
-        "sha256": "3bf4a976ff62c6e5dc5f63e1fe25602c362da78d113e564c0ee89eb7868cc761"
+        "sha256": "308d86f2e14bf8af5ac134d615fdade231d0d29c4e2ea6ba6f2be74d902829e6"
+      }
+    },
+    {
+      "id": "smrule",
+      "name": "SheetMetalRule",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+        "line": 18,
+        "endLine": 18,
+        "excerpt": "public struct SheetMetalRule: Codable, Equatable, Sendable {",
+        "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+      }
+    },
+    {
+      "id": "smpart",
+      "name": "SheetMetalPart",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+        "line": 86,
+        "endLine": 86,
+        "excerpt": "public struct SheetMetalPart: Codable, Equatable, Identifiable, Sendable {",
+        "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+      }
+    },
+    {
+      "id": "smoperation",
+      "name": "SheetMetalOperation",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+        "line": 71,
+        "endLine": 71,
+        "excerpt": "public struct SheetMetalOperation: Codable, Equatable, Identifiable, Sendable {",
+        "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+      }
+    },
+    {
+      "id": "smbase",
+      "name": "SheetMetalBase",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+        "line": 52,
+        "endLine": 52,
+        "excerpt": "public struct SheetMetalBase: Codable, Equatable, Sendable {",
+        "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+      }
+    },
+    {
+      "id": "smflange",
+      "name": "SheetMetalFlange",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+        "line": 59,
+        "endLine": 59,
+        "excerpt": "public struct SheetMetalFlange: Codable, Equatable, Sendable {",
+        "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+      }
+    },
+    {
+      "id": "smdirection",
+      "name": "SheetMetalBendDirection",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+        "line": 50,
+        "endLine": 50,
+        "excerpt": "public enum SheetMetalBendDirection: String, Codable, Sendable { case up, down }",
+        "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+      }
+    },
+    {
+      "id": "smerror",
+      "name": "SheetMetalError",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+        "line": 3,
+        "endLine": 3,
+        "excerpt": "public enum SheetMetalError: Error, LocalizedError, Equatable, Sendable {",
+        "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+      }
+    },
+    {
+      "id": "smbendzone",
+      "name": "SheetMetalBendZone",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+        "line": 3,
+        "endLine": 3,
+        "excerpt": "public struct SheetMetalBendZone: Equatable, Sendable {",
+        "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+      }
+    },
+    {
+      "id": "smflat",
+      "name": "SheetMetalFlatPattern",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+        "line": 15,
+        "endLine": 15,
+        "excerpt": "public struct SheetMetalFlatPattern: Equatable, Sendable {",
+        "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+      }
+    },
+    {
+      "id": "smbuild",
+      "name": "SheetMetalBuild",
+      "kind": "struct",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+        "line": 42,
+        "endLine": 42,
+        "excerpt": "public struct SheetMetalBuild: Sendable {",
+        "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+      }
+    },
+    {
+      "id": "smengine",
+      "name": "SheetMetalEngine",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+        "line": 47,
+        "endLine": 47,
+        "excerpt": "public enum SheetMetalEngine {",
+        "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+      }
+    },
+    {
+      "id": "smdxf",
+      "name": "SheetMetalDXF",
+      "kind": "enum",
+      "module": "CADCore",
+      "target": "CADCore",
+      "language": "Swift",
+      "availability": "active",
+      "group": "Lamiera · Codex",
+      "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+      "source": {
+        "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+        "line": 5,
+        "endLine": 5,
+        "excerpt": "public enum SheetMetalDXF {",
+        "sha256": "bb69ef99ae64043f1c9c786c93ab0b3ac3d1c7803f15d2d999a06eb33fae41f9"
       }
     }
   ],
@@ -2307,7 +2631,7 @@
           "line": 5,
           "endLine": 5,
           "excerpt": "@State private var model = DesignModel()",
-          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
+          "sha256": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2928,10 +3252,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "line": 12,
-          "endLine": 12,
+          "line": 13,
+          "endLine": 13,
           "excerpt": "WorkspaceView()",
-          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
+          "sha256": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2952,10 +3276,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "line": 8,
-          "endLine": 8,
+          "line": 9,
+          "endLine": 9,
           "excerpt": "@State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider()])",
-          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
+          "sha256": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -2979,7 +3303,7 @@
           "line": 6,
           "endLine": 6,
           "excerpt": "@State private var mcp = MCPHost()",
-          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
+          "sha256": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3000,10 +3324,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/FusionTakeoffApp.swift",
-          "line": 21,
-          "endLine": 21,
+          "line": 23,
+          "endLine": 23,
           "excerpt": "let tools = (model as AnyObject) as? CADToolProvider",
-          "sha256": "243fa4bd6c201280354b75b9835fa826d7ca70f252eeae4239b283e83def368a"
+          "sha256": "d3ad7ad7b33acb2245e2f8df7ab1bcdb64505b697c3838fc9ae14ac71e165923"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3024,10 +3348,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
-          "line": 67,
-          "endLine": 67,
+          "line": 69,
+          "endLine": 69,
           "excerpt": "case .assistant: AssistantPanel()",
-          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
+          "sha256": "57383937492a074952c5168dce8c67a020829ace0e84c759343491078895e62b"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -3048,10 +3372,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Workspace/InspectorPanel.swift",
-          "line": 21,
-          "endLine": 21,
+          "line": 27,
+          "endLine": 27,
           "excerpt": "TextField(\"Nome\", text: $model.document.features[i].name)",
-          "sha256": "32c2c74e4b3a495bffc3508bd2d90742f466e9ade81e411e2eae5da2c8635748"
+          "sha256": "cd75508d6b42a42e2b49593fe04acb55dc63af214f5ae757a2d58fe452558540"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -4299,7 +4623,7 @@
           "line": 8,
           "endLine": 8,
           "excerpt": "@Environment(ProjectLibrary.self) private var library",
-          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
+          "sha256": "57383937492a074952c5168dce8c67a020829ace0e84c759343491078895e62b"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -4320,10 +4644,10 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
-          "line": 9,
-          "endLine": 9,
+          "line": 10,
+          "endLine": 10,
           "excerpt": "@State private var workspace = WorkspaceState()",
-          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
+          "sha256": "57383937492a074952c5168dce8c67a020829ace0e84c759343491078895e62b"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
@@ -4344,13 +4668,493 @@
       "evidence": [
         {
           "file": "App/Sources/UI/Workspace/WorkspaceView.swift",
-          "line": 10,
-          "endLine": 10,
+          "line": 11,
+          "endLine": 11,
           "excerpt": "@State private var viewport = ViewportState()",
-          "sha256": "d6897ada87806e57fffa019313642040050b45932db83da832aa5cede9692b76"
+          "sha256": "57383937492a074952c5168dce8c67a020829ace0e84c759343491078895e62b"
         }
       ],
       "xcodeTarget": "FusionTakeoff",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM001",
+      "source": "smpart",
+      "target": "smrule",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "line": 92,
+          "endLine": 92,
+          "excerpt": "public private(set) var rule: SheetMetalRule",
+          "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM002",
+      "source": "smpart",
+      "target": "smoperation",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "line": 93,
+          "endLine": 93,
+          "excerpt": "public private(set) var operations: [SheetMetalOperation]",
+          "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM003",
+      "source": "smoperation",
+      "target": "smbase",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "line": 73,
+          "endLine": 73,
+          "excerpt": "case base(SheetMetalBase)",
+          "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM004",
+      "source": "smoperation",
+      "target": "smflange",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "line": 74,
+          "endLine": 74,
+          "excerpt": "case edgeFlange(SheetMetalFlange)",
+          "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM005",
+      "source": "smflange",
+      "target": "smdirection",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "line": 64,
+          "endLine": 64,
+          "excerpt": "public let direction: SheetMetalBendDirection",
+          "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM006",
+      "source": "smengine",
+      "target": "smpart",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 59,
+          "endLine": 59,
+          "excerpt": "public static func rebuild(_ part: SheetMetalPart) throws -> SheetMetalBuild {",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM007",
+      "source": "smengine",
+      "target": "kernel",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 89,
+          "endLine": 89,
+          "excerpt": "let raw = try PrimitiveKernel.build(Feature(id: part.id, name: part.name,",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM008",
+      "source": "smengine",
+      "target": "brepbody",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 100,
+          "endLine": 100,
+          "excerpt": "let folded = BRepBody(id: raw.id, vertices: raw.vertices.map { .init(id: $0.id, position: point($0.position)) },",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM009",
+      "source": "smengine",
+      "target": "smflat",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 106,
+          "endLine": 106,
+          "excerpt": "let flat = SheetMetalFlatPattern(source: part, outline: outline, thickness: t, bendZones: zones,",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM010",
+      "source": "smengine",
+      "target": "smbuild",
+      "relation": "constructs_type",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 108,
+          "endLine": 108,
+          "excerpt": "return SheetMetalBuild(foldedBody: folded, flatPattern: flat)",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM011",
+      "source": "smengine",
+      "target": "smbendzone",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 63,
+          "endLine": 63,
+          "excerpt": "var zones: [SheetMetalBendZone] = []",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM012",
+      "source": "smbuild",
+      "target": "brepbody",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 43,
+          "endLine": 43,
+          "excerpt": "public let foldedBody: BRepBody",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM013",
+      "source": "smbuild",
+      "target": "smflat",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 44,
+          "endLine": 44,
+          "excerpt": "public let flatPattern: SheetMetalFlatPattern",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM014",
+      "source": "smflat",
+      "target": "smpart",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 25,
+          "endLine": 25,
+          "excerpt": "private let source: SheetMetalPart",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM015",
+      "source": "smflat",
+      "target": "profile",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 20,
+          "endLine": 20,
+          "excerpt": "public let outline: Profile2D",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM016",
+      "source": "smflat",
+      "target": "operations",
+      "relation": "calls_direct",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalEngine.swift",
+          "line": 38,
+          "endLine": 38,
+          "excerpt": "public var mesh: Mesh { Operations.extrude(outline, height: thickness) }",
+          "sha256": "05cdae730eebdab9d088be6ca3747e3743cf5deff371e243824f631d80c9ad28"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM017",
+      "source": "smdxf",
+      "target": "smflat",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+          "line": 6,
+          "endLine": 6,
+          "excerpt": "public static func export(_ pattern: SheetMetalFlatPattern, for part: SheetMetalPart) throws -> String {",
+          "sha256": "bb69ef99ae64043f1c9c786c93ab0b3ac3d1c7803f15d2d999a06eb33fae41f9"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM018",
+      "source": "smdxf",
+      "target": "smpart",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+          "line": 6,
+          "endLine": 6,
+          "excerpt": "public static func export(_ pattern: SheetMetalFlatPattern, for part: SheetMetalPart) throws -> String {",
+          "sha256": "bb69ef99ae64043f1c9c786c93ab0b3ac3d1c7803f15d2d999a06eb33fae41f9"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM019",
+      "source": "smdxf",
+      "target": "smerror",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalDXF.swift",
+          "line": 8,
+          "endLine": 8,
+          "excerpt": "guard pattern.isCurrent(for: part) else { throw SheetMetalError.staleFlatPattern }",
+          "sha256": "bb69ef99ae64043f1c9c786c93ab0b3ac3d1c7803f15d2d999a06eb33fae41f9"
+        }
+      ],
+      "xcodeTarget": "CADCore",
+      "provenance": {
+        "method": "MANUAL_TEXTUAL",
+        "reviewer": "Codex",
+        "extraction": "ANCHOR_VERIFIED"
+      },
+      "configuration": "Debug / macOS / arm64 (snapshot; no compiler resolution)",
+      "ambiguity": "Destinazioni e overload non risolti dal compilatore."
+    },
+    {
+      "id": "SM020",
+      "source": "smrule",
+      "target": "smerror",
+      "relation": "references_symbol",
+      "semanticStatus": "SYNTACTIC",
+      "evidence": [
+        {
+          "file": "Packages/CADCore/Sources/CADCore/SheetMetal/SheetMetalPart.swift",
+          "line": 38,
+          "endLine": 38,
+          "excerpt": "throw SheetMetalError.invalidParameter(\"regola: nome richiesto, revisione positiva, K-factor tra 0 e 1\")",
+          "sha256": "ec14738bc04fb4deafb9e3e73a9e772fca448b73041edef3f242d60f6ba88545"
+        }
+      ],
+      "xcodeTarget": "CADCore",
       "provenance": {
         "method": "MANUAL_TEXTUAL",
         "reviewer": "Codex",
@@ -4367,7 +5171,8 @@
     "Nessuna prova di correttezza numerica, timing, race, performance GPU, stato disco o stampa fisica.",
     "Leggere graph.py status per le attività; questa mappa non assegna task e non ne certifica il completamento.",
     "Il 3MF conserva colori e metadati per Bambu Studio, OrcaSlicer e Snapmaker Orca; importazione, filamenti e stampa si verificano separatamente in PRINT_3MF.md, non tramite un arco del grafo.",
-    "La prima base B-rep espone snapshot sul Model; integrazione renderer distinta. ID laterali di profili liberi invalidati quando cambia il profilo v1; nessun naming split/merge o Boolean kernel completo implicito."
+    "La prima base B-rep espone snapshot sul Model; integrazione renderer distinta. ID laterali di profili liberi invalidati quando cambia il profilo v1; nessun naming split/merge o Boolean kernel completo implicito.",
+    "Lamiera T78 è una base core autonoma: piastra e singola flangia, sviluppo analitico, DXF e operazioni JSON. Nessuna integrazione UI/Model/.ftk/chat, lamiera completa o collaudo officina implicito nel grafo."
   ],
   "probes": [
     {
@@ -4435,6 +5240,12 @@
       "category": "sampled_edge_and_dead_code",
       "result": "MANUAL_PARTIAL",
       "evidence": "Campione C006 ThreeMFExporter -> StoredZIP verificato come calls_direct SYNTACTIC, non eredità; BRepBody.snapshot senza UI non è codice morto: API del Model e test la chiamano."
+    },
+    {
+      "id": "P12",
+      "category": "sheet_metal",
+      "result": "MANUAL_PARTIAL",
+      "evidence": "SheetMetalEngine.rebuild costruisce BRepBody tramite PrimitiveKernel e uno SheetMetalFlatPattern separato. SheetMetalDXF verifica isCurrent prima di esportare. Solo ancoraggi testuali, nessun chiamante UI o AI inventato; fixture Swift e lettore Python separati dimostrano i risultati numerici supportati."
     }
   ]
 }</script>

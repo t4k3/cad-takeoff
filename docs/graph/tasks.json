@@ -1454,7 +1454,7 @@
       "id": "T78",
       "title": "Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF",
       "phase": "Lamiera · prima base",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T75"
       ],
@@ -1466,11 +1466,53 @@
         "scripts/ci.sh",
         "docs/requirements/SHEET_METAL.md",
         "docs/requirements/SHEET_METAL_V1.md",
-        "docs/ROADMAP.md"
+        "docs/ROADMAP.md",
+        "docs/architecture"
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-25 11:37"
+      "started": "2026-09-25 11:37",
+      "finished": "2026-09-25 11:58",
+      "notes": [
+        "2026-09-25 11:58 codex: Base core propria completata: regola versionata spessore/raggio/K, piastra rettangolare e singola flangia su/giu, geometria chiusa sfaccettata, sviluppo analitico revisionato, DXF mm, operazioni JSON modificabili/sopprimibili/ricostruibili. CI 8/8 verde con 35 test core e controlli file indipendenti; build app riuscita. Campione e anteprima build/sheet-metal; contratto per Claude e grafo aggiornati. Integrazione app/chat separata in T79/T80; lamiera completa non conclusa."
+      ]
+    },
+    {
+      "id": "T79",
+      "title": "Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo",
+      "phase": "Altro",
+      "status": "todo",
+      "deps": [
+        "T78",
+        "T77"
+      ],
+      "paths": [
+        "App/Sources/Model",
+        "Packages/CADCore/Sources/CADCore/Document.swift",
+        "Tests/SheetMetalIntegration",
+        "scripts/test-sheet-metal-integration.sh",
+        "docs/requirements/SHEET_METAL_V1.md"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T80",
+      "title": "UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export",
+      "phase": "Altro",
+      "status": "todo",
+      "deps": [
+        "T79",
+        "T25"
+      ],
+      "paths": [
+        "App/Sources/UI/SheetMetal",
+        "App/Sources/UI/Workspace",
+        "App/Sources/UI/Viewport",
+        "App/Sources/Integration/Projects"
+      ],
+      "suggested": "claude",
+      "owner": null
     }
   ]
 }
