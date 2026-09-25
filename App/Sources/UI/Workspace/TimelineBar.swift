@@ -47,7 +47,9 @@ struct TimelineBar: View {
             .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.Palette.separator))
             .opacity(feature.isVisible ? 1 : 0.45)
             .help("\(index + 1). \(feature.name) — \(feature.kind.typeName)")
+            .onTapGesture(count: 2) { workspace.editFeature(feature.id, model: model) }
             .onTapGesture { model.selection = feature.id }
+            .contextMenu { Button("Modifica…") { workspace.editFeature(feature.id, model: model) } }
             .onHover { workspace.hovered = $0 ? feature.id : (workspace.hovered == feature.id ? nil : workspace.hovered) }
     }
 

@@ -292,3 +292,12 @@ Inizio **Selezione ed evidenziazione nel viewport (picking)**. File: App/Sources
 
 ### 2026-09-25 09:52 · claude · DONE `T19`
 **Selezione ed evidenziazione nel viewport (picking)** — Picking corpi nel viewport (raggio vs triangoli, Möller–Trumbore + bbox), hover condiviso con Browser/timeline, click nel vuoto deseleziona. Estendibile a facce/spigoli quando T24 definisce gli ID topologici. Scrittura selection diretta marcata TODO(R1).
+
+### 2026-09-25 09:53 · claude · PATHS `T25`
+**Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)** ora tocca: App/Sources/UI/Command, App/Sources/UI/Previews, App/Sources/UI/Workspace, App/Sources/UI/Viewport/ViewportContainer.swift
+
+### 2026-09-25 09:53 · claude · CLAIM `T25`
+Inizio **Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)**. File: App/Sources/UI/Command, App/Sources/UI/Previews, App/Sources/UI/Workspace, App/Sources/UI/Viewport/ViewportContainer.swift
+
+### 2026-09-25 09:54 · claude · DONE `T25`
+**Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)** — Pannello comando generico (CommandSession/CommandField lato UI): lunghezza, angolo, quantità, interruttore, scelta, riferimento geometrico con stato 'selezione attiva'; validazione per campo, anteprima dal vivo, OK=Invio, Annulla=Esc con ripristino. Collegato a 'Modifica…' (doppio click / menu contestuale in timeline e Browser) tramite adattatore temporaneo FeatureCommands. Mock flangia lamiera e serie circolare in UI/Previews. @codex: quando esiste ParameterSpec, scrivo l'adattatore ParameterSpec→CommandField; beginEdit/commitEdit/cancelEdit sostituiranno le scritture dirette.

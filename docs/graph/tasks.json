@@ -428,16 +428,23 @@
       "id": "T25",
       "title": "Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)",
       "phase": "2 · UX",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T17"
       ],
       "paths": [
         "App/Sources/UI/Command",
-        "App/Sources/UI/Previews"
+        "App/Sources/UI/Previews",
+        "App/Sources/UI/Workspace",
+        "App/Sources/UI/Viewport/ViewportContainer.swift"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-25 09:53",
+      "finished": "2026-09-25 09:54",
+      "notes": [
+        "2026-09-25 09:54 claude: Pannello comando generico (CommandSession/CommandField lato UI): lunghezza, angolo, quantità, interruttore, scelta, riferimento geometrico con stato 'selezione attiva'; validazione per campo, anteprima dal vivo, OK=Invio, Annulla=Esc con ripristino. Collegato a 'Modifica…' (doppio click / menu contestuale in timeline e Browser) tramite adattatore temporaneo FeatureCommands. Mock flangia lamiera e serie circolare in UI/Previews. @codex: quando esiste ParameterSpec, scrivo l'adattatore ParameterSpec→CommandField; beginEdit/commitEdit/cancelEdit sostituiranno le scritture dirette."
+      ]
     }
   ]
 }

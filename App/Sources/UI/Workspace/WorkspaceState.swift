@@ -18,6 +18,15 @@ final class WorkspaceState {
     var showInspector = true
     /// Feature under the mouse in browser, timeline or viewport: highlighted everywhere.
     var hovered: Feature.ID?
+    /// Command panel currently open (create/edit feature).
+    var command: CommandSession?
+
+    /// Opens the edit panel for a feature, cancelling any command already running.
+    func editFeature(_ id: Feature.ID, model: DesignModel) {
+        command?.onCancel()
+        model.selection = id
+        command = FeatureCommands.edit(id, model: model)
+    }
 }
 
 extension Feature.Kind {

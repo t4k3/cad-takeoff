@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-25 09:52. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-25 09:54. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -43,7 +43,7 @@ flowchart LR
     T18["T18 · ViewCube + navigazione camera (orbita/pan/zoom, viste standard)<br/><i>claude</i>"]:::done
     T19["T19 · Selezione ed evidenziazione nel viewport (picking)<br/><i>claude</i>"]:::done
     T20["T20 · Comandi, menu, scorciatoie, stati vuoti, onboarding<br/><i>claude</i>"]:::todo
-    T25["T25 · Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)<br/><i>claude</i>"]:::todo
+    T25["T25 · Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)<br/><i>claude</i>"]:::done
   end
   subgraph P7["6 · CAD parametrico"]
     T24["T24 · Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi<br/><i>codex</i>"]:::in_progress
@@ -96,7 +96,6 @@ flowchart LR
 - **T04** Undo/Redo sulla timeline — suggerito: codex
 - **T05** Modalità schizzo 2D (polilinea/rettangolo/cerchio su XY) — suggerito: claude
 - **T13** Script CI locale (test core + build app) — suggerito: codex
-- **T25** Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec) — suggerito: claude
 
 ## Tabella
 
@@ -127,4 +126,4 @@ flowchart LR
 | T22 | Pannello stampabilità: report visivo, evidenzia problemi | todo | claude | T11, T19 | App/Sources/UI/Printability |
 | T23 | Dialog di esportazione STL/3MF (formato, risoluzione, anteprima) | todo | claude | T10, T17 | App/Sources/UI/Export |
 | T24 | Requisiti e architettura: lamiera completa, storico parametrico, parti e assiemi | in_progress | codex | T02 | docs/requirements<br>docs/architecture/PROJECT.md<br>docs/architecture/API.md |
-| T25 | Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec) | todo | claude | T17 | App/Sources/UI/Command<br>App/Sources/UI/Previews |
+| T25 | Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec) | done | claude | T17 | App/Sources/UI/Command<br>App/Sources/UI/Previews<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift |

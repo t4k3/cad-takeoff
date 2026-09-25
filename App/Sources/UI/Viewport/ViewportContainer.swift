@@ -65,10 +65,18 @@ struct ViewportContainer: View {
             .padding(8)
         }
         .overlay(alignment: .topLeading) {
+            if let session = workspace.command {
+                CommandPanel(session: session) { workspace.command = nil }
+                    .padding(12)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                    .id(session.id)
+            } else {
             Text("Trascina: orbita · ⇧ trascina / due dita: sposta · rotella / pizzica: zoom")
                 .font(.system(size: 10.5)).foregroundStyle(.white.opacity(0.55))
                 .padding(12)
+            }
         }
+        .animation(.easeOut(duration: 0.18), value: workspace.command?.id)
         .clipped()
     }
 

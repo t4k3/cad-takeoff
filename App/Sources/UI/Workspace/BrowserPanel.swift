@@ -53,9 +53,11 @@ struct BrowserPanel: View {
             .buttonStyle(IconButtonStyle())
             .help(feature.isVisible ? "Nascondi corpo" : "Mostra corpo")
         }
+        .onTapGesture(count: 2) { workspace.editFeature(feature.id, model: model) }
         .onTapGesture { model.selection = feature.id }
         .onHover { workspace.hovered = $0 ? feature.id : (workspace.hovered == feature.id ? nil : workspace.hovered) }
         .contextMenu {
+            Button("Modifica…") { workspace.editFeature(feature.id, model: model) }
             Button("Elimina", role: .destructive) {
                 model.selection = feature.id
                 model.deleteSelected()
