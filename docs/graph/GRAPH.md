@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 10:47. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 12:03. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -134,7 +134,7 @@ flowchart LR
     T82["T82 · Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1<br/><i>claude</i>"]:::done
   end
   subgraph P22["Fase 3b"]
-    T83["T83 · Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana<br/><i>claude</i>"]:::todo
+    T83["T83 · Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana<br/><i>claude</i>"]:::done
   end
   subgraph P23["Fase 3"]
     T84["T84 · Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI<br/><i>claude</i>"]:::done
@@ -330,7 +330,6 @@ flowchart LR
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: claude
 - **T63** Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza — suggerito: claude
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: claude
-- **T83** Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana — suggerito: claude
 - **T85** Smusso (chamfer) su spigoli selezionati — suggerito: claude
 
 ## Tabella
@@ -420,7 +419,7 @@ flowchart LR
 | T80 | UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export | todo | claude | T79, T25 | App/Sources/UI/SheetMetal<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport<br>App/Sources/Integration/Projects |
 | T81 | Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura | done | claude | — | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>App/Sources/UI<br>App/Sources/Integration/Projects |
 | T82 | Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1 | done | claude | T81 | Packages/CADCore<br>App/Sources<br>Tests |
-| T83 | Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana | todo | claude | T82 | Packages/CADCore/Sources/CADCore/Features<br>App/Sources/UI |
+| T83 | Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana | done | claude | T82 | Packages/CADCore/Sources/CADCore/Features<br>App/Sources/UI |
 | T84 | Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI | done | claude | T76, T82 | Packages/CADCore<br>App/Sources<br>Tests |
 | T85 | Smusso (chamfer) su spigoli selezionati | todo | claude | T84 | Packages/CADCore<br>App/Sources |
 | T86 | Raccordo (fillet) a raggio costante su spigoli selezionati | todo | claude | T85 | Packages/CADCore<br>App/Sources |

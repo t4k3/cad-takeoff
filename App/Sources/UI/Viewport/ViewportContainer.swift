@@ -95,6 +95,10 @@ struct ViewportContainer: View {
                                   sketch.click(p)
                                   return
                               }
+                              if let placement = workspace.holePlacement, let bodies = viewport.renderer?.visibleBodies {
+                                  if let msg = placement.click(ray, bodies: bodies) { model.statusMessage = msg }
+                                  return
+                              }
                               if workspace.selectionFilter != .body {
                                   let multi = !mods.isDisjoint(with: [.shift, .command])
                                   if let ref = viewport.pickGeo(ray, filter: workspace.selectionFilter) {
@@ -222,6 +226,10 @@ struct ViewportContainer: View {
                         Text("Faccia piana").font(.system(size: 11, weight: .semibold))
                         Text("Area \(fmt(face.area)) mm²")
                         Text("Normale \(fmt(n.x)) · \(fmt(n.y)) · \(fmt(n.z))")
+                    case let .cone(_, _, half):
+                        Text("Faccia conica (svasatura)").font(.system(size: 11, weight: .semibold))
+                        Text("Angolo \(fmt(2 * half * 180 / .pi))°")
+                        Text("Area \(fmt(face.area)) mm²")
                     case let .cylinder(_, axis, r):
                         Text("Faccia cilindrica").font(.system(size: 11, weight: .semibold))
                         Text("Ø \(fmt(2 * r)) mm · R \(fmt(r)) mm")
@@ -257,7 +265,7 @@ struct ViewportContainer: View {
     // MARK: Sketch overlays
 
     private var sketchLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
-        savedSketchLines + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
+        savedSketchLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
                                   previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
     }
@@ -293,8 +301,24 @@ struct ViewportContainer: View {
         }
     }
 
-    /// "SCHIZZO" banner with the current tool hint.
+    /// "SCHIZZO" / "FORO" banner with the current hint.
     @ViewBuilder private var sketchBanner: some View {
+        if let placement = workspace.holePlacement {
+            HStack(spacing: 8) {
+                Label("FORO", systemImage: "circle.circle").font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.Palette.danger)
+                Text(placement.centers.isEmpty ? "Clicca su una faccia piana per posizionare il centro"
+                     : "\(placement.centers.count) centr\(placement.centers.count == 1 ? "o" : "i") · clicca per aggiungerne altri")
+                    .font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                if !placement.centers.isEmpty {
+                    Button("Togli ultimo") { placement.centers.removeLast(); if placement.centers.isEmpty { placement.normal = nil; placement.planeOrigin = nil } }
+                        .controlSize(.small)
+                }
+            }
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .overlayChip()
+            .padding(.top, 10)
+        }
         if let sketch = workspace.sketch, workspace.command == nil {
             HStack(spacing: 8) {
                 Label("SCHIZZO · piano XY", systemImage: "pencil.and.outline")

@@ -1,3 +1,4 @@
+import CADCore
 import Foundation
 
 /// The same catalogue is consumed by both MCP and in-app providers.
@@ -33,6 +34,16 @@ enum CADToolCatalog {
             tool("add_box", "Crea parallelepipedo", "Create a box centred on position.x/y, bottom at position.z (default origin). Example width=40 depth=30 height=5. Use operation to join/cut/intersect with touching bodies.", fields(["width": number, "depth": number, "height": number]), required: ["width", "depth", "height"], write: true),
             tool("add_cylinder", "Crea cilindro", "Create a 64-segment cylinder, axis +Z, centre at position.x/y and bottom at position.z. Radius, not diameter. For a through hole use operation cut with a height exceeding the plate and a start below it.", fields(["radius": number, "height": number]), required: ["radius", "height"], write: true),
             tool("add_extrude", "Estrudi profilo", "Extrude one simple XY polygon toward +Z. Position translates the resulting solid; default origin. Concave profiles supported; the profile itself has no holes (cut them with operation cut).", fields(["points": points, "height": number]), required: ["points", "height"], write: true),
+            tool("add_hole", "Crea foro", "Drill holes (always removes material) on a planar face. centers: points ON the start face (world mm), direction: into the material (default {0,0,-1}, i.e. drilling down from a top face). style: simple | counterbore | countersink. fit: clearance (screw passes, default) | tapped (tap-drill for threading/self-tapping) | heatInsert (hole for heat-set threaded inserts) | manual (use diameter). size: M2, M2.5, M3, M4, M5, M6, M8, M10, M12. depth in mm, omit for through-all. print_allowance: mm added to diameters (FDM holes print small; 0.1–0.3 typical). Example: 4 M3 counterbored holes at the corners of a 40×30×5 plate at z=5.",
+                 ["centers": ["type": "array", "minItems": 1, "maxItems": 200, "items": position],
+                  "direction": position,
+                  "style": ["type": "string", "enum": ["simple", "counterbore", "countersink"]],
+                  "fit": ["type": "string", "enum": ["clearance", "tapped", "heatInsert", "manual"]],
+                  "size": ["type": "string", "enum": .array(MetricScrew.all.map { .string($0.name) })],
+                  "diameter": number, "depth": number,
+                  "print_allowance": ["type": "number", "minimum": 0, "maximum": 2],
+                  "name": name, "color": color],
+                 required: ["centers"], write: true),
             tool("update_feature", "Modifica geometria", "Update only supplied fields of an existing feature, retaining its ID and kind. width/depth only box, radius only cylinder, points only extrude, height all. No change of kind.", fields(["feature_id": id, "width": number, "depth": number, "height": number, "radius": number, "points": points]), required: ["feature_id"], write: true),
             tool("delete_feature", "Elimina geometria", "Delete exactly one identified feature. Undo can restore it.", ["feature_id": id], required: ["feature_id"], write: true),
             tool("set_visibility", "Visibilità geometria", "Show/hide one feature. Hidden features are omitted from scene mesh and whole-scene export.", ["feature_id": id, "visible": ["type": "boolean"]], required: ["feature_id", "visible"], write: true),

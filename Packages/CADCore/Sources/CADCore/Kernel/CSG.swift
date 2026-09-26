@@ -203,16 +203,21 @@ private func split(_ p: CSGSolid.Polygon, _ n: Vec3, _ w: Double) -> SplitResult
 public extension CSGSolid {
     /// Welded, T-junction-free triangle mesh plus the face of each triangle.
     func triangulated() -> (mesh: Mesh, triangleFace: [Int]) {
-        // 1. Weld on a 1e-5 mm grid so vertices computed by different splits coincide.
-        var index: [SIMD3<Int64>: UInt32] = [:]
+        // 1. Weld within 2e-5 mm. Points are bucketed on a 1e-5 grid but matched against the 27
+        //    neighbouring cells, so two nearly equal points on opposite sides of a rounding
+        //    boundary still merge (plain rounding would split them and leave cracks).
+        let tol = 2e-5, cell = 1e-5
+        var buckets: [SIMD3<Int64>: [UInt32]] = [:]
         var positions: [Vec3] = []
-        func key(_ v: Vec3) -> SIMD3<Int64> { SIMD3(Int64((v.x * 1e5).rounded()), Int64((v.y * 1e5).rounded()), Int64((v.z * 1e5).rounded())) }
+        func key(_ v: Vec3) -> SIMD3<Int64> { SIMD3(Int64((v.x / cell).rounded(.down)), Int64((v.y / cell).rounded(.down)), Int64((v.z / cell).rounded(.down))) }
         func id(_ v: Vec3) -> UInt32 {
             let k = key(v)
-            if let i = index[k] { return i }
+            for dx in -2...2 { for dy in -2...2 { for dz in -2...2 {
+                for i in buckets[k &+ SIMD3(Int64(dx), Int64(dy), Int64(dz))] ?? [] where (positions[Int(i)] - v).length <= tol { return i }
+            } } }
             let i = UInt32(positions.count)
-            index[k] = i
-            positions.append(Vec3(Double(k.x) / 1e5, Double(k.y) / 1e5, Double(k.z) / 1e5))
+            buckets[k, default: []].append(i)
+            positions.append(v)
             return i
         }
         var loops: [(ids: [UInt32], face: Int)] = []
@@ -266,7 +271,39 @@ public extension CSGSolid {
                 for k in 0..<ids.count { addTriangle(&mesh, &triangleFace, ci, ids[k], ids[(k + 1) % ids.count], face) }
             }
         }
-        return (mesh, triangleFace)
+        return Self.removingZeroVolumeFins(mesh, triangleFace)
+    }
+
+    /// Welding can turn two tiny BSP fragments into the same triangle with opposite winding:
+    /// a zero-thickness fin that makes edges non-manifold. Such pairs cancel out.
+    private static func removingZeroVolumeFins(_ mesh: Mesh, _ faces: [Int]) -> (mesh: Mesh, triangleFace: [Int]) {
+        struct Key: Hashable { let a: UInt32, b: UInt32, c: UInt32 }
+        func canonical(_ a: UInt32, _ b: UInt32, _ c: UInt32) -> (Key, Bool) {
+            // Rotate so the smallest index is first; the parity of the rest tells the winding.
+            var t = [a, b, c]
+            while t[0] != t.min()! { t = [t[1], t[2], t[0]] }
+            return t[1] < t[2] ? (Key(a: t[0], b: t[1], c: t[2]), true) : (Key(a: t[0], b: t[2], c: t[1]), false)
+        }
+        var seen: [Key: (ccw: [Int], cw: [Int])] = [:]
+        for t in 0..<mesh.triangleCount {
+            let (k, ccw) = canonical(mesh.indices[t * 3], mesh.indices[t * 3 + 1], mesh.indices[t * 3 + 2])
+            if ccw { seen[k, default: ([], [])].ccw.append(t) } else { seen[k, default: ([], [])].cw.append(t) }
+        }
+        var drop = Set<Int>()
+        for (_, v) in seen {
+            let pairs = min(v.ccw.count, v.cw.count)
+            drop.formUnion(v.ccw.prefix(pairs)); drop.formUnion(v.cw.prefix(pairs))
+            drop.formUnion(v.ccw.dropFirst(max(pairs, 1)))   // exact duplicates, same winding
+            drop.formUnion(v.cw.dropFirst(max(pairs, 1)))
+        }
+        guard !drop.isEmpty else { return (mesh, faces) }
+        var out = Mesh(vertices: mesh.vertices, indices: [])
+        var outFaces: [Int] = []
+        for t in 0..<mesh.triangleCount where !drop.contains(t) {
+            out.indices += mesh.indices[(t * 3)..<(t * 3 + 3)]
+            outFaces.append(faces[t])
+        }
+        return (out, outFaces)
     }
 
     private func hasCollinear(_ ids: [UInt32], _ p: [Vec3]) -> Bool {

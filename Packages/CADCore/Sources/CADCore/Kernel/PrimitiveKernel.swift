@@ -22,6 +22,9 @@ public enum PrimitiveKernel {
             }
             points = Profile2D.circle(radius: r, segments: cylinderSegments).points
             height = h; family = "cylinder"; profileKey = "cylinder/\(cylinderSegments)"; radius = r
+        case let .hole(spec):
+            try spec.validate()
+            throw KernelError.invalidParameter("il foro è un taglio: viene calcolato dal valutatore")
         case let .extrude(profile, h):
             try dimension(h)
             guard (3...128).contains(profile.points.count) else {

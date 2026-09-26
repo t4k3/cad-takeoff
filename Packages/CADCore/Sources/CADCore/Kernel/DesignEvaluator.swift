@@ -34,6 +34,33 @@ public enum DesignEvaluator {
                 }
                 continue
             }
+            if case let .hole(spec) = feature.kind {
+                do { try spec.validate() } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                // Through-all depth: how far the bodies extend along the hole axis past the start
+                // face, plus 1 mm. Kept tight: very long skinny tool faces hurt BSP precision.
+                let axis = spec.direction.normalized
+                var reach = 1.0
+                for box in bodies.compactMap({ bounds($0.snapshot) }) {
+                    for c in spec.centers {
+                        for x in [box.min.x, box.max.x] { for y in [box.min.y, box.max.y] { for z in [box.min.z, box.max.z] {
+                            reach = max(reach, (Vec3(x, y, z) - c).dot(axis) + 1)
+                        } } }
+                    }
+                }
+                let tool = HoleGeometry.solid(spec, featureID: feature.id, throughDepth: reach)
+                let toolBox = bounds(tool)
+                let touched = bodies.indices.filter { overlaps(bounds(bodies[$0].snapshot), toolBox) }
+                if touched.isEmpty {
+                    issues.append(.init(featureID: feature.id, message: "Foro senza effetto: non tocca nessun corpo."))
+                }
+                for i in touched.reversed() {
+                    let solid = solidOf(bodies[i]).subtracting(tool)
+                    if solid.isEmpty { bodies.remove(at: i) } else { bodies[i] = rebuilt(bodies[i], solid, by: feature.id, revision: revision) }
+                }
+                continue
+            }
             let brep: BRepBody
             do { brep = try PrimitiveKernel.build(feature) } catch {
                 issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
@@ -119,15 +146,24 @@ public enum DesignEvaluator {
     private static func surface(_ f: CSGFace) -> SurfaceDescriptor {
         switch f.surface {
         case let .plane(o, n): .plane(origin: o, normal: f.flipped ? -n : n)
-        case .cylinder: f.surface
+        case .cylinder, .cone: f.surface
         }
     }
 
     private static func smoothNormal(_ f: CSGFace, at p: Vec3) -> Vec3? {
-        guard case let .cylinder(o, axis, _) = f.surface else { return nil }
-        let d = p - o
-        let radial = (d - axis * d.dot(axis)).normalized
-        return f.flipped ? -radial : radial
+        switch f.surface {
+        case let .cylinder(o, axis, _):
+            let d = p - o
+            let radial = (d - axis * d.dot(axis)).normalized
+            return f.flipped ? -radial : radial
+        case let .cone(apex, axis, half):
+            let d = p - apex
+            let radial = (d - axis * d.dot(axis)).normalized
+            let n = (radial * cos(half) - axis * sin(half)).normalized
+            return f.flipped ? -n : n
+        case .plane:
+            return nil
+        }
     }
 
     /// Edges between triangles of different faces, chained into polylines per face pair.
@@ -190,6 +226,17 @@ public enum DesignEvaluator {
         guard var lo = s.positions.first else { return nil }
         var hi = lo
         for p in s.positions {
+            lo = Vec3(min(lo.x, p.x), min(lo.y, p.y), min(lo.z, p.z))
+            hi = Vec3(max(hi.x, p.x), max(hi.y, p.y), max(hi.z, p.z))
+        }
+        return BoundingBox(min: lo, max: hi)
+    }
+
+    private static func bounds(_ s: CSGSolid) -> BoundingBox? {
+        let pts = s.polygons.flatMap(\.vertices)
+        guard var lo = pts.first else { return nil }
+        var hi = lo
+        for p in pts {
             lo = Vec3(min(lo.x, p.x), min(lo.y, p.y), min(lo.z, p.z))
             hi = Vec3(max(hi.x, p.x), max(hi.y, p.y), max(hi.z, p.z))
         }

@@ -64,6 +64,7 @@
 		EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */; };
 		EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
+		FE2BFC396A55BAC42977CD69 /* HoleCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -148,6 +149,7 @@
 		F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportRenderer.swift; sourceTree = "<group>"; };
 		F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPanel.swift; sourceTree = "<group>"; };
 		F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailRenderer.swift; sourceTree = "<group>"; };
+		FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoleCommand.swift; sourceTree = "<group>"; };
 		FB8505013537F19DABD1503A /* CADToolValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolValidation.swift; sourceTree = "<group>"; };
 		FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantProvider.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -249,6 +251,7 @@
 				F1472CEAADDAA3A83F7D7939 /* Commands */,
 				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
+				7A8C1A0EDA4C545CE9572D01 /* Features */,
 				7C49791EA814007E5DEA23D0 /* Home */,
 				AFDE5F6EC0E12C1023FBFC61 /* Previews */,
 				A3A5D1508574B5B604AD5C7B /* Selection */,
@@ -266,6 +269,14 @@
 				ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */,
 			);
 			path = Assistant;
+			sourceTree = "<group>";
+		};
+		7A8C1A0EDA4C545CE9572D01 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
+			);
+			path = Features;
 			sourceTree = "<group>";
 		};
 		7C49791EA814007E5DEA23D0 /* Home */ = {
@@ -556,6 +567,7 @@
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
 				13A90DD582DD0DFADFC02690 /* GeoSelection.swift in Sources */,
+				FE2BFC396A55BAC42977CD69 /* HoleCommand.swift in Sources */,
 				6391BD7137C19D938C85F761 /* HomeView.swift in Sources */,
 				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
 				BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */,

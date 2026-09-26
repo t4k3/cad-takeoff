@@ -1124,3 +1124,9 @@ Smusso (chamfer) su spigoli selezionati (dipende da T84)
 
 ### 2026-09-26 10:47 · claude · NUOVO TASK `T86`
 Raccordo (fillet) a raggio costante su spigoli selezionati (dipende da T85)
+
+### 2026-09-26 11:32 · claude · CLAIM `T83`
+Inizio **Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana**. File: Packages/CADCore/Sources/CADCore/Features, App/Sources/UI
+
+### 2026-09-26 12:03 · claude · DONE `T83`
+**Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana** — Foro nel motore CSG: semplice/lamato/svasato, viti M2–M12 (passaggio, filettatura indicata = preforo maschio, inserto a caldo, manuale), passante o cieco, più centri su una faccia piana con snap 0,5 mm, compensazione stampa; strumento assistente add_hole; 62 test core + CI 9/9; provato a schermo (taglio, timeline, ⌘Z). Filetto modellato rinviato: serve un motore booleano più veloce.

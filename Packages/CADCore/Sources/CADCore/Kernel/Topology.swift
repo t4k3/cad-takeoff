@@ -20,6 +20,8 @@ public struct VertexID: RawRepresentable, Hashable, Codable, Sendable {
 public enum SurfaceDescriptor: Equatable, Sendable {
     case plane(origin: Vec3, normal: Vec3)
     case cylinder(axisOrigin: Vec3, axisDirection: Vec3, radius: Double)
+    /// Cone (countersinks): radius grows from the apex along `axisDirection` with the given half angle.
+    case cone(apex: Vec3, axisDirection: Vec3, halfAngle: Double)
 }
 
 public enum KernelError: Error, LocalizedError, Equatable, Sendable {

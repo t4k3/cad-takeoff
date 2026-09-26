@@ -94,6 +94,17 @@ struct InspectorPanel: View {
         case let .cylinder(r, h):
             DimensionField(title: "Raggio", value: Binding(get: { r }, set: { kind.wrappedValue = .cylinder(radius: $0, height: h) }))
             DimensionField(title: "Altezza", value: Binding(get: { h }, set: { kind.wrappedValue = .cylinder(radius: r, height: $0) }))
+        case let .hole(spec):
+            info("Foro", spec.summary)
+            info("Diametro", String(format: "%.2f mm", spec.boreDiameter))
+            if spec.style != .simple { info("Testa", String(format: "%.2f mm", spec.resolvedHeadDiameter)) }
+            info("Centri", "\(spec.centers.count)")
+            Button("Modifica foro…") {
+                if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) {
+                    workspace.startHole(model: model, editing: f)
+                }
+            }
+            .controlSize(.small)
         case let .extrude(p, h):
             info("Profilo", "\(p.points.count) vertici")
             DimensionField(title: "Altezza", value: Binding(get: { h }, set: { kind.wrappedValue = .extrude(profile: p, height: $0) }))

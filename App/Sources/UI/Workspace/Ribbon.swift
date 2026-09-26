@@ -72,6 +72,10 @@ struct Ribbon: View {
             Button { model.addHexPrism() } label: { Label("Prisma", systemImage: "hexagon") }
                 .help("Nuovo prisma esagonale estruso")
         }
+        ToolGroup("LAVORA") {
+            Button { workspace.startHole(model: model) } label: { Label("Foro", systemImage: "circle.circle") }
+                .help("Fori semplici, lamati o svasati, per viti, filettature o inserti a caldo: clicca su una faccia piana")
+        }
         ToolGroup("MODIFICA") {
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }
                 .disabled(model.selection == nil)

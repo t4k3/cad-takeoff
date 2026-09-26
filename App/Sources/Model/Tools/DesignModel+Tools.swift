@@ -48,12 +48,13 @@ extension DesignModel: CADToolProvider {
             case "add_box": kind = .box(width: try number(args, "width"), depth: try number(args, "depth"), height: try number(args, "height"))
             case "add_cylinder": kind = .cylinder(radius: try number(args, "radius"), height: try number(args, "height"))
             case "add_extrude": kind = .extrude(profile: Profile2D(points: try points(args)), height: try number(args, "height"))
+            case "add_hole": kind = .hole(try holeSpec(args))
             default: throw CADToolFailure("Comando non supportato.")
             }
             let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "\(title) \(next.features.count + 1)",
                             kind: kind, position: try position(args) ?? .zero,
                             color: try args["color"].map { _ in try color(args) } ?? .defaultColor,
-                            operation: try operation(args) ?? .newBody)
+                            operation: name == "add_hole" ? .cut : (try operation(args) ?? .newBody))
             try CADToolValidation.feature(f)
             try CADToolValidation.mesh(f.buildMesh())
             next.features.append(f); changed = f.id; selected = f.id
@@ -80,6 +81,8 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
+                case .hole:
+                    legal = []   // holes: re-create with add_hole or edit in the app
                 case let .extrude(p, h):
                     legal = ["points", "height"]
                     f.kind = .extrude(profile: args["points"] == nil ? p : Profile2D(points: try points(args)), height: try optionalNumber(args, "height", h))
@@ -179,6 +182,19 @@ extension DesignModel: CADToolProvider {
         case let .box(w, d, h): value.merge(["kind": "box", "width": .number(w), "depth": .number(d), "height": .number(h)]) { _, b in b }
         case let .cylinder(r, h): value.merge(["kind": "cylinder", "radius": .number(r), "height": .number(h)]) { _, b in b }
         case let .extrude(p, h): value.merge(["kind": "extrude", "points": .array(p.points.map { ["x": .number($0.x), "y": .number($0.y)] }), "height": .number(h)]) { _, b in b }
+        case let .hole(s):
+            let size: JSONValue = s.size.map { JSONValue.string($0) } ?? JSONValue.null
+            let depth: JSONValue = s.depth.map { JSONValue.number($0) } ?? JSONValue.string("through")
+            let centers = JSONValue.array(s.centers.map(vector))
+            value["kind"] = "hole"
+            value["summary"] = .string(s.summary)
+            value["style"] = .string(s.style.rawValue)
+            value["fit"] = .string(s.fit.rawValue)
+            value["size"] = size
+            value["bore_diameter"] = .number(s.boreDiameter)
+            value["depth"] = depth
+            value["centers"] = centers
+            value["direction"] = vector(s.direction)
         }
         return .object(value)
     }
@@ -210,6 +226,33 @@ extension DesignModel: CADToolProvider {
             throw CADToolFailure("operation deve essere newBody, join, cut o intersect.")
         }
         return op
+    }
+
+    private func holeSpec(_ args: [String: JSONValue]) throws -> HoleSpec {
+        guard let list = args["centers"]?.array, !list.isEmpty else { throw CADToolFailure("centers: almeno un punto {x,y,z}.") }
+        let centers = try list.map { v -> Vec3 in
+            guard let x = v["x"]?.number, let y = v["y"]?.number, let z = v["z"]?.number else { throw CADToolFailure("centers: punti {x,y,z} in mm.") }
+            return Vec3(x, y, z)
+        }
+        var dir = Vec3(0, 0, -1)
+        if let d = args["direction"] {
+            guard let x = d["x"]?.number, let y = d["y"]?.number, let z = d["z"]?.number, Vec3(x, y, z).length > 0.5 else {
+                throw CADToolFailure("direction: vettore {x,y,z} non nullo.")
+            }
+            dir = Vec3(x, y, z).normalized
+        }
+        func pick<T: RawRepresentable>(_ key: String, _ fallback: T) throws -> T where T.RawValue == String {
+            guard args[key] != nil else { return fallback }
+            guard let v = T(rawValue: try string(args, key)) else { throw CADToolFailure("\(key): valore non valido.") }
+            return v
+        }
+        let fit: HoleSpec.Fit = try pick("fit", .clearance)
+        guard fit != .modeledThread else { throw CADToolFailure("Filetto modellato non ancora disponibile: usa tapped o heatInsert.") }
+        return HoleSpec(centers: centers, direction: dir, style: try pick("style", .simple), fit: fit,
+                        size: fit == .manual ? nil : (args["size"] == nil ? "M3" : try string(args, "size")),
+                        diameter: args["diameter"] == nil ? 3 : try number(args, "diameter"),
+                        depth: args["depth"] == nil ? nil : try number(args, "depth"),
+                        printAllowance: args["print_allowance"]?.number ?? 0)
     }
 
     private func color(_ args: [String: JSONValue]) throws -> PartColor {

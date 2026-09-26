@@ -55,6 +55,9 @@ enum CADToolValidation {
         case let .box(w, d, h): for v in [w, d, h] { try dimension(v) }
         case let .cylinder(r, h): try dimension(r); try dimension(h)
         case let .extrude(p, h): try dimension(h); try profile(p.points)
+        case let .hole(spec):
+            do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
+            for c in spec.centers { try coordinate(c.x); try coordinate(c.y); try coordinate(c.z) }
         }
     }
     static func mesh(_ mesh: Mesh) throws {

@@ -35,6 +35,14 @@ final class WorkspaceState {
 
     /// Command panel currently open (create/edit feature).
     var command: CommandSession?
+    /// Hole centres being placed while the Hole panel is open.
+    var holePlacement: HolePlacement?
+
+    func startHole(model: DesignModel, editing feature: Feature? = nil) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = HoleCommand.start(workspace: self, model: model, editing: feature)
+    }
     /// Active sketch (v0, UI-only). nil = not sketching.
     var sketch: SketchSession?
     /// Asks the viewport to switch camera for sketch mode (true) or restore it (false).
@@ -86,6 +94,10 @@ final class WorkspaceState {
     func editFeature(_ id: Feature.ID, model: DesignModel) {
         command?.onCancel()
         model.selection = id
+        if let f = model.document.features.first(where: { $0.id == id }), case .hole = f.kind {
+            command = HoleCommand.start(workspace: self, model: model, editing: f)
+            return
+        }
         command = FeatureCommands.edit(id, model: model)
     }
 }
@@ -96,6 +108,7 @@ extension Feature.Kind {
         case .box: "cube"
         case .cylinder: "cylinder"
         case .extrude: "square.stack.3d.up"
+        case .hole: "circle.circle"
         }
     }
 
@@ -104,6 +117,7 @@ extension Feature.Kind {
         case .box: "Parallelepipedo"
         case .cylinder: "Cilindro"
         case .extrude: "Estrusione"
+        case .hole: "Foro"
         }
     }
 }

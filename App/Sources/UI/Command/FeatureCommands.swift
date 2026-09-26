@@ -21,6 +21,8 @@ enum FeatureCommands {
                       .init(id: "h", label: "Altezza", kind: .length(length), value: .number(h))]
         case let .extrude(_, h):
             fields = [.init(id: "h", label: "Distanza", kind: .length(length), value: .number(h))]
+        case .hole:
+            return nil   // holes use their own panel (HoleCommand)
         }
         fields += [.init(id: "z", label: "Offset Z", kind: .length(-1000...1000), value: .number(original.position.z)),
                    .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)),
@@ -34,6 +36,7 @@ enum FeatureCommands {
             case .box: f.kind = .box(width: v("w"), depth: v("d"), height: v("h"))
             case .cylinder: f.kind = .cylinder(radius: v("r"), height: v("h"))
             case let .extrude(p, _): f.kind = .extrude(profile: p, height: v("h"))
+            case .hole: break
             }
             f.position.z = v("z")
             if case let .index(i)? = fields.first(where: { $0.id == "op" })?.value { f.operation = BooleanOperation.allCases[i] }

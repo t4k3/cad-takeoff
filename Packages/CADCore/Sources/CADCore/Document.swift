@@ -27,6 +27,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case box(width: Double, depth: Double, height: Double)
         case cylinder(radius: Double, height: Double)
         case extrude(profile: Profile2D, height: Double)
+        /// One or more holes on a face (always removes material).
+        case hole(HoleSpec)
     }
 
     public var id: UUID
@@ -63,6 +65,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case let .box(w, d, h): local = Primitives.box(width: w, depth: d, height: h)
         case let .cylinder(r, h): local = Primitives.cylinder(radius: r, height: h)
         case let .extrude(profile, h): local = Operations.extrude(profile, height: h)
+        case let .hole(spec): return HoleGeometry.mesh(spec, featureID: id)
         }
         return local.translated(by: position)
     }
