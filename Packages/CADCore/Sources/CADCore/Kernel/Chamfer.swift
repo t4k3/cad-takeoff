@@ -214,6 +214,30 @@ public enum ChamferGeometry {
         return (mid, sum.normalized * (concave ? 1 : -1), cos(half), 1 / sin(half) - 1, limit)
     }
 
+    /// Whether a bevel or round on the edge would be too thin to see: the faces turn so little that
+    /// it stays within 0.01 mm of them (a 2.7° crease with a 3 mm round: 0.001 mm). Such tools are
+    /// slivers that only break the booleans where rounds meet, so they are skipped.
+    public static func isNearlyFlat(_ edge: EdgeInfo, in snapshot: BodySnapshot, spec: ChamferSpec) -> Bool {
+        guard let mid = edge.midpoint, edge.faces.count == 2 else { return false }
+        var normals: [Vec3] = []
+        for id in edge.faces {
+            guard let f = snapshot.faces.firstIndex(where: { $0.id == id }) else { return false }
+            var best: (Double, Vec3)?
+            for t in 0..<snapshot.triangleFace.count where Int(snapshot.triangleFace[t]) == f {
+                let v = (0..<3).map { snapshot.positions[Int(snapshot.triangles[t * 3 + $0])] }
+                let c = (v[0] + v[1] + v[2]) * (1.0 / 3)
+                let d = (c - mid).length
+                if d < (best?.0 ?? .infinity) { best = (d, (v[1] - v[0]).cross(v[2] - v[0]).normalized) }
+            }
+            guard let (_, n) = best else { return false }
+            normals.append(n)
+        }
+        let turn = acos(max(-1, min(1, normals[0].dot(normals[1]))))
+        if turn < 0.5 * .pi / 180 { return true }
+        let sag = spec.profile == .round ? spec.distance * (1 / cos(turn / 2) - 1) : spec.distance * sin(turn / 2)
+        return sag < 0.01
+    }
+
     /// How far a face reaches from an edge (farthest vertex): no bevel can be wider.
     static func extent(ofFace f: Int, from polyline: [Vec3], _ s: BodySnapshot) -> Double {
         // Vertices alone are not enough: a disc merged into a fan has all of them on its rim.
@@ -329,7 +353,7 @@ public enum ChamferGeometry {
             }
             let wall = snapshot.faces.enumerated().compactMap { i, f -> (Vec3, Vec3)? in
                 guard i != a.0, i != b.0, case let .plane(o, n) = f.surface, abs((p - o).dot(n)) < 1e-5,
-                      abs(n.dot(dir)) > 0.2 else { return nil }
+                      abs(n.dot(dir)) > 0.9 else { return nil }
                 return (o, n)
             }.max { abs($0.1.dot(dir)) < abs($1.1.dot(dir)) }
             guard let (o, n) = wall else { return (p, section.map { p + $0 }) }

@@ -113,10 +113,19 @@ public enum PrimitiveKernel {
         // cylindrical wall with one rim edge top and bottom, like the cylinder primitive: fillets,
         // chamfers and selection take the whole arc, and the wall renders smooth.
         let arcs: [ProfileArc?] = family == "extrude" ? profileArcs(points) : Array(repeating: nil, count: n)
+        // Vertices of an arc exactly on its circle: points with rounded coordinates (4 decimals from
+        // the assistant or a DXF) are otherwise off the wall's cylinder by ~5e-5 mm, enough for
+        // rounds and cuts on that wall to leave cracks. IDs keep the original points.
+        var onArcs = points
+        for i in 0..<n {
+            guard let arc = arcs[i] ?? arcs[(i + n - 1) % n] else { continue }
+            let d = points[i] - arc.center, l = d.length
+            if l > 1e-12, abs(l - arc.radius) < 1e-3 { onArcs[i] = arc.center + d * (arc.radius / l) }
+        }
         func faceID(_ role: String) -> FaceID { FaceID(rawValue: prefix + role) }
         func edgeID(_ role: String) -> EdgeID { EdgeID(rawValue: prefix + role) }
-        let positions = points.map { Vec3($0.x, $0.y, 0) + feature.position }
-            + points.map { Vec3($0.x, $0.y, height) + feature.position }
+        let positions = onArcs.map { Vec3($0.x, $0.y, 0) + feature.position }
+            + onArcs.map { Vec3($0.x, $0.y, height) + feature.position }
         let vertices = positions.enumerated().map { i, p in
             BRepVertex(id: VertexID(rawValue: prefix + profileKey + "/\(i < n ? "bottom" : "top")/vertex/\(i % n)"), position: p)
         }
@@ -240,12 +249,16 @@ public enum PrimitiveKernel {
             guard r.isFinite, r < 1e6 else { return nil }
             return (o, r)
         }
-        func same(_ u: (c: Vec2, r: Double), _ v: (c: Vec2, r: Double)) -> Bool {
-            let tol = 1e-6 * max(1, u.r)
+        // Points typed or generated with 4 decimals (the assistant, DXF) are off the circle by
+        // up to ~6e-5 mm; a 3-point centre amplifies that by 1 / (θ²/2) for sides of θ radians,
+        // so the centres of neighbouring vertices are matched within that (or 2e-4·r).
+        func same(_ u: (c: Vec2, r: Double), _ v: (c: Vec2, r: Double), side i: Int) -> Bool {
+            let theta = (at(i + 1) - at(i)).length / max(u.r, 1e-12)
+            let tol = max(2e-4 * max(1, u.r), min(0.02 * u.r, 1.2e-4 / max(theta * theta / 2, 1e-9)))
             return abs(u.r - v.r) <= tol && abs(u.c.x - v.c.x) <= tol && abs(u.c.y - v.c.y) <= tol
         }
         func onCircle(_ q: Vec2, _ c: (c: Vec2, r: Double)) -> Bool {
-            abs(((q - c.c).x * (q - c.c).x + (q - c.c).y * (q - c.c).y).squareRoot() - c.r) <= 1e-6 * max(1, c.r)
+            abs(((q - c.c).x * (q - c.c).x + (q - c.c).y * (q - c.c).y).squareRoot() - c.r) <= max(1e-6 * max(1, c.r), 1e-4)
         }
         func angle(_ i: Int, _ c: (c: Vec2, r: Double)) -> Double {
             let l = ((at(i + 1) - at(i)).x * (at(i + 1) - at(i)).x + (at(i + 1) - at(i)).y * (at(i + 1) - at(i)).y).squareRoot()
@@ -257,7 +270,7 @@ public enum PrimitiveKernel {
         // 4 are not enough, a line between two mirrored arc ends is co-circular with them).
         let arcVertex: [Bool] = (0..<n).map { i in
             guard let c = circles[i] else { return false }
-            return [circles[(i + n - 1) % n], circles[(i + 1) % n]].allSatisfy { $0.map { same($0, c) } ?? false }
+            return [circles[(i + n - 1) % n], circles[(i + 1) % n]].allSatisfy { $0.map { same($0, c, side: i) } ?? false }
         }
         let sideCircle: [(c: Vec2, r: Double)?] = (0..<n).map { i in
             let j = (i + 1) % n
@@ -269,10 +282,10 @@ public enum PrimitiveKernel {
         }
         // Group consecutive sides on the same circle; a lone side is not an arc.
         var out = [ProfileArc?](repeating: nil, count: n)
-        let start = (0..<n).first { i in sideCircle[i] == nil || sideCircle[(i + n - 1) % n].map { !same($0, sideCircle[i]!) } ?? true }
+        let start = (0..<n).first { i in sideCircle[i] == nil || sideCircle[(i + n - 1) % n].map { !same($0, sideCircle[i]!, side: i) } ?? true }
         guard let first = start else {
             // Every side on one circle: a full circle.
-            let c = sideCircle[0]!
+            let c = fit(p) ?? sideCircle[0]!
             return (0..<n).map { i in ProfileArc(index: 0, center: c.c, radius: c.r, step: angle(i, c)) }
         }
         var index = 0
@@ -281,14 +294,37 @@ public enum PrimitiveKernel {
             let i = (first + k) % n
             guard let c = sideCircle[i] else { k += 1; continue }
             var run = [i]
-            while run.count < n, let next = sideCircle[(run.last! + 1) % n], same(next, c) { run.append((run.last! + 1) % n) }
+            while run.count < n, let next = sideCircle[(run.last! + 1) % n], same(next, c, side: (run.last! + 1) % n) { run.append((run.last! + 1) % n) }
             if run.count >= 2 {
-                for s in run { out[s] = ProfileArc(index: index, center: c.c, radius: c.r, step: angle(s, c)) }
+                // One circle for the whole arc, fitted on all its points (a single 3-point circle
+                // carries the rounding noise of its points).
+                let fitted = fit(run.flatMap { [at($0), at($0 + 1)] }) ?? c
+                for s in run { out[s] = ProfileArc(index: index, center: fitted.c, radius: fitted.r, step: angle(s, fitted)) }
                 index += 1
             }
             k += run.count
         }
         return out
+    }
+
+    /// Least-squares circle through points (Kåsa fit), nil when they are on a line.
+    static func fit(_ q: [Vec2]) -> (c: Vec2, r: Double)? {
+        guard q.count >= 3 else { return nil }
+        let m = Double(q.count)
+        let mx = q.map(\.x).reduce(0, +) / m, my = q.map(\.y).reduce(0, +) / m
+        var suu = 0.0, svv = 0.0, suv = 0.0, suuu = 0.0, svvv = 0.0, suvv = 0.0, svuu = 0.0
+        for p in q {
+            let u = p.x - mx, v = p.y - my
+            suu += u * u; svv += v * v; suv += u * v
+            suuu += u * u * u; svvv += v * v * v; suvv += u * v * v; svuu += v * u * u
+        }
+        let det = suu * svv - suv * suv
+        guard abs(det) > 1e-18 else { return nil }
+        let b1 = (suuu + suvv) / 2, b2 = (svvv + svuu) / 2
+        let uc = (b1 * svv - b2 * suv) / det, vc = (suu * b2 - suv * b1) / det
+        let r = (uc * uc + vc * vc + (suu + svv) / m).squareRoot()
+        guard r.isFinite, r < 1e6 else { return nil }
+        return (Vec2(uc + mx, vc + my), r)
     }
 
     /// Vertical edge at profile vertex i + 1 (between sides i and i + 1) is not a crease: both sides on

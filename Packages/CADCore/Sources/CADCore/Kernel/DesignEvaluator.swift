@@ -109,7 +109,7 @@ public enum DesignEvaluator {
                 for i in perBody.keys.sorted(by: >) {
                     // Convex edges: material removed; concave (inside corners): material added.
                     var remove: CSGSolid?, add: CSGSolid?
-                    for (k, edge) in perBody[i]! {
+                    for (k, edge) in perBody[i]! where !ChamferGeometry.isNearlyFlat(edge, in: bodies[i].snapshot, spec: spec) {
                         do {
                             let t = try ChamferGeometry.tool(for: edge, ref: spec.edges[k], spec: spec, snapshot: bodies[i].snapshot,
                                                              featureID: feature.id, index: k)

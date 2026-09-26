@@ -87,14 +87,20 @@ extension BRepBody {
             let topologyIDs = remaining.map(\.id)
             let first = remaining.removeFirst()
             var chain = [first.startVertex, first.endVertex]
-            // Each current semantic group is a single edge or one cylinder rim.
+            // Each current semantic group is a single edge or one cylinder rim; its pieces are
+            // chained from either end (an arc may run across the profile's first vertex).
             while !remaining.isEmpty {
-                let end = chain.last!
-                guard let i = remaining.firstIndex(where: { $0.startVertex == end || $0.endVertex == end }) else {
-                    preconditionFailure("PrimitiveKernel generated a disconnected semantic edge")
+                let end = chain.last!, start = chain.first!
+                if let i = remaining.firstIndex(where: { $0.startVertex == end || $0.endVertex == end }) {
+                    let edge = remaining.remove(at: i)
+                    chain.append(edge.startVertex == end ? edge.endVertex : edge.startVertex)
+                } else if let i = remaining.firstIndex(where: { $0.startVertex == start || $0.endVertex == start }) {
+                    let edge = remaining.remove(at: i)
+                    chain.insert(edge.startVertex == start ? edge.endVertex : edge.startVertex, at: 0)
+                } else {
+                    assertionFailure("PrimitiveKernel generated a disconnected semantic edge")
+                    break
                 }
-                let edge = remaining.remove(at: i)
-                chain.append(edge.startVertex == end ? edge.endVertex : edge.startVertex)
             }
             let adjacent = first.halfEdges.map { faces[halfEdges[$0].face].selectionID }
             return EdgeInfo(id: id, polyline: chain.map { vertices[$0].position }, isSharp: true,
