@@ -94,6 +94,9 @@ struct Ribbon: View {
             }
             .disabled(model.selection == nil)
             .help("Specchia il corpo selezionato rispetto a un piano (anche unito, per i pezzi simmetrici)")
+            Button { workspace.startSplit(model: model) } label: { Label("Dividi", systemImage: "rectangle.split.2x1") }
+                .disabled(model.selection == nil)
+                .help("Divide il corpo selezionato con un piano (es. per stampare un pezzo più grande del piatto)")
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
                 .help("Arrotonda o smussa gli spigoli: clicca gli spigoli, scegli la forma (Tondo o Piatto) e la misura, o trascina la freccia")
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }

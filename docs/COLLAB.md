@@ -1175,3 +1175,12 @@ Inizio **Serie rettangolare/circolare e specchio di corpi**. File: Packages/CADC
 
 ### 2026-09-26 15:32 · claude · DONE `T88`
 **Serie rettangolare/circolare e specchio di corpi** — PatternSpec (griglia, circolare attorno a un asse verticale, specchio su piani YZ/XZ/XY spostabili), copie come nuovo corpo (unite se si sovrappongono) o unite all'originale; specchio con avvolgimento corretto; pannello con anteprima, ispettore, add_pattern (19 strumenti). 80 test core, CI 10/10. Prova a schermo in sospeso.
+
+### 2026-09-26 15:35 · claude · NUOVO TASK `T89`
+Dividi corpo con piano (dipende da T84)
+
+### 2026-09-26 15:35 · claude · CLAIM `T89`
+Inizio **Dividi corpo con piano**. File: Packages/CADCore, App/Sources
+
+### 2026-09-26 15:35 · claude · DONE `T89`
+**Dividi corpo con piano** — SplitSpec: piano YZ/XZ/XY a una posizione, tieni entrambe (la parte + diventa un corpo nuovo) o un lato; pannello con anteprima, ispettore, add_split (20 strumenti). CI 10/10.

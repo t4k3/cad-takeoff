@@ -104,6 +104,27 @@ public struct PatternSpec: Codable, Sendable, Equatable {
     }
 }
 
+/// Split a body with a plane parallel to YZ, XZ or XY (T89).
+public struct SplitSpec: Codable, Sendable, Equatable {
+    public enum Keep: String, Codable, Sendable, CaseIterable {
+        /// Both halves: the original keeps the negative side, the positive side becomes a new body.
+        case both, positive, negative
+        public var label: String {
+            switch self { case .both: "Entrambe le parti"; case .positive: "Solo il lato +"; case .negative: "Solo il lato −" }
+        }
+    }
+    public var body: UUID
+    public var plane: PatternSpec.MirrorPlane
+    public var offset: Double
+    public var keep: Keep
+
+    public init(body: UUID, plane: PatternSpec.MirrorPlane = .xy, offset: Double = 0, keep: Keep = .both) {
+        self.body = body; self.plane = plane; self.offset = offset; self.keep = keep
+    }
+
+    var axis: Vec3 { plane.axis }
+}
+
 /// An imported triangle mesh, stored compactly in the design (float32 positions, uint32 indices,
 /// base64): the file keeps working even if the original STL/3MF is moved.
 public struct ImportedMesh: Codable, Sendable, Equatable {
@@ -199,6 +220,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case importedMesh(ImportedMesh)
         /// Copies of a body: rectangular or circular pattern, or mirror image.
         case pattern(PatternSpec)
+        /// Cuts a body in two with a plane (e.g. to print a part larger than the bed).
+        case split(SplitSpec)
     }
 
     public var id: UUID
@@ -255,6 +278,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case .component: return Mesh(vertices: [], indices: [])   // geometry comes from the referenced file
         case let .importedMesh(m): return m.mesh.translated(by: position)
         case .pattern: return Mesh(vertices: [], indices: [])   // copies of another body
+        case .split: return Mesh(vertices: [], indices: [])     // acts on another body
         }
         return local.translated(by: position)
     }

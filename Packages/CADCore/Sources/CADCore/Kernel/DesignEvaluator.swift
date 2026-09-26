@@ -102,6 +102,42 @@ public enum DesignEvaluator {
                 }
                 continue
             }
+            if case let .split(spec) = feature.kind {
+                guard spec.offset.isFinite, let i = bodies.firstIndex(where: { $0.source.id == spec.body }),
+                      let box = bounds(bodies[i].snapshot) else {
+                    issues.append(.init(featureID: feature.id, message: "Dividi: il corpo da dividere non esiste (deve venire prima nella timeline)."))
+                    continue
+                }
+                let n = spec.axis
+                let lo = box.min.dot(n), hi = box.max.dot(n)
+                guard spec.offset > lo + 1e-6, spec.offset < hi - 1e-6 else {
+                    issues.append(.init(featureID: feature.id, message: "Dividi: il piano non attraversa il corpo (va tra \(String(format: "%.1f", lo)) e \(String(format: "%.1f", hi)) mm)."))
+                    continue
+                }
+                // Half-space as a box beyond the body on the positive side of the plane.
+                let pad = 10.0
+                var a = box.min - Vec3(pad, pad, pad), b = box.max + Vec3(pad, pad, pad)
+                switch spec.plane {
+                case .yz: a.x = spec.offset
+                case .xz: a.y = spec.offset
+                case .xy: a.z = spec.offset
+                }
+                let halfSpace = CSGSolid(boxSolid(a, b, prefix: "split:\(feature.id.uuidString)"))
+                let whole = solidOf(bodies[i])
+                let positive = whole.intersecting(halfSpace), negative = whole.subtracting(halfSpace)
+                switch spec.keep {
+                case .negative:
+                    bodies[i] = rebuilt(bodies[i], negative, by: feature.id, revision: revision)
+                case .positive:
+                    bodies[i] = rebuilt(bodies[i], positive, by: feature.id, revision: revision)
+                case .both:
+                    bodies[i] = rebuilt(bodies[i], negative, by: feature.id, revision: revision)
+                    let (mesh, triFace) = positive.triangulated()
+                    bodies.append(Work(source: feature, snapshot: snapshot(of: positive, mesh: mesh, triangleFace: triFace, bodyID: feature.id, revision: revision),
+                                       solid: positive, mesh: mesh, modifiedBy: []))
+                }
+                continue
+            }
             if case let .pattern(spec) = feature.kind {
                 do { try spec.validate() } catch {
                     issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
@@ -231,6 +267,19 @@ public enum DesignEvaluator {
             return Work(source: w.source, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: w.source.id, revision: revision),
                         solid: solid, mesh: mesh, modifiedBy: w.modifiedBy + [id])
         }
+    }
+
+    /// Axis-aligned box as a snapshot with one named face per side (the cut face is a plane).
+    static func boxSolid(_ a: Vec3, _ b: Vec3, prefix: String) -> BodySnapshot {
+        let f = Feature(name: "box", kind: .box(width: b.x - a.x, depth: b.y - a.y, height: b.z - a.z),
+                        position: Vec3((a.x + b.x) / 2, (a.y + b.y) / 2, a.z))
+        let snap = (try? PrimitiveKernel.build(f))!.snapshot(revision: "")
+        // Rename the faces so they cannot collide with the body's own.
+        let faces = snap.faces.map { FaceInfo(id: FaceID(rawValue: prefix + "/" + ($0.id.rawValue.split(separator: "/").last.map(String.init) ?? "f")),
+                                              surface: $0.surface, area: $0.area, topologyFaceIDs: []) }
+        return BodySnapshot(bodyID: snap.bodyID, revision: "", positions: snap.positions, normals: snap.normals, triangles: snap.triangles,
+                            triangleFace: snap.triangleFace, triangleTopologyFace: snap.triangleTopologyFace, faces: faces, edges: [],
+                            maximumSurfaceDeviation: 0)
     }
 
     // MARK: Components

@@ -46,6 +46,8 @@ public enum PrimitiveKernel {
             throw KernelError.invalidParameter("il componente viene letto dal suo file dal valutatore")
         case .importedMesh:
             throw KernelError.invalidParameter("la mesh importata viene preparata dal valutatore")
+        case .split:
+            throw KernelError.invalidParameter("la divisione agisce su un corpo: viene calcolata dal valutatore")
         case let .pattern(spec):
             try spec.validate()
             throw KernelError.invalidParameter("la serie copia un corpo: viene calcolata dal valutatore")

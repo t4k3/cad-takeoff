@@ -60,6 +60,8 @@ enum CADToolValidation {
             for c in spec.centers { try coordinate(c.x); try coordinate(c.y); try coordinate(c.z) }
         case let .chamfer(spec):
             do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
+        case let .split(spec):
+            guard spec.offset.isFinite else { throw CADToolFailure("Posizione del piano non valida.") }
         case let .pattern(spec):
             do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
         case let .importedMesh(m):

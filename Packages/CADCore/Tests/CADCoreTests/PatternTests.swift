@@ -37,3 +37,24 @@ private func run(_ spec: PatternSpec, extra: [Feature] = []) -> ([DesignEvaluato
     let saved = CADDocument(features: [cube, Feature(name: "S", kind: .pattern(PatternSpec(body: cube.id, kind: .circular, count: 4, angle: 90)))])
     #expect(try! CADDocument.decode(saved.encoded()) == saved)
 }
+
+// MARK: Split
+
+@Test func splitWithAPlane() {
+    let block = Feature(name: "Blocco", kind: .box(width: 40, depth: 30, height: 20))
+    func split(_ spec: SplitSpec, _ extra: [Feature] = []) -> ([DesignEvaluator.Body], [DesignEvaluator.Issue]) {
+        DesignEvaluator.evaluate(CADDocument(features: [block] + extra + [Feature(name: "Dividi", kind: .split(spec))]), revision: "r")
+    }
+    let (both, i1) = split(SplitSpec(body: block.id, plane: .xy, offset: 8))
+    #expect(i1.isEmpty && both.count == 2)
+    #expect(abs(both[0].mesh.volume - 40 * 30 * 8) < 1e-6 && abs(both[1].mesh.volume - 40 * 30 * 12) < 1e-6)
+    #expect(both.allSatisfy { MeshValidator.validate($0.mesh).isWatertight })
+    let (top, _) = split(SplitSpec(body: block.id, plane: .yz, offset: 5, keep: .positive))
+    #expect(top.count == 1 && abs(top[0].mesh.volume - 15 * 30 * 20) < 1e-6)
+    let (_, outside) = split(SplitSpec(body: block.id, plane: .xy, offset: 50))
+    #expect(outside.contains { $0.message.contains("non attraversa") })
+    // A drilled block splits through the hole: both halves stay closed.
+    let hole = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(0, 0, 20)], fit: .manual, diameter: 8)), operation: .cut)
+    let (drilled, i4) = split(SplitSpec(body: block.id, plane: .xz, offset: 0), [hole])
+    #expect(i4.isEmpty && drilled.count == 2 && drilled.allSatisfy { MeshValidator.validate($0.mesh).isWatertight })
+}

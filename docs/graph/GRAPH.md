@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 15:32. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 15:35. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -128,6 +128,7 @@ flowchart LR
     T80["T80 · UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export<br/><i>claude</i>"]:::done
     T87["T87 · Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV<br/><i>claude</i>"]:::done
     T88["T88 · Serie rettangolare/circolare e specchio di corpi<br/><i>claude</i>"]:::done
+    T89["T89 · Dividi corpo con piano<br/><i>claude</i>"]:::done
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
@@ -323,6 +324,7 @@ flowchart LR
   T85 --> T86
   T82 --> T87
   T84 --> T88
+  T84 --> T89
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -428,3 +430,4 @@ flowchart LR
 | T86 | Raccordo (fillet) a raggio costante su spigoli selezionati | done | claude | T85 | Packages/CADCore<br>App/Sources |
 | T87 | Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV | done | claude | T82 | Packages/CADCore<br>App/Sources |
 | T88 | Serie rettangolare/circolare e specchio di corpi | done | claude | T84 | Packages/CADCore<br>App/Sources |
+| T89 | Dividi corpo con piano | done | claude | T84 | Packages/CADCore<br>App/Sources |

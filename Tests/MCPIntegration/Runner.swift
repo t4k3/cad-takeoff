@@ -25,7 +25,7 @@ import CADCore
         let initReply = try await send("initialize", ["protocolVersion": "2024-11-05", "capabilities": [:], "clientInfo": ["name": "integration-test", "version": "1"]])
         expect(initReply.0 == 200, "real loopback listener initialized")
         let list = try await send("tools/list")
-        expect(list.1?["result"]?["tools"]?.array?.count == 19, "19 tools via HTTP")
+        expect(list.1?["result"]?["tools"]?.array?.count == 20, "20 tools via HTTP")
         let scene = try await send("tools/call", ["name": "scene_info", "arguments": [:]])
         let structured = scene.1!["result"]!["structuredContent"]!
         let text = scene.1!["result"]!["content"]!.array![0]["text"]!.string!

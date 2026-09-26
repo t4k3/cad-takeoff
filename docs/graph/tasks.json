@@ -1704,6 +1704,26 @@
       "notes": [
         "2026-09-26 15:32 claude: PatternSpec (griglia, circolare attorno a un asse verticale, specchio su piani YZ/XZ/XY spostabili), copie come nuovo corpo (unite se si sovrappongono) o unite all'originale; specchio con avvolgimento corretto; pannello con anteprima, ispettore, add_pattern (19 strumenti). 80 test core, CI 10/10. Prova a schermo in sospeso."
       ]
+    },
+    {
+      "id": "T89",
+      "title": "Dividi corpo con piano",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T84"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-26 15:35",
+      "finished": "2026-09-26 15:35",
+      "notes": [
+        "2026-09-26 15:35 claude: SplitSpec: piano YZ/XZ/XY a una posizione, tieni entrambe (la parte + diventa un corpo nuovo) o un lato; pannello con anteprima, ispettore, add_split (20 strumenti). CI 10/10."
+      ]
     }
   ]
 }

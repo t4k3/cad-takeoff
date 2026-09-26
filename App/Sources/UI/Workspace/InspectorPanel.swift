@@ -115,6 +115,14 @@ struct InspectorPanel: View {
                 DimensionField(title: "Distanza 2", value: Binding(get: { spec.distance2 }, set: { var s = spec; s.distance2 = $0; kind.wrappedValue = .chamfer(s) }))
             }
             if spec.profile == .flat, spec.mode == .distanceAngle { info("Angolo", String(format: "%.0f°", spec.angle)) }
+        case let .split(sp):
+            info("Divide", model.document.features.first { $0.id == sp.body }?.name ?? "—")
+            info("Piano", SplitCommand.planeLabels[SplitCommand.planes.firstIndex(of: sp.plane) ?? 0] + " a \(sp.offset) mm")
+            info("Tieni", sp.keep.label)
+            Button("Modifica…") {
+                if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
+            }
+            .controlSize(.small)
         case let .pattern(p):
             info("Tipo", p.kind.label)
             info("Copia di", model.document.features.first { $0.id == p.body }?.name ?? "—")

@@ -113,6 +113,12 @@ final class WorkspaceState {
         command = PatternCommand.start(workspace: self, model: model, kind: kind)
     }
 
+    func startSplit(model: DesignModel) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = SplitCommand.start(workspace: self, model: model)
+    }
+
     func startChamfer(model: DesignModel, editing feature: Feature? = nil, profile: ChamferSpec.Profile = .flat) {
         command?.onCancel()
         if sketch != nil { exitSketch() }
@@ -195,6 +201,10 @@ final class WorkspaceState {
             command = HoleCommand.start(workspace: self, model: model, editing: f)
             return
         }
+        if let f = model.document.features.first(where: { $0.id == id }), case .split = f.kind {
+            command = SplitCommand.start(workspace: self, model: model, editing: f)
+            return
+        }
         if let f = model.document.features.first(where: { $0.id == id }), case let .pattern(p) = f.kind {
             command = PatternCommand.start(workspace: self, model: model, kind: p.kind, editing: f)
             return
@@ -224,6 +234,7 @@ extension Feature.Kind {
         case .component: "puzzlepiece.extension"
         case .importedMesh: "square.and.arrow.down.on.square"
         case let .pattern(p): p.kind == .mirror ? "arrow.left.and.right.righttriangle.left.righttriangle.right" : "square.grid.3x3"
+        case .split: "rectangle.split.2x1"
         }
     }
 
@@ -238,6 +249,7 @@ extension Feature.Kind {
         case .component: "Componente"
         case .importedMesh: "Mesh importata"
         case let .pattern(p): p.kind.label
+        case .split: "Dividi"
         }
     }
 }

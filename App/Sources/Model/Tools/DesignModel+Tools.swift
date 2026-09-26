@@ -69,6 +69,11 @@ extension DesignModel: CADToolProvider {
             case "add_hole": kind = .hole(try holeSpec(args))
             case "add_sheet_metal": kind = .sheetMetal(try sheetSpec(args))
             case "add_pattern": kind = .pattern(try patternSpec(args))
+            case "add_split":
+                let source = document.features[try index(args, key: "body_feature_id")].id
+                guard let plane = PatternSpec.MirrorPlane(rawValue: try string(args, "plane")) else { throw CADToolFailure("plane: yz, xz o xy.") }
+                let keep = args["keep"] == nil ? SplitSpec.Keep.both : (SplitSpec.Keep(rawValue: try string(args, "keep")) ?? .both)
+                kind = .split(SplitSpec(body: source, plane: plane, offset: try number(args, "offset"), keep: keep))
             default: throw CADToolFailure("Comando non supportato.")
             }
             var placement: FeaturePlacement?
@@ -87,7 +92,7 @@ extension DesignModel: CADToolProvider {
                             operation: name == "add_hole" ? .cut : (try operation(args) ?? .newBody),
                             placement: placement)
             try CADToolValidation.feature(f)
-            if case .pattern = f.kind {
+            if f.kind.actsOnBodies {
                 // Copies exist only on the evaluated body: check the evaluation instead of a mesh.
                 var check = next
                 check.features.append(f)
@@ -121,7 +126,7 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern:
+                case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
                 case let .extrude(p, h):
                     legal = ["points", "height"]
@@ -252,6 +257,12 @@ extension DesignModel: CADToolProvider {
             if s.mode == .twoDistances { value["distance2"] = .number(s.distance2) }
             if s.mode == .distanceAngle { value["angle"] = .number(s.angle) }
             value["edge_count"] = .number(Double(s.edges.count))
+        case let .split(sp):
+            value["kind"] = "split"
+            value["body_feature_id"] = .string(sp.body.uuidString)
+            value["plane"] = .string(sp.plane.rawValue)
+            value["offset"] = .number(sp.offset)
+            value["keep"] = .string(sp.keep.rawValue)
         case let .pattern(p):
             value["kind"] = p.kind == .mirror ? "mirror" : "pattern"
             value["pattern"] = .string(p.kind.rawValue)
@@ -460,5 +471,15 @@ extension DesignModel: CADToolProvider {
         }
         try CADToolValidation.profile(p)
         return p
+    }
+}
+
+extension Feature.Kind {
+    /// Features that change or copy bodies made earlier (no mesh of their own to validate).
+    var actsOnBodies: Bool {
+        switch self {
+        case .pattern, .split: true
+        default: false
+        }
     }
 }

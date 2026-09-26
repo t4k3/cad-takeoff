@@ -23,6 +23,7 @@
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */; };
+		36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */; };
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
 		3AC54D45E3D318B30B845B0B /* ProjectLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */; };
 		3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */; };
@@ -112,6 +113,7 @@
 		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
+		29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitCommand.swift; sourceTree = "<group>"; };
 		2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */ = {isa = PBXFileReference; path = FusionTakeoffExport.manifest; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblySheets.swift; sourceTree = "<group>"; };
@@ -311,6 +313,7 @@
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
 				63320AFB5B8D43EF4528E264 /* PatternCommand.swift */,
 				E98CD345010D437D5502B155 /* SheetMetalCommand.swift */,
+				29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -655,6 +658,7 @@
 				2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */,
 				CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */,
 				EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */,
+				36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */,
 				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,
 				95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */,
 				363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */,
