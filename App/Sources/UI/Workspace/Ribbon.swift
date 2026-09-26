@@ -78,9 +78,7 @@ struct Ribbon: View {
         }
         ToolGroup("MODIFICA") {
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
-                .help("Arrotonda gli spigoli (raccordo a raggio costante): clicca gli spigoli, poi scegli il raggio o trascina la freccia")
-            Button { workspace.startChamfer(model: model) } label: { Label("Smusso", systemImage: "skew") }
-                .help("Smussa gli spigoli: clicca gli spigoli da smussare, poi scegli la distanza o trascina la freccia")
+                .help("Arrotonda o smussa gli spigoli: clicca gli spigoli, scegli la forma (Tondo o Piatto) e la misura, o trascina la freccia")
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }
                 .disabled(model.selection == nil)
                 .help("Elimina la feature selezionata (⌫)")

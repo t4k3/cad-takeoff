@@ -1,7 +1,7 @@
 import CADCore
 import SwiftUI
 
-/// Chamfer / round panel (T85): pick edges in the viewport (each click adds or removes one),
+/// Round / chamfer panel ("Raccordo", T85–T86: one command for both shapes): pick edges in the viewport (each click adds or removes one),
 /// choose flat (chamfer) or round (fillet), set the size in the panel or with the drag arrow.
 /// The result is previewed live; the design changes only on OK (one undo step).
 @MainActor
@@ -144,8 +144,8 @@ enum ChamferCommand {
         }
 
         session = CommandSession(
-            title: original == nil ? (profile == .round ? "Raccordo" : "Smusso") : "Modifica \(original!.name)",
-            symbol: profile == .round ? "circle.bottomhalf.filled" : "skew",
+            title: original == nil ? "Raccordo" : "Modifica \(original!.name)",
+            symbol: "circle.bottomhalf.filled",
             fields: fields,
             onPreview: preview,
             onCommit: { f in
