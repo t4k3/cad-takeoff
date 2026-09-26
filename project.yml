@@ -39,14 +39,15 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Fusion Takeoff
+        CFBundleDisplayName: CAD Takeoff
+        CFBundleName: CAD Takeoff
         LSApplicationCategoryType: public.app-category.graphics-design
         # Only standard HTTPS (Anthropic/OpenAI APIs) and a localhost MCP server: exempt.
         ITSAppUsesNonExemptEncryption: false
-        NSHumanReadableCopyright: "© 2026 Fusion Takeoff"
+        NSHumanReadableCopyright: "© 2026 CAD Takeoff"
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: com.takeoff.fusiontakeoff.design
-            UTTypeDescription: Fusion Takeoff Design
+            UTTypeDescription: CAD Takeoff Design
             UTTypeConformsTo: [public.json]
             UTTypeTagSpecification:
               public.filename-extension: [ftk]

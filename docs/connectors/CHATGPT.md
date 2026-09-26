@@ -1,4 +1,4 @@
-# ChatGPT → Fusion Takeoff
+# ChatGPT → CAD Takeoff
 
 Responsabile: Codex. Stato: preparazione locale implementata; collegamento remoto
 non attivato né verificato. Il catalogo di 12 strumenti è quello comune del Model.
@@ -59,7 +59,7 @@ una conversazione con il connettore abilitato. La procedura aggiornata è nella
 [guida ufficiale](https://developers.openai.com/plugins/deploy/connect-chatgpt).
 Il helper non modifica l'account ChatGPT e non crea tunnel automaticamente.
 
-Prova: «Usa Fusion Takeoff: leggi la scena, crea una base 40 × 30 × 5 mm,
+Prova: «Usa CAD Takeoff: leggi la scena, crea una base 40 × 30 × 5 mm,
 verifica il volume, porta l'altezza a 8 mm e annulla questa ultima modifica».
 Il risultato atteso è una base alta 5 mm, volume 6000 mm³, con lo stesso ID.
 Per evitare ambiguità usare una scena vuota o verificare la feature creata per ID.

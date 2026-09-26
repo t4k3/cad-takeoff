@@ -501,7 +501,7 @@ public enum SheetMetalDXF {
         func number(_ value: Double) -> String {
             value == 0 ? "0" : String(format: "%.12g", locale: Locale(identifier: "en_US_POSIX"), value)
         }
-        put(999, "Fusion Takeoff flat pattern: \(name)")
+        put(999, "CAD Takeoff flat pattern: \(name)")
         put(999, "Material \(rule.material.name), t=\(number(rule.thickness)) mm, Ri=\(number(rule.insideRadius)) mm, K=\(number(rule.kFactor)), V\(number(rule.vDie))")
         put(0, "SECTION"); put(2, "HEADER")
         put(9, "$ACADVER"); put(1, "AC1015")

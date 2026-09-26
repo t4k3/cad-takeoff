@@ -1,4 +1,4 @@
-# Fusion Takeoff — progetto progressivo
+# CAD Takeoff — progetto progressivo
 
 Revisione 3 · 25 settembre 2026 · requisiti T24, decisione sulle dipendenze T71.
 Stato operativo aggiornato: [grafo attività](../graph/GRAPH.md).

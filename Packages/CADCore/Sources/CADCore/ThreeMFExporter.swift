@@ -46,7 +46,7 @@ public enum ThreeMFExporter {
         var xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <model unit="millimeter" xml:lang="it-IT" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02" requiredextensions="m">
-        <metadata name="Application">Fusion Takeoff</metadata>
+        <metadata name="Application">CAD Takeoff</metadata>
         <metadata name="Title">Design</metadata>
         <resources>
         """

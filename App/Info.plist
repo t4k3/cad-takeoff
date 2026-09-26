@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Fusion Takeoff</string>
+	<string>CAD Takeoff</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>CAD Takeoff</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -25,7 +25,7 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.graphics-design</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>© 2026 Fusion Takeoff</string>
+	<string>© 2026 CAD Takeoff</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
@@ -34,7 +34,7 @@
 				<string>public.json</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Fusion Takeoff Design</string>
+			<string>CAD Takeoff Design</string>
 			<key>UTTypeIdentifier</key>
 			<string>com.takeoff.fusiontakeoff.design</string>
 			<key>UTTypeTagSpecification</key>

@@ -1,11 +1,11 @@
-"""Fusion 360 add-in: «Esporta per Fusion Takeoff».
+"""Fusion 360 add-in: «Esporta per CAD Takeoff».
 
-Writes the active design as a Fusion Takeoff design (.ftk) in a chosen folder — usually a
-project folder of the Fusion Takeoff library — on demand or every time the design is saved.
+Writes the active design as a CAD Takeoff design (.ftk) in a chosen folder — usually a
+project folder of the CAD Takeoff library — on demand or every time the design is saved.
 
 Each visible body (root and components, already placed in the assembly) becomes an imported
 mesh in millimetres, with its name and appearance colour. Parametric history (sketches,
-extrusions…) is not converted yet: in Fusion Takeoff the flat faces of the bodies are real
+extrusions…) is not converted yet: in CAD Takeoff the flat faces of the bodies are real
 faces, so holes, rounds and sketches can be added on top.
 """
 import adsk.core
@@ -59,7 +59,7 @@ def body_colour(body):
 
 
 def y_up(app):
-    """Fusion designs can be Y-up; Fusion Takeoff (like slicers) is Z-up."""
+    """Fusion designs can be Y-up; CAD Takeoff (like slicers) is Z-up."""
     try:
         orientation = app.preferences.generalPreferences.defaultModelingOrientation
         return orientation == adsk.core.DefaultModelingOrientations.YUpModelingOrientation
@@ -127,7 +127,7 @@ def export_design(app, folder):
 
 def choose_folder(ui, current):
     dialog = ui.createFolderDialog()
-    dialog.title = "Cartella dove salvare i disegni per Fusion Takeoff (es. un progetto della libreria)"
+    dialog.title = "Cartella dove salvare i disegni per CAD Takeoff (es. un progetto della libreria)"
     if current:
         dialog.initialDirectory = current
     if dialog.showDialog() == adsk.core.DialogResults.DialogOK:
@@ -150,10 +150,10 @@ class ExecuteHandler(adsk.core.CommandEventHandler):
                 settings["folder"] = folder
             save_settings(settings)
             path, count = export_design(app, folder)
-            app.userInterface.messageBox("Esportati %d corpi in:\n%s\n\nIn Fusion Takeoff: Home › apri il disegno." % (count, path),
-                                         "Fusion Takeoff")
+            app.userInterface.messageBox("Esportati %d corpi in:\n%s\n\nIn CAD Takeoff: Home › apri il disegno." % (count, path),
+                                         "CAD Takeoff")
         except Exception as error:
-            app.userInterface.messageBox("Esportazione non riuscita:\n%s" % error, "Fusion Takeoff")
+            app.userInterface.messageBox("Esportazione non riuscita:\n%s" % error, "CAD Takeoff")
 
 
 class InputChangedHandler(adsk.core.InputChangedEventHandler):
@@ -201,7 +201,7 @@ def run(context):
     ui = app.userInterface
     try:
         definition = ui.commandDefinitions.itemById(CMD_ID) or ui.commandDefinitions.addButtonDefinition(
-            CMD_ID, "Esporta per Fusion Takeoff", "Salva il disegno attivo come .ftk per Fusion Takeoff (millimetri, Z in alto)", "")
+            CMD_ID, "Esporta per CAD Takeoff", "Salva il disegno attivo come .ftk per CAD Takeoff (millimetri, Z in alto)", "")
         created = CommandCreatedHandler()
         definition.commandCreated.add(created)
         handlers.append(created)
@@ -212,7 +212,7 @@ def run(context):
         app.documentSaved.add(saved)
         handlers.append(saved)
     except Exception:
-        ui.messageBox("Fusion Takeoff: avvio add-in non riuscito\n" + traceback.format_exc())
+        ui.messageBox("CAD Takeoff: avvio add-in non riuscito\n" + traceback.format_exc())
 
 
 def stop(context):

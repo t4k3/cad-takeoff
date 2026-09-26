@@ -1,4 +1,4 @@
-# Architettura condivisa — Fusion Takeoff
+# Architettura condivisa — CAD Takeoff
 
 **Punto di ingresso per Codex e Claude. Chat e MCP sono la priorità principale.** L'obiettivo è un CAD essenziale per macOS,
 sviluppato in Xcode, con disegno quotato, solidi e file per stampa 3D. La versione

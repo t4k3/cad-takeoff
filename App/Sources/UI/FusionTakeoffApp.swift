@@ -10,7 +10,7 @@ struct FusionTakeoffApp: App {
     @State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider()])
 
     var body: some Scene {
-        WindowGroup("Fusion Takeoff") {
+        WindowGroup("CAD Takeoff") {
             WorkspaceView()
                 .environment(model)
                 .environment(mcp)

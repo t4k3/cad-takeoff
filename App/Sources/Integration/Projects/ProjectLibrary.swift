@@ -58,7 +58,7 @@ final class ProjectLibrary {
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
         panel.prompt = "Usa questa cartella"
-        panel.message = "Scegli (o crea) la cartella dove Fusion Takeoff terrà i tuoi progetti, ad esempio Documenti › Fusion Takeoff."
+        panel.message = "Scegli (o crea) la cartella dove CAD Takeoff terrà i tuoi progetti, ad esempio Documenti › CAD Takeoff."
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let url = panel.url else { return }
         rootURL?.stopAccessingSecurityScopedResource()

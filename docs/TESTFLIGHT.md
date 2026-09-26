@@ -1,4 +1,4 @@
-# TestFlight — dare Fusion Takeoff ai colleghi
+# TestFlight — dare CAD Takeoff ai colleghi
 
 Pronto nel progetto (26/09): icona dell'app, manifesto privacy (`PrivacyInfo.xcprivacy`: nessun tracciamento, UserDefaults e date dei file per mostrarle), crittografia dichiarata esente (`ITSAppUsesNonExemptEncryption = NO`: solo HTTPS verso Anthropic/OpenAI e il server MCP locale), sandbox con i soli permessi usati, build Release verificata, script di archiviazione.
 
@@ -7,7 +7,7 @@ I passi qui sotto richiedono il tuo account Apple Developer (team 9F8D583GBV): l
 ## 1. Una volta sola
 
 1. **Xcode › Settings › Accounts**: il tuo Apple ID con il team 9F8D583GBV. Da lì Xcode crea da solo il certificato *Apple Distribution* e i profili.
-2. **App Store Connect › App › +** → *Nuova app*, piattaforma **macOS**, nome «Fusion Takeoff» (o quello che preferisci), lingua Italiano, bundle ID **com.takeoff.fusiontakeoff** (se non compare, crealo in *Certificates, Identifiers & Profiles › Identifiers* con la capacità **App Groups** e il gruppo `9F8D583GBV.com.takeoff.fusiontakeoff`), SKU a piacere.
+2. **App Store Connect › App › +** → *Nuova app*, piattaforma **macOS**, nome «CAD Takeoff» (o quello che preferisci), lingua Italiano, bundle ID **com.takeoff.fusiontakeoff** (se non compare, crealo in *Certificates, Identifiers & Profiles › Identifiers* con la capacità **App Groups** e il gruppo `9F8D583GBV.com.takeoff.fusiontakeoff`), SKU a piacere.
 
 ## 2. Ogni versione
 

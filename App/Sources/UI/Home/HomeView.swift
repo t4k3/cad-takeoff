@@ -83,7 +83,7 @@ struct HomeView: View {
                 Text("Da Fusion 360").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
                 Button("Installa add-in…") { model.statusMessage = FusionAddInInstaller.installWithPanel() }
                     .controlSize(.small)
-                    .help("Aggiunge a Fusion il comando «Esporta per Fusion Takeoff»: salva il disegno come .ftk in una cartella dei progetti, anche a ogni salvataggio")
+                    .help("Aggiunge a Fusion il comando «Esporta per CAD Takeoff»: salva il disegno come .ftk in una cartella dei progetti, anche a ogni salvataggio")
                 Button("Importa STL/3MF…") { library.showHome = false; model.importMeshWithPanel() }.controlSize(.small)
             }
             .padding(12)
@@ -202,7 +202,7 @@ struct HomeView: View {
         VStack(spacing: 14) {
             Image(systemName: "folder.badge.gearshape").font(.system(size: 44)).foregroundStyle(Theme.Palette.accent)
             Text("Dove vuoi tenere i tuoi progetti?").font(.title3.weight(.semibold))
-            Text("Fusion Takeoff organizza i disegni in progetti e cartelle in una cartella del tuo Mac, ad esempio Documenti › Fusion Takeoff. Puoi cambiarla quando vuoi.")
+            Text("CAD Takeoff organizza i disegni in progetti e cartelle in una cartella del tuo Mac, ad esempio Documenti › CAD Takeoff. Puoi cambiarla quando vuoi.")
                 .multilineTextAlignment(.center).foregroundStyle(Theme.Palette.textSecondary).frame(maxWidth: 420)
             Button("Scegli la cartella…") { library.chooseRoot() }.buttonStyle(.borderedProminent).controlSize(.large)
         }

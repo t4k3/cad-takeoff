@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch the official private MCP tunnel through Fusion Takeoff's shared stdio bridge.
+"""Launch the official private MCP tunnel through CAD Takeoff's shared stdio bridge.
 No secrets in argv, generated files or printed commands. No public listener.
 """
 import argparse

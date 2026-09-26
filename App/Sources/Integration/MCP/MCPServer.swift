@@ -14,7 +14,7 @@ final class MCPServer {
     let serverVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0"
 
     static let instructions = """
-    Fusion Takeoff è un CAD parametrico per macOS orientato alla stampa 3D.
+    CAD Takeoff è un CAD parametrico per macOS orientato alla stampa 3D.
     Unità: millimetri. Asse Z verso l'alto; il piano XY è il piatto di stampa.
     Prima di modificare, leggi lo stato con gli strumenti di sola lettura (es. list_features, scene_info).
     Ogni strumento che modifica il design crea un passo annullabile nell'app.
@@ -51,7 +51,7 @@ final class MCPServer {
             return result(id, [
                 "protocolVersion": .string(version),
                 "capabilities": ["tools": ["listChanged": false]],
-                "serverInfo": ["name": .string(serverName), "title": "Fusion Takeoff", "version": .string(serverVersion)],
+                "serverInfo": ["name": .string(serverName), "title": "CAD Takeoff", "version": .string(serverVersion)],
                 "instructions": .string(Self.instructions),
             ])
         case "notifications/initialized", "notifications/cancelled":

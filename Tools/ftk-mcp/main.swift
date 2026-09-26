@@ -1,5 +1,5 @@
 // ftk-mcp — stdio ⇄ HTTP bridge between MCP clients that launch local servers
-// (Claude Desktop, Claude Code stdio) and the MCP server inside Fusion Takeoff.
+// (Claude Desktop, Claude Code stdio) and the MCP server inside CAD Takeoff.
 //
 // Reads newline-delimited JSON-RPC from stdin, POSTs each message to the app's local
 // endpoint with its bearer token (from the app's discovery file) and writes the
@@ -45,7 +45,7 @@ func endpoint() async -> Endpoint? {
     if let e = readEndpoint() { return e }
     if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty,
        let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-        log("avvio Fusion Takeoff…")
+        log("avvio CAD Takeoff…")
         let config = NSWorkspace.OpenConfiguration()
         config.activates = false
         _ = try? await NSWorkspace.shared.openApplication(at: appURL, configuration: config)
@@ -66,7 +66,7 @@ func errorReply(for message: Data, _ text: String) -> Data? {
 func forward(_ message: Data) async -> Data? {
     for attempt in 0..<2 {
         guard let e = await endpoint() else {
-            return errorReply(for: message, "Fusion Takeoff non è in esecuzione o il server MCP è disattivato (barra di stato → MCP).")
+            return errorReply(for: message, "CAD Takeoff non è in esecuzione o il server MCP è disattivato (barra di stato → MCP).")
         }
         var req = URLRequest(url: e.url)
         req.httpMethod = "POST"
@@ -83,14 +83,14 @@ func forward(_ message: Data) async -> Data? {
             case 200: return data
             case 202: return nil
             case 401 where attempt == 0: continue // token rotated: re-read discovery and retry once
-            default: return errorReply(for: message, "Fusion Takeoff ha risposto HTTP \(status).")
+            default: return errorReply(for: message, "CAD Takeoff ha risposto HTTP \(status).")
             }
         } catch {
             if attempt == 0 { try? await Task.sleep(for: .milliseconds(300)); continue }
-            return errorReply(for: message, "Connessione a Fusion Takeoff non riuscita: \(error.localizedDescription)")
+            return errorReply(for: message, "Connessione a CAD Takeoff non riuscita: \(error.localizedDescription)")
         }
     }
-    return errorReply(for: message, "Autorizzazione rifiutata da Fusion Takeoff.")
+    return errorReply(for: message, "Autorizzazione rifiutata da CAD Takeoff.")
 }
 
 let stdout = FileHandle.standardOutput

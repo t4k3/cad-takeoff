@@ -1,12 +1,12 @@
 # Connettore Claude (MCP)
 
-Fusion Takeoff espone il design aperto a Claude tramite il **Model Context Protocol**.
+CAD Takeoff espone il design aperto a Claude tramite il **Model Context Protocol**.
 Gli strumenti (creare, modificare, leggere la geometria, esportare) sono gli stessi
 usati dalla chat interna all'app: ogni modifica è un passo annullabile (⌘Z) nell'app.
 
 ```
-Claude Desktop ──stdio──▶ ftk-mcp ──HTTP 127.0.0.1 + token──▶ Fusion Takeoff (server MCP)
-Claude Code ────────────────HTTP 127.0.0.1 + token──────────▶ Fusion Takeoff (server MCP)
+Claude Desktop ──stdio──▶ ftk-mcp ──HTTP 127.0.0.1 + token──▶ CAD Takeoff (server MCP)
+Claude Code ────────────────HTTP 127.0.0.1 + token──────────▶ CAD Takeoff (server MCP)
 ```
 
 - Il server gira dentro l'app, ascolta **solo su 127.0.0.1** (porta 51770, o una casuale se occupata)
@@ -49,6 +49,6 @@ printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | ~/.local/bin/ft
 
 | Sintomo | Causa |
 |---|---|
-| "Fusion Takeoff non è in esecuzione o il server MCP è disattivato" | App chiusa e non avviabile, oppure interruttore MCP spento nel pannello |
+| "CAD Takeoff non è in esecuzione o il server MCP è disattivato" | App chiusa e non avviabile, oppure interruttore MCP spento nel pannello |
 | Lista strumenti vuota | Strumenti CAD non ancora disponibili (T48) |
 | HTTP 401 dopo "Rigenera token" | Il bridge rilegge il token da solo; per Claude Code HTTP ricopia il comando |

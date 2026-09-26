@@ -51,7 +51,7 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
   È la base naturale per gli assiemi (riferimenti tra file dello stesso progetto).
   Chi: Codex (struttura su disco, indice, versioni, riferimenti tra file) + Claude (dashboard, anteprime, navigazione).
 - **Import da Fusion 360 (T74) — fase 1 fatta 26/09**: import STL/OBJ/3MF come corpi con facce piane vere (selezione, fori, schizzi);
-  add-in per Fusion «Esporta per Fusion Takeoff» (un clic o a ogni salvataggio, scrive il .ftk nella cartella del progetto: corpi e
+  add-in per Fusion «Esporta per CAD Takeoff» (un clic o a ogni salvataggio, scrive il .ftk nella cartella del progetto: corpi e
   componenti già posizionati, colori, mm, Y-su → Z-su), installabile dalla Home. Collaudato con un'API Fusion simulata; **da provare
   nel vero Fusion con Ross**. Fase 2: storico parametrico (schizzi, estrusioni, fori) invece delle sole mesh.
 

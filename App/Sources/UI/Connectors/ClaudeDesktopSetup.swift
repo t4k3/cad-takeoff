@@ -33,7 +33,7 @@ enum ClaudeDesktopSetup {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.prompt = "Consenti"
-        panel.message = "Per collegare Claude Desktop, Fusion Takeoff deve aggiungere una voce alla configurazione di Claude. Seleziona la cartella «Claude» (già evidenziata) e premi Consenti."
+        panel.message = "Per collegare Claude Desktop, CAD Takeoff deve aggiungere una voce alla configurazione di Claude. Seleziona la cartella «Claude» (già evidenziata) e premi Consenti."
         guard panel.runModal() == .OK, let folder = panel.url else { return .cancelled }
         guard folder.lastPathComponent == "Claude" else {
             return .failed("Seleziona proprio la cartella «Claude» in Libreria › Application Support.")

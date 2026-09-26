@@ -92,7 +92,7 @@ def build():
                           "literalSites": {k: len(re.findall(v, text)) for k, v in patterns.items()}})
     graph = {
         "schemaVersion": 1,
-        "title": "Fusion Takeoff — mappa architetturale esplorativa",
+        "title": "CAD Takeoff — mappa architetturale esplorativa",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "method": "MANUAL_TEXTUAL", "coverageState": "PARTIAL_EXPLORATORY",
         "identity": {"checkout": str(ROOT), "branch": run("git", "branch", "--show-current"),
