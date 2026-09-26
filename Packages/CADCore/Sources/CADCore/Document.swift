@@ -21,6 +21,28 @@ public enum BooleanOperation: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// A design of the project inserted in another one (assembly component). The referenced file is
+/// read when evaluating, so the assembly follows the part's changes.
+public struct ComponentRef: Codable, Sendable, Equatable {
+    /// Path of the part's .ftk, relative to the project library root.
+    public var path: String
+    /// Degrees about X, then Y, then Z (world axes), applied before `Feature.position`.
+    public var rotation: Vec3
+
+    public init(path: String, rotation: Vec3 = .zero) { self.path = path; self.rotation = rotation }
+
+    /// Part name from the file name.
+    public var partName: String { ((path as NSString).lastPathComponent as NSString).deletingPathExtension }
+
+    /// Rotation matrix rows (Rz·Ry·Rx) applied to a point.
+    public func rotate(_ p: Vec3) -> Vec3 {
+        let (x, y, z) = (rotation.x * .pi / 180, rotation.y * .pi / 180, rotation.z * .pi / 180)
+        var v = Vec3(p.x, p.y * cos(x) - p.z * sin(x), p.y * sin(x) + p.z * cos(x))
+        v = Vec3(v.x * cos(y) + v.z * sin(y), v.y, -v.x * sin(y) + v.z * cos(y))
+        return Vec3(v.x * cos(z) - v.y * sin(z), v.x * sin(z) + v.y * cos(z), v.z)
+    }
+}
+
 /// Where a box, cylinder or extrusion is built: on a sketch plane (e.g. a face), outward along
 /// its normal or, reversed, into the part. Nil = the world XY plane (the original behaviour).
 public struct FeaturePlacement: Codable, Sendable, Equatable {
@@ -41,6 +63,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case chamfer(ChamferSpec)
         /// Bent sheet-metal part: plate + flanges with a material bending rule (T79).
         case sheetMetal(SheetMetalSpec)
+        /// Another design of the project placed in this one (assemblies).
+        case component(ComponentRef)
     }
 
     public var id: UUID
@@ -94,6 +118,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case let .sheetMetal(spec):
             guard let build = try? SheetMetalGeometry.build(spec, featureID: id, position: position) else { return Mesh() }
             return build.folded.triangulated().mesh
+        case .component: return Mesh(vertices: [], indices: [])   // geometry comes from the referenced file
         }
         return local.translated(by: position)
     }

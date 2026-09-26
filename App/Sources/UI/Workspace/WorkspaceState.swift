@@ -69,8 +69,9 @@ final class WorkspaceState {
         pendingPreview = nil; previewBusy = true
         let generation = previewGeneration
         let revision = "preview-\(UUID().uuidString)"
+        let resolver = model?.componentResolver
         Task { [weak self] in
-            let result = await Task.detached(priority: .userInitiated) { DesignEvaluator.evaluate(doc, revision: revision) }.value
+            let result = await Task.detached(priority: .userInitiated) { DesignEvaluator.evaluate(doc, revision: revision, components: resolver) }.value
             guard let self else { return }
             if generation == self.previewGeneration {
                 self.previewSnapshot = DesignSnapshot(revision: revision, bodies: result.bodies.filter(\.isVisible).map(\.snapshot),
@@ -92,6 +93,10 @@ final class WorkspaceState {
         if sketch != nil { exitSketch() }
         command = HoleCommand.start(workspace: self, model: model, editing: feature)
     }
+    /// ASSIEME: sheets for inserting a component and for the bill of materials.
+    var showComponentPicker = false
+    var showBOM = false
+
     /// LAMIERA tab: show sheet-metal parts developed flat (with bend lines) instead of folded.
     var showFlat = false
 
@@ -206,6 +211,7 @@ extension Feature.Kind {
         case .hole: "circle.circle"
         case let .chamfer(s): s.profile == .round ? "circle.bottomhalf.filled" : "skew"
         case .sheetMetal: "square.stack.3d.down.forward"
+        case .component: "puzzlepiece.extension"
         }
     }
 
@@ -217,6 +223,7 @@ extension Feature.Kind {
         case .hole: "Foro"
         case let .chamfer(s): s.profile == .round ? "Raccordo" : "Smusso"
         case .sheetMetal: "Lamiera"
+        case .component: "Componente"
         }
     }
 }

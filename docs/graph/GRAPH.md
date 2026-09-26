@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 15:04. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 15:10. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -126,6 +126,7 @@ flowchart LR
   subgraph P19["Altro"]
     T79["T79 · Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo<br/><i>claude</i>"]:::done
     T80["T80 · UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export<br/><i>claude</i>"]:::done
+    T87["T87 · Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV<br/><i>claude</i>"]:::done
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
@@ -319,6 +320,7 @@ flowchart LR
   T82 --> T84
   T84 --> T85
   T85 --> T86
+  T82 --> T87
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -422,3 +424,4 @@ flowchart LR
 | T84 | Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI | done | claude | T76, T82 | Packages/CADCore<br>App/Sources<br>Tests |
 | T85 | Smusso (chamfer) su spigoli selezionati | done | claude | T84 | Packages/CADCore<br>App/Sources |
 | T86 | Raccordo (fillet) a raggio costante su spigoli selezionati | done | claude | T85 | Packages/CADCore<br>App/Sources |
+| T87 | Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV | done | claude | T82 | Packages/CADCore<br>App/Sources |

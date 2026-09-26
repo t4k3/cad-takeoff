@@ -1154,3 +1154,12 @@ Inizio **Raccordo (fillet) a raggio costante su spigoli selezionati**. File: Pac
 
 ### 2026-09-26 15:04 · ? · DONE `T66`
 **UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0** — Schizzo su faccia: SketchPlane.onFace, FeaturePlacement (piano + verso) nel kernel (B-rep portato sul piano), camera frontale, spigoli proiettati come riferimenti con aggancio, Estrudi con direzione; add_extrude con face_point/face_normal/into_part. Test core e assistente; prova visiva in sospeso (schermo bloccato).
+
+### 2026-09-26 15:10 · claude · NUOVO TASK `T87`
+Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV (dipende da T82)
+
+### 2026-09-26 15:10 · claude · CLAIM `T87`
+Inizio **Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV**. File: Packages/CADCore, App/Sources
+
+### 2026-09-26 15:10 · claude · DONE `T87`
+**Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV** — Feature.Kind.component(ComponentRef: percorso relativo alla radice + rotazione XYZ): il valutatore legge il file tramite un risolutore fornito dall'app (core puro), sposta e fonde i corpi del pezzo (facce/spigoli trasformati, ID prefissati), segnala mancanti e circolari, annidamento fino a 8 livelli. App: SOLIDO › ASSIEME › Inserisci (elenco disegni della libreria), Posiziona (pannello X/Y/Z e rotazioni con anteprima), Apri pezzo, Distinta base (quantità, materiale e massa per la lamiera, volume) con CSV. Test core e cronologia; prova a schermo in sospeso.

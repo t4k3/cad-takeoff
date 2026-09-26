@@ -23,6 +23,8 @@ enum FeatureCommands {
             fields = [.init(id: "h", label: "Distanza", kind: .length(length), value: .number(h))]
         case .hole, .chamfer, .sheetMetal:
             return nil   // own panels (HoleCommand, ChamferCommand, SheetMetalCommand)
+        case let .component(ref):
+            return component(id, ref: ref, original: original, model: model)
         }
         fields += [.init(id: "z", label: "Offset Z", kind: .length(-1000...1000), value: .number(original.position.z)),
                    .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)),
@@ -36,7 +38,7 @@ enum FeatureCommands {
             case .box: f.kind = .box(width: v("w"), depth: v("d"), height: v("h"))
             case .cylinder: f.kind = .cylinder(radius: v("r"), height: v("h"))
             case let .extrude(p, _): f.kind = .extrude(profile: p, height: v("h"))
-            case .hole, .chamfer, .sheetMetal: break
+            case .hole, .chamfer, .sheetMetal, .component: break
             }
             f.position.z = v("z")
             if case let .index(i)? = fields.first(where: { $0.id == "op" })?.value { f.operation = BooleanOperation.allCases[i] }
@@ -55,5 +57,33 @@ enum FeatureCommands {
                     model.document.features[i] = original
                 }
             })
+    }
+
+    /// Component placement: position and rotation, previewed live on the design.
+    private static func component(_ id: Feature.ID, ref: ComponentRef, original: Feature, model: DesignModel) -> CommandSession {
+        let fields: [CommandField] = [
+            .init(id: "note", label: "Pezzo: " + ref.path, kind: .note(warning: false), value: .flag(false)),
+            .init(id: "x", label: "Posizione X", kind: .length(-100_000...100_000), value: .number(original.position.x)),
+            .init(id: "y", label: "Posizione Y", kind: .length(-100_000...100_000), value: .number(original.position.y)),
+            .init(id: "z", label: "Posizione Z", kind: .length(-100_000...100_000), value: .number(original.position.z)),
+            .init(id: "rx", label: "Rotazione X", kind: .angle(-360...360), value: .number(ref.rotation.x)),
+            .init(id: "ry", label: "Rotazione Y", kind: .angle(-360...360), value: .number(ref.rotation.y)),
+            .init(id: "rz", label: "Rotazione Z", kind: .angle(-360...360), value: .number(ref.rotation.z),
+                  help: "Rotazioni in gradi attorno agli assi del mondo, nell'ordine X, Y, Z"),
+        ]
+        func apply(_ f: [CommandField]) {
+            guard f.allSatisfy({ $0.isHidden || $0.validationMessage == nil }),
+                  let i = model.document.features.firstIndex(where: { $0.id == id }) else { return }
+            let v = { (key: String) in f.first { $0.id == key }?.number ?? 0 }
+            var next = original
+            next.position = Vec3(v("x"), v("y"), v("z"))
+            next.kind = .component(ComponentRef(path: ref.path, rotation: Vec3(v("rx"), v("ry"), v("rz"))))
+            model.document.features[i] = next
+        }
+        return CommandSession(title: "Posiziona \(original.name)", symbol: "puzzlepiece.extension", fields: fields,
+                              onPreview: apply, onCommit: apply,
+                              onCancel: {
+                                  if let i = model.document.features.firstIndex(where: { $0.id == id }) { model.document.features[i] = original }
+                              })
     }
 }

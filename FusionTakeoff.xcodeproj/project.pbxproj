@@ -46,6 +46,7 @@
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
 		A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */; };
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
+		A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */; };
 		B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */; };
 		B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */; };
 		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
@@ -105,6 +106,7 @@
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
+		38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblySheets.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 			isa = PBXGroup;
 			children = (
 				00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */,
+				73C1EBFC2DD0A1230910F42D /* Assembly */,
 				785E63BA1C7AEB7EF9F2E4AD /* Assistant */,
 				F4C74464F3687349A61C6F69 /* Command */,
 				F1472CEAADDAA3A83F7D7939 /* Commands */,
@@ -266,6 +269,14 @@
 				EBF7FA287516A5F3EE980E3C /* Workspace */,
 			);
 			path = UI;
+			sourceTree = "<group>";
+		};
+		73C1EBFC2DD0A1230910F42D /* Assembly */ = {
+			isa = PBXGroup;
+			children = (
+				38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */,
+			);
+			path = Assembly;
 			sourceTree = "<group>";
 		};
 		785E63BA1C7AEB7EF9F2E4AD /* Assistant */ = {
@@ -554,6 +565,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */,
+				A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */,
 				D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */,
 				A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */,
 				0E767B03A5E12FC1C9C65E1E /* AssistantSession.swift in Sources */,

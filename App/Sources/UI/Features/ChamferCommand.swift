@@ -49,7 +49,7 @@ enum ChamferCommand {
                   let at = model.document.timeline.firstIndex(where: { $0.id == original.id }) else { return nil }
             var before = model.document
             before.rollback = at
-            for b in DesignEvaluator.evaluate(before, revision: "handle").bodies {
+            for b in DesignEvaluator.evaluate(before, revision: "handle", components: model.componentResolver).bodies {
                 if let e = ChamferGeometry.resolve(first, in: b.snapshot) { return (e, b.snapshot) }
             }
             return nil

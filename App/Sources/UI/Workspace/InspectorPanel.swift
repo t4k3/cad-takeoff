@@ -8,6 +8,7 @@ struct InspectorPanel: View {
     @Environment(DesignModel.self) private var model
 
     @Environment(WorkspaceState.self) private var workspace
+    @Environment(ProjectLibrary.self) private var library
 
     var body: some View {
         if let sketch = workspace.sketch { SketchInspector(sketch: sketch) } else { solidBody }
@@ -114,6 +115,19 @@ struct InspectorPanel: View {
                 DimensionField(title: "Distanza 2", value: Binding(get: { spec.distance2 }, set: { var s = spec; s.distance2 = $0; kind.wrappedValue = .chamfer(s) }))
             }
             if spec.profile == .flat, spec.mode == .distanceAngle { info("Angolo", String(format: "%.0f°", spec.angle)) }
+        case let .component(ref):
+            info("Pezzo", ref.partName)
+            info("File", ref.path)
+            info("Rotazione", String(format: "%.0f° · %.0f° · %.0f°", ref.rotation.x, ref.rotation.y, ref.rotation.z))
+            HStack {
+                Button("Posiziona…") {
+                    if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
+                }
+                Button("Apri pezzo") {
+                    if let url = library.url(forComponent: ref.path) { library.open(url, model: model) }
+                }
+            }
+            .controlSize(.small)
         case let .sheetMetal(spec):
             if let rule = try? spec.rule() {
                 info("Materiale", rule.material.name)

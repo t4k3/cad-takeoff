@@ -68,6 +68,42 @@ final class ProjectLibrary {
         touch()
     }
 
+    // MARK: Assemblies (components are referenced by their path under the root)
+
+    /// Reads a component design by its root-relative path (safe off the main thread).
+    var componentResolver: DesignEvaluator.ComponentResolver {
+        let root = rootURL
+        return { path in
+            let url = path.hasPrefix("/") ? URL(fileURLWithPath: path) : root?.appendingPathComponent(path)
+            guard let url, let data = try? Data(contentsOf: url) else { return nil }
+            return try? CADDocument.decode(data)
+        }
+    }
+
+    /// Path to store in a ComponentRef: relative to the root when inside it, absolute otherwise.
+    func componentPath(for url: URL) -> String {
+        if let root = rootURL?.standardizedFileURL.path, url.standardizedFileURL.path.hasPrefix(root + "/") {
+            return String(url.standardizedFileURL.path.dropFirst(root.count + 1))
+        }
+        return url.standardizedFileURL.path
+    }
+
+    func url(forComponent path: String) -> URL? {
+        path.hasPrefix("/") ? URL(fileURLWithPath: path) : rootURL?.appendingPathComponent(path)
+    }
+
+    /// Every design under the root (for «Inserisci componente»), newest first.
+    var allDesigns: [Item] {
+        _ = version
+        guard let root = rootURL,
+              let e = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.contentModificationDateKey],
+                                                     options: [.skipsHiddenFiles]) else { return [] }
+        return e.compactMap { $0 as? URL }.filter { $0.pathExtension == Self.designExtension }
+            .map { Item(url: $0, isFolder: false,
+                        modified: (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) }
+            .sorted { $0.modified > $1.modified }
+    }
+
     // MARK: Reading
 
     var projects: [Item] { rootURL.map { contents(of: $0).filter(\.isFolder) } ?? [] }
@@ -254,7 +290,7 @@ final class ProjectLibrary {
     private func writeThumbnail(for doc: CADDocument, design: URL) {
         let thumb = Item(url: design, isFolder: false, modified: .now).thumbnailURL
         try? FileManager.default.createDirectory(at: thumb.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let png = ThumbnailRenderer.png(for: doc) { try? png.write(to: thumb, options: .atomic) }
+        if let png = ThumbnailRenderer.png(for: doc, components: componentResolver) { try? png.write(to: thumb, options: .atomic) }
         else { try? FileManager.default.removeItem(at: thumb) }
     }
 

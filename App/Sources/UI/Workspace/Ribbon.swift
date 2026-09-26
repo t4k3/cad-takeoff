@@ -73,6 +73,12 @@ struct Ribbon: View {
             Button { model.addHexPrism() } label: { Label("Prisma", systemImage: "hexagon") }
                 .help("Nuovo prisma esagonale estruso")
         }
+        ToolGroup("ASSIEME") {
+            Button { workspace.showComponentPicker = true } label: { Label("Inserisci", systemImage: "puzzlepiece.extension") }
+                .help("Inserisci un altro disegno del progetto come componente (si aggiorna quando il pezzo cambia)")
+            Button { workspace.showBOM = true } label: { Label("Distinta", systemImage: "list.number") }
+                .help("Distinta base dell'assieme: pezzi, quantità, materiali, volumi")
+        }
         ToolGroup("LAVORA") {
             Button { workspace.startHole(model: model) } label: { Label("Foro", systemImage: "circle.circle") }
                 .help("Fori semplici, lamati o svasati, per viti, filettature o inserti a caldo: clicca su una faccia piana")

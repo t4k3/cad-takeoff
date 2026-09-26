@@ -1660,6 +1660,26 @@
       "notes": [
         "2026-09-26 14:06 claude: Raccordo come forma «Tondo» dello Smusso (+ pulsante Raccordo): arco tangente per spigoli dritti (faccia cilindrica), profilo di rivoluzione con toro per bordi di cilindri/fori (nuova SurfaceDescriptor.torus). Controllo «troppo grande per questo spigolo». Freccia trascinabile (DistanceManipulator, misura sul piano dello schermo) e anteprima dal vivo calcolata in background (l'ultima richiesta vince) con selezione sugli spigoli reali. BSP iterativo (niente stack overflow su thread secondari). add_chamfer profile round. 73 test core, CI 9/9, provato a schermo."
       ]
+    },
+    {
+      "id": "T87",
+      "title": "Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T82"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-26 15:10",
+      "finished": "2026-09-26 15:10",
+      "notes": [
+        "2026-09-26 15:10 claude: Feature.Kind.component(ComponentRef: percorso relativo alla radice + rotazione XYZ): il valutatore legge il file tramite un risolutore fornito dall'app (core puro), sposta e fonde i corpi del pezzo (facce/spigoli trasformati, ID prefissati), segnala mancanti e circolari, annidamento fino a 8 livelli. App: SOLIDO › ASSIEME › Inserisci (elenco disegni della libreria), Posiziona (pannello X/Y/Z e rotazioni con anteprima), Apri pezzo, Distinta base (quantità, materiale e massa per la lamiera, volume) con CSV. Test core e cronologia; prova a schermo in sospeso."
+      ]
     }
   ]
 }

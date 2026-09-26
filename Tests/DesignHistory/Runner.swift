@@ -94,6 +94,18 @@ struct DesignHistoryTests {
         m.undo()
         expect(m.document.timeline.map(\.id) == ids && m.document.rollback == 2, "undo delete restores order and marker")
 
+        // Assembly: two instances of a sheet-metal part → one BOM row, quantity 2, mass from DC01.
+        let bracket = CADDocument(features: [Feature(name: "Staffa", kind: .sheetMetal(SheetMetalSpec(material: "dc01", thickness: 2,
+                                                   width: 40, depth: 60, flanges: [.front: SheetFlange(length: 30)])))])
+        m.componentResolver = { $0 == "P/Staffa.ftk" ? bracket : nil }
+        m.replaceDocument(CADDocument(features: [
+            Feature(name: "Staffa", kind: .component(ComponentRef(path: "P/Staffa.ftk"))),
+            Feature(name: "Staffa (2)", kind: .component(ComponentRef(path: "P/Staffa.ftk", rotation: Vec3(0, 0, 180))), position: Vec3(0, 80, 0)),
+        ]), status: "Assieme")
+        let bom = m.billOfMaterials()
+        expect(bom.count == 1 && bom[0].quantity == 2 && bom[0].material.hasPrefix("Acciaio DC01"), "BOM groups the instances")
+        expect(abs((bom[0].mass ?? 0) - bom[0].volume * 7.85e-6) < 1e-9 && m.evaluation().bodies.count == 2, "mass from the material, two bodies")
+
         // Opening a file starts a fresh history.
         m.replaceDocument(CADDocument(), status: "Aperto")
         expect(!m.canUndo && !m.canRedo, "open/new clears history")

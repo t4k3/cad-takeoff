@@ -26,9 +26,11 @@ struct FusionTakeoffApp: App {
                     assistant.tools = tools
                     mcp.start()
                     sketches.model = model
+                    model.componentResolver = library.componentResolver
                     library.adoptInitialDesign(model)
                     AppDelegate.confirmQuit = { [library, model] in library.confirmDiscard(model) }
                 }
+                .onChange(of: library.rootURL) { _, _ in model.componentResolver = library.componentResolver }
                 .frame(minWidth: 1100, minHeight: 700)
         }
         .commands {

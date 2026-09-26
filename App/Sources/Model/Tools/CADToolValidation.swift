@@ -60,6 +60,10 @@ enum CADToolValidation {
             for c in spec.centers { try coordinate(c.x); try coordinate(c.y); try coordinate(c.z) }
         case let .chamfer(spec):
             do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
+        case let .component(ref):
+            guard !ref.path.isEmpty, [ref.rotation.x, ref.rotation.y, ref.rotation.z].allSatisfy({ $0.isFinite }) else {
+                throw CADToolFailure("Componente non valido.")
+            }
         case let .sheetMetal(spec):
             do { _ = try SheetMetalGeometry.build(spec, featureID: feature.id) } catch { throw CADToolFailure(error.localizedDescription) }
         }

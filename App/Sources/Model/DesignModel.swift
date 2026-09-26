@@ -68,6 +68,8 @@ final class DesignModel {
     /// Commits work still open in an editor (e.g. the sketch) into the document, so saving,
     /// opening another file or quitting never silently drops it.
     @ObservationIgnored var finishPendingEdits: () -> Void = {}
+    /// Reads assembly components from the project library (set by the app).
+    @ObservationIgnored var componentResolver: DesignEvaluator.ComponentResolver?
     @ObservationIgnored private var cachedSnapshot: DesignSnapshot?
     @ObservationIgnored private var cachedFlat: (snapshot: DesignSnapshot, bends: [(Vec3, Vec3, SheetBendDirection, Bool)])?
     @ObservationIgnored private var cachedEvaluation: (revision: String, bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue])?
@@ -91,7 +93,7 @@ final class DesignModel {
     /// Bodies of the design after running the active history with its booleans (cached per revision).
     func evaluation() -> (bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue]) {
         if let c = cachedEvaluation, c.revision == designRevision { return (c.bodies, c.issues) }
-        let (bodies, issues) = DesignEvaluator.evaluate(document, revision: designRevision)
+        let (bodies, issues) = DesignEvaluator.evaluate(document, revision: designRevision, components: componentResolver)
         cachedEvaluation = (designRevision, bodies, issues)
         return (bodies, issues)
     }
@@ -321,6 +323,66 @@ final class DesignModel {
             return ThreeMFPart(id: body.id, name: body.source.name, mesh: body.mesh, color: body.source.color)
         }
         return try ThreeMFExporter.archive(parts: parts)
+    }
+
+    // MARK: Assemblies
+
+    struct BOMRow: Identifiable {
+        let path: String
+        let name: String
+        let quantity: Int
+        /// Sheet metal: material and thickness; otherwise empty.
+        let material: String
+        /// One piece.
+        let volume: Double
+        /// One piece, when the material is known (sheet metal), in kg.
+        let mass: Double?
+        var id: String { path }
+    }
+
+    /// Bill of materials of the assembly: one row per referenced part, with quantities.
+    func billOfMaterials() -> [BOMRow] {
+        var order: [String] = [], count: [String: Int] = [:]
+        for f in document.activeFeatures {
+            guard case let .component(ref) = f.kind else { continue }
+            if count[ref.path] == nil { order.append(ref.path) }
+            count[ref.path, default: 0] += 1
+        }
+        return order.map { path in
+            let part = componentResolver?(path)
+            let bodies = part.map { DesignEvaluator.evaluate($0, revision: "bom", components: componentResolver).bodies.filter(\.isVisible) } ?? []
+            let volume = bodies.reduce(0) { $0 + $1.mesh.volume }
+            var materials: [String] = [], mass = 0.0, massKnown = false
+            for f in part?.activeFeatures ?? [] {
+                guard case let .sheetMetal(spec) = f.kind, let rule = try? spec.rule() else { continue }
+                materials.append(spec.summary.components(separatedBy: " · ").first ?? spec.summary)
+                if let body = bodies.first(where: { $0.id == f.id }) {
+                    mass += body.mesh.volume * rule.material.density / 1_000_000; massKnown = true
+                }
+            }
+            return BOMRow(path: path, name: ComponentRef(path: path).partName, quantity: count[path] ?? 0,
+                          material: Array(Set(materials)).sorted().joined(separator: ", "), volume: volume, mass: massKnown ? mass : nil)
+        }
+    }
+
+    func exportBOMWithPanel() {
+        let rows = billOfMaterials()
+        guard !rows.isEmpty else { statusMessage = "Nessun componente nell'assieme."; return }
+        func field(_ s: String) -> String { "\"" + s.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }
+        var csv = "Pos;Pezzo;Quantità;Materiale;Volume cad. (cm³);Massa cad. (kg);File\n"
+        for (i, r) in rows.enumerated() {
+            csv += "\(i + 1);\(field(r.name));\(r.quantity);\(field(r.material));"
+                + String(format: "%.2f", r.volume / 1000).replacingOccurrences(of: ".", with: ",") + ";"
+                + (r.mass.map { String(format: "%.3f", $0).replacingOccurrences(of: ".", with: ",") } ?? "") + ";\(field(r.path))\n"
+        }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "csv") ?? .commaSeparatedText]
+        panel.nameFieldStringValue = "Distinta base.csv"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try csv.write(to: url, atomically: true, encoding: .utf8)
+            statusMessage = "Esportata \(url.lastPathComponent) (separatore ; per Excel italiano)"
+        } catch { statusMessage = "Errore export distinta: \(error.localizedDescription)" }
     }
 
     // MARK: Sheet metal (T79)

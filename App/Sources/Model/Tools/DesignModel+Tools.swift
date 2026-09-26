@@ -111,7 +111,7 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole, .chamfer, .sheetMetal:
+                case .hole, .chamfer, .sheetMetal, .component:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
                 case let .extrude(p, h):
                     legal = ["points", "height"]
@@ -242,6 +242,10 @@ extension DesignModel: CADToolProvider {
             if s.mode == .twoDistances { value["distance2"] = .number(s.distance2) }
             if s.mode == .distanceAngle { value["angle"] = .number(s.angle) }
             value["edge_count"] = .number(Double(s.edges.count))
+        case let .component(c):
+            value["kind"] = "component"
+            value["path"] = .string(c.path)
+            value["rotation_deg"] = vector(c.rotation)
         case let .sheetMetal(s):
             value["kind"] = "sheet_metal"
             value["summary"] = .string(s.summary)
@@ -341,7 +345,7 @@ extension DesignModel: CADToolProvider {
         try CADToolValidation.feature(f)
         var next = document
         next.features.append(f)
-        let messages = DesignEvaluator.evaluate(next, revision: "check").issues.filter { $0.featureID == f.id }.map(\.message)
+        let messages = DesignEvaluator.evaluate(next, revision: "check", components: componentResolver).issues.filter { $0.featureID == f.id }.map(\.message)
         let failed = Set(messages).count == 1 && messages.count >= refs.count || messages.contains { $0.contains("senza effetto") }
         if failed { throw CADToolFailure("Smusso non applicabile: \(messages.first ?? "nessuno spigolo modificato").") }
         return (f, (refs.count, Array(Set(messages)).sorted()))

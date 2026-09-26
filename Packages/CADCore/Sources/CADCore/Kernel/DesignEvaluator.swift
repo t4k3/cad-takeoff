@@ -20,7 +20,14 @@ public enum DesignEvaluator {
         public let message: String
     }
 
-    public static func evaluate(_ doc: CADDocument, revision: String) -> (bodies: [Body], issues: [Issue]) {
+    /// Reads a component's design by its library path (the app provides it; nil = not found).
+    public typealias ComponentResolver = @Sendable (String) -> CADDocument?
+
+    public static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver? = nil) -> (bodies: [Body], issues: [Issue]) {
+        evaluate(doc, revision: revision, components: components, depth: 0)
+    }
+
+    private static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver?, depth: Int) -> (bodies: [Body], issues: [Issue]) {
         struct Work { var source: Feature; var snapshot: BodySnapshot; var solid: CSGSolid?; var mesh: Mesh; var modifiedBy: [UUID] }
         var bodies: [Work] = []
         var issues: [Issue] = []
@@ -95,9 +102,34 @@ public enum DesignEvaluator {
                 }
                 continue
             }
-            // The feature's own solid: exact kernel B-rep for primitives, CSG for sheet metal.
+            // The feature's own solid: exact kernel B-rep for primitives, CSG for sheet metal,
+            // the referenced design for a component.
             let fresh: Work
-            if case let .sheetMetal(spec) = feature.kind {
+            if case let .component(ref) = feature.kind {
+                guard depth < 8 else {
+                    issues.append(.init(featureID: feature.id, message: "Componente «\(ref.partName)»: riferimento circolare o annidato troppo in profondità."))
+                    continue
+                }
+                guard let child = components?(ref.path) else {
+                    issues.append(.init(featureID: feature.id, message: "Componente non trovato: \(ref.path)"))
+                    continue
+                }
+                let result = evaluate(child, revision: revision, components: components, depth: depth + 1)
+                // Problems inside the part surface on the component (circular references included).
+                if let first = result.issues.first {
+                    issues.append(.init(featureID: feature.id, message: first.message.hasPrefix("Componente")
+                        ? first.message : "Nel componente «\(ref.partName)»: \(first.message)"))
+                }
+                let inner = result.bodies.filter(\.isVisible)
+                guard !inner.isEmpty else {
+                    if result.issues.isEmpty {
+                        issues.append(.init(featureID: feature.id, message: "Il componente «\(ref.partName)» non ha corpi visibili."))
+                    }
+                    continue
+                }
+                let placed = placeComponent(inner, ref: ref, position: feature.position, bodyID: feature.id, revision: revision)
+                fresh = Work(source: feature, snapshot: placed.snapshot, solid: nil, mesh: placed.mesh, modifiedBy: [])
+            } else if case let .sheetMetal(spec) = feature.kind {
                 let solid: CSGSolid
                 do { solid = try SheetMetalGeometry.build(spec, featureID: feature.id, position: feature.position).folded } catch {
                     issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
@@ -151,6 +183,50 @@ public enum DesignEvaluator {
             return Work(source: w.source, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: w.source.id, revision: revision),
                         solid: solid, mesh: mesh, modifiedBy: w.modifiedBy + [id])
         }
+    }
+
+    // MARK: Components
+
+    /// The component's bodies moved into place and merged into one body (faces keep their IDs,
+    /// prefixed per inner body so they stay unique).
+    static func placeComponent(_ inner: [Body], ref: ComponentRef, position: Vec3, bodyID: UUID, revision: String) -> (mesh: Mesh, snapshot: BodySnapshot) {
+        func point(_ p: Vec3) -> Vec3 { ref.rotate(p) + position }
+        func direction(_ d: Vec3) -> Vec3 { ref.rotate(d) }
+        func surface(_ s: SurfaceDescriptor) -> SurfaceDescriptor {
+            switch s {
+            case let .plane(o, n): .plane(origin: point(o), normal: direction(n))
+            case let .cylinder(o, a, r): .cylinder(axisOrigin: point(o), axisDirection: direction(a), radius: r)
+            case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
+            case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
+            }
+        }
+        var mesh = Mesh()
+        var positions: [Vec3] = [], normals: [Vec3] = [], triangles: [UInt32] = [], triangleFace: [UInt32] = []
+        var topology: [FaceID] = [], faces: [FaceInfo] = [], edges: [EdgeInfo] = []
+        var deviation = 0.0
+        for b in inner {
+            let prefix = "comp:\(b.id.uuidString)/"
+            func fid(_ f: FaceID) -> FaceID { FaceID(rawValue: prefix + f.rawValue) }
+            let base = UInt32(mesh.vertices.count)
+            mesh.vertices += b.mesh.vertices.map(point)
+            mesh.indices += b.mesh.indices.map { $0 + base }
+            let s = b.snapshot
+            let p0 = UInt32(positions.count), f0 = UInt32(faces.count)
+            positions += s.positions.map(point)
+            normals += s.normals.map(direction)
+            triangles += s.triangles.map { $0 + p0 }
+            triangleFace += s.triangleFace.map { $0 + f0 }
+            topology += s.triangleTopologyFace.map(fid)
+            faces += s.faces.map { FaceInfo(id: fid($0.id), surface: surface($0.surface), area: $0.area, topologyFaceIDs: $0.topologyFaceIDs.map(fid)) }
+            edges += s.edges.map { e in
+                EdgeInfo(id: EdgeID(rawValue: prefix + e.id.rawValue), polyline: e.polyline.map(point), isSharp: e.isSharp,
+                         faces: e.faces.map(fid), topologyEdgeIDs: e.topologyEdgeIDs.map { EdgeID(rawValue: prefix + $0.rawValue) })
+            }
+            deviation = max(deviation, s.maximumSurfaceDeviation)
+        }
+        return (mesh, BodySnapshot(bodyID: bodyID, revision: revision, positions: positions, normals: normals, triangles: triangles,
+                                   triangleFace: triangleFace, triangleTopologyFace: topology, faces: faces, edges: edges,
+                                   maximumSurfaceDeviation: deviation))
     }
 
     // MARK: Snapshot of a boolean result
