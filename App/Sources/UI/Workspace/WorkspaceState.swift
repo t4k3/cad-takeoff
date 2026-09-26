@@ -121,6 +121,11 @@ final class WorkspaceState {
         command = SplitCommand.start(workspace: self, model: model)
     }
 
+    func startPressPull(model: DesignModel) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = PressPullCommand.start(workspace: self, model: model)
+    }
     func startChamfer(model: DesignModel, editing feature: Feature? = nil, profile: ChamferSpec.Profile = .flat) {
         command?.onCancel()
         if sketch != nil { exitSketch() }

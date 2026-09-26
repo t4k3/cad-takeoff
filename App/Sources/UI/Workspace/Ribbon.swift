@@ -97,6 +97,8 @@ struct Ribbon: View {
             Button { workspace.startSplit(model: model) } label: { Label("Dividi", systemImage: "rectangle.split.2x1") }
                 .disabled(model.selection == nil)
                 .help("Divide il corpo selezionato con un piano (es. per stampare un pezzo più grande del piatto)")
+            Button { workspace.startPressPull(model: model) } label: { Label("Premi/Tira", systemImage: "arrow.up.and.down.square") }
+                .help("Clicca una faccia e trascina la freccia (Q): l'alto o il basso di un'estrusione ne cambia l'altezza, le altre facce si estrudono")
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
                 .help("Arrotonda o smussa gli spigoli: clicca gli spigoli, scegli la forma (Tondo o Piatto) e la misura, o trascina la freccia")
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }
