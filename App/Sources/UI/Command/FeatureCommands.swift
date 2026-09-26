@@ -21,6 +21,9 @@ enum FeatureCommands {
                       .init(id: "h", label: "Altezza", kind: .length(length), value: .number(h))]
         case let .extrude(_, h):
             fields = [.init(id: "h", label: "Distanza", kind: .length(length), value: .number(h))]
+        case let .revolve(spec):
+            fields = [.init(id: "angle", label: "Angolo", kind: .angle(0.1...360), value: .number(spec.angle)),
+                      .init(id: "rev", label: "Verso opposto", kind: .toggle, value: .flag(spec.reversed))]
         case .hole, .chamfer, .sheetMetal, .pattern, .split:
             return nil   // own panels (HoleCommand, ChamferCommand, SheetMetalCommand, PatternCommand)
         case let .component(ref):
@@ -50,6 +53,10 @@ enum FeatureCommands {
             case .cylinder: f.kind = .cylinder(radius: v("r"), height: v("h"))
             case let .extrude(p, _): f.kind = .extrude(profile: p, height: v("h"))
             case .hole, .chamfer, .sheetMetal, .component, .pattern, .split: break
+            case var .revolve(spec):
+                spec.angle = v("angle")
+                if case let .flag(b)? = fields.first(where: { $0.id == "rev" })?.value { spec.reversed = b }
+                f.kind = .revolve(spec)
             case .importedMesh: f.position.x = v("x"); f.position.y = v("y")
             }
             f.position.z = v("z")

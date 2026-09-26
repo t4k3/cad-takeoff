@@ -201,6 +201,12 @@ final class WorkspaceState {
         sketchCameraRequest = false
     }
 
+    func revolveSketch(model: DesignModel) {
+        guard let sketch else { return }
+        command?.onCancel()
+        command = SketchCommands.revolve(sketch: sketch, model: model, workspace: self)
+    }
+
     func extrudeSketch(model: DesignModel) {
         guard let sketch else { return }
         command?.onCancel()
@@ -249,6 +255,7 @@ extension Feature.Kind {
         case .importedMesh: "square.and.arrow.down.on.square"
         case let .pattern(p): p.kind == .mirror ? "arrow.left.and.right.righttriangle.left.righttriangle.right" : "square.grid.3x3"
         case .split: "rectangle.split.2x1"
+        case .revolve: "arrow.triangle.2.circlepath"
         }
     }
 
@@ -264,6 +271,7 @@ extension Feature.Kind {
         case .importedMesh: "Mesh importata"
         case let .pattern(p): p.kind.label
         case .split: "Dividi"
+        case .revolve: "Rivoluzione"
         }
     }
 }

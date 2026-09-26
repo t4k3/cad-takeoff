@@ -247,6 +247,14 @@ public enum DesignEvaluator {
                 let (mesh, triFace) = solid.triangulated()
                 fresh = Work(source: feature, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: feature.id, revision: revision),
                              solid: solid, mesh: mesh, modifiedBy: [])
+            } else if case let .revolve(spec) = feature.kind {
+                let solid: CSGSolid
+                do { solid = try Revolve.build(spec, holes: feature.holes, featureID: feature.id, position: feature.position) } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                let (mesh, triFace) = solid.triangulated()
+                fresh = Work(source: feature, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: feature.id, revision: revision),
+                             solid: solid, mesh: mesh, modifiedBy: [])
             } else if !feature.holes.isEmpty {
                 let solid: CSGSolid
                 do { solid = try PrimitiveKernel.solidWithHoles(feature, revision: revision) } catch {

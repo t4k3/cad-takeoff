@@ -146,6 +146,10 @@ extension DesignModel: CADToolProvider {
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
                 case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
+                case var .revolve(spec):
+                    legal = ["angle"]
+                    spec.angle = try optionalNumber(args, "angle", spec.angle)
+                    f.kind = .revolve(spec)
                 case let .extrude(p, h):
                     legal = ["points", "height"]
                     f.kind = .extrude(profile: args["points"] == nil ? p : Profile2D(points: try points(args)), height: try optionalNumber(args, "height", h))
@@ -322,6 +326,12 @@ extension DesignModel: CADToolProvider {
                 value["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
                 value["warnings"] = .array(build.warnings.map { .string($0) })
             }
+        case let .revolve(r):
+            value["kind"] = "revolve"
+            value["angle"] = .number(r.angle)
+            value["profile_points"] = .number(Double(r.profile.points.count))
+            value["holes"] = .number(Double(f.holes.count))
+            value["axis"] = ["start": ["x": .number(r.axisStart.x), "y": .number(r.axisStart.y)], "end": ["x": .number(r.axisEnd.x), "y": .number(r.axisEnd.y)]]
         }
         return .object(value)
     }

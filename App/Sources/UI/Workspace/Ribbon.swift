@@ -216,6 +216,9 @@ struct Ribbon: View {
                 Button { workspace.extrudeSketch(model: model) } label: { Label("Estrudi", systemImage: "square.stack.3d.up") }
                     .disabled(sketch.faces.isEmpty || workspace.command != nil)
                     .help(sketch.faces.isEmpty ? "Disegna un profilo chiuso" : "Estrudi: clicca le aree da estrudere (E)")
+                Button { workspace.revolveSketch(model: model) } label: { Label("Rivoluzione", systemImage: "arrow.triangle.2.circlepath") }
+                    .disabled(sketch.faces.isEmpty || workspace.command != nil)
+                    .help("Fa girare le aree intorno a una linea dello schizzo (meglio di costruzione): alberi, pulegge, perni")
                 Button { sketch.deleteSelection() } label: { Label("Elimina", systemImage: "trash") }
                     .disabled(sketch.selection == nil)
             }

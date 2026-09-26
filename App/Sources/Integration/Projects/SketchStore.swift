@@ -45,9 +45,20 @@ extension CADDocument {
             // Faces of the arrangement, found again from the points picked inside them.
             if !link.seeds.isEmpty {
                 guard let area = sketch.areas(seeds: link.seeds).first,
-                      let i = features.firstIndex(where: { $0.id == link.featureID }),
-                      case let .extrude(_, height) = features[i].kind else { continue }
-                features[i].kind = .extrude(profile: Profile2D(points: area.outline), height: height)
+                      let i = features.firstIndex(where: { $0.id == link.featureID }) else { continue }
+                switch features[i].kind {
+                case let .extrude(_, height):
+                    features[i].kind = .extrude(profile: Profile2D(points: area.outline), height: height)
+                case var .revolve(spec):
+                    spec.profile = Profile2D(points: area.outline)
+                    // The axis line follows the sketch too.
+                    if case let .segment(id, j)? = spec.axisRef, let (a, b) = sketch.shapes.first(where: { $0.id == id })?.segment(j) {
+                        spec.axisStart = a; spec.axisEnd = b
+                    }
+                    features[i].kind = .revolve(spec)
+                default:
+                    continue
+                }
                 features[i].holes = area.holes.map { Profile2D(points: $0) }
                 continue
             }

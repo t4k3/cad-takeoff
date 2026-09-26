@@ -127,6 +127,10 @@ final class SketchSession {
     var offsetSource: SketchShape.ID?
     /// Specchio: the axis line picked first (then the shapes to mirror).
     var mirrorAxis: SketchRef?
+    /// Rivoluzione: the axis pick while the command's «Asse» field is active, and the preview.
+    @ObservationIgnored var onAxisPick: ((SketchRef) -> Void)?
+    struct RevolvePreview: Equatable { var axisStart: Vec2, axisEnd: Vec2, angle: Double, reversed: Bool, isCut: Bool }
+    var revolvePreview: RevolvePreview?
     var polygonCircumscribed = false
     /// Height shown as wireframe while the Extrude panel is open.
     var previewHeight: Double?

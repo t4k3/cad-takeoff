@@ -139,3 +139,108 @@ enum SketchCommands {
         return created
     }
 }
+
+extension SketchCommands {
+    /// «Rivoluzione» from sketch profiles, as in Fusion: click the areas, then the axis line (a
+    /// construction line is picked by itself when it is the only one); angle, direction and
+    /// operation, with a wireframe preview. OK adds the solids linked to the sketch.
+    static func revolve(sketch: SketchSession, model: DesignModel, workspace: WorkspaceState) -> CommandSession? {
+        guard !sketch.faces.isEmpty else { return nil }
+        if let shape = sketch.extrudeCandidate {
+            let inside = sketch.faces.filter { SketchArrangement.inside($0.seed, shape.outline) }
+            sketch.selectedSeeds = inside.max(by: { $0.area < $1.area }).map { [$0.seed] } ?? []
+        } else {
+            sketch.selectedSeeds = []
+        }
+        sketch.pickingRegions = true
+        // The only construction line (the usual centre line) is the axis to start with.
+        let construction = sketch.shapes.filter { $0.isConstruction && $0.segmentCount == 1 }
+        var axis: SketchRef? = construction.count == 1 ? .segment(construction[0].id, 0) : nil
+        weak var session: CommandSession?
+        func axisLabel() -> CommandField.Value { .references(axis.map { _ in ["asse"] } ?? []) }
+        func angle(_ f: [CommandField]) -> Double { f.first { $0.id == "angle" }?.number ?? 360 }
+        func reversed(_ f: [CommandField]) -> Bool { if case let .flag(b)? = f.first(where: { $0.id == "rev" })?.value { b } else { false } }
+        func operation(_ f: [CommandField]) -> BooleanOperation {
+            if case let .index(i)? = f.first(where: { $0.id == "op" })?.value { return BooleanOperation.allCases[i] }
+            return .newBody
+        }
+        func preview(_ f: [CommandField]) {
+            guard let axis, case let .segment(id, j) = axis, let (a, b) = sketch.shape(id)?.segment(j) else { sketch.revolvePreview = nil; return }
+            sketch.revolvePreview = .init(axisStart: a, axisEnd: b, angle: angle(f), reversed: reversed(f), isCut: operation(f) == .cut)
+        }
+        func finish() {
+            sketch.pickingRegions = false
+            sketch.selectedSeeds = []
+            sketch.onRegionsChange = {}
+            sketch.onAxisPick = nil
+            sketch.revolvePreview = nil
+        }
+        let created = CommandSession(
+            title: "Rivoluzione", symbol: "arrow.triangle.2.circlepath",
+            fields: [.init(id: "areas", label: "Profili", kind: .reference(prompt: "Clicca le aree", maxCount: 500),
+                           value: .references(sketch.pickedAreas.map { "\($0.seed)" }),
+                           help: "Clicca un'area per aggiungerla o toglierla"),
+                     .init(id: "axis", label: "Asse", kind: .reference(prompt: "Clicca la linea d'asse", maxCount: 1), value: axisLabel(),
+                           help: "Una linea dello schizzo (meglio di costruzione): il profilo le gira intorno"),
+                     .init(id: "angle", label: "Angolo", kind: .angle(0.1...360), value: .number(360), help: "360° = giro completo"),
+                     .init(id: "rev", label: "Verso opposto", kind: .toggle, value: .flag(false)),
+                     .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
+                           help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca")],
+            onPreview: preview,
+            onCommit: { f in
+                let seeds = sketch.selectedSeeds, areas = sketch.pickedAreas
+                let picked = axis
+                finish()
+                guard !areas.isEmpty else { model.statusMessage = "Clicca almeno un'area."; return }
+                guard let picked, case let .segment(id, j) = picked, let (a, b) = sketch.shape(id)?.segment(j) else {
+                    model.statusMessage = "Clicca la linea d'asse."; return
+                }
+                let op = operation(f)
+                let plane = sketch.sketch.plane
+                var features: [Feature] = []
+                for area in areas {
+                    let spec = RevolveSpec(profile: Profile2D(points: area.outline), plane: plane, axisStart: a, axisEnd: b, axisRef: picked,
+                                           angle: angle(f), reversed: reversed(f))
+                    let feature = Feature(name: (op == .cut ? "Taglio " : "Rivoluzione ") + "\(model.document.features.count + features.count + 1)",
+                                          kind: .revolve(spec), operation: op, holes: area.holes.map { Profile2D(points: $0) })
+                    do {
+                        try CADToolValidation.feature(feature)
+                    } catch {
+                        model.statusMessage = "Rivoluzione non riuscita: \(error.localizedDescription)"
+                        return
+                    }
+                    features.append(feature)
+                }
+                let saved = sketch.sketch
+                model.edit("Rivoluzione", selected: .some(features[0].id), changed: features.map(\.id)) { doc in
+                    doc.upsert(saved)
+                    for (feature, area) in zip(features, areas) {
+                        doc.features.append(feature)
+                        let own = seeds.filter { area.contains($0) }
+                        doc.sketchLinks.append(SketchLink(featureID: feature.id, sketchID: saved.id, shapeID: UUID(),
+                                                          seeds: own.isEmpty ? [area.seed] : own))
+                    }
+                }
+                model.statusMessage = "Rivoluzione creata — ⌘Z per annullare"
+                workspace.exitSketch()
+            },
+            onCancel: { finish() })
+        session = created
+        sketch.onRegionsChange = { [weak created] in
+            guard let created else { return }
+            created.update("areas") { $0.value = .references(sketch.pickedAreas.map { "\($0.seed)" }) }
+        }
+        sketch.onAxisPick = { [weak created] ref in
+            guard let created else { return }
+            axis = ref
+            created.update("axis") { $0.value = axisLabel() }
+            created.activeReference = sketch.pickedAreas.isEmpty ? "areas" : nil
+            preview(created.fields)
+        }
+        if axis != nil { created.activeReference = sketch.pickedAreas.isEmpty ? "areas" : nil }
+        preview(created.fields)
+        _ = session
+        workspace.viewRequest = .home
+        return created
+    }
+}

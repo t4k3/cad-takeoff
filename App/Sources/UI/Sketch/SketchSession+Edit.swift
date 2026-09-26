@@ -73,6 +73,7 @@ extension SketchSession {
             for i in 0..<(closed ? pts.count : pts.count - 1) { out.append((w(pts[i]), w(pts[(i + 1) % pts.count]), color)) }
         }
         let preview = sketchColor * SIMD4(1, 1, 1, 0.75)
+        if let r = revolvePreview { out += revolveOverlay(r) }
         switch tool {
         case .trim:
             if let raw = rawCursor, let piece = sketch.trimPiece(at: raw, tolerance: editTolerance) {
@@ -97,6 +98,49 @@ extension SketchSession {
             }
         default:
             break
+        }
+        return out
+    }
+
+    /// Wireframe of the revolve: the profile at a few angles and the circles its corners trace.
+    private func revolveOverlay(_ r: RevolvePreview) -> [Line] {
+        let areas = pickedAreas
+        guard !areas.isEmpty, (r.axisEnd - r.axisStart).length > 1e-9 else { return [] }
+        let color: SIMD4<Float> = r.isCut ? SIMD4(0.95, 0.25, 0.25, 0.9) : SIMD4(0.35, 0.7, 1, 0.9)
+        let dir = (r.axisEnd - r.axisStart) * (1 / (r.axisEnd - r.axisStart).length)
+        let left = Vec2(-dir.y, dir.x)
+        let pts = areas.flatMap { [$0.outline] + $0.holes }
+        let offsets: [Double] = pts.flatMap { $0 }.map { dir.cross($0 - r.axisStart) }
+        let farthest: Double = offsets.max { abs($0) < abs($1) } ?? 1
+        let side: Double = farthest < 0 ? -1 : 1
+        let radial = left * side
+        let sign = (radial.cross(dir) >= 0 ? 1.0 : -1.0) * (r.reversed ? -1 : 1)
+        let span = min(360, max(0.1, r.angle)) * .pi / 180
+        func at(_ q: Vec2, _ t: Double) -> SIMD3<Float> {
+            let rel = q - r.axisStart
+            let h = rel.dot(dir), rad = abs(dir.cross(rel))
+            let inPlane = r.axisStart + dir * h + radial * (rad * cos(t))
+            return world(inPlane, sign * rad * sin(t))
+        }
+        var out: [Line] = []
+        // The axis, dashed-long.
+        out.append((world(r.axisStart - dir * 5, 0.03), world(r.axisEnd + dir * 5, 0.03), color * SIMD4(1, 1, 1, 0.6)))
+        let copies = span >= 2 * .pi - 1e-6 ? 8 : 4
+        for k in 0...copies {
+            let t = span * Double(k) / Double(copies)
+            for loop in pts where loop.count >= 2 {
+                for i in 0..<loop.count { out.append((at(loop[i], t), at(loop[(i + 1) % loop.count], t), color)) }
+            }
+        }
+        // Circles from the corners (a few per loop, not every facet of a round).
+        let steps = max(8, Int(span / (2 * .pi) * 48))
+        for loop in pts {
+            let stride = max(1, loop.count / 12)
+            for i in Swift.stride(from: 0, to: loop.count, by: stride) {
+                for s in 0..<steps {
+                    out.append((at(loop[i], span * Double(s) / Double(steps)), at(loop[i], span * Double(s + 1) / Double(steps)), color * SIMD4(1, 1, 1, 0.55)))
+                }
+            }
         }
         return out
     }

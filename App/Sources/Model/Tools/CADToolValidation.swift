@@ -72,6 +72,9 @@ enum CADToolValidation {
             }
         case let .sheetMetal(spec):
             do { _ = try SheetMetalGeometry.build(spec, featureID: feature.id) } catch { throw CADToolFailure(error.localizedDescription) }
+        case let .revolve(spec):
+            try profile(spec.profile.points)
+            do { try spec.validate(holes: feature.holes) } catch { throw CADToolFailure(error.localizedDescription) }
         }
     }
     static func mesh(_ mesh: Mesh) throws {

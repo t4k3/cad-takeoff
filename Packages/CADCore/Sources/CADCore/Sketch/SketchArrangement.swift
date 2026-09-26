@@ -321,9 +321,9 @@ public enum SketchArrangement {
 }
 
 extension Vec2 {
-    var length2: Double { x * x + y * y }
-    var length: Double { length2.squareRoot() }
-    func dot(_ o: Vec2) -> Double { x * o.x + y * o.y }
+    public var length2: Double { x * x + y * y }
+    public var length: Double { length2.squareRoot() }
+    public func dot(_ o: Vec2) -> Double { x * o.x + y * o.y }
 }
 
 extension Sketch {

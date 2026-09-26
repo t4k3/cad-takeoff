@@ -82,6 +82,9 @@ public enum PrimitiveKernel {
         case let .chamfer(spec):
             try spec.validate()
             throw KernelError.invalidParameter("lo smusso modifica un corpo esistente: viene calcolato dal valutatore")
+        case let .revolve(spec):
+            try spec.validate(holes: feature.holes)
+            throw KernelError.invalidParameter("la rivoluzione viene calcolata dal valutatore")
         case let .extrude(profile, h):
             try dimension(h)
             guard (3...1024).contains(profile.points.count) else {

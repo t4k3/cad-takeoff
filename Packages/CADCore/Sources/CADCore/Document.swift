@@ -222,6 +222,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case pattern(PatternSpec)
         /// Cuts a body in two with a plane (e.g. to print a part larger than the bed).
         case split(SplitSpec)
+        /// A sketch profile turned about a line (Rivoluzione).
+        case revolve(RevolveSpec)
     }
 
     public var id: UUID
@@ -274,6 +276,9 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     }
 
     public func buildMesh() -> Mesh {
+        if case let .revolve(spec) = kind {
+            return (try? Revolve.build(spec, holes: holes, featureID: id, position: position))?.triangulated().mesh ?? Mesh()
+        }
         if !holes.isEmpty { return (try? PrimitiveKernel.solidWithHoles(self))?.triangulated().mesh ?? Mesh() }
         if placement != nil, let brep = try? PrimitiveKernel.build(self) { return brep.mesh }
         let local: Mesh
@@ -290,6 +295,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case let .importedMesh(m): return m.mesh.translated(by: position)
         case .pattern: return Mesh(vertices: [], indices: [])   // copies of another body
         case .split: return Mesh(vertices: [], indices: [])     // acts on another body
+        case .revolve: return Mesh()                            // built above
         }
         return local.translated(by: position)
     }
