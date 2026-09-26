@@ -42,7 +42,7 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 
 - Smusso/raccordo su **archi** parziali; angolo sferico dove si incontrano tre raccordi. (Spigoli concavi: fatti 26/09.)
 - Freccia di trascinamento anche per Foro (profondità) e parametri dei solidi. (Estrudi: fatto 26/09.)
-- Booleane più veloci: la mesh finale ora è unita per faccia (−50/−55% triangoli, 26/09), ma l'albero BSP lavora ancora sui frammenti; servono un BSP con poligoni convessi uniti o un motore diverso (anche per il filetto modellato).
+- ~~Booleane più veloci~~ **Fatto 26/09**: booleane per coppie di poligoni che si intersecano davvero, con classificazione a raggio (il BSP resta come riserva); raccordi su raccordi da 100 s a ~1 s in Debug, ~0,1 s ottimizzato; CADCore compilato ottimizzato anche in Debug. Resta il filetto modellato.
 
 - Spigoli di selezione più spessi nel viewport (linee larghe via quad in Metal).
 - **Home / gestione progetti (idea di Ross, 25/09)** — come il pannello Dati di Fusion, ma **in locale**:

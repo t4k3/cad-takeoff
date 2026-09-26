@@ -6,7 +6,9 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [.library(name: "CADCore", targets: ["CADCore"])],
     targets: [
-        .target(name: "CADCore"),
+        // Geometry is heavy numeric code: optimised even in Debug builds (10× faster booleans
+        // while running the app from Xcode). Local package, so the unsafe flag is allowed.
+        .target(name: "CADCore", swiftSettings: [.unsafeFlags(["-O"], .when(configuration: .debug))]),
         .testTarget(name: "CADCoreTests", dependencies: ["CADCore"])
     ]
 )

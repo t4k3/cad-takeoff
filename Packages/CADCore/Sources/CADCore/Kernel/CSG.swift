@@ -59,8 +59,12 @@ public struct CSGSolid: Sendable {
 
     // MARK: Operations
 
+    /// The polygon-pair booleans (CSGMesh) first; the BSP only when they cannot decide.
+    nonisolated(unsafe) static var useMeshBooleans = true
+
     public func union(_ other: CSGSolid) -> CSGSolid {
         let (b, faces) = merged(other, flipOther: false)
+        if Self.useMeshBooleans, let r = Self.meshBoolean(polygons, b, .union) { return CSGSolid(polygons: r, faces: faces) }
         let na = BSPNode(polygons), nb = BSPNode(b)
         na.clip(to: nb); nb.clip(to: na); nb.invert(); nb.clip(to: na); nb.invert()
         na.build(nb.allPolygons())
@@ -69,6 +73,7 @@ public struct CSGSolid: Sendable {
 
     public func subtracting(_ other: CSGSolid) -> CSGSolid {
         let (b, faces) = merged(other, flipOther: true)
+        if Self.useMeshBooleans, let r = Self.meshBoolean(polygons, b, .subtract) { return CSGSolid(polygons: r, faces: faces) }
         let na = BSPNode(polygons), nb = BSPNode(b)
         na.invert(); na.clip(to: nb); nb.clip(to: na); nb.invert(); nb.clip(to: na); nb.invert()
         na.build(nb.allPolygons()); na.invert()
@@ -77,6 +82,7 @@ public struct CSGSolid: Sendable {
 
     public func intersecting(_ other: CSGSolid) -> CSGSolid {
         let (b, faces) = merged(other, flipOther: false)
+        if Self.useMeshBooleans, let r = Self.meshBoolean(polygons, b, .intersect) { return CSGSolid(polygons: r, faces: faces) }
         let na = BSPNode(polygons), nb = BSPNode(b)
         na.invert(); nb.clip(to: na); nb.invert(); na.clip(to: nb); nb.clip(to: na)
         na.build(nb.allPolygons()); na.invert()

@@ -123,3 +123,22 @@ private func box(_ w: Double, _ d: Double, _ h: Double, at p: Vec3 = .zero) -> F
     #expect(MeshValidator.validate(merged).isWatertight)
     #expect(merged.triangleCount < 4500)
 }
+
+@Test func roundsOnRoundsStayLight() {
+    // Ring, big bevel outside, round inside, rounds at the bottom: each boolean splits only the
+    // polygons it really crosses (the BSP used to slice the rounds into ~50k triangles, 100 s).
+    func refs(_ doc: CADDocument, _ z: Double) -> [EdgeRef] {
+        DesignEvaluator.evaluate(doc, revision: "r").bodies[0].snapshot.edges
+            .filter { $0.polyline.allSatisfy { abs($0.z - z) < 1e-6 } }.compactMap(EdgeRef.init)
+    }
+    let ring = Feature(name: "Anello", kind: .extrude(profile: .circle(radius: 20), height: 30), holes: [.circle(radius: 8)])
+    var doc = CADDocument(features: [ring])
+    let top = refs(doc, 30)
+    doc.features.append(Feature(name: "S", kind: .chamfer(ChamferSpec(edges: [top[0]], profile: .flat, distance: 6)), operation: .cut))
+    doc.features.append(Feature(name: "R", kind: .chamfer(ChamferSpec(edges: [top[1]], profile: .round, distance: 3)), operation: .cut))
+    doc.features.append(Feature(name: "R2", kind: .chamfer(ChamferSpec(edges: refs(doc, 0), profile: .round, distance: 2)), operation: .cut))
+    let (bodies, issues) = DesignEvaluator.evaluate(doc, revision: "r")
+    #expect(issues.isEmpty)
+    #expect(MeshValidator.validate(bodies[0].mesh).isWatertight)
+    #expect(bodies[0].mesh.triangleCount < 15_000)
+}
