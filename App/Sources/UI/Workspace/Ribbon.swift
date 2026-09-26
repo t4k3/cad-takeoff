@@ -144,7 +144,14 @@ struct Ribbon: View {
                 ForEach(SketchSession.Tool.drawing) { tool in
                     Button { sketch.constraintTool = nil; sketch.tool = tool } label: { Label(tool.rawValue, systemImage: tool.symbol) }
                         .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool && sketch.constraintTool == nil, tint: Theme.Palette.sketch))
-                        .help(tool.hint)
+                        .help(tool.hint + (tool.key.map { " (\($0.uppercased()))" } ?? ""))
+                }
+            }
+            ToolGroup("MODIFICA") {
+                ForEach(SketchSession.Tool.modify) { tool in
+                    Button { sketch.constraintTool = nil; sketch.tool = tool } label: { Label(tool.rawValue, systemImage: tool.symbol) }
+                        .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool && sketch.constraintTool == nil, tint: Theme.Palette.sketch))
+                        .help(tool.hint + (tool.key.map { " (\($0.uppercased()))" } ?? ""))
                 }
             }
             ToolGroup("VINCOLI") {
@@ -171,10 +178,12 @@ struct Ribbon: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Griglia 1 mm", isOn: Binding(get: { sketch.snapToGrid }, set: { sketch.snapToGrid = $0 }))
                         .toggleStyle(.checkbox)
-                    if sketch.tool == .fillet {
+                    if sketch.tool == .fillet || sketch.tool == .offset {
+                        let fillet = sketch.tool == .fillet
                         HStack(spacing: 4) {
-                            Text("Raggio")
-                            TextField("", value: Binding(get: { sketch.filletRadius }, set: { sketch.filletRadius = max(0.01, $0) }),
+                            Text(fillet ? "Raggio" : "Distanza")
+                            TextField("", value: Binding(get: { fillet ? sketch.filletRadius : sketch.offsetDistance },
+                                                         set: { if fillet { sketch.filletRadius = max(0.01, $0) } else { sketch.offsetDistance = max(0.01, $0) } }),
                                       format: .number.precision(.fractionLength(0...2)))
                                 .frame(width: 44).textFieldStyle(.roundedBorder)
                             Text("mm")

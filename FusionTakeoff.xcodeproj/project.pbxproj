@@ -38,6 +38,7 @@
 		6391BD7137C19D938C85F761 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ACF2F56948E53B401DAEA56 /* HomeView.swift */; };
 		6A10CC336BAEA35811826D10 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069D2799753CD573213F79CB /* AppVersion.swift */; };
 		6A65AED3408C4EB0ECFB82BF /* ftk-mcp in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 8CDAC622763B58001C57E74E /* ftk-mcp */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6F8298EDA67F97F349B5DA81 /* SketchSession+Edit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5018C0134761E9A7DB53FF11 /* SketchSession+Edit.swift */; };
 		777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */; };
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
 		7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */; };
@@ -130,6 +131,7 @@
 		3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = FusionTakeoffExport.py; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
+		5018C0134761E9A7DB53FF11 /* SketchSession+Edit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SketchSession+Edit.swift"; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 		55A384B92C6A6894EA9A5831 /* SketchSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchSession.swift; sourceTree = "<group>"; };
 		56D04A4DB715945B73E88E2B /* PartColorPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartColorPicker.swift; sourceTree = "<group>"; };
@@ -251,6 +253,7 @@
 				8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */,
 				55A384B92C6A6894EA9A5831 /* SketchSession.swift */,
 				B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */,
+				5018C0134761E9A7DB53FF11 /* SketchSession+Edit.swift */,
 			);
 			path = Sketch;
 			sourceTree = "<group>";
@@ -711,6 +714,7 @@
 				1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */,
 				2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */,
 				2E9E1A85449505E8EE29A665 /* SketchSession+Constraints.swift in Sources */,
+				6F8298EDA67F97F349B5DA81 /* SketchSession+Edit.swift in Sources */,
 				CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */,
 				EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */,
 				36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */,
@@ -821,7 +825,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.105;
+				MARKETING_VERSION = 0.1.106;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -884,7 +888,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.105;
+				MARKETING_VERSION = 0.1.106;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

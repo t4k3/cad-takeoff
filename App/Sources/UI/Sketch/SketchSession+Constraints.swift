@@ -333,6 +333,7 @@ extension SketchSession {
         case let .concentric(a, _): return circle(a).map { ($0.center + Vec2(off * 0.6, off * 0.6), "◎") }
         case let .coincident(a, _), let .pointOnLine(a, _), let .pointOnCircle(a, _): return point(a).map { ($0 + Vec2(off * 0.5, off * 0.5), "•") }
         case let .midpoint(a, _): return point(a).map { ($0 + Vec2(off * 0.5, off * 0.5), "½") }
+        case let .symmetric(_, b, _): return point(b).map { ($0 + Vec2(off * 0.5, -off * 0.5), "⇋") }
         case let .fix(a, _): return point(a).map { ($0 + Vec2(-off * 0.6, -off * 0.6), "🔒") }
         case let .length(r, v):
             guard let (u, w) = segment(r) else { return nil }

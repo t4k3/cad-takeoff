@@ -10,10 +10,12 @@ import simd
 final class SketchSession {
     enum Tool: String, CaseIterable, Identifiable {
         case select = "Seleziona", line = "Linea", rectangle = "Rettangolo", circle = "Cerchio",
-             polygon = "Poligono", slot = "Asola", arc = "Arco", fillet = "Raccordo", dimension = "Quota"
+             polygon = "Poligono", slot = "Asola", arc = "Arco", fillet = "Raccordo", trim = "Taglia", extend = "Estendi",
+             offset = "Offset", mirror = "Specchio", dimension = "Quota"
         var id: String { rawValue }
-        /// The drawing tools (Quota lives with the constraints).
-        static var drawing: [Tool] { allCases.filter { $0 != .dimension } }
+        /// The drawing tools (Quota lives with the constraints, the editing tools under MODIFICA).
+        static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc] }
+        static var modify: [Tool] { [.fillet, .trim, .extend, .offset, .mirror] }
         var symbol: String {
             switch self {
             case .select: "cursorarrow"
@@ -24,6 +26,10 @@ final class SketchSession {
             case .slot: "capsule"
             case .arc: "circle.bottomhalf.filled"
             case .fillet: "arrow.turn.up.right"
+            case .trim: "scissors"
+            case .extend: "arrow.right.to.line"
+            case .offset: "square.on.square.dashed"
+            case .mirror: "arrow.left.and.right.righttriangle.left.righttriangle.right"
             case .dimension: "ruler"
             }
         }
@@ -37,13 +43,18 @@ final class SketchSession {
             case .slot: "Clicca il primo centro, il secondo centro, poi la larghezza."
             case .arc: "Clicca l'inizio, la fine, poi un punto dell'arco."
             case .fillet: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato."
+            case .trim: "Clicca il pezzo da togliere: si taglia fino alle linee che lo incrociano (in rosso sotto il cursore)."
+            case .extend: "Clicca vicino all'estremo libero di una linea o di un arco: si allunga fino alla prima curva che incontra."
+            case .offset: "Clicca una forma (con le linee e gli archi uniti a lei), poi il lato dove creare la copia alla distanza impostata."
+            case .mirror: "Clicca la linea d'asse, poi le forme da specchiare: le copie restano simmetriche all'originale."
             case .dimension: "Clicca una linea (lunghezza), un cerchio (diametro), due punti (distanza) o due linee (angolo), poi scrivi il valore."
             }
         }
         var key: String? {
             switch self {
             case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .arc: "a"
-            case .select, .fillet: nil
+            case .trim: "t"; case .offset: "o"
+            case .select, .fillet, .extend, .mirror: nil
             }
         }
     }
@@ -93,7 +104,7 @@ final class SketchSession {
     @ObservationIgnored private var applyingUndo = false
     var tool: Tool = .line {
         didSet {
-            if tool != oldValue { pending = []; picked = [] }
+            if tool != oldValue { pending = []; picked = []; offsetSource = nil; mirrorAxis = nil }
             if tool != .select, constraintTool != nil { constraintTool = nil }
         }
     }
@@ -106,6 +117,11 @@ final class SketchSession {
     var polygonSides = 6
     /// Radius of the next 2D fillet (Raccordo tool).
     var filletRadius = 3.0
+    var offsetDistance = 2.0
+    /// Offset: the shape picked first (then the side is clicked).
+    var offsetSource: SketchShape.ID?
+    /// Specchio: the axis line picked first (then the shapes to mirror).
+    var mirrorAxis: SketchRef?
     var polygonCircumscribed = false
     /// Height shown as wireframe while the Extrude panel is open.
     var previewHeight: Double?
@@ -254,6 +270,10 @@ final class SketchSession {
         switch tool {
         case .dimension: break
         case .fillet: filletCorner(raw)
+        case .trim: trim(raw)
+        case .extend: extend(raw)
+        case .offset: offsetClick(raw)
+        case .mirror: mirrorClick(raw)
         case .arc:
             switch pending.count {
             case 0: pending = [p]
@@ -300,6 +320,8 @@ final class SketchSession {
     func cancel() -> Bool {
         if editingDimension != nil { editingDimension = nil; return true }
         if !picked.isEmpty { picked = []; return true }
+        if offsetSource != nil { offsetSource = nil; return true }
+        if mirrorAxis != nil { mirrorAxis = nil; return true }
         if constraintTool != nil { constraintTool = nil; return true }
         if selectedConstraint != nil { selectedConstraint = nil; return true }
         if !pending.isEmpty { pending = []; return true }
@@ -337,7 +359,7 @@ final class SketchSession {
     }
 
     /// Topmost closed shape containing the point, else the nearest outline within the snap radius.
-    private func pick(_ p: Vec2) -> SketchShape.ID? {
+    func pick(_ p: Vec2) -> SketchShape.ID? {
         var best: (SketchShape.ID, Double)?
         for s in shapes.reversed() {
             let o = s.outline
@@ -496,7 +518,8 @@ final class SketchSession {
                 return nil
             }
         case .fillet: return "R \(fmt(filletRadius)) mm"
-        case .select, .dimension: return nil
+        case .offset: return offsetSource == nil ? nil : "Offset \(fmt(offsetDistance)) mm"
+        case .select, .dimension, .trim, .extend, .mirror: return nil
         }
     }
 
@@ -594,6 +617,7 @@ final class SketchSession {
             }
             if let preview { let s = SketchShape(kind: preview); ring(s.outline, closed: true, rubber) }
         }
+        out += editOverlay(sketchColor: sketchColor, selectedColor: selectedColor)
         // Midpoints of the segments near the cursor light up (then snap when closer).
         if let raw = rawCursor, tool != .select {
             let faint = SIMD4<Float>(1, 0.62, 0.25, 0.55)

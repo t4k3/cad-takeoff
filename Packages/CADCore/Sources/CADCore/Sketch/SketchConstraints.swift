@@ -42,6 +42,8 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
     case pointOnLine(SketchRef, SketchRef)
     case pointOnCircle(SketchRef, SketchRef)
     case midpoint(SketchRef, SketchRef)
+    /// Two points mirrored about a line (the third reference).
+    case symmetric(SketchRef, SketchRef, SketchRef)
     /// Point pinned where it is.
     case fix(SketchRef, Vec2)
     // Dimensions (driving values, mm or degrees).
@@ -62,6 +64,8 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
             [a, b]
         case let .horizontal(a), let .vertical(a), let .fix(a, _), let .length(a, _), let .radius(a, _), let .diameter(a, _):
             [a]
+        case let .symmetric(a, b, l):
+            [a, b, l]
         }
     }
 
@@ -77,6 +81,7 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
         case let .pointOnLine(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnLine(a, b)
         case let .pointOnCircle(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnCircle(a, b)
         case let .midpoint(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .midpoint(a, b)
+        case let .symmetric(a, b, l): guard let a = f(a), let b = f(b), let l = f(l) else { return nil }; return .symmetric(a, b, l)
         case let .distance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .distance(a, b, v)
         case let .horizontalDistance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .horizontalDistance(a, b, v)
         case let .verticalDistance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .verticalDistance(a, b, v)
@@ -126,6 +131,7 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
         case .pointOnLine: "Punto su linea"
         case .pointOnCircle: "Punto su cerchio"
         case .midpoint: "Punto medio"
+        case .symmetric: "Simmetrico"
         case .fix: "Fisso"
         case .distance: "Distanza"
         case .horizontalDistance: "Distanza orizzontale"
@@ -393,6 +399,10 @@ public enum SketchSolver {
         case let .midpoint(a, b):
             guard let p = pointOf(a, s), let (u, v) = segmentOf(b, s) else { return [] }
             return [p.x - (u.x + v.x) / 2, p.y - (u.y + v.y) / 2]
+        case let .symmetric(a, b, l):
+            guard let p = pointOf(a, s), let q = pointOf(b, s), let (u, v) = segmentOf(l, s) else { return [] }
+            let d = v - u, n = max(len(d), 1e-9), m = Vec2((p.x + q.x) / 2, (p.y + q.y) / 2)
+            return [d.cross(m - u) / n, ((q.x - p.x) * d.x + (q.y - p.y) * d.y) / n]
         case let .fix(a, at):
             guard let p = pointOf(a, s) else { return [] }
             return [p.x - at.x, p.y - at.y]

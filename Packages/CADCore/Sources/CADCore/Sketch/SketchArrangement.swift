@@ -299,9 +299,12 @@ public enum SketchArrangement {
             for b in boxes { lo = Vec2(min(lo.x, b.lo.x), min(lo.y, b.lo.y)); hi = Vec2(max(hi.x, b.hi.x), max(hi.y, b.hi.y)) }
             let extent = boxes.isEmpty ? 1 : max(hi.x - lo.x, hi.y - lo.y, 1e-3)
             cell = max(extent / max(4, Double(boxes.count).squareRoot()), 1e-3)
+            // Boxes padded by the weld distance: an end a hair's breadth off a line (1e-15 below
+            // it, as arc ends at 180° are) still meets it even across a cell border.
+            let pad = 1e-6
             for (i, b) in boxes.enumerated() {
-                for x in Int64((b.lo.x / cell).rounded(.down))...Int64((b.hi.x / cell).rounded(.down)) {
-                    for y in Int64((b.lo.y / cell).rounded(.down))...Int64((b.hi.y / cell).rounded(.down)) { cells[Graph.Key(x, y), default: []].append(i) }
+                for x in Int64(((b.lo.x - pad) / cell).rounded(.down))...Int64(((b.hi.x + pad) / cell).rounded(.down)) {
+                    for y in Int64(((b.lo.y - pad) / cell).rounded(.down))...Int64(((b.hi.y + pad) / cell).rounded(.down)) { cells[Graph.Key(x, y), default: []].append(i) }
                 }
             }
         }
