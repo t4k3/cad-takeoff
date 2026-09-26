@@ -628,7 +628,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "plist=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\ncommit=$(git -C \"$SRCROOT\" rev-parse --short HEAD 2>/dev/null || echo \"sconosciuto\")\nif [ -n \"$(git -C \"$SRCROOT\" status --porcelain --untracked-files=no 2>/dev/null)\" ]; then commit=\"$commit+\"; fi\nstamp=$(date \"+%Y-%m-%d %H:%M\")\nfor pair in \"FTKCommit:$commit\" \"FTKBuildDate:$stamp\"; do\n  key=${pair%%:*}; value=${pair#*:}\n  /usr/libexec/PlistBuddy -c \"Set :$key $value\" \"$plist\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Add :$key string $value\" \"$plist\"\ndone\n";
+			shellScript = "plist=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\ncommit=$(git -C \"$SRCROOT\" rev-parse --short HEAD 2>/dev/null || echo \"sconosciuto\")\nif [ -n \"$(git -C \"$SRCROOT\" status --porcelain --untracked-files=no 2>/dev/null)\" ]; then commit=\"$commit+\"; fi\nstamp=$(date \"+%Y-%m-%d %H:%M\")\n# Version = MARKETING_VERSION's major.minor + the number of commits: every change\n# committed is +1 (0.1.87 → 0.1.88), never edited by hand.\ncount=$(git -C \"$SRCROOT\" rev-list --count HEAD 2>/dev/null || echo 0)\nversion=\"$(echo \"$MARKETING_VERSION\" | cut -d. -f1-2).$count\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $version\" \"$plist\"\nfor pair in \"FTKCommit:$commit\" \"FTKBuildDate:$stamp\"; do\n  key=${pair%%:*}; value=${pair#*:}\n  /usr/libexec/PlistBuddy -c \"Set :$key $value\" \"$plist\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Add :$key string $value\" \"$plist\"\ndone\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -797,7 +797,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -860,7 +860,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

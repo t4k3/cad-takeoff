@@ -9,7 +9,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.0"
+    # Major.minor only: the patch number is the commit count (Stamp version phase).
+    MARKETING_VERSION: "0.1"
     CURRENT_PROJECT_VERSION: "1"
     # Signed with Ross's Apple Development identity (team 9F8D583GBV): needed for the
     # App Group shared by the app and the ftk-mcp bridge. For TestFlight, archive in Xcode
@@ -71,6 +72,11 @@ targets:
           commit=$(git -C "$SRCROOT" rev-parse --short HEAD 2>/dev/null || echo "sconosciuto")
           if [ -n "$(git -C "$SRCROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]; then commit="$commit+"; fi
           stamp=$(date "+%Y-%m-%d %H:%M")
+          # Version = MARKETING_VERSION's major.minor + the number of commits: every change
+          # committed is +1 (0.1.87 → 0.1.88), never edited by hand.
+          count=$(git -C "$SRCROOT" rev-list --count HEAD 2>/dev/null || echo 0)
+          version="$(echo "$MARKETING_VERSION" | cut -d. -f1-2).$count"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist"
           for pair in "FTKCommit:$commit" "FTKBuildDate:$stamp"; do
             key=${pair%%:*}; value=${pair#*:}
             /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"

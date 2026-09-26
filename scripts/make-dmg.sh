@@ -9,7 +9,6 @@ cd "$(dirname "$0")/.."
 out=build/dmg
 rm -rf "$out"; mkdir -p "$out"
 build_number=$(date +%Y%m%d%H%M)
-version=$(grep -m1 'MARKETING_VERSION' project.yml | sed -E 's/.*"([^"]+)".*/\1/')
 
 echo "1/4 Archivio Release (build $build_number)…"
 xcodegen generate >/dev/null
@@ -52,6 +51,7 @@ stage="$out/stage"
 mkdir -p "$stage"
 ditto "$app" "$stage/CAD Takeoff.app"
 ln -s /Applications "$stage/Applicazioni"
+version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$app/Contents/Info.plist")
 dmg="$out/CAD-Takeoff-$version-$build_number.dmg"
 hdiutil create -volname "CAD Takeoff" -srcfolder "$stage" -ov -format UDZO "$dmg" >/dev/null
 rm -rf "$stage"
