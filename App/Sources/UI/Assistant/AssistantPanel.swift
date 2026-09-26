@@ -7,6 +7,7 @@ struct AssistantPanel: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
     @State private var draft = ""
+    @State private var desktopMessage: String?
     @FocusState private var composerFocused: Bool
 
     static let suggestions = [
@@ -131,13 +132,38 @@ struct AssistantPanel: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if !session.provider.isConfigured {
+                // With a Claude subscription (Pro/Max) there is no API key: Claude Desktop, logged
+                // in with that account, drives this design through the bundled MCP bridge.
                 VStack(alignment: .leading, spacing: 6) {
-                    Label(session.provider.setupHint, systemImage: "key.fill")
+                    Label("Hai l'abbonamento a Claude? Usa l'app Claude Desktop: parli con Claude lì e lui lavora su questo disegno, senza API key.",
+                          systemImage: "person.crop.circle.badge.checkmark")
+                        .font(.caption).fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        Button(ClaudeDesktopSetup.configuredBridgePath == nil ? "Collega a Claude Desktop…" : "Ricollega Claude Desktop…") {
+                            switch ClaudeDesktopSetup.connect() {
+                            case .configured: desktopMessage = "Fatto. Chiudi e riapri Claude Desktop: nella chat troverai gli strumenti «fusion-takeoff». Tieni aperto CAD Takeoff mentre lavori."
+                            case .cancelled: desktopMessage = nil
+                            case let .failed(msg): desktopMessage = msg
+                            }
+                        }
+                        .controlSize(.small)
+                        if ClaudeDesktopSetup.configuredBridgePath != nil, !ClaudeDesktopSetup.needsUpdate {
+                            Label("Collegato", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(Theme.Palette.success)
+                        }
+                    }
+                    if let desktopMessage {
+                        Text(desktopMessage).font(.caption).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(10)
+                .background(Theme.Palette.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Oppure, per usare l'assistente qui dentro: " + session.provider.setupHint, systemImage: "key.fill")
                         .font(.caption).fixedSize(horizontal: false, vertical: true)
                     SettingsLink { Text("Apri Impostazioni") }.controlSize(.small)
                 }
                 .padding(10)
-                .background(Theme.Palette.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                .background(Theme.Palette.panel.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
             }
             ForEach(Self.suggestions, id: \.self) { s in
                 Button { send(s) } label: {
