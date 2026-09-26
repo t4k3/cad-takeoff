@@ -7,7 +7,12 @@ import simd
 enum ThumbnailRenderer {
     static func png(for document: CADDocument, components: DesignEvaluator.ComponentResolver? = nil,
                     size: CGSize = CGSize(width: 360, height: 270)) -> Data? {
-        let parts = DesignEvaluator.evaluate(document, revision: "", components: components).bodies.filter(\.isVisible).map { ($0.mesh, $0.source.color) }
+        png(parts: DesignEvaluator.evaluate(document, revision: "", components: components).bodies.filter(\.isVisible).map { ($0.mesh, $0.source.color) },
+            size: size)
+    }
+
+    /// From evaluated bodies (mesh and colour). Thread-safe: no UI, no model.
+    nonisolated static func png(parts: [(Mesh, PartColor)], size: CGSize = CGSize(width: 360, height: 270)) -> Data? {
         guard parts.contains(where: { !$0.0.isEmpty }) else { return nil }
 
         // Home-like view direction (from front-right, above), Z up.

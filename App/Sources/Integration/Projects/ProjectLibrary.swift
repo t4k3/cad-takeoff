@@ -227,11 +227,23 @@ final class ProjectLibrary {
 
     func open(_ url: URL, model: DesignModel) {
         guard url != currentURL || !isDirty(model) else { showHome = false; return }
-        guard confirmDiscard(model) else { return }
-        run {
-            try model.load(from: url)
-            markSaved(url, model: model)
-            showHome = false
+        guard model.loading == nil, confirmDiscard(model) else { return }
+        // Read and evaluated in the background (progress bar); the Home stays until it is ready.
+        model.loadInBackground(from: url) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success:
+                self.markCurrent(url, model: model)
+                // Thumbnail only if missing or older than the file (opening does not change it).
+                let thumb = Item(url: url, isFolder: false, modified: .now).thumbnailURL
+                let fileDate = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                let thumbDate = (try? thumb.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                if thumbDate < fileDate { self.writeThumbnail(for: model, design: url) }
+                self.showHome = false
+            case let .failure(error):
+                self.lastError = error.localizedDescription
+                model.statusMessage = "Apertura non riuscita: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -277,9 +289,14 @@ final class ProjectLibrary {
     }
 
     private func markSaved(_ url: URL, model: DesignModel) {
+        markCurrent(url, model: model)
+        writeThumbnail(for: model, design: url)
+    }
+
+    /// The design now open is this file, clean.
+    private func markCurrent(_ url: URL, model: DesignModel) {
         currentURL = url
         savedRevision = model.designRevision
-        writeThumbnail(for: model.document, design: url)
         var r = UserDefaults.standard.stringArray(forKey: Self.recentsKey) ?? []
         r.removeAll { $0 == url.path }
         r.insert(url.path, at: 0)
@@ -287,11 +304,16 @@ final class ProjectLibrary {
         touch()
     }
 
-    private func writeThumbnail(for doc: CADDocument, design: URL) {
+    /// Drawn in the background from the bodies already evaluated (never a second evaluation).
+    private func writeThumbnail(for model: DesignModel, design: URL) {
         let thumb = Item(url: design, isFolder: false, modified: .now).thumbnailURL
-        try? FileManager.default.createDirectory(at: thumb.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let png = ThumbnailRenderer.png(for: doc, components: componentResolver) { try? png.write(to: thumb, options: .atomic) }
-        else { try? FileManager.default.removeItem(at: thumb) }
+        let parts = model.evaluation().bodies.filter(\.isVisible).map { ($0.mesh, $0.source.color) }
+        Task.detached(priority: .utility) { [weak self] in
+            try? FileManager.default.createDirectory(at: thumb.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if let png = ThumbnailRenderer.png(parts: parts) { try? png.write(to: thumb, options: .atomic) }
+            else { try? FileManager.default.removeItem(at: thumb) }
+            await MainActor.run { self?.touch() }
+        }
     }
 
     /// Unsaved changes: Save / Don't save / Cancel. Also used when quitting.

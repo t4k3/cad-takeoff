@@ -26,16 +26,19 @@ public enum DesignEvaluator {
 
     /// `cache`: reuse the state after an unchanged prefix of the history (editing the last steps
     /// or previewing a new one does not recompute the earlier booleans).
+    /// `progress(done, total)`: history steps evaluated so far (for a progress bar while opening).
     public static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver? = nil,
-                                cache: EvaluationCache? = nil) -> (bodies: [Body], issues: [Issue]) {
-        evaluate(doc, revision: revision, components: components, depth: 0, cache: cache)
+                                cache: EvaluationCache? = nil,
+                                progress: (@Sendable (Int, Int) -> Void)? = nil) -> (bodies: [Body], issues: [Issue]) {
+        evaluate(doc, revision: revision, components: components, depth: 0, cache: cache, progress: progress)
     }
 
     /// A body while the history runs.
     struct Work: Sendable { var source: Feature; var snapshot: BodySnapshot; var solid: CSGSolid?; var mesh: Mesh; var modifiedBy: [UUID] }
 
     private static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver?, depth: Int,
-                                 cache: EvaluationCache? = nil) -> (bodies: [Body], issues: [Issue]) {
+                                 cache: EvaluationCache? = nil,
+                                 progress: (@Sendable (Int, Int) -> Void)? = nil) -> (bodies: [Body], issues: [Issue]) {
         var bodies: [Work] = []
         var issues: [Issue] = []
         let features = doc.activeFeatures
@@ -51,6 +54,7 @@ public enum DesignEvaluator {
             bodies = state.bodies; issues = state.issues; reported = state.reported; start = k + 1
         }
         for (k, feature) in features.enumerated() where k >= start {
+            progress?(k, features.count)
             defer { if let cache, k < keys.count { cache.store(keys[k], .init(bodies: bodies, issues: issues, reported: reported)) } }
             guard counts[feature.id] == 1 else {
                 if reported.insert(feature.id).inserted {

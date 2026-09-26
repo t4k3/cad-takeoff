@@ -102,6 +102,17 @@ final class DesignModel {
         return (bodies, issues)
     }
 
+    /// Bodies, triangles and volume of the visible bodies (status bar), once per revision:
+    /// merging a million-triangle assembly on every redraw froze the window.
+    func stats() -> (bodies: Int, triangles: Int, volume: Double) {
+        if let c = cachedStats, c.revision == designRevision { return c.value }
+        let visible = evaluation().bodies.filter(\.isVisible)
+        let value = (visible.count, visible.reduce(0) { $0 + $1.mesh.triangleCount }, visible.reduce(0.0) { $0 + $1.mesh.volume })
+        cachedStats = (designRevision, value)
+        return value
+    }
+    @ObservationIgnored private var cachedStats: (revision: String, value: (bodies: Int, triangles: Int, volume: Double))?
+
     // MARK: Features
 
     func addBox() { add(Feature(name: "Box \(document.features.count + 1)", kind: .box(width: 20, depth: 20, height: 20))) }
@@ -190,6 +201,49 @@ final class DesignModel {
     }
 
     func newDesign() { replaceDocument(CADDocument(), status: "Nuovo design") }
+
+    // MARK: Opening in the background
+
+    /// A design being opened: its name and how many history steps are done (progress bar).
+    struct Loading: Equatable { var name: String; var done: Int; var total: Int }
+    private(set) var loading: Loading?
+
+    /// Reads and evaluates a design off the main thread (a large Fusion assembly takes seconds),
+    /// with progress in `loading`, then shows it without evaluating it again.
+    func loadInBackground(from url: URL, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        let name = url.deletingPathExtension().lastPathComponent
+        loading = Loading(name: name, done: 0, total: 0)
+        let revision = UUID().uuidString
+        let components = componentResolver, cache = evaluationCache
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                let doc = try CADDocument.decode(Data(contentsOf: url))
+                let total = doc.activeFeatures.count
+                await MainActor.run { self?.loading = Loading(name: name, done: 0, total: total) }
+                let (bodies, issues) = DesignEvaluator.evaluate(doc, revision: revision, components: components, cache: cache) { done, total in
+                    Task { @MainActor in
+                        guard let self, var l = self.loading, done > l.done else { return }
+                        l.done = done; l.total = total
+                        self.loading = l
+                    }
+                }
+                await MainActor.run {
+                    guard let self else { return }
+                    self.replaceDocument(doc, status: "Aperto \(name)")
+                    // The evaluation just made is the one for this document: no second pass.
+                    self.designRevision = revision
+                    self.cachedEvaluation = (revision, bodies, issues)
+                    self.loading = nil
+                    completion(.success(()))
+                }
+            } catch {
+                await MainActor.run {
+                    self?.loading = nil
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
 
     // MARK: Undo / Redo
 

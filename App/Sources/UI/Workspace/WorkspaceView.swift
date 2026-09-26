@@ -37,6 +37,13 @@ struct WorkspaceView: View {
             // Home covers the workspace but keeps its state (camera, panels) alive underneath.
             if library.showHome { HomeView().transition(.opacity) }
         }
+        .overlay {
+            // Opening a design in the background: progress over everything, input blocked.
+            if let loading = model.loading { LoadingCard(loading: loading).transition(.opacity) }
+        }
+        .animation(.easeOut(duration: 0.15), value: model.loading == nil)
+        // A design just opened: frame all of it from the home view.
+        .onChange(of: model.loading == nil) { _, done in if done { workspace.viewRequest = .home } }
         .animation(.easeOut(duration: 0.15), value: library.showHome)
         .sheet(isPresented: $workspace.showComponentPicker) { ComponentPickerSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showBOM) { BOMSheet().environment(workspace) }
@@ -89,5 +96,36 @@ private struct SidePanel: View {
             case .assistant: AssistantPanel()
             }
         }
+    }
+}
+
+/// «Apertura Robotvolley — parte 57 di 138» with a progress bar, while a design is read and
+/// evaluated in the background.
+private struct LoadingCard: View {
+    let loading: DesignModel.Loading
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.35).ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Apertura «\(loading.name)»", systemImage: "cube.transparent")
+                    .font(.system(size: 13, weight: .semibold))
+                if loading.total > 0 {
+                    ProgressView(value: Double(loading.done), total: Double(loading.total))
+                    Text("Parte \(min(loading.done + 1, loading.total)) di \(loading.total)")
+                        .font(.system(size: 11).monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
+                } else {
+                    ProgressView().progressViewStyle(.linear)
+                    Text("Lettura del file…").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                }
+            }
+            .padding(18)
+            .frame(width: 320)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.Palette.panel))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.08)))
+            .shadow(color: .black.opacity(0.4), radius: 18, y: 6)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {}   // swallow clicks while loading
     }
 }
