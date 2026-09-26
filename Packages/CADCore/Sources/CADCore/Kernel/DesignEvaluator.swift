@@ -127,6 +127,23 @@ public enum DesignEvaluator {
                 }
                 continue
             }
+            if case let .shell(spec) = feature.kind {
+                // The body with the open faces (they keep their IDs through booleans), else the named one.
+                let i = spec.openFaces.first.flatMap { face in bodies.firstIndex { $0.snapshot.faces.contains { $0.id == face } } }
+                    ?? bodies.firstIndex { $0.source.id == spec.body }
+                guard let i else {
+                    issues.append(.init(featureID: feature.id, message: "Guscio: il corpo o le facce scelte non esistono più."))
+                    continue
+                }
+                do {
+                    let cavity = try ShellGeometry.cavity(of: bodies[i].snapshot, spec: spec, featureID: feature.id)
+                    let solid = solidOf(bodies[i]).subtracting(cavity)
+                    if solid.isEmpty { bodies.remove(at: i) } else { bodies[i] = rebuilt(bodies[i], solid, by: feature.id, revision: revision) }
+                } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription))
+                }
+                continue
+            }
             if case let .split(spec) = feature.kind {
                 guard spec.offset.isFinite, let i = bodies.firstIndex(where: { $0.source.id == spec.body }),
                       let box = bounds(bodies[i].snapshot) else {

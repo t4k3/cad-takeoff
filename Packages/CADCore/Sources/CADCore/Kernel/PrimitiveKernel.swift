@@ -85,6 +85,9 @@ public enum PrimitiveKernel {
         case let .revolve(spec):
             try spec.validate(holes: feature.holes)
             throw KernelError.invalidParameter("la rivoluzione viene calcolata dal valutatore")
+        case let .shell(spec):
+            try spec.validate()
+            throw KernelError.invalidParameter("il guscio svuota un corpo: viene calcolato dal valutatore")
         case let .extrude(profile, h):
             try dimension(h)
             guard (3...1024).contains(profile.points.count) else {

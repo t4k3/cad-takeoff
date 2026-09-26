@@ -142,6 +142,10 @@ struct InspectorPanel: View {
                 if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
             }
             .controlSize(.small)
+        case let .shell(spec):
+            DimensionField(title: "Spessore", value: Binding(get: { spec.thickness }, set: { var s = spec; s.thickness = max(0.01, $0); kind.wrappedValue = .shell(s) }))
+            info("Facce aperte", "\(spec.openFaces.count)")
+            info("Corpo", model.document.features.first { $0.id == spec.body }?.name ?? "—")
         case let .revolve(spec):
             DimensionField(title: "Angolo", value: Binding(get: { spec.angle }, set: { var r = spec; r.angle = min(360, max(0.1, $0)); kind.wrappedValue = .revolve(r) }), unit: "°")
             info("Profilo", "\(spec.profile.points.count) vertici" + (spec.axisRef != nil ? " · asse dallo schizzo" : ""))

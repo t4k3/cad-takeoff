@@ -99,6 +99,8 @@ struct Ribbon: View {
                 .help("Divide il corpo selezionato con un piano (es. per stampare un pezzo più grande del piatto)")
             Button { workspace.startPressPull(model: model) } label: { Label("Premi/Tira", systemImage: "arrow.up.and.down.square") }
                 .help("Clicca una faccia e trascina la freccia (Q): l'alto o il basso di un'estrusione ne cambia l'altezza, le altre facce si estrudono")
+            Button { workspace.startShell(model: model) } label: { Label("Guscio", systemImage: "cube.transparent") }
+                .help("Svuota un corpo lasciando pareti di spessore dato: clicca le facce da aprire (es. il sopra di una scatola)")
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
                 .help("Arrotonda o smussa gli spigoli: clicca gli spigoli, scegli la forma (Tondo o Piatto) e la misura, o trascina la freccia")
             Button { workspace.showParameters = true } label: { Label("Parametri", systemImage: "function") }

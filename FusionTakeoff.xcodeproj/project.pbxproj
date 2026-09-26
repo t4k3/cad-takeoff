@@ -59,6 +59,7 @@
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
 		A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */; };
 		AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AE2553C670B5E2BE5C6306 /* FusionAddInInstaller.swift */; };
+		B1A5529266ECF311788CD40F /* ShellCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388E65A3410FB91CB09F5B4C /* ShellCommand.swift */; };
 		B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */; };
 		B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */; };
 		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
@@ -127,6 +128,7 @@
 		2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */ = {isa = PBXFileReference; path = FusionTakeoffExport.manifest; sourceTree = "<group>"; };
 		3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = CADTakeoffImportProject.py; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
+		388E65A3410FB91CB09F5B4C /* ShellCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommand.swift; sourceTree = "<group>"; };
 		38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblySheets.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
 		3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = FusionTakeoffExport.py; sourceTree = "<group>"; };
@@ -342,6 +344,7 @@
 				63320AFB5B8D43EF4528E264 /* PatternCommand.swift */,
 				ADF9849BD6F001008766D793 /* PressPullCommand.swift */,
 				E98CD345010D437D5502B155 /* SheetMetalCommand.swift */,
+				388E65A3410FB91CB09F5B4C /* ShellCommand.swift */,
 				29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */,
 			);
 			path = Features;
@@ -715,6 +718,7 @@
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
 				94D9C9F09E67E17A68189E85 /* SheetMetalCommand.swift in Sources */,
+				B1A5529266ECF311788CD40F /* ShellCommand.swift in Sources */,
 				1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */,
 				2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */,
 				2E9E1A85449505E8EE29A665 /* SketchSession+Constraints.swift in Sources */,
@@ -829,7 +833,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.109;
+				MARKETING_VERSION = 0.1.110;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -892,7 +896,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.109;
+				MARKETING_VERSION = 0.1.110;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

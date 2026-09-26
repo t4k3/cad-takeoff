@@ -146,6 +146,10 @@ extension DesignModel: CADToolProvider {
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
                 case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
+                case var .shell(spec):
+                    legal = ["thickness"]
+                    spec.thickness = try optionalNumber(args, "thickness", spec.thickness)
+                    f.kind = .shell(spec)
                 case var .revolve(spec):
                     legal = ["angle"]
                     spec.angle = try optionalNumber(args, "angle", spec.angle)
@@ -326,6 +330,11 @@ extension DesignModel: CADToolProvider {
                 value["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
                 value["warnings"] = .array(build.warnings.map { .string($0) })
             }
+        case let .shell(s):
+            value["kind"] = "shell"
+            value["thickness"] = .number(s.thickness)
+            value["open_faces"] = .number(Double(s.openFaces.count))
+            value["body_feature_id"] = .string(s.body.uuidString)
         case let .revolve(r):
             value["kind"] = "revolve"
             value["angle"] = .number(r.angle)

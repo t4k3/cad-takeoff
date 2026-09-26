@@ -122,6 +122,11 @@ final class WorkspaceState {
         command = SplitCommand.start(workspace: self, model: model)
     }
 
+    func startShell(model: DesignModel) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = ShellCommand.start(workspace: self, model: model)
+    }
     func startPressPull(model: DesignModel) {
         command?.onCancel()
         if sketch != nil { exitSketch() }
@@ -234,6 +239,10 @@ final class WorkspaceState {
             command = SheetMetalCommand.start(workspace: self, model: model, editing: f)
             return
         }
+        if let f = model.document.features.first(where: { $0.id == id }), case .shell = f.kind {
+            command = ShellCommand.edit(f, workspace: self, model: model)
+            return
+        }
         if let f = model.document.features.first(where: { $0.id == id }), case .chamfer = f.kind {
             command = ChamferCommand.start(workspace: self, model: model, editing: f)
             return
@@ -256,6 +265,7 @@ extension Feature.Kind {
         case let .pattern(p): p.kind == .mirror ? "arrow.left.and.right.righttriangle.left.righttriangle.right" : "square.grid.3x3"
         case .split: "rectangle.split.2x1"
         case .revolve: "arrow.triangle.2.circlepath"
+        case .shell: "cube.transparent"
         }
     }
 
@@ -272,6 +282,7 @@ extension Feature.Kind {
         case let .pattern(p): p.kind.label
         case .split: "Dividi"
         case .revolve: "Rivoluzione"
+        case .shell: "Guscio"
         }
     }
 }
