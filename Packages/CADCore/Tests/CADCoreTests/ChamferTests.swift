@@ -67,15 +67,43 @@ private func allAt(z: Double) -> (EdgeInfo) -> Bool { { e in e.polyline.allSatis
     #expect(abs(mesh.volume - (1000 + 500 - 10 * 0.5)) < 1e-6)
 }
 
-@Test func concaveEdgeIsReported() {
+@Test func insideCornersAreFilled() {
     let step = Feature(name: "Gradino", kind: .box(width: 20, depth: 10, height: 5), position: Vec3(10, 5, 0))
     let block = Feature(name: "Blocco", kind: .box(width: 10, depth: 10, height: 10), position: Vec3(5, 5, 0), operation: .join)
-    // Inside corner between the step's top and the block's wall.
+    // Inside corner between the step's top (z = 5) and the block's wall (x = 10), 10 mm long.
     let inner = refs([step, block], { e in e.polyline.allSatisfy { abs($0.z - 5) < 1e-9 && abs($0.x - 10) < 1e-9 } })
     #expect(inner.count == 1)
-    let (mesh, issues, _) = chamfered([step, block], ChamferSpec(edges: inner, distance: 1))
-    #expect(issues.contains { $0.message.contains("concavo") })
-    #expect(abs(mesh.volume - 1500) < 1e-6)
+    let (round, i1, snap) = chamfered([step, block], ChamferSpec(edges: inner, profile: .round, distance: 2))
+    #expect(i1.isEmpty && MeshValidator.validate(round).isWatertight)
+    #expect(abs(round.volume - (1500 + 10 * roundArea(2))) < 1e-6)
+    // Nothing added past the part's ends (y 0…10).
+    #expect(abs(round.bounds!.min.y) < 1e-9 && abs(round.bounds!.max.y - 10) < 1e-9)
+    #expect(snap?.faces.contains { if case let .cylinder(_, _, r) = $0.surface { abs(r - 2) < 1e-12 } else { false } } == true)
+    let (flat, i2, _) = chamfered([step, block], ChamferSpec(edges: inner, distance: 2))
+    #expect(i2.isEmpty && MeshValidator.validate(flat).isWatertight && abs(flat.volume - (1500 + 10 * 2)) < 1e-6)
+}
+
+@Test func rootOfABossAndFloorOfABlindHole() {
+    let centroid = (10 - 3 * Double.pi) / (12 - 3 * Double.pi)
+    let plate = Feature(name: "Piastra", kind: .box(width: 40, depth: 40, height: 5))
+    let boss = Feature(name: "Perno", kind: .cylinder(radius: 5, height: 10), position: Vec3(0, 0, 5), operation: .join)
+    let root = refs([plate, boss], { e in e.faces.contains { $0.rawValue.contains("cylinder/wall") } && e.polyline.allSatisfy { abs($0.z - 5) < 1e-9 } })
+    #expect(root.count == 1)
+    let before = DesignEvaluator.evaluate(CADDocument(features: [plate, boss]), revision: "r").bodies[0].mesh.volume
+    let (m1, i1, _) = chamfered([plate, boss], ChamferSpec(edges: root, profile: .round, distance: 1))
+    #expect(i1.isEmpty && MeshValidator.validate(m1).isWatertight)
+    let added = 2 * Double.pi * (5 + centroid) * (1 - .pi / 4)
+    #expect(abs((m1.volume - before) - added) < added * 0.05)
+
+    let block = Feature(name: "Blocco", kind: .box(width: 40, depth: 40, height: 10))
+    let blind = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(0, 0, 10)], fit: .manual, diameter: 10, depth: 5)), operation: .cut)
+    let floor = refs([block, blind], { e in e.faces.contains { $0.rawValue.contains("bore") } && e.polyline.allSatisfy { abs($0.z - 5) < 1e-9 } })
+    #expect(floor.count == 1)
+    let drilled = DesignEvaluator.evaluate(CADDocument(features: [block, blind]), revision: "r").bodies[0].mesh.volume
+    let (m2, i2, _) = chamfered([block, blind], ChamferSpec(edges: floor, profile: .round, distance: 1))
+    #expect(i2.isEmpty && MeshValidator.validate(m2).isWatertight)
+    let filled = 2 * Double.pi * (5 - centroid) * (1 - .pi / 4)
+    #expect(abs((m2.volume - drilled) - filled) < filled * 0.05)
 }
 
 @Test func cylinderTopRim() {

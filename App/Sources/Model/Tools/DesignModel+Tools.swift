@@ -200,7 +200,7 @@ extension DesignModel: CADToolProvider {
             "warning": "Corpi separati non si fondono tra loro: usa operation join per unirli. La chiusura dei bordi non certifica la stampabilità.",
             "capabilities": ["box", "cylinder", "simple_polygon_extrude", "boolean_join_cut_intersect", "hole", "chamfer", "fillet", "sheet_metal",
                              "parameter_update", "timeline_rollback_suppress", "session_undo", "stl", "part_color", "3mf"],
-            "unavailable": ["modeled_thread", "concave_chamfer", "sheet_metal_closed_corners", "assemblies", "step"]
+            "unavailable": ["modeled_thread", "sheet_metal_closed_corners", "step"]
         ])
     }
 

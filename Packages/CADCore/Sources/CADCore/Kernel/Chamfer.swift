@@ -158,9 +158,10 @@ public enum ChamferGeometry {
             .min { distance(ref.point, $0.polyline) < distance(ref.point, $1.polyline) }
     }
 
-    /// Solid removed by chamfering `edge` of the body described by `snapshot`.
+    /// Tool of a chamfer/round on `edge`: removed from the body on a convex edge, added to it
+    /// (`adds`) on a concave one (inside corner: the round fills it).
     public static func tool(for edge: EdgeInfo, ref: EdgeRef, spec: ChamferSpec, snapshot: BodySnapshot,
-                            featureID: UUID, index: Int) throws -> CSGSolid {
+                            featureID: UUID, index: Int) throws -> (solid: CSGSolid, adds: Bool) {
         let order = spec.flip ? [ref.faces[1], ref.faces[0]] : ref.faces
         guard let fa = snapshot.faces.firstIndex(where: { $0.id == order[0] }),
               let fb = snapshot.faces.firstIndex(where: { $0.id == order[1] }) else {
@@ -186,25 +187,28 @@ public enum ChamferGeometry {
     public static func handle(for edge: EdgeInfo, in snapshot: BodySnapshot)
         -> (origin: Vec3, inward: Vec3, flat: Double, round: Double, limit: Double)? {
         guard let mid = edge.midpoint, edge.faces.count == 2 else { return nil }
-        var normals: [Vec3] = []
+        var normals: [Vec3] = [], centroids: [Vec3] = []
         var limit = Double.infinity
         for id in edge.faces {
             guard let f = snapshot.faces.firstIndex(where: { $0.id == id }) else { return nil }
             limit = min(limit, extent(ofFace: f, from: edge.polyline, snapshot))
-            var best: (Double, Vec3)?
+            var best: (Double, Vec3, Vec3)?
             for t in 0..<snapshot.triangleFace.count where Int(snapshot.triangleFace[t]) == f {
                 let v = (0..<3).map { snapshot.positions[Int(snapshot.triangles[t * 3 + $0])] }
-                let d = ((v[0] + v[1] + v[2]) * (1.0 / 3) - mid).length
-                if d < (best?.0 ?? .infinity) { best = (d, (v[1] - v[0]).cross(v[2] - v[0]).normalized) }
+                let c = (v[0] + v[1] + v[2]) * (1.0 / 3)
+                let d = (c - mid).length
+                if d < (best?.0 ?? .infinity) { best = (d, (v[1] - v[0]).cross(v[2] - v[0]).normalized, c) }
             }
-            guard let n = best?.1 else { return nil }
-            normals.append(n)
+            guard let (_, n, c) = best else { return nil }
+            normals.append(n); centroids.append(c)
         }
         let sum = normals[0] + normals[1]
         guard sum.length > 1e-6 else { return nil }
         let dihedral = .pi - acos(max(-1, min(1, normals[0].dot(normals[1]))))
         let half = max(dihedral / 2, 0.05)
-        return (mid, -sum.normalized, cos(half), 1 / sin(half) - 1, limit)
+        // Inside corner: the fill grows out into the air, so the handle moves that way.
+        let concave = (centroids[0] - mid).dot(normals[1]) > 1e-9
+        return (mid, sum.normalized * (concave ? 1 : -1), cos(half), 1 / sin(half) - 1, limit)
     }
 
     /// How far a face reaches from an edge (farthest vertex): no bevel can be wider.
@@ -224,7 +228,7 @@ public enum ChamferGeometry {
     // MARK: Straight edge between two planes
 
     private static func straight(_ edge: EdgeInfo, a: (Int, Vec3, Vec3), b: (Int, Vec3, Vec3),
-                                 spec: ChamferSpec, snapshot: BodySnapshot, prefix: String) throws -> CSGSolid {
+                                 spec: ChamferSpec, snapshot: BodySnapshot, prefix: String) throws -> (solid: CSGSolid, adds: Bool) {
         let pts = edge.polyline
         guard let e0 = pts.first, let e1 = pts.last, (e1 - e0).length > 1e-6 else {
             throw KernelError.invalidParameter("smusso: spigolo troppo corto")
@@ -240,11 +244,15 @@ public enum ChamferGeometry {
               let tb = inFaceDirection(face: b.0, edgeStart: e0, dir: dir, normal: nb, snapshot: snapshot) else {
             throw KernelError.invalidTopology("smusso: facce dello spigolo non trovate")
         }
-        guard ta.dot(nb) < -1e-6, tb.dot(na) < -1e-6 else {
-            throw KernelError.invalidParameter("smusso su spigolo concavo non ancora disponibile")
-        }
+        // Convex: each face runs away from the other's outside. Concave (inside corner): towards it;
+        // then the air wedge lies between the faces and the tool fills its corner.
+        let convex = ta.dot(nb) < -1e-6 && tb.dot(na) < -1e-6
+        let concave = ta.dot(nb) > 1e-6 && tb.dot(na) > 1e-6
+        guard convex || concave else { throw KernelError.invalidParameter("smusso: spigolo tangente o degenere") }
         let dihedral = acos(max(-1, min(1, ta.dot(tb))))
-        let out = (na + nb).normalized
+        // Direction from the edge into the material (concave) or the air (convex) side of the tool.
+        let out = (na + nb).normalized * (concave ? -1.0 : 1.0)
+        let sign = concave ? -1.0 : 1.0
         let widthA = extent(ofFace: a.0, from: pts, snapshot), widthB = extent(ofFace: b.0, from: pts, snapshot)
 
         // Cross-section, relative to a point of the edge (the corner), star-shaped around the
@@ -266,8 +274,14 @@ public enum ChamferGeometry {
                 let t = Double(i) / Double(n)
                 return c + (from * sin((1 - t) * theta) + to * sin(t * theta)) * (1 / sin(theta))
             }
-            let m = r + lead
-            section = arc + [tb * x + nb * m, out * (2 * m + centreDistance), ta * x + na * m]
+            if concave {
+                // Fill: just past the faces into the material (thin walls stay untouched outside).
+                let ov = min(0.2, 0.25 * r)
+                section = arc + [tb * x - nb * ov, (na + nb) * (-ov), ta * x - na * ov]
+            } else {
+                let m = r + lead
+                section = arc + [tb * x + nb * (sign * m), out * (2 * m + centreDistance), ta * x + na * (sign * m)]
+            }
             special = Set(0..<n)
             surface = .cylinder(axisOrigin: e0 + c, axisDirection: dir, radius: r)
             probe = w * (centreDistance - r) * 0.5
@@ -282,10 +296,17 @@ public enum ChamferGeometry {
             let perp = qa - u * qa.dot(u)
             let nline = -perp.normalized
             let e = max(d1, d2) + lead
-            let h = 2 * perp.length / max(out.dot(nline), 0.1) + lead
-            section = [qa - u * e, qb + u * e, qb + u * e + out * h, qa - u * e + out * h]
+            if concave {
+                // Fill the triangle corner–QA–QB, reaching just past the faces into the material.
+                let ov = min(0.2, 0.25 * min(d1, d2))
+                section = [qa, qb, qb - nb * ov, (na + nb) * (-ov), qa - na * ov]
+            } else {
+                let h = 2 * perp.length / max(out.dot(nline), 0.1) + lead
+                section = [qa - u * e, qb + u * e, qb + u * e + out * h, qa - u * e + out * h]
+            }
             special = [0]
-            surface = .plane(origin: e0 + qa, normal: nline)
+            // Outward normal of the bevel in the result (faces the air).
+            surface = .plane(origin: e0 + qa, normal: concave ? -nline : nline)
             probe = (qa + qb) * 0.25
             reach = e
         }
@@ -294,7 +315,8 @@ public enum ChamferGeometry {
         // runs into a wall) it stops on that wall's plane.
         func cap(_ p: Vec3, outward w: Vec3) -> (centre: Vec3, ring: [Vec3]) {
             let delta = min(0.05, 0.25 * probe.length)
-            if !contains(p + w * delta + probe, snapshot) {
+            // Filling an inside corner must never add material past the part: always stop at the end.
+            if convex, !contains(p + w * delta + probe, snapshot) {
                 return (p + w * reach, section.map { p + $0 + w * reach })
             }
             let wall = snapshot.faces.enumerated().compactMap { i, f -> (Vec3, Vec3)? in
@@ -308,7 +330,10 @@ public enum ChamferGeometry {
         }
         let (c0, s0) = cap(e0, outward: -dir), (c1, s1) = cap(e1, outward: dir)
 
-        var faces = [CSGFace(id: FaceID(rawValue: prefix), surface: surface, flipped: true)]
+        // Subtracted tools have their faces flipped by the boolean; added ones keep them. The round
+        // surface of a concave corner faces its axis (flipped either way).
+        let flipped = spec.profile == .round ? true : convex
+        var faces = [CSGFace(id: FaceID(rawValue: prefix), surface: surface, flipped: flipped)]
         var polys: [CSGSolid.Polygon] = []
         func auxFace(_ v: [Vec3]) -> Int {
             let n = (v[1] - v[0]).cross(v[2] - v[0]).normalized
@@ -330,7 +355,7 @@ public enum ChamferGeometry {
                 polys.append(CSGSolid.Polygon(vertices: tri, face: face))
             }
         }
-        return oriented(polys, faces)
+        return (oriented(polys, faces), concave)
     }
 
     /// Unit vector in the face plane, perpendicular to the edge, pointing into the face.
@@ -351,7 +376,7 @@ public enum ChamferGeometry {
     // MARK: Circular edge between a plane and a cylinder
 
     private static func circular(_ edge: EdgeInfo, plane: (Vec3, Vec3), cylinder: (Int, Vec3, Vec3, Double), planeFirst: Bool,
-                                 spec: ChamferSpec, snapshot: BodySnapshot, prefix: String) throws -> CSGSolid {
+                                 spec: ChamferSpec, snapshot: BodySnapshot, prefix: String) throws -> (solid: CSGSolid, adds: Bool) {
         let (po, a) = plane
         let (fc, axisOrigin, axisDir, radius) = cylinder
         guard abs(axisDir.normalized.dot(a)) > 0.999 else {
@@ -372,6 +397,12 @@ public enum ChamferGeometry {
             break
         }
         guard let boss else { throw KernelError.invalidTopology("smusso: faccia cilindrica non trovata") }
+        // Concave when the wall rises from the face (root of a boss, floor of a blind hole).
+        var rise = 0.0, count = 0.0
+        for t in 0..<snapshot.triangleFace.count where Int(snapshot.triangleFace[t]) == fc {
+            for k in 0..<3 { rise += (snapshot.positions[Int(snapshot.triangles[t * 3 + k])] - centre).dot(a); count += 1 }
+        }
+        let concave = count > 0 && rise / count > 1e-6
         // Along the wall a bevel cannot go past the cylinder's height.
         let wall = extent(ofFace: fc, from: edge.polyline, snapshot)
         let alongWall = spec.profile == .round ? spec.distance : (planeFirst ? try spec.distances(dihedral: .pi / 2).1 : spec.distance)
@@ -385,7 +416,45 @@ public enum ChamferGeometry {
         let special: Set<Int>
         let surface: SurfaceDescriptor
         let toolFlipped: Bool
-        if spec.profile == .round {
+        // Overlap of an added fill into the material: small, so thin plates are not pierced.
+        let ov = min(0.2, 0.25 * min(spec.distance, radius))
+        if spec.profile == .round, concave {
+            // Fill the inside corner with a quarter round (torus); the round faces its tube axis.
+            let q = spec.distance
+            let arcSteps = segments / 4
+            func arc(_ c: (Double, Double), from a0: Double, to a1: Double) -> [(Double, Double)] {
+                (0...arcSteps).map { i in
+                    let t = a0 + (a1 - a0) * Double(i) / Double(arcSteps)
+                    return (c.0 + q * cos(t), c.1 + q * sin(t))
+                }
+            }
+            if boss {
+                profile = [(radius - ov, q), (radius - ov, -ov), (radius + q, -ov)] + arc((radius + q, q), from: -.pi / 2, to: -.pi)
+                surface = .torus(center: centre + a * q, axisDirection: a, majorRadius: radius + q, minorRadius: q)
+            } else {
+                guard q < radius * 0.98 else { throw KernelError.invalidParameter("raccordo più grande del raggio del foro") }
+                profile = [(radius + ov, q), (radius + ov, -ov), (radius - q, -ov)] + arc((radius - q, q), from: -.pi / 2, to: 0)
+                surface = .torus(center: centre + a * q, axisDirection: a, majorRadius: radius - q, minorRadius: q)
+            }
+            special = Set(3..<(3 + arcSteps))
+            toolFlipped = true
+        } else if concave {
+            // Fill the inside corner with a cone band.
+            let (first1, second) = try spec.distances(dihedral: .pi / 2)
+            let dp = planeFirst ? first1 : second, dc = planeFirst ? second : first1
+            let k = dp / dc
+            if boss {
+                profile = [(radius - ov, dc), (radius - ov, -ov), (radius + dp, -ov), (radius + dp, 0), (radius, dc)]
+                surface = .cone(apex: centre + a * ((radius + dp) / k), axisDirection: -a, halfAngle: atan(k))
+                toolFlipped = false
+            } else {
+                guard dp < radius * 0.98 else { throw KernelError.invalidParameter("smusso più grande del raggio del foro") }
+                profile = [(radius + ov, dc), (radius + ov, -ov), (radius - dp, -ov), (radius - dp, 0), (radius, dc)]
+                surface = .cone(apex: centre - a * ((radius - dp) / k), axisDirection: a, halfAngle: atan(k))
+                toolFlipped = true
+            }
+            special = [3]
+        } else if spec.profile == .round {
             let q = spec.distance
             let arcSteps = segments / 4
             func arc(_ c: (Double, Double), from a0: Double, to a1: Double) -> [(Double, Double)] {
@@ -454,7 +523,7 @@ public enum ChamferGeometry {
                 polys.append(CSGSolid.Polygon(vertices: quad, face: face))
             }
         }
-        return oriented(polys, faces)
+        return (oriented(polys, faces), concave)
     }
 
     // MARK: Helpers

@@ -43,9 +43,11 @@ public enum DesignEvaluator {
         let counts = Dictionary(grouping: features, by: \.id).mapValues(\.count)
         var reported = Set<UUID>()
         // Prefix keys (every step and, for components, the file it reads) and the longest cached prefix.
-        let keys = cache == nil ? [] : EvaluationCache.prefixKeys(features, components: components)
+        // (Not for a damaged file with duplicate IDs: excluding them depends on the whole history.)
+        let cacheable = cache != nil && counts.values.allSatisfy { $0 == 1 }
+        let keys = cacheable ? EvaluationCache.prefixKeys(features, components: components) : []
         var start = 0
-        if let cache, let (k, state) = cache.longestPrefix(keys) {
+        if cacheable, let cache, let (k, state) = cache.longestPrefix(keys) {
             bodies = state.bodies; issues = state.issues; reported = state.reported; start = k + 1
         }
         for (k, feature) in features.enumerated() where k >= start {
@@ -101,18 +103,22 @@ public enum DesignEvaluator {
                         : "Smusso: \(missing) spigoli su \(spec.edges.count) non esistono più."))
                 }
                 for i in perBody.keys.sorted(by: >) {
-                    var tool: CSGSolid?
+                    // Convex edges: material removed; concave (inside corners): material added.
+                    var remove: CSGSolid?, add: CSGSolid?
                     for (k, edge) in perBody[i]! {
                         do {
                             let t = try ChamferGeometry.tool(for: edge, ref: spec.edges[k], spec: spec, snapshot: bodies[i].snapshot,
                                                              featureID: feature.id, index: k)
-                            tool = tool.map { $0.union(t) } ?? t
+                            if t.adds { add = add.map { $0.union(t.solid) } ?? t.solid }
+                            else { remove = remove.map { $0.union(t.solid) } ?? t.solid }
                         } catch {
                             issues.append(.init(featureID: feature.id, message: error.localizedDescription))
                         }
                     }
-                    guard let tool else { continue }
-                    let solid = solidOf(bodies[i]).subtracting(tool)
+                    guard remove != nil || add != nil else { continue }
+                    var solid = solidOf(bodies[i])
+                    if let remove { solid = solid.subtracting(remove) }
+                    if let add { solid = solid.union(add) }
                     if solid.isEmpty { bodies.remove(at: i) } else { bodies[i] = rebuilt(bodies[i], solid, by: feature.id, revision: revision) }
                 }
                 continue
@@ -273,7 +279,9 @@ public enum DesignEvaluator {
                 }
             }
         }
-        let out = bodies.map { Body(id: $0.source.id, source: $0.source, modifiedBy: $0.modifiedBy, mesh: $0.mesh, snapshot: $0.snapshot) }
+        // Bodies reused from the cache carry the revision they were computed at: stamp the current one.
+        let out = bodies.map { Body(id: $0.source.id, source: $0.source, modifiedBy: $0.modifiedBy, mesh: $0.mesh,
+                                    snapshot: $0.snapshot.revision == revision ? $0.snapshot : $0.snapshot.stamped(revision)) }
         return (out, issues)
 
         func solidOf(_ w: Work) -> CSGSolid { w.solid ?? CSGSolid(w.snapshot) }
@@ -573,4 +581,12 @@ public final class EvaluationCache: @unchecked Sendable {
 
 private extension SHA256 {
     var finalizedHex: String { self.finalize().map { String(format: "%02x", $0) }.joined() }
+}
+
+extension BodySnapshot {
+    func stamped(_ revision: String) -> BodySnapshot {
+        BodySnapshot(bodyID: bodyID, revision: revision, positions: positions, normals: normals, triangles: triangles,
+                     triangleFace: triangleFace, triangleTopologyFace: triangleTopologyFace, faces: faces, edges: edges,
+                     maximumSurfaceDeviation: maximumSurfaceDeviation)
+    }
 }
