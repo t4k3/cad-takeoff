@@ -172,9 +172,45 @@ public struct Sketch: Identifiable, Codable, Sendable, Equatable {
     public var plane: SketchPlane
     public var shapes: [SketchShape]
     public var isVisible: Bool
+    /// Geometric constraints and dimensions between the shapes (solved by `SketchSolver`).
+    public var constraints: [SketchConstraint]
 
-    public init(id: UUID = UUID(), name: String, plane: SketchPlane = .xy, shapes: [SketchShape] = [], isVisible: Bool = true) {
+    public init(id: UUID = UUID(), name: String, plane: SketchPlane = .xy, shapes: [SketchShape] = [], isVisible: Bool = true,
+                constraints: [SketchConstraint] = []) {
         self.id = id; self.name = name; self.plane = plane; self.shapes = shapes; self.isVisible = isVisible
+        self.constraints = constraints
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, name, plane, shapes, isVisible, constraints }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        plane = try c.decode(SketchPlane.self, forKey: .plane)
+        shapes = try c.decode([SketchShape].self, forKey: .shapes)
+        isVisible = try c.decodeIfPresent(Bool.self, forKey: .isVisible) ?? true
+        constraints = try c.decodeIfPresent([SketchConstraint].self, forKey: .constraints) ?? []
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id); try c.encode(name, forKey: .name); try c.encode(plane, forKey: .plane)
+        try c.encode(shapes, forKey: .shapes); try c.encode(isVisible, forKey: .isVisible)
+        if !constraints.isEmpty { try c.encode(constraints, forKey: .constraints) }
+    }
+
+    /// Re-solves the constraints (after an edit or a new dimension). Constraints on deleted shapes are
+    /// dropped. Returns false, leaving the sketch unchanged, when they cannot all hold.
+    @discardableResult
+    public mutating func solve(drag: (SketchRef, Vec2)? = nil) -> Bool {
+        let ids = Set(shapes.map(\.id))
+        constraints.removeAll { c in c.kind.refs.contains { !ids.contains($0.shapeID) } }
+        guard !constraints.isEmpty || drag != nil else { return true }
+        let result = SketchSolver.solve(shapes, constraints, drag: drag)
+        guard result.converged else { return false }
+        shapes = result.shapes
+        return true
     }
 
     public var profiles: [SketchShape] { shapes.filter { $0.profile != nil } }
