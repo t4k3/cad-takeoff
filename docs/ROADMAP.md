@@ -1,5 +1,7 @@
 # Roadmap — un passo alla volta
 
+> **Piano di ottobre 2026 verso un CAD professionale:** [PIANO_CAD_PRO.md](PIANO_CAD_PRO.md) — dove siamo, cosa manca, priorità e le 4 settimane.
+
 Regola (Ross, 25/09): **si procede un passo alla volta, con calma**. Si lavora solo sul
 passo *In corso*; il passo successivo parte quando Ross ha visto il risultato e lo approva.
 Nuove idee o richieste si aggiungono in fondo a *Da valutare*, non si iniziano subito.
