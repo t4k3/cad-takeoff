@@ -151,14 +151,21 @@ public struct SheetFlatPattern: Equatable, Sendable {
         }
     }
 
+    public struct Hole: Equatable, Sendable {
+        public let center: Vec2
+        public let diameter: Double
+    }
+
     /// Counter-clockwise outline (closed, first point not repeated).
     public let outline: [Vec2]
     public let bends: [Bend]
+    /// Round holes to cut, unfolded from the holes drilled in the folded part.
+    public internal(set) var holes: [Hole] = []
     public let thickness: Double
     /// Offset of the part (the feature position): the flat pattern lies at the plate.
     public let origin: Vec3
 
-    public var area: Double { Profile2D(points: outline).area }
+    public var area: Double { Profile2D(points: outline).area - holes.reduce(0) { $0 + .pi * $1.diameter * $1.diameter / 4 } }
     public var size: (width: Double, height: Double) {
         let xs = outline.map(\.x), ys = outline.map(\.y)
         return ((xs.max() ?? 0) - (xs.min() ?? 0), (ys.max() ?? 0) - (ys.min() ?? 0))
@@ -171,6 +178,69 @@ public struct SheetMetalBuild: Sendable {
     public let flat: SheetFlatPattern
     /// Workshop advice (short flanges, radii below the material minimum…): not errors.
     public let warnings: [String]
+    let layout: SheetLayout
+
+    /// The flat pattern with the holes drilled in the folded part (hole features that cut it).
+    /// Holes on the plate or on a flange's straight part unfold exactly; holes crossing a bend,
+    /// blind or not square to the sheet are skipped and counted.
+    public func flat(adding holes: [HoleSpec]) -> (flat: SheetFlatPattern, skipped: Int) {
+        var out = flat, skipped = 0
+        for spec in holes {
+            let through = spec.depth.map { $0 >= layout.t - 1e-6 } ?? true
+            for c in spec.centers {
+                if through, let p = layout.unfold(c, axis: spec.direction.normalized) {
+                    out.holes.append(.init(center: p, diameter: spec.boreDiameter))
+                } else { skipped += 1 }
+            }
+        }
+        return (out, skipped)
+    }
+}
+
+/// Where everything is, to map folded points back onto the flat pattern.
+struct SheetLayout: Sendable {
+    struct Bent: Sendable {
+        let edge: SheetEdge; let theta: Double; let straight: Double; let allowance: Double; let up: Bool
+    }
+    let x0: Double, x1: Double, y0: Double, y1: Double
+    let r: Double, t: Double
+    let position: Vec3
+    let flanges: [Bent]
+
+    /// Flat-pattern point of a hole centre drilled along `axis`, if it lies on a flat region.
+    func unfold(_ world: Vec3, axis: Vec3) -> Vec2? {
+        let q = world - position
+        let e = 1e-4
+        if abs(axis.z) > 0.999, q.x >= x0 - e, q.x <= x1 + e, q.y >= y0 - e, q.y <= y1 + e, q.z >= -e, q.z <= t + e {
+            return Vec2(q.x, q.y)
+        }
+        for b in flanges {
+            let (origin, out, along, span): (Vec2, Vec2, Vec2, Double) = switch b.edge {
+            case .front: (Vec2(x0, y0), Vec2(0, -1), Vec2(1, 0), x1 - x0)
+            case .back: (Vec2(x0, y1), Vec2(0, 1), Vec2(1, 0), x1 - x0)
+            case .left: (Vec2(x0, y0), Vec2(-1, 0), Vec2(0, 1), y1 - y0)
+            case .right: (Vec2(x1, y0), Vec2(1, 0), Vec2(0, 1), y1 - y0)
+            }
+            let rel = Vec2(q.x - origin.x, q.y - origin.y)
+            let u = rel.x * out.x + rel.y * out.y, s = rel.x * along.x + rel.y * along.y
+            // Section of the straight part: mid-thickness line from the bend end along d.
+            let rm = r + t / 2
+            let c = Vec2(0, r + t)
+            var mid = Vec2(rm * sin(b.theta), c.y - rm * cos(b.theta))
+            var d = Vec2(cos(b.theta), sin(b.theta))
+            if !b.up { mid = Vec2(mid.x, t - mid.y); d = Vec2(d.x, -d.y) }
+            let w = q.z
+            let along2 = (u - mid.x) * d.x + (w - mid.y) * d.y
+            let across = abs((u - mid.x) * -d.y + (w - mid.y) * d.x)
+            // The flange's normal in world: perpendicular to d in the (out, z) plane.
+            let normal = Vec3(out.x * -d.y, out.y * -d.y, d.x)
+            guard s >= -e, s <= span + e, along2 >= -e, along2 <= b.straight + e, across <= t / 2 + e,
+                  abs(normal.dot(axis)) > 0.999 else { continue }
+            let reach = b.allowance + along2
+            return Vec2(origin.x + along.x * s + out.x * reach, origin.y + along.y * s + out.y * reach)
+        }
+        return nil
+    }
 }
 
 public enum SheetMetalGeometry {
@@ -263,12 +333,34 @@ public enum SheetMetalGeometry {
                                angle: b.flange.angle, direction: b.flange.direction, insideRadius: r))
         }
         let flat = SheetFlatPattern(outline: simplified(raw), bends: bends, thickness: t, origin: position)
-        return SheetMetalBuild(rule: rule, folded: solid, flat: flat, warnings: warnings)
+        let layout = SheetLayout(x0: x0, x1: x1, y0: y0, y1: y1, r: r, t: t, position: position,
+                                 flanges: SheetEdge.allCases.compactMap { e in bent[e].map {
+                                     .init(edge: e, theta: $0.theta, straight: $0.straight, allowance: $0.allowance, up: $0.flange.direction == .up)
+                                 } })
+        return SheetMetalBuild(rule: rule, folded: solid, flat: flat, warnings: warnings, layout: layout)
     }
 
-    /// Flat pattern as a thin solid (for display and 3MF), at the plate's height.
+    /// Flat pattern as a thin solid (for display and 3MF), at the plate's height, holes cut.
     public static func flatMesh(_ flat: SheetFlatPattern) -> Mesh {
-        Operations.extrude(Profile2D(points: flat.outline), height: flat.thickness).translated(by: flat.origin)
+        guard !flat.holes.isEmpty else {
+            return Operations.extrude(Profile2D(points: flat.outline), height: flat.thickness).translated(by: flat.origin)
+        }
+        return flatSolid(flat, id: UUID()).triangulated().mesh
+    }
+
+    /// Flat blank as a solid with named faces (its holes are cylinders), for the viewport.
+    public static func flatSolid(_ flat: SheetFlatPattern, id: UUID) -> CSGSolid {
+        let plate = Feature(id: id, name: "Sviluppo", kind: .extrude(profile: Profile2D(points: flat.outline), height: flat.thickness),
+                            position: flat.origin)
+        guard let brep = try? PrimitiveKernel.build(plate) else { return CSGSolid(polygons: [], faces: []) }
+        var solid = CSGSolid(brep.snapshot(revision: "flat"))
+        for (i, h) in flat.holes.enumerated() {
+            let spec = HoleSpec(centers: [Vec3(h.center.x, h.center.y, flat.thickness) + flat.origin], fit: .manual, diameter: h.diameter)
+            let hole = HoleGeometry.solid(spec, featureID: UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", i)) ?? id,
+                                          throughDepth: flat.thickness + 1)
+            solid = solid.subtracting(hole)
+        }
+        return solid
     }
 
     // MARK: Pieces
@@ -436,6 +528,10 @@ public enum SheetMetalDXF {
             put(0, "LINE"); put(100, "AcDbEntity"); put(8, layer); put(100, "AcDbLine")
             put(10, number(l.0.x)); put(20, number(l.0.y)); put(30, "0")
             put(11, number(l.1.x)); put(21, number(l.1.y)); put(31, "0")
+        }
+        for h in flat.holes {
+            put(0, "CIRCLE"); put(100, "AcDbEntity"); put(8, "CUT"); put(100, "AcDbCircle")
+            put(10, number(h.center.x)); put(20, number(h.center.y)); put(30, "0"); put(40, number(h.diameter / 2))
         }
         for b in flat.bends {
             put(999, "Bend \(b.edge.rawValue) \(b.direction.rawValue) angle_deg=\(number(b.angle)) inside_radius_mm=\(number(b.insideRadius))")

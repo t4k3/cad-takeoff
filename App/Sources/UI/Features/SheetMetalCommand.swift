@@ -35,6 +35,7 @@ enum SheetMetalCommand {
         if let feature, case let .sheetMetal(existing) = feature.kind { spec = existing }
         let original = feature
         let firstFlange = SheetEdge.allCases.compactMap { spec[$0] }.first ?? SheetFlange(length: 20)
+        let differentLengths = Set(SheetEdge.allCases.compactMap { spec[$0]?.length }).count > 1
 
         func thicknessOptions(_ m: SheetMaterial) -> [String] { m.thicknesses.map { mm($0) + " mm" } }
         let material = SheetMaterial.named(spec.material) ?? materials[0]
@@ -58,6 +59,12 @@ enum SheetMetalCommand {
             .init(id: "back", label: "Flangia dietro", kind: .toggle, value: .flag(spec.back != nil)),
             .init(id: "left", label: "Flangia a sinistra", kind: .toggle, value: .flag(spec.left != nil)),
             .init(id: "length", label: "Altezza flangia", kind: .length(0.5...2000), value: .number(firstFlange.length)),
+            .init(id: "perSide", label: "Altezze diverse per lato", kind: .toggle, value: .flag(differentLengths)),
+        ] + SheetEdge.allCases.map { e in
+            .init(id: "length-" + e.rawValue, label: "Altezza " + e.label.lowercased(), kind: .length(0.5...2000),
+                  value: .number(spec[e]?.length ?? firstFlange.length), isHidden: !differentLengths || spec[e] == nil)
+        } + [
+
             .init(id: "angle", label: "Angolo di piega", kind: .angle(5...135), value: .number(firstFlange.angle),
                   help: "Rotazione dalla posizione piana: 90° = a squadra"),
             .init(id: "direction", label: "Verso", kind: .choice(directions.map(\.label)),
@@ -82,7 +89,12 @@ enum SheetMetalCommand {
             let flange = SheetFlange(length: num("length"), angle: num("angle"),
                                      direction: directions[min(idx("direction"), directions.count - 1)],
                                      reference: references[min(idx("reference"), references.count - 1)])
-            for e in SheetEdge.allCases { s[e] = flag(e.rawValue) ? flange : nil }
+            for e in SheetEdge.allCases {
+                guard flag(e.rawValue) else { s[e] = nil; continue }
+                var own = flange
+                if flag("perSide") { own.length = num("length-" + e.rawValue) }
+                s[e] = own
+            }
             return s
         }
 
@@ -103,7 +115,10 @@ enum SheetMetalCommand {
             let auto = { if case let .flag(b)? = f.first(where: { $0.id == "autoRadius" })?.value { b } else { true } }()
             session.update("radius") { $0.isHidden = auto }
             let anyFlange = SheetEdge.allCases.contains { s[$0] != nil }
-            for id in ["length", "angle", "direction", "reference"] { session.update(id) { $0.isHidden = !anyFlange } }
+            let perSide = { if case let .flag(b)? = f.first(where: { $0.id == "perSide" })?.value { b } else { false } }()
+            for id in ["angle", "direction", "reference", "perSide"] { session.update(id) { $0.isHidden = !anyFlange } }
+            session.update("length") { $0.isHidden = !anyFlange || perSide }
+            for e in SheetEdge.allCases { session.update("length-" + e.rawValue) { $0.isHidden = !perSide || s[e] == nil } }
 
             do {
                 let build = try SheetMetalGeometry.build(s, featureID: original?.id ?? UUID())

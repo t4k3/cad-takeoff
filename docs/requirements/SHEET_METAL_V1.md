@@ -9,6 +9,8 @@
 - **Ingombro esterno**: larghezza e profondità sono le linee di stampo esterne, come su un disegno d'officina. Una flangia a 90° con quota esterna 30 è alta 30 fuori tutto.
 - **Pieghe vere**: nel piegato le pieghe sono superfici cilindriche (raggio interno e raggio + spessore) selezionabili e misurabili.
 - **Sviluppo** (LAMIERA › Sviluppo): contorno piano con linee di piega (rosse in su, blu in giù) e tangenti; **DXF** in mm con layer `CUT`, `BEND_UP`, `BEND_DOWN`, `BEND_TANGENT` e i dati di piega nei commenti.
+- **Fori nello sviluppo**: i fori fatti sul piegato (comando Foro) che attraversano la piastra o il tratto dritto di una flangia sono svolti nella posizione esatta e diventano cerchi `CUT` nel DXF e fori veri nella vista Sviluppo.
+- **Altezze diverse per lato** nel pannello («Altezze diverse per lato»).
 - **Assistente/MCP**: `add_sheet_metal` (materiale, spessore commerciale, ingombro, lati delle flange); la risposta riporta raggio, K, sviluppo e avvisi.
 
 ## Materiali e regole di piega
@@ -53,7 +55,7 @@ La piastra piana va dalla linea di stampo esterna meno OSSB su ogni lato con fla
 
 ## Limiti (prossimi passi)
 
-- Angoli chiusi con scarico (tondo/quadro) come in Fusion; flange diverse per lato dal pannello (oggi una misura comune; l'assistente e il formato già le supportano per lato).
+- Angoli chiusi con scarico (tondo/quadro) come in Fusion.
 - Flange su flange (profili a Z, cassette chiuse), orli (hem), flange parziali, forme della piastra da schizzo.
-- Fori e tagli riportati nello sviluppo e nel DXF (oggi tagliano il piegato, non il piano).
+- Fori che attraversano una piega, fori ciechi o obliqui: non riportati nello sviluppo (l'export lo dice). Asole e tagli da schizzo.
 - Tavola di piega (sequenza, angoli, quote) e compensazione del ritorno elastico.

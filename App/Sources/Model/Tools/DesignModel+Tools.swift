@@ -28,6 +28,16 @@ extension DesignModel: CADToolProvider {
             case "scene_info": return try sceneInfo()
             case "export_stl": return try export(args)
             case "export_3mf": return try export3MF(args)
+            case "export_flat_dxf":
+                let id = args["feature_id"] == nil ? nil : document.features[try index(args)].id
+                let (name, dxf) = try flatPatternDXF(id)
+                let data = Data(dxf.utf8)
+                let part = sheetParts().first { $0.feature.name == name }
+                return result("DXF dello sviluppo pronto", [
+                    "filename": .string("\(name) - sviluppo.dxf"), "mime_type": "image/vnd.dxf", "encoding": "base64",
+                    "data": .string(data.base64EncodedString()), "bytes": .number(Double(data.count)), "coordinate_units": "mm",
+                    "holes": .number(Double(part?.flat.holes.count ?? 0)), "skipped_holes": .number(Double(part?.skippedHoles ?? 0))
+                ])
             case "undo": return try restore(redo: false)
             case "redo": return try restore(redo: true)
             default: return try mutate(name, args: args, title: spec.title)

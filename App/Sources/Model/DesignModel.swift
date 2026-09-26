@@ -334,12 +334,16 @@ final class DesignModel {
         let base = snapshot()
         var bodies = base.bodies
         var lines: [(Vec3, Vec3, SheetBendDirection, Bool)] = []
-        for (f, build) in sheetParts() {
-            let flat = build.flat
-            let plate = Feature(id: f.id, name: f.name, kind: .extrude(profile: Profile2D(points: flat.outline), height: flat.thickness),
-                                position: flat.origin)
-            guard let brep = try? PrimitiveKernel.build(plate) else { continue }
-            let snap = brep.snapshot(revision: "flat-" + designRevision)
+        for (f, _, flat, _) in sheetParts() {
+            let snap: BodySnapshot
+            if flat.holes.isEmpty {
+                let plate = Feature(id: f.id, name: f.name, kind: .extrude(profile: Profile2D(points: flat.outline), height: flat.thickness),
+                                    position: flat.origin)
+                guard let brep = try? PrimitiveKernel.build(plate) else { continue }
+                snap = brep.snapshot(revision: "flat-" + designRevision)
+            } else {
+                snap = SheetMetalGeometry.flatSolid(flat, id: f.id).bodySnapshot(bodyID: f.id, revision: "flat-" + designRevision).snapshot
+            }
             if let i = bodies.firstIndex(where: { $0.bodyID == f.id }) { bodies[i] = snap } else { bodies.append(snap) }
             let z = flat.origin.z + flat.thickness + 0.02
             func p(_ v: Vec2) -> Vec3 { Vec3(v.x + flat.origin.x, v.y + flat.origin.y, z) }
@@ -355,12 +359,19 @@ final class DesignModel {
 
 
     /// Active sheet-metal parts with their bending rule and flat pattern.
-    /// Flat pattern and rule only: the folded solid comes from `evaluation()`.
-    func sheetParts() -> [(feature: Feature, build: SheetMetalBuild)] {
-        document.activeFeatures.compactMap { f in
+    /// Rule and flat pattern (with the holes drilled into the folded part) of each sheet part.
+    /// The folded solid itself comes from `evaluation()`.
+    func sheetParts() -> [(feature: Feature, build: SheetMetalBuild, flat: SheetFlatPattern, skippedHoles: Int)] {
+        let bodies = evaluation().bodies
+        return document.activeFeatures.compactMap { f in
             guard case let .sheetMetal(spec) = f.kind,
                   let build = try? SheetMetalGeometry.build(spec, featureID: f.id, position: f.position, folded: false) else { return nil }
-            return (f, build)
+            let cutters = bodies.first { $0.id == f.id }?.modifiedBy ?? []
+            let holes = document.features.filter { cutters.contains($0.id) }.compactMap { h -> HoleSpec? in
+                if case let .hole(spec) = h.kind { spec } else { nil }
+            }
+            let (flat, skipped) = build.flat(adding: holes)
+            return (f, build, flat, skipped)
         }
     }
 
@@ -370,7 +381,7 @@ final class DesignModel {
         guard let part = id.flatMap({ id in parts.first { $0.feature.id == id } }) ?? (parts.count == 1 ? parts.first : nil) else {
             throw CADToolFailure(parts.isEmpty ? "Nessuna lamiera nel disegno." : "Seleziona la lamiera da sviluppare.")
         }
-        return (part.feature.name, SheetMetalDXF.export(part.build.flat, rule: part.build.rule, name: part.feature.name))
+        return (part.feature.name, SheetMetalDXF.export(part.flat, rule: part.build.rule, name: part.feature.name))
     }
 
     func exportFlatDXFWithPanel(_ id: UUID? = nil) {
@@ -381,7 +392,9 @@ final class DesignModel {
             panel.nameFieldStringValue = "\(name) - sviluppo.dxf"
             guard panel.runModal() == .OK, let url = panel.url else { return }
             try dxf.write(to: url, atomically: true, encoding: .utf8)
-            statusMessage = "Esportato \(url.lastPathComponent) — taglio (CUT) e linee di piega (BEND_UP/BEND_DOWN), in mm"
+            let skipped = sheetParts().first { $0.feature.name == name }?.skippedHoles ?? 0
+            statusMessage = "Esportato \(url.lastPathComponent) — taglio (CUT), fori e linee di piega, in mm"
+                + (skipped > 0 ? " · \(skipped) for\(skipped == 1 ? "o" : "i") su pieghe o non passant\(skipped == 1 ? "e" : "i") non riportat\(skipped == 1 ? "o" : "i")" : "")
         } catch { statusMessage = "Errore export DXF: \(error.localizedDescription)" }
     }
 

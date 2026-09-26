@@ -68,7 +68,7 @@ struct AssistantToolsTests {
         expect(invalidShape.isError, "JSON shape validation")
         let missing = await m.call("get_feature", arguments: ["feature_id": .string(UUID().uuidString)])
         expect(missing.isError, "unknown ID")
-        expect(Set(m.tools.map(\.name)).count == 17, "17 unique tools")
+        expect(Set(m.tools.map(\.name)).count == 18, "18 unique tools")
         let partID = m.document.features[0].id
         let beforeColour = m.document
         let coloured = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "#E53935"])
@@ -182,6 +182,9 @@ struct AssistantToolsTests {
         let tooShort = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "width": 50, "depth": 50,
                                                      "flange_sides": .array(["left"]), "flange_length": 3])
         expect(tooShort.isError, "flange shorter than the bend rejected")
+        let dxf = await m.call("export_flat_dxf", arguments: [:])
+        let dxfText = dxf.structured?["data"]?.string.flatMap { Data(base64Encoded: $0) }.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        expect(!dxf.isError && dxfText.contains("BEND_UP") && dxfText.hasSuffix("EOF\n"), "flat pattern DXF via tool")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

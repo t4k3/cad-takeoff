@@ -112,3 +112,24 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     #expect(dxf.contains("BEND_UP") && dxf.contains("$INSUNITS") && dxf.hasSuffix("EOF\n"))
     #expect(dxf.components(separatedBy: "\nLINE\n").count - 1 == 3)
 }
+
+@Test func holesUnfoldIntoTheFlatPattern() throws {
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 40, depth: 60, flanges: [.front: SheetFlange(length: 30)])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID())
+    let r = 2.6, t = 2.0, y0 = -30 + r + t
+    let allowance = Double.pi / 2 * (r + build.rule.kFactor * t)
+    let onPlate = HoleSpec(centers: [Vec3(0, 10, 2)], fit: .clearance, size: "M4")
+    // Drilled horizontally into the flange's outer face (y = −30), 15 mm up.
+    let onFlange = HoleSpec(centers: [Vec3(5, -30, 15)], direction: Vec3(0, 1, 0), fit: .manual, diameter: 6)
+    // Inside the bend zone: cannot be unfolded reliably.
+    let onBend = HoleSpec(centers: [Vec3(0, -28.5, 1)], direction: Vec3(0, 1, 0), fit: .manual, diameter: 2)
+    let (flat, skipped) = build.flat(adding: [onPlate, onFlange, onBend])
+    #expect(skipped == 1 && flat.holes.count == 2)
+    #expect(flat.holes[0].center == Vec2(0, 10) && flat.holes[0].diameter == 4.5)
+    #expect(abs(flat.holes[1].center.x - 5) < 1e-9 && abs(flat.holes[1].center.y - (y0 - allowance - (15 - (r + t)))) < 1e-9)
+    let mesh = SheetMetalGeometry.flatMesh(flat)
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    #expect(abs(mesh.volume - flat.area * t) < 0.5)   // 64-gon holes vs true circles
+    let dxf = SheetMetalDXF.export(flat, rule: build.rule, name: "Forata")
+    #expect(dxf.components(separatedBy: "\nCIRCLE\n").count - 1 == 2)
+}

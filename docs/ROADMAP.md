@@ -33,12 +33,12 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 | 5 | **Operazioni sui solidi, una per volta**: Estrudi con Unisci/Taglia/Interseca → Smusso → Raccordo → Specchio → Dividi con piano → piani di costruzione | Ogni operazione arriva completa (pannello, anteprima, storico) prima della successiva | Codex + Claude | — |
 | 6 | **Assistente che usa tutto quanto sopra** (strumenti v2) | L'assistente sa fare schizzi su facce, tagli, smussi e correggere lo storico | Codex + Claude | — |
 | 7 | **Parti e assiemi** | — | — | — |
-| 8 | **Lamiera** | Campione piegato + sviluppo DXF/3MF e operazioni salvate | Claude | **Base integrata (26/09): scheda LAMIERA, materiali con regole da pressa piegatrice (V, raggio, K DIN 6935, flangia minima), piastra + flange sui 4 lati, sviluppo, DXF, assistente.** Prossimo: angoli chiusi, flange per lato, flange su flange, fori nello sviluppo. [Dettagli](requirements/SHEET_METAL_V1.md) |
+| 8 | **Lamiera** | Campione piegato + sviluppo DXF/3MF e operazioni salvate | Claude | **Base integrata (26/09): scheda LAMIERA, materiali con regole da pressa piegatrice (V, raggio, K DIN 6935, flangia minima), piastra + flange sui 4 lati, sviluppo, DXF, assistente.** Poi: altezze per lato nel pannello, fori riportati nello sviluppo/DXF. Prossimo: angoli chiusi, flange su flange. [Dettagli](requirements/SHEET_METAL_V1.md) |
 | 9 | **Prima release TestFlight ai colleghi** | — | Ross + Claude | — |
 
 ## Da valutare (non iniziati)
 
-- Lamiera: angoli chiusi con scarico, misure diverse per lato nel pannello, flange su flange (Z, cassette), orli, fori/tagli nello sviluppo e nel DXF, tavola di piega.
+- Lamiera: angoli chiusi con scarico, flange su flange (Z, cassette), orli, fori che attraversano una piega o asole nello sviluppo, tavola di piega.
 
 - Smusso/raccordo su spigoli **concavi** (aggiunge materiale) e su **archi** parziali; angolo sferico dove si incontrano tre raccordi.
 - Freccia di trascinamento anche per Estrudi, Foro (profondità) e parametri dei solidi.

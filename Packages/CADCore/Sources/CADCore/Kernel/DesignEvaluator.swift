@@ -303,3 +303,11 @@ public enum DesignEvaluator {
 extension Array {
     subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
 }
+
+extension CSGSolid {
+    /// Closed mesh and renderer snapshot of a solid (faces keep their IDs and surfaces).
+    public func bodySnapshot(bodyID: UUID, revision: String) -> (mesh: Mesh, snapshot: BodySnapshot) {
+        let (mesh, triFace) = triangulated()
+        return (mesh, DesignEvaluator.snapshot(of: self, mesh: mesh, triangleFace: triFace, bodyID: bodyID, revision: revision))
+    }
+}
