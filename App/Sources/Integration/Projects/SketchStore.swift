@@ -39,9 +39,18 @@ extension CADDocument {
         let featureIDs = Set(features.map(\.id))
         sketchLinks.removeAll { link in
             link.sketchID == sketch.id && (!featureIDs.contains(link.featureID)
-                                          || !sketch.shapes.contains { $0.id == link.shapeID && $0.profile != nil })
+                                          || (link.seeds.isEmpty && !sketch.shapes.contains { $0.id == link.shapeID && $0.profile != nil }))
         }
         for link in sketchLinks where link.sketchID == sketch.id {
+            // Faces of the arrangement, found again from the points picked inside them.
+            if !link.seeds.isEmpty {
+                guard let area = sketch.areas(seeds: link.seeds).first,
+                      let i = features.firstIndex(where: { $0.id == link.featureID }),
+                      case let .extrude(_, height) = features[i].kind else { continue }
+                features[i].kind = .extrude(profile: Profile2D(points: area.outline), height: height)
+                features[i].holes = area.holes.map { Profile2D(points: $0) }
+                continue
+            }
             guard let shape = sketch.shapes.first(where: { $0.id == link.shapeID }), let profile = shape.profile,
                   let i = features.firstIndex(where: { $0.id == link.featureID }),
                   case let .extrude(_, height) = features[i].kind else { continue }

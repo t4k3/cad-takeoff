@@ -110,7 +110,7 @@ import Testing
             [Vec2(0, 0), Vec2(10, 0), Vec2(.nan, 10)],
             // Non-adjacent vertex touching another edge.
             [Vec2(0, 0), Vec2(10, 0), Vec2(10, 10), Vec2(5, 0), Vec2(0, 10)],
-            Profile2D.circle(radius: 20, segments: 129).points]
+            Profile2D.circle(radius: 200, segments: 1025).points]
         for points in badProfiles {
             #expect(throws: KernelError.self) { try PrimitiveKernel.build(Feature(name: "bad", kind: .extrude(profile: Profile2D(points: points), height: 5))) }
         }

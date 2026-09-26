@@ -84,8 +84,8 @@ public enum PrimitiveKernel {
             throw KernelError.invalidParameter("lo smusso modifica un corpo esistente: viene calcolato dal valutatore")
         case let .extrude(profile, h):
             try dimension(h)
-            guard (3...128).contains(profile.points.count) else {
-                throw KernelError.invalidProfile("richiesti 3–128 vertici, senza fori")
+            guard (3...1024).contains(profile.points.count) else {
+                throw KernelError.invalidProfile("richiesti 3–1024 vertici")
             }
             points = Profile2D(points: profile.points).points
             height = h; family = "extrude"; radius = nil

@@ -223,12 +223,16 @@ public struct SketchLink: Codable, Sendable, Equatable, Hashable {
     public var shapeID: UUID
     /// Closed shapes left as holes in the extruded region (the inner circle of a ring).
     public var holeShapeIDs: [UUID]
+    /// Points inside the extruded face(s) of the sketch arrangement: the face is found again from
+    /// them after edits (preferred over shapeID when present).
+    public var seeds: [Vec2]
 
-    public init(featureID: UUID, sketchID: UUID, shapeID: UUID, holeShapeIDs: [UUID] = []) {
+    public init(featureID: UUID, sketchID: UUID, shapeID: UUID, holeShapeIDs: [UUID] = [], seeds: [Vec2] = []) {
         self.featureID = featureID; self.sketchID = sketchID; self.shapeID = shapeID; self.holeShapeIDs = holeShapeIDs
+        self.seeds = seeds
     }
 
-    private enum CodingKeys: String, CodingKey { case featureID, sketchID, shapeID, holeShapeIDs }
+    private enum CodingKeys: String, CodingKey { case featureID, sketchID, shapeID, holeShapeIDs, seeds }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -236,11 +240,13 @@ public struct SketchLink: Codable, Sendable, Equatable, Hashable {
         sketchID = try c.decode(UUID.self, forKey: .sketchID)
         shapeID = try c.decode(UUID.self, forKey: .shapeID)
         holeShapeIDs = try c.decodeIfPresent([UUID].self, forKey: .holeShapeIDs) ?? []
+        seeds = try c.decodeIfPresent([Vec2].self, forKey: .seeds) ?? []
     }
 
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(featureID, forKey: .featureID); try c.encode(sketchID, forKey: .sketchID); try c.encode(shapeID, forKey: .shapeID)
         if !holeShapeIDs.isEmpty { try c.encode(holeShapeIDs, forKey: .holeShapeIDs) }
+        if !seeds.isEmpty { try c.encode(seeds, forKey: .seeds) }
     }
 }

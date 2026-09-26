@@ -112,13 +112,26 @@ final class SketchSession {
     /// Fusion's profiles: the ring between two circles, the disc inside…
     var pickingRegions = false
     /// Picked regions, by the shape that bounds them.
-    var selectedRegions: Set<UUID> = []
+    /// Picked faces, each by a point inside it (Fusion profiles from the sketch arrangement).
+    var selectedSeeds: [Vec2] = []
+    /// Faces of the sketch, recomputed only when the shapes change.
+    @ObservationIgnored private var faceCache: (shapes: [SketchShape], faces: [SketchFace])?
+    var faces: [SketchFace] {
+        if let c = faceCache, c.shapes == sketch.shapes { return c.faces }
+        let f = sketch.faces
+        faceCache = (sketch.shapes, f)
+        return f
+    }
+    /// The picked faces merged into areas to extrude.
+    var pickedAreas: [SketchFace] { selectedSeeds.isEmpty ? [] : sketch.areas(seeds: selectedSeeds) }
     @ObservationIgnored var onRegionsChange: () -> Void = {}
 
     /// Adds or removes the region under a point of the plane.
     func toggleRegion(at world: SIMD3<Float>) {
-        guard let r = sketch.region(at: local(world)) else { return }
-        if selectedRegions.contains(r.shapeID) { selectedRegions.remove(r.shapeID) } else { selectedRegions.insert(r.shapeID) }
+        let p = local(world)
+        let all = faces
+        guard let f = sketch.face(at: p, in: all) else { return }
+        if let i = selectedSeeds.firstIndex(where: { sketch.face(at: $0, in: all) == f }) { selectedSeeds.remove(at: i) } else { selectedSeeds.append(p) }
         onRegionsChange()
     }
 
@@ -129,9 +142,10 @@ final class SketchSession {
         func fill(_ profile: Profile2D, _ holes: [Profile2D], _ color: SIMD4<Float>) {
             for (a, b, c) in profile.triangulate(holes: holes) { out.append((world(a, 0.01), world(b, 0.01), world(c, 0.01), color)) }
         }
-        for area in sketch.areas(selected: selectedRegions) { fill(area.profile, area.holes, SIMD4(0.2, 0.55, 1, 0.35)) }
-        if let raw = rawCursor, let r = sketch.region(at: raw), !selectedRegions.contains(r.shapeID) {
-            fill(Profile2D(points: r.outline), r.holes.map { Profile2D(points: $0) }, SIMD4(0.2, 0.55, 1, 0.14))
+        for area in pickedAreas { fill(Profile2D(points: area.outline), area.holes.map { Profile2D(points: $0) }, SIMD4(0.2, 0.55, 1, 0.35)) }
+        let all = faces
+        if let raw = rawCursor, let f = sketch.face(at: raw, in: all), !selectedSeeds.contains(where: { sketch.face(at: $0, in: all) == f }) {
+            fill(Profile2D(points: f.outline), f.holes.map { Profile2D(points: $0) }, SIMD4(0.2, 0.55, 1, 0.14))
         }
         return out
     }
@@ -516,17 +530,21 @@ final class SketchSession {
         if pickingRegions, let h0 = previewHeight, h0 > 0 {
             let h = previewReversed ? -h0 : h0
             let pc = previewIsCut ? SIMD4<Float>(0.95, 0.25, 0.25, 0.9) : previewColor
-            for area in sketch.areas(selected: selectedRegions) {
-                for id in [area.shapeID] + area.holeShapeIDs {
-                    guard let s = shape(id) else { continue }
-                    ring(s.outline, closed: true, pc, z: h)
-                    let n = s.outline.count
-                    let sides: [Int] = switch s.kind {
-                    case .circle: [0, n / 4, n / 2, 3 * n / 4]
-                    case .slot: [0, n / 2 - 1, n / 2, n - 1]
-                    default: Array(0..<n)
+            for area in pickedAreas {
+                for loop in [area.outline] + area.holes {
+                    ring(loop, closed: true, pc, z: h)
+                    // Side lines at real corners only (not along the facets of a circle or an arc),
+                    // plus a few on smooth loops so they read as walls.
+                    let n = loop.count
+                    var sides: [Int] = []
+                    for i in 0..<n {
+                        let a = loop[(i + n - 1) % n], b = loop[i], c = loop[(i + 1) % n]
+                        let u = b - a, v = c - b
+                        let turn = abs(atan2(u.cross(v), u.x * v.x + u.y * v.y))
+                        if turn > 0.35 { sides.append(i) }
                     }
-                    for i in sides where i < n { out.append((w(s.outline[i]), w(s.outline[i], h), pc)) }
+                    if sides.isEmpty { sides = [0, n / 4, n / 2, 3 * n / 4] }
+                    for i in sides where i < n { out.append((w(loop[i]), w(loop[i], h), pc)) }
                 }
             }
         }

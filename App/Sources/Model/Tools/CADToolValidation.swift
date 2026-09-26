@@ -19,7 +19,7 @@ enum CADToolValidation {
         guard value.isFinite, abs(value) <= 100000 else { throw CADToolFailure("Coordinata non valida (limite ±100000 mm).") }
     }
     static func profile(_ points: [Vec2]) throws {
-        guard (3...128).contains(points.count) else { throw CADToolFailure("Il profilo richiede 3–128 vertici.") }
+        guard (3...1024).contains(points.count) else { throw CADToolFailure("Il profilo richiede 3–1024 vertici.") }
         for p in points { try coordinate(p.x); try coordinate(p.y) }
         let n = points.count
         for i in 0..<n {

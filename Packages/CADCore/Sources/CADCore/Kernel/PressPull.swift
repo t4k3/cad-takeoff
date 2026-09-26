@@ -46,7 +46,7 @@ public enum PressPull {
         guard let loops = boundary(of: face, in: snapshot), !loops.isEmpty else { return nil }
         let plane = SketchPlane.onFace(point: frame.centre, normal: frame.normal)
         let flat = loops.map { Profile2D(points: $0.map { plane.local($0) }) }
-        guard let outer = flat.max(by: { $0.area < $1.area }), flat.allSatisfy({ (3...128).contains($0.points.count) }) else { return nil }
+        guard let outer = flat.max(by: { $0.area < $1.area }), flat.allSatisfy({ (3...1024).contains($0.points.count) }) else { return nil }
         return .offset(profile: outer, holes: flat.filter { $0 != outer }, plane: plane)
     }
 
