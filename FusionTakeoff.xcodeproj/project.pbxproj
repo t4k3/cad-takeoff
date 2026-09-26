@@ -41,6 +41,7 @@
 		8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */; };
 		9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891E4E944492E6539912AE18 /* MCPHost.swift */; };
 		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
+		9E390BBDAE0C6659CE5ECBC6 /* ChamferCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = F565E8DD894590B674296FD8 /* ChamferCommand.swift */; };
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
 		A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */; };
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
@@ -148,6 +149,7 @@
 		F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeDesktopSetup.swift; sourceTree = "<group>"; };
 		F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportRenderer.swift; sourceTree = "<group>"; };
 		F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPanel.swift; sourceTree = "<group>"; };
+		F565E8DD894590B674296FD8 /* ChamferCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChamferCommand.swift; sourceTree = "<group>"; };
 		F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailRenderer.swift; sourceTree = "<group>"; };
 		FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoleCommand.swift; sourceTree = "<group>"; };
 		FB8505013537F19DABD1503A /* CADToolValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolValidation.swift; sourceTree = "<group>"; };
@@ -274,6 +276,7 @@
 		7A8C1A0EDA4C545CE9572D01 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				F565E8DD894590B674296FD8 /* ChamferCommand.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
 			);
 			path = Features;
@@ -553,6 +556,7 @@
 				4AF0F80F02AFC0EADE2DC571 /* CADToolCatalog.swift in Sources */,
 				4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */,
 				9F5347637A122C50E1BABB0A /* Camera.swift in Sources */,
+				9E390BBDAE0C6659CE5ECBC6 /* ChamferCommand.swift in Sources */,
 				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
 				B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */,
 				89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */,

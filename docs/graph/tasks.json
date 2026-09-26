@@ -1609,7 +1609,7 @@
       "id": "T85",
       "title": "Smusso (chamfer) su spigoli selezionati",
       "phase": "Fase 3c",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T84"
       ],
@@ -1618,7 +1618,12 @@
         "App/Sources"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-26 12:05",
+      "finished": "2026-09-26 12:24",
+      "notes": [
+        "2026-09-26 12:24 claude: Smusso: EdgeRef stabile (coppia di facce + punto), prisma per spigoli dritti tra piani (arresto su parete dove il materiale continua), anello di rivoluzione per bordi di cilindri e fori; distanza uguale / due distanze / distanza+angolo / inverti; pannello con selezione spigoli a clic, modifica dalla timeline con anteprima dal vivo; strumento assistente add_chamfer (16 strumenti). Pulizia mesh CSG 80× più veloce (griglia + DDA per giunzioni a T, saldatura 27 celle). Foro: agganci a vertici/punti medi/centri/punti schizzo in spazio schermo, niente centri fuori faccia, coordinate X/Y/Z. 69 test core, CI 9/9, provato a schermo."
+      ]
     },
     {
       "id": "T86",

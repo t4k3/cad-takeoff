@@ -31,7 +31,12 @@ final class WorkspaceState {
         didSet { if selectionFilter != oldValue { geoHover = nil; geoSelection = [] } }
     }
     var geoHover: GeoRef?
-    var geoSelection: [GeoRef] = []
+    var geoSelection: [GeoRef] = [] {
+        didSet { if geoSelection != oldValue { onGeoSelectionChange?() } }
+    }
+    /// A command is collecting edges: a plain click adds or removes one (no ⇧ needed).
+    var edgePicking = false
+    @ObservationIgnored var onGeoSelectionChange: (() -> Void)?
 
     /// Command panel currently open (create/edit feature).
     var command: CommandSession?
@@ -42,6 +47,11 @@ final class WorkspaceState {
         command?.onCancel()
         if sketch != nil { exitSketch() }
         command = HoleCommand.start(workspace: self, model: model, editing: feature)
+    }
+    func startChamfer(model: DesignModel, editing feature: Feature? = nil) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = ChamferCommand.start(workspace: self, model: model, editing: feature)
     }
     /// Active sketch (v0, UI-only). nil = not sketching.
     var sketch: SketchSession?
@@ -98,6 +108,10 @@ final class WorkspaceState {
             command = HoleCommand.start(workspace: self, model: model, editing: f)
             return
         }
+        if let f = model.document.features.first(where: { $0.id == id }), case .chamfer = f.kind {
+            command = ChamferCommand.start(workspace: self, model: model, editing: f)
+            return
+        }
         command = FeatureCommands.edit(id, model: model)
     }
 }
@@ -109,6 +123,7 @@ extension Feature.Kind {
         case .cylinder: "cylinder"
         case .extrude: "square.stack.3d.up"
         case .hole: "circle.circle"
+        case .chamfer: "skew"
         }
     }
 
@@ -118,6 +133,7 @@ extension Feature.Kind {
         case .cylinder: "Cilindro"
         case .extrude: "Estrusione"
         case .hole: "Foro"
+        case .chamfer: "Smusso"
         }
     }
 }

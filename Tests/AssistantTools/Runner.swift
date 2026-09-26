@@ -68,7 +68,7 @@ struct AssistantToolsTests {
         expect(invalidShape.isError, "JSON shape validation")
         let missing = await m.call("get_feature", arguments: ["feature_id": .string(UUID().uuidString)])
         expect(missing.isError, "unknown ID")
-        expect(Set(m.tools.map(\.name)).count == 15, "15 unique tools")
+        expect(Set(m.tools.map(\.name)).count == 16, "16 unique tools")
         let partID = m.document.features[0].id
         let beforeColour = m.document
         let coloured = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "#E53935"])
@@ -153,6 +153,16 @@ struct AssistantToolsTests {
         expect(holeInfo.structured?["edge_closed"]?.bool == true, "drilled plate closed")
         let thread = await edit("add_hole", ["centers": .array([["x": 0, "y": 0, "z": 5]]), "fit": "modeledThread", "size": "M6"])
         expect(thread.isError, "modelled thread not offered yet")
+        // Chamfer tool: 1 mm on the top edges of a plate.
+        m.newDesign()
+        let plateID = (await edit("add_box", ["width": 40, "depth": 30, "height": 5, "name": "Piastra"])).structured?["feature_id"]?.string ?? ""
+        let ch = await edit("add_chamfer", ["feature_id": .string(plateID), "edges": "top", "distance": 1])
+        let chInfo = await m.call("scene_info", arguments: [:])
+        expect(!ch.isError && ch.structured?["edge_count"]?.number == 4, "chamfer on 4 top edges")
+        expect(abs((chInfo.structured?["mesh_volume_mm3"]?.number ?? 0) - (6000 - 70 + 4.0 / 3)) < 1e-6, "chamfer volume")
+        expect(chInfo.structured?["edge_closed"]?.bool == true, "chamfered plate closed")
+        let tooBig = await edit("add_chamfer", ["feature_id": .string(plateID), "edges": "vertical", "distance": 1, "mode": "distanceAngle", "angle": 95])
+        expect(tooBig.isError, "chamfer angle out of range rejected")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

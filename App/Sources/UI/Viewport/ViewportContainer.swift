@@ -55,6 +55,13 @@ final class ViewportState {
         }
     }
 
+    /// Millimetres covered by `points` on screen at distance `d` along a pick ray.
+    func screenTolerance(_ points: Double) -> (Double) -> Double {
+        let h = Double(max(viewSize.height, 1)), tanHalf = Double(tan(camera.fovY / 2))
+        let perspective = camera.projection == .perspective, orbit = Double(camera.pose.distance)
+        return { d in points * 2 * (perspective ? max(d, 1) : orbit) * tanHalf / h }
+    }
+
     func body(_ id: Feature.ID) -> ViewportRenderer.Body? { renderer?.bodies[id] }
 
     func pick(_ ray: Ray) -> Feature.ID? {
@@ -96,11 +103,11 @@ struct ViewportContainer: View {
                                   return
                               }
                               if let placement = workspace.holePlacement, let bodies = viewport.renderer?.visibleBodies {
-                                  if let msg = placement.click(ray, bodies: bodies) { model.statusMessage = msg }
+                                  if let msg = placement.click(ray, bodies: bodies, tolerance: viewport.screenTolerance(12)), !msg.isEmpty { model.statusMessage = msg }
                                   return
                               }
                               if workspace.selectionFilter != .body {
-                                  let multi = !mods.isDisjoint(with: [.shift, .command])
+                                  let multi = workspace.edgePicking || !mods.isDisjoint(with: [.shift, .command])
                                   if let ref = viewport.pickGeo(ray, filter: workspace.selectionFilter) {
                                       model.selection = ref.feature
                                       if multi {
@@ -121,6 +128,10 @@ struct ViewportContainer: View {
                               if let sketch = workspace.sketch {
                                   sketch.vertexSnap = 8 * viewport.mmPerPoint
                                   sketch.hover(ray?.intersect(planePoint: .zero, normal: SIMD3(0, 0, 1)), screen: point)
+                                  return
+                              }
+                              if let placement = workspace.holePlacement {
+                                  placement.hover(ray, bodies: viewport.renderer?.visibleBodies ?? [], tolerance: viewport.screenTolerance(12))
                                   return
                               }
                               if workspace.selectionFilter != .body {
@@ -310,8 +321,12 @@ struct ViewportContainer: View {
                 Text(placement.centers.isEmpty ? "Clicca su una faccia piana per posizionare il centro"
                      : "\(placement.centers.count) centr\(placement.centers.count == 1 ? "o" : "i") · clicca per aggiungerne altri")
                     .font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                if let snap = placement.hover?.snap {
+                    Label(snap, systemImage: "scope").font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color(red: 0.3, green: 0.9, blue: 0.45))
+                }
                 if !placement.centers.isEmpty {
-                    Button("Togli ultimo") { placement.centers.removeLast(); if placement.centers.isEmpty { placement.normal = nil; placement.planeOrigin = nil } }
+                    Button("Togli ultimo") { placement.removeLast() }
                         .controlSize(.small)
                 }
             }

@@ -203,16 +203,16 @@ private func split(_ p: CSGSolid.Polygon, _ n: Vec3, _ w: Double) -> SplitResult
 public extension CSGSolid {
     /// Welded, T-junction-free triangle mesh plus the face of each triangle.
     func triangulated() -> (mesh: Mesh, triangleFace: [Int]) {
-        // 1. Weld within 2e-5 mm. Points are bucketed on a 1e-5 grid but matched against the 27
-        //    neighbouring cells, so two nearly equal points on opposite sides of a rounding
-        //    boundary still merge (plain rounding would split them and leave cracks).
-        let tol = 2e-5, cell = 1e-5
+        // 1. Weld within 2e-5 mm. Points are bucketed on a grid as fine as the tolerance but
+        //    matched against the 27 neighbouring cells, so two nearly equal points on opposite
+        //    sides of a rounding boundary still merge (plain rounding would split them and leave cracks).
+        let tol = 2e-5, cell = 2e-5
         var buckets: [SIMD3<Int64>: [UInt32]] = [:]
         var positions: [Vec3] = []
         func key(_ v: Vec3) -> SIMD3<Int64> { SIMD3(Int64((v.x / cell).rounded(.down)), Int64((v.y / cell).rounded(.down)), Int64((v.z / cell).rounded(.down))) }
         func id(_ v: Vec3) -> UInt32 {
             let k = key(v)
-            for dx in -2...2 { for dy in -2...2 { for dz in -2...2 {
+            for dx in -1...1 { for dy in -1...1 { for dz in -1...1 {
                 for i in buckets[k &+ SIMD3(Int64(dx), Int64(dy), Int64(dz))] ?? [] where (positions[Int(i)] - v).length <= tol { return i }
             } } }
             let i = UInt32(positions.count)
@@ -229,7 +229,46 @@ public extension CSGSolid {
             loops.append((ids, p.face))
         }
 
-        // 2. T-junctions: insert any vertex lying inside a polygon edge.
+        // 2. T-junctions: insert any vertex lying inside a polygon edge. Candidates come from a
+        //    coarse grid walked along each edge (checking every vertex is quadratic).
+        var lo = positions.first ?? .zero, hi = lo
+        for p in positions {
+            lo = Vec3(min(lo.x, p.x), min(lo.y, p.y), min(lo.z, p.z)); hi = Vec3(max(hi.x, p.x), max(hi.y, p.y), max(hi.z, p.z))
+        }
+        let g = max((hi - lo).length / 256, 1e-3)
+        func cellOf(_ p: Vec3) -> SIMD3<Int32> {
+            SIMD3(Int32(((p.x - lo.x) / g).rounded(.down)), Int32(((p.y - lo.y) / g).rounded(.down)), Int32(((p.z - lo.z) / g).rounded(.down)))
+        }
+        // Each vertex goes in every cell its tolerance box touches, so the cells an edge passes
+        // through (exact traversal) hold every vertex within tolerance of it.
+        var grid: [SIMD3<Int32>: [UInt32]] = [:]
+        let pad = Vec3(3e-5, 3e-5, 3e-5)
+        for (i, p) in positions.enumerated() {
+            let c0 = cellOf(p - pad), c1 = cellOf(p + pad)
+            for x in c0.x...c1.x { for y in c0.y...c1.y { for z in c0.z...c1.z { grid[SIMD3(x, y, z), default: []].append(UInt32(i)) } } }
+        }
+        func candidates(_ pa: Vec3, _ pb: Vec3) -> [UInt32] {
+            var c = cellOf(pa)
+            let end = cellOf(pb), d = pb - pa
+            let dv = [d.x, d.y, d.z], av = [pa.x - lo.x, pa.y - lo.y, pa.z - lo.z]
+            var tMax = [Double](repeating: .infinity, count: 3), tDelta = tMax
+            var stepv = SIMD3<Int32>(0, 0, 0)
+            for k in 0..<3 where abs(dv[k]) > 1e-15 {
+                stepv[k] = dv[k] > 0 ? 1 : -1
+                let boundary = (Double(c[k]) + (dv[k] > 0 ? 1 : 0)) * g
+                tMax[k] = (boundary - av[k]) / dv[k]
+                tDelta[k] = g / abs(dv[k])
+            }
+            var out = grid[c] ?? []
+            var budget = abs(Int(end.x - c.x)) + abs(Int(end.y - c.y)) + abs(Int(end.z - c.z))
+            while c != end, budget > 0 {
+                let k = tMax[0] < tMax[1] ? (tMax[0] < tMax[2] ? 0 : 2) : (tMax[1] < tMax[2] ? 1 : 2)
+                c[k] += stepv[k]; tMax[k] += tDelta[k]; budget -= 1
+                out += grid[c] ?? []
+            }
+            if c != end { out += grid[end] ?? [] }
+            return out
+        }
         for li in loops.indices {
             var out: [UInt32] = []
             let ids = loops[li].ids
@@ -242,8 +281,8 @@ public extension CSGSolid {
                 var inner: [(Double, UInt32)] = []
                 let lo = Vec3(min(pa.x, pb.x), min(pa.y, pb.y), min(pa.z, pb.z)) - Vec3(1e-4, 1e-4, 1e-4)
                 let hi = Vec3(max(pa.x, pb.x), max(pa.y, pb.y), max(pa.z, pb.z)) + Vec3(1e-4, 1e-4, 1e-4)
-                for (ci, pc) in positions.enumerated() {
-                    let c = UInt32(ci)
+                for c in candidates(pa, pb) {
+                    let pc = positions[Int(c)]
                     guard c != a, c != b, pc.x >= lo.x, pc.x <= hi.x, pc.y >= lo.y, pc.y <= hi.y,
                           pc.z >= lo.z, pc.z <= hi.z else { continue }
                     let t = (pc - pa).dot(d) / len2

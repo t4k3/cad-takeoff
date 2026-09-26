@@ -77,6 +77,8 @@ struct Ribbon: View {
                 .help("Fori semplici, lamati o svasati, per viti, filettature o inserti a caldo: clicca su una faccia piana")
         }
         ToolGroup("MODIFICA") {
+            Button { workspace.startChamfer(model: model) } label: { Label("Smusso", systemImage: "skew") }
+                .help("Smussa gli spigoli: clicca gli spigoli da smussare, poi scegli la distanza")
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }
                 .disabled(model.selection == nil)
                 .help("Elimina la feature selezionata (⌫)")

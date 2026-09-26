@@ -29,6 +29,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case extrude(profile: Profile2D, height: Double)
         /// One or more holes on a face (always removes material).
         case hole(HoleSpec)
+        /// Bevel on selected edges of existing bodies (always removes material).
+        case chamfer(ChamferSpec)
     }
 
     public var id: UUID
@@ -66,6 +68,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case let .cylinder(r, h): local = Primitives.cylinder(radius: r, height: h)
         case let .extrude(profile, h): local = Operations.extrude(profile, height: h)
         case let .hole(spec): return HoleGeometry.mesh(spec, featureID: id)
+        case .chamfer: return Mesh(vertices: [], indices: [])   // exists only on the body it modifies
         }
         return local.translated(by: position)
     }

@@ -61,6 +61,40 @@ public enum DesignEvaluator {
                 }
                 continue
             }
+            if case let .chamfer(spec) = feature.kind {
+                do { try spec.validate() } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                // Each edge belongs to the body that still has it (faces keep their IDs through booleans).
+                var perBody: [Int: [(Int, EdgeInfo)]] = [:]
+                var missing = 0
+                for (k, ref) in spec.edges.enumerated() {
+                    if let hit = bodies.indices.lazy.compactMap({ i in ChamferGeometry.resolve(ref, in: bodies[i].snapshot).map { (i, $0) } }).first {
+                        perBody[hit.0, default: []].append((k, hit.1))
+                    } else { missing += 1 }
+                }
+                if missing > 0 {
+                    issues.append(.init(featureID: feature.id, message: missing == spec.edges.count
+                        ? "Smusso senza effetto: gli spigoli scelti non esistono più (la geometria è cambiata)."
+                        : "Smusso: \(missing) spigoli su \(spec.edges.count) non esistono più."))
+                }
+                for i in perBody.keys.sorted(by: >) {
+                    var tool: CSGSolid?
+                    for (k, edge) in perBody[i]! {
+                        do {
+                            let t = try ChamferGeometry.tool(for: edge, ref: spec.edges[k], spec: spec, snapshot: bodies[i].snapshot,
+                                                             featureID: feature.id, index: k)
+                            tool = tool.map { $0.union(t) } ?? t
+                        } catch {
+                            issues.append(.init(featureID: feature.id, message: error.localizedDescription))
+                        }
+                    }
+                    guard let tool else { continue }
+                    let solid = solidOf(bodies[i]).subtracting(tool)
+                    if solid.isEmpty { bodies.remove(at: i) } else { bodies[i] = rebuilt(bodies[i], solid, by: feature.id, revision: revision) }
+                }
+                continue
+            }
             let brep: BRepBody
             do { brep = try PrimitiveKernel.build(feature) } catch {
                 issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue

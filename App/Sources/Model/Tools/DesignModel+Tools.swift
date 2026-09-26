@@ -41,6 +41,14 @@ extension DesignModel: CADToolProvider {
         var next = document
         var selected = selection
         let changed: UUID
+        if name == "add_chamfer" {
+            let (f, warnings) = try chamfer(args, title: title)
+            next.features.append(f)
+            commitEdit(next, selected: selected, title: "Assistente: \(title)", changed: [f.id])
+            var fields: [String: JSONValue] = ["changed": true, "feature_id": .string(f.id.uuidString), "edge_count": .number(Double(warnings.edges))]
+            if !warnings.messages.isEmpty { fields["warnings"] = .array(warnings.messages.map { .string($0) }) }
+            return result(statusMessage, fields, changed: [f.id])
+        }
         if name.hasPrefix("add_") {
             guard next.features.count < 256 else { throw CADToolFailure("Limite prototipo: 256 geometrie per documento.") }
             let kind: Feature.Kind
@@ -81,8 +89,8 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole:
-                    legal = []   // holes: re-create with add_hole or edit in the app
+                case .hole, .chamfer:
+                    legal = []   // re-create with add_hole/add_chamfer or edit in the app
                 case let .extrude(p, h):
                     legal = ["points", "height"]
                     f.kind = .extrude(profile: args["points"] == nil ? p : Profile2D(points: try points(args)), height: try optionalNumber(args, "height", h))
@@ -127,9 +135,9 @@ extension DesignModel: CADToolProvider {
             "body_count": .number(Double(bodies.count)),
             "issues": .array(issues.map { ["feature_id": .string($0.featureID.uuidString), "message": .string($0.message)] }),
             "warning": "Corpi separati non si fondono tra loro: usa operation join per unirli. La chiusura dei bordi non certifica la stampabilità.",
-            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "boolean_join_cut_intersect", "parameter_update",
-                             "timeline_rollback_suppress", "session_undo", "stl", "part_color", "3mf"],
-            "unavailable": ["hole_feature", "fillet", "chamfer", "sheet_metal_ui", "assemblies", "step", "dxf"]
+            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "boolean_join_cut_intersect", "hole", "chamfer",
+                             "parameter_update", "timeline_rollback_suppress", "session_undo", "stl", "part_color", "3mf"],
+            "unavailable": ["fillet", "modeled_thread", "concave_chamfer", "sheet_metal_ui", "assemblies", "step", "dxf"]
         ])
     }
 
@@ -195,6 +203,14 @@ extension DesignModel: CADToolProvider {
             value["depth"] = depth
             value["centers"] = centers
             value["direction"] = vector(s.direction)
+        case let .chamfer(s):
+            value["kind"] = "chamfer"
+            value["summary"] = .string(s.summary)
+            value["mode"] = .string(s.mode.rawValue)
+            value["distance"] = .number(s.distance)
+            if s.mode == .twoDistances { value["distance2"] = .number(s.distance2) }
+            if s.mode == .distanceAngle { value["angle"] = .number(s.angle) }
+            value["edge_count"] = .number(Double(s.edges.count))
         }
         return .object(value)
     }
@@ -226,6 +242,49 @@ extension DesignModel: CADToolProvider {
             throw CADToolFailure("operation deve essere newBody, join, cut o intersect.")
         }
         return op
+    }
+
+    /// Chamfer on a body's edges picked by a simple rule (the assistant cannot click edges).
+    private func chamfer(_ args: [String: JSONValue], title: String) throws -> (Feature, (edges: Int, messages: [String])) {
+        guard document.features.count < 256 else { throw CADToolFailure("Limite prototipo: 256 geometrie per documento.") }
+        let target = document.features[try index(args)].id
+        guard let body = evaluation().bodies.first(where: { $0.id == target }) else {
+            throw CADToolFailure("Questa geometria non crea un corpo attivo: indica la geometria che ha creato il corpo.")
+        }
+        let zs = body.snapshot.positions.map(\.z)
+        let (lo, hi) = (zs.min() ?? 0, zs.max() ?? 0)
+        let rule = try string(args, "edges")
+        let picked = body.snapshot.edges.filter { e in
+            switch rule {
+            case "all": return true
+            case "top": return e.polyline.allSatisfy { abs($0.z - hi) < 1e-6 }
+            case "bottom": return e.polyline.allSatisfy { abs($0.z - lo) < 1e-6 }
+            case "vertical":
+                guard let a = e.polyline.first, let b = e.polyline.last, (b - a).length > 1e-6 else { return false }
+                return abs((b - a).normalized.z) > 1 - 1e-9
+            default: return false
+            }
+        }
+        guard ["all", "top", "bottom", "vertical"].contains(rule) else { throw CADToolFailure("edges: all, top, bottom o vertical.") }
+        let refs = picked.compactMap(EdgeRef.init)
+        guard !refs.isEmpty else { throw CADToolFailure("Nessuno spigolo corrisponde a «\(rule)» su questo corpo.") }
+        var spec = ChamferSpec(edges: Array(refs.prefix(500)))
+        if args["mode"] != nil {
+            guard let m = ChamferSpec.Mode(rawValue: try string(args, "mode")) else { throw CADToolFailure("mode: equalDistance, twoDistances o distanceAngle.") }
+            spec.mode = m
+        }
+        spec.distance = try number(args, "distance")
+        spec.distance2 = try optionalNumber(args, "distance2", spec.distance)
+        spec.angle = try optionalNumber(args, "angle", 45)
+        let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "Smusso " + spec.summary,
+                        kind: .chamfer(spec), operation: .cut)
+        try CADToolValidation.feature(f)
+        var next = document
+        next.features.append(f)
+        let messages = DesignEvaluator.evaluate(next, revision: "check").issues.filter { $0.featureID == f.id }.map(\.message)
+        let failed = Set(messages).count == 1 && messages.count >= refs.count || messages.contains { $0.contains("senza effetto") }
+        if failed { throw CADToolFailure("Smusso non applicabile: \(messages.first ?? "nessuno spigolo modificato").") }
+        return (f, (refs.count, Array(Set(messages)).sorted()))
     }
 
     private func holeSpec(_ args: [String: JSONValue]) throws -> HoleSpec {

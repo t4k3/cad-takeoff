@@ -105,6 +105,14 @@ struct InspectorPanel: View {
                 }
             }
             .controlSize(.small)
+        case let .chamfer(spec):
+            info("Tipo", spec.mode.label)
+            info("Spigoli", "\(spec.edges.count)")
+            DimensionField(title: "Distanza", value: Binding(get: { spec.distance }, set: { var s = spec; s.distance = $0; kind.wrappedValue = .chamfer(s) }))
+            if spec.mode == .twoDistances {
+                DimensionField(title: "Distanza 2", value: Binding(get: { spec.distance2 }, set: { var s = spec; s.distance2 = $0; kind.wrappedValue = .chamfer(s) }))
+            }
+            if spec.mode == .distanceAngle { info("Angolo", String(format: "%.0f°", spec.angle)) }
         case let .extrude(p, h):
             info("Profilo", "\(p.points.count) vertici")
             DimensionField(title: "Altezza", value: Binding(get: { h }, set: { kind.wrappedValue = .extrude(profile: p, height: $0) }))
