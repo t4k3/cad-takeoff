@@ -163,6 +163,13 @@ struct AssistantToolsTests {
         expect(chInfo.structured?["edge_closed"]?.bool == true, "chamfered plate closed")
         let tooBig = await edit("add_chamfer", ["feature_id": .string(plateID), "edges": "vertical", "distance": 1, "mode": "distanceAngle", "angle": 95])
         expect(tooBig.isError, "chamfer angle out of range rejected")
+        let rounded = await edit("add_chamfer", ["feature_id": .string(plateID), "edges": "vertical", "distance": 3, "profile": "round"])
+        let roundInfo = await m.call("scene_info", arguments: [:])
+        expect(!rounded.isError && rounded.structured?["edge_count"]?.number == 4, "round on 4 vertical edges")
+        let chamferedVolume: Double = 6000 - 70 + 4.0 / 3
+        let roundedVolume: Double = roundInfo.structured?["mesh_volume_mm3"]?.number ?? 0
+        expect(roundedVolume < chamferedVolume - 20, "round removes the corners")
+        expect(roundInfo.structured?["edge_closed"]?.bool == true, "rounded plate closed")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

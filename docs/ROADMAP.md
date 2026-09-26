@@ -22,7 +22,7 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 | 3 | Booleane: Unisci / Taglia / Interseca | **Fatta** — motore CSG nostro, risultati chiusi, facce con identità, export uniti |
 | 3b | **Foro** (richiesta Ross 26/09): semplice, lamato, svasato; viti M2–M12 per passaggio, filettatura indicata (preforo per maschio) o inserto a caldo; passante o cieco; più fori su faccia piana | **Fatta** — in attesa di prova di Ross. Posizione con aganci (vertici, punti medi, centri di cerchi e facce, punti dello schizzo proiettati) e coordinate X/Y/Z scritte a mano (richiesta Ross 26/09). Filetto *modellato* rinviato (serve motore booleane più veloce) |
 | 3c | **Smusso** (chamfer, richiesta Ross 26/09): distanza uguale / due distanze / distanza+angolo, su spigoli selezionati | **Fatta** — in attesa di prova di Ross. Spigoli dritti tra facce piane e bordi circolari (cilindri, bocca dei fori); spigoli concavi, archi parziali e anteprima di un nuovo smusso non ancora |
-| 3d | **Raccordo** (fillet, richiesta Ross 26/09): raggio costante su spigoli selezionati, tangenza automatica | prossima |
+| 3d | **Raccordo** (fillet, richiesta Ross 26/09): raggio costante su spigoli selezionati, tangenza automatica | **Fatta** — in attesa di prova di Ross. È la forma «Tondo» del comando Smusso (richiesta Ross 26/09: scegliere il tipo) e ha anche il suo pulsante; spigoli dritti e bordi di cilindri/fori (superficie toroidale). Freccia da trascinare sullo spigolo e anteprima dal vivo (anche per un nuovo smusso). Angoli tra più raccordi: incrocio semplice, non ancora il raccordo sferico d'angolo di Fusion |
 
 | # | Passo | Cosa vede Ross alla fine | Chi | Stato |
 |---|---|---|---|---|
@@ -38,7 +38,8 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 
 ## Da valutare (non iniziati)
 
-- Smusso su spigoli **concavi** (aggiunge materiale) e su **archi** parziali; anteprima dal vivo anche per un nuovo smusso.
+- Smusso/raccordo su spigoli **concavi** (aggiunge materiale) e su **archi** parziali; angolo sferico dove si incontrano tre raccordi.
+- Freccia di trascinamento anche per Estrudi, Foro (profondità) e parametri dei solidi.
 - **Semplificare la mesh dopo le booleane** (unire i frammenti complanari della stessa faccia): oggi un foro + smusso su una piastra
   produce ~16.000 triangoli; serve prima del raccordo e del filetto modellato per restare veloci.
 

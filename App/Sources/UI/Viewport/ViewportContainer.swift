@@ -1,6 +1,7 @@
 import CADCore
 import Observation
 import SwiftUI
+import simd
 
 /// UI state of the 3D view that must survive SwiftUI updates.
 @MainActor
@@ -40,8 +41,45 @@ final class ViewportState {
 
     // MARK: Faces and edges (stable kernel IDs, T76)
 
+    /// While a command preview replaces the geometry on screen, picking and highlights keep
+    /// using the real design (the edges being chamfered stay clickable).
+    @ObservationIgnored private var reference: (revision: String, bodies: [Feature.ID: ViewportRenderer.Body])?
+
+    func setReference(_ snapshot: DesignSnapshot?, features: [Feature]) {
+        guard let snapshot else { reference = nil; return }
+        guard reference?.revision != snapshot.revision else { return }
+        var map: [Feature.ID: ViewportRenderer.Body] = [:]
+        for b in snapshot.bodies {
+            guard let f = features.first(where: { $0.id == b.bodyID }), var lo = b.positions.first else { continue }
+            var hi = lo
+            for p in b.positions {
+                lo = Vec3(min(lo.x, p.x), min(lo.y, p.y), min(lo.z, p.z)); hi = Vec3(max(hi.x, p.x), max(hi.y, p.y), max(hi.z, p.z))
+            }
+            map[f.id] = ViewportRenderer.Body(feature: f, snapshot: b, triangles: nil, triangleVertexCount: 0,
+                                             edges: nil, edgeVertexCount: 0, bounds: BoundingBox(min: lo, max: hi))
+        }
+        reference = (snapshot.revision, map)
+    }
+
+    var pickableBodies: [ViewportRenderer.Body] {
+        reference.map { Array($0.bodies.values) } ?? renderer?.visibleBodies ?? []
+    }
+
+    /// Screen point (points, top-left origin) of a world position; nil when behind the camera.
+    func screenPoint(_ p: Vec3) -> CGPoint? {
+        let size = viewSize
+        guard size.width > 0, size.height > 0 else { return nil }
+        let proj: simd_float4x4 = camera.projectionMatrix(aspect: Float(size.width / size.height))
+        let m: simd_float4x4 = simd_mul(proj, camera.viewMatrix)
+        let c: SIMD4<Float> = simd_mul(m, SIMD4<Float>(Float(p.x), Float(p.y), Float(p.z), 1))
+        guard c.w > 1e-6 else { return nil }
+        let x = Double((c.x / c.w + 1) / 2), y = Double((1 - c.y / c.w) / 2)
+        return CGPoint(x: x * size.width, y: y * size.height)
+    }
+
     func pickGeo(_ ray: Ray, filter: SelectionFilter) -> GeoRef? {
-        guard let bodies = renderer?.visibleBodies else { return nil }
+        let bodies = pickableBodies
+        guard !bodies.isEmpty else { return nil }
         switch filter {
         case .body: return nil
         case .face: return GeoPicking.face(ray, bodies: bodies)
@@ -62,7 +100,7 @@ final class ViewportState {
         return { d in points * 2 * (perspective ? max(d, 1) : orbit) * tanHalf / h }
     }
 
-    func body(_ id: Feature.ID) -> ViewportRenderer.Body? { renderer?.bodies[id] }
+    func body(_ id: Feature.ID) -> ViewportRenderer.Body? { reference?.bodies[id] ?? renderer?.bodies[id] }
 
     func pick(_ ray: Ray) -> Feature.ID? {
         guard let renderer else { return nil }
@@ -83,85 +121,24 @@ struct ViewportContainer: View {
     @Environment(SketchStore.self) private var sketchStore
     @Bindable var viewport: ViewportState
 
-    var body: some View {
+    /// Viewport and its first overlays (split from `body` to keep type-checking fast).
+    private var canvas: some View {
         ZStack {
             LinearGradient(colors: [Color(white: 0.30), Color(white: 0.17)], startPoint: .top, endPoint: .bottom)
                 .overlay(Theme.Palette.canvas.opacity(0.0))
-            MetalViewport(features: model.document.activeFeatures, snapshot: model.snapshot(),
-                          // In face/edge mode only the picked face/edge is highlighted, not the whole body.
-                          selection: workspace.selectionFilter == .body ? model.selection : nil,
-                          hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,
-                          overlayLines: sketchLines,
-                          highlightTriangles: geoHighlight.triangles,
-                          highlightLines: geoHighlight.lines,
-                          onClick: { _, ray, mods in
-                              if let sketch = workspace.sketch {
-                                  guard workspace.command == nil,
-                                        let p = ray.intersect(planePoint: .zero, normal: SIMD3(0, 0, 1)) else { return }
-                                  sketch.vertexSnap = 8 * viewport.mmPerPoint
-                                  sketch.click(p)
-                                  return
-                              }
-                              if let placement = workspace.holePlacement, let bodies = viewport.renderer?.visibleBodies {
-                                  if let msg = placement.click(ray, bodies: bodies, tolerance: viewport.screenTolerance(12)), !msg.isEmpty { model.statusMessage = msg }
-                                  return
-                              }
-                              if workspace.selectionFilter != .body {
-                                  let multi = workspace.edgePicking || !mods.isDisjoint(with: [.shift, .command])
-                                  if let ref = viewport.pickGeo(ray, filter: workspace.selectionFilter) {
-                                      model.selection = ref.feature
-                                      if multi {
-                                          if let i = workspace.geoSelection.firstIndex(of: ref) { workspace.geoSelection.remove(at: i) }
-                                          else { workspace.geoSelection.append(ref) }
-                                      } else { workspace.geoSelection = [ref] }
-                                  } else if !multi {
-                                      workspace.geoSelection = []
-                                      model.selection = nil
-                                  }
-                                  return
-                              }
-                              // Click selects the body under the cursor; empty space clears the selection.
-                              // TODO(R1): model.select(_:) when Codex ships it.
-                              model.selection = viewport.pick(ray)
-                          },
-                          onHover: { point, ray in
-                              if let sketch = workspace.sketch {
-                                  sketch.vertexSnap = 8 * viewport.mmPerPoint
-                                  sketch.hover(ray?.intersect(planePoint: .zero, normal: SIMD3(0, 0, 1)), screen: point)
-                                  return
-                              }
-                              if let placement = workspace.holePlacement {
-                                  placement.hover(ray, bodies: viewport.renderer?.visibleBodies ?? [], tolerance: viewport.screenTolerance(12))
-                                  return
-                              }
-                              if workspace.selectionFilter != .body {
-                                  let ref = ray.flatMap { viewport.pickGeo($0, filter: workspace.selectionFilter) }
-                                  if workspace.geoHover != ref { workspace.geoHover = ref }
-                                  if workspace.hovered != nil { workspace.hovered = nil }
-                                  return
-                              }
-                              let id = ray.flatMap { viewport.pick($0) }
-                              if workspace.hovered != id { workspace.hovered = id }
-                          },
-                          onKey: { key in
-                              if let sketch = workspace.sketch, workspace.command == nil {
-                                  if let tool = SketchSession.Tool.allCases.first(where: { $0.key == key }) {
-                                      sketch.tool = tool; return true
-                                  }
-                                  if key == "e" { workspace.extrudeSketch(model: model); return true }
-                              }
-                              if key == "f" { viewport.fit(); return true }
-                              return false
-                          },
-                          onReady: { renderer in
-                              viewport.renderer = renderer
-                              viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
-                              DispatchQueue.main.async { viewport.fitOnce() }
-                          })
+            metal
         }
         .background(GeometryReader { g in Color.clear.onAppear { viewport.viewSize = g.size }.onChange(of: g.size) { _, s in viewport.viewSize = s } })
         .overlay(alignment: .topLeading) { sketchHUD }
         .overlay(alignment: .bottomLeading) { measureChip.padding(12) }
+        .overlay(alignment: .topLeading) { manipulatorLabel }
+        .onChange(of: workspace.previewSnapshot?.revision) { _, revision in
+            viewport.setReference(revision == nil ? nil : model.snapshot(), features: model.document.activeFeatures)
+        }
+    }
+
+    var body: some View {
+        canvas
         .overlay(alignment: .top) { sketchBanner }
         .background { sketchKeys }
         .onChange(of: workspace.sketchCameraRequest) { _, request in
@@ -191,6 +168,120 @@ struct ViewportContainer: View {
         }
         .animation(.easeOut(duration: 0.18), value: workspace.command?.id)
         .clipped()
+    }
+
+    private var metal: some View {
+    MetalViewport(features: model.document.activeFeatures, snapshot: workspace.previewSnapshot ?? model.snapshot(),
+                  // In face/edge mode only the picked face/edge is highlighted, not the whole body.
+                  selection: workspace.selectionFilter == .body ? model.selection : nil,
+                  hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,
+                  overlayLines: sketchLines,
+                  highlightTriangles: geoHighlight.triangles,
+                  highlightLines: geoHighlight.lines,
+                  onClick: handleClick,
+                  onHover: handleHover,
+                  onDragBegin: dragBegin,
+                  onDragMove: { ray in workspace.manipulator?.drag(ray) },
+                  onDragEnd: { workspace.manipulator?.endDrag() },
+                  onKey: handleKey,
+                  onReady: { renderer in
+                      viewport.renderer = renderer
+                      viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
+                      DispatchQueue.main.async { viewport.fitOnce() }
+                  })
+    }
+
+    // MARK: Viewport input
+
+    private func handleClick(_ point: CGPoint, _ ray: Ray, _ mods: NSEvent.ModifierFlags) {
+        if let sketch = workspace.sketch {
+            guard workspace.command == nil,
+                  let p = ray.intersect(planePoint: .zero, normal: SIMD3(0, 0, 1)) else { return }
+            sketch.vertexSnap = 8 * viewport.mmPerPoint
+            sketch.click(p)
+            return
+        }
+        if let placement = workspace.holePlacement, let bodies = viewport.renderer?.visibleBodies {
+            if let msg = placement.click(ray, bodies: bodies, tolerance: viewport.screenTolerance(12)), !msg.isEmpty { model.statusMessage = msg }
+            return
+        }
+        if workspace.selectionFilter != .body {
+            let multi = workspace.edgePicking || !mods.isDisjoint(with: [.shift, .command])
+            if let ref = viewport.pickGeo(ray, filter: workspace.selectionFilter) {
+                model.selection = ref.feature
+                if multi {
+                    if let i = workspace.geoSelection.firstIndex(of: ref) { workspace.geoSelection.remove(at: i) }
+                    else { workspace.geoSelection.append(ref) }
+                } else { workspace.geoSelection = [ref] }
+            } else if !multi {
+                workspace.geoSelection = []
+                model.selection = nil
+            }
+            return
+        }
+        // Click selects the body under the cursor; empty space clears the selection.
+        // TODO(R1): model.select(_:) when Codex ships it.
+        model.selection = viewport.pick(ray)
+    }
+
+    private func dragBegin(_ ray: Ray) -> Bool {
+        guard let m = workspace.manipulator,
+              m.hits(ray, length: arrowLength, tolerance: viewport.screenTolerance(8)) else { return false }
+        m.beginDrag(ray, viewDirection: viewport.camera.forward)
+        return true
+    }
+
+    private func handleHover(_ point: CGPoint?, _ ray: Ray?) {
+        if let m = workspace.manipulator {
+            let hot = ray.map { m.hits($0, length: arrowLength, tolerance: viewport.screenTolerance(8)) } ?? false
+            if m.isHot != hot { m.isHot = hot }
+        }
+        if let sketch = workspace.sketch {
+            sketch.vertexSnap = 8 * viewport.mmPerPoint
+            sketch.hover(ray?.intersect(planePoint: .zero, normal: SIMD3(0, 0, 1)), screen: point)
+            return
+        }
+        if let placement = workspace.holePlacement {
+            placement.hover(ray, bodies: viewport.renderer?.visibleBodies ?? [], tolerance: viewport.screenTolerance(12))
+            return
+        }
+        if workspace.selectionFilter != .body {
+            let ref = ray.flatMap { viewport.pickGeo($0, filter: workspace.selectionFilter) }
+            if workspace.geoHover != ref { workspace.geoHover = ref }
+            if workspace.hovered != nil { workspace.hovered = nil }
+            return
+        }
+        let id = ray.flatMap { viewport.pick($0) }
+        if workspace.hovered != id { workspace.hovered = id }
+    }
+
+    private func handleKey(_ key: String) -> Bool {
+        if let sketch = workspace.sketch, workspace.command == nil {
+            if let tool = SketchSession.Tool.allCases.first(where: { $0.key == key }) {
+                sketch.tool = tool; return true
+            }
+            if key == "e" { workspace.extrudeSketch(model: model); return true }
+        }
+        if key == "f" { viewport.fit(); return true }
+        return false
+    }
+
+    // MARK: Drag arrow
+
+    /// Arrow length: about 60 points on screen.
+    private var arrowLength: Double { 60 * viewport.mmPerPoint }
+
+    /// Value next to the arrow tip, like Fusion's on-canvas input.
+    @ViewBuilder private var manipulatorLabel: some View {
+        if let m = workspace.manipulator, let p = viewport.screenPoint(m.handle - m.inward * arrowLength) {
+            Text(m.label + " " + String(format: "%.1f mm", m.value))
+                .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6).padding(.vertical, 3)
+                .background(RoundedRectangle(cornerRadius: 4).fill(m.isDragging || m.isHot ? Color.orange : Theme.Palette.sketch))
+                .offset(x: p.x + 8, y: p.y - 22)
+                .allowsHitTesting(false)
+        }
     }
 
     // MARK: Face / edge highlight and measurements
@@ -241,6 +332,10 @@ struct ViewportContainer: View {
                         Text("Faccia conica (svasatura)").font(.system(size: 11, weight: .semibold))
                         Text("Angolo \(fmt(2 * half * 180 / .pi))°")
                         Text("Area \(fmt(face.area)) mm²")
+                    case let .torus(_, _, _, minor):
+                        Text("Faccia tonda (raccordo)").font(.system(size: 11, weight: .semibold))
+                        Text("Raggio \(fmt(minor)) mm")
+                        Text("Area \(fmt(face.area)) mm²")
                     case let .cylinder(_, axis, r):
                         Text("Faccia cilindrica").font(.system(size: 11, weight: .semibold))
                         Text("Ø \(fmt(2 * r)) mm · R \(fmt(r)) mm")
@@ -276,7 +371,7 @@ struct ViewportContainer: View {
     // MARK: Sketch overlays
 
     private var sketchLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
-        savedSketchLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
+        savedSketchLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay(length: arrowLength) ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
                                   previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
     }

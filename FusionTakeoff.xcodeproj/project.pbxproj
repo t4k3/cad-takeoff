@@ -64,6 +64,7 @@
 		E91C000FA839F7AAD962F2CD /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */; };
 		EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */; };
 		EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */; };
+		F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
 		FE2BFC396A55BAC42977CD69 /* HoleCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */; };
 /* End PBXBuildFile section */
@@ -98,6 +99,7 @@
 		0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStream.swift; sourceTree = "<group>"; };
 		0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIConversation.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
+		14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceManipulator.swift; sourceTree = "<group>"; };
 		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
@@ -277,6 +279,7 @@
 			isa = PBXGroup;
 			children = (
 				F565E8DD894590B674296FD8 /* ChamferCommand.swift */,
+				14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
 			);
 			path = Features;
@@ -568,6 +571,7 @@
 				B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */,
 				777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
+				F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
 				13A90DD582DD0DFADFC02690 /* GeoSelection.swift in Sources */,

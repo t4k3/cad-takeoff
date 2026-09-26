@@ -114,3 +114,61 @@ private func allAt(z: Double) -> (EdgeInfo) -> Bool { { e in e.polyline.allSatis
     let doc = CADDocument(features: [base, f])
     #expect(try CADDocument.decode(doc.encoded()) == doc)
 }
+
+// MARK: Round profile (fillet)
+
+/// Area removed by a round of radius r on a right-angle edge (arc as n chords over 90°).
+private func roundArea(_ r: Double, _ n: Int = 16) -> Double { r * r - Double(n) / 2 * r * r * sin(.pi / 2 / Double(n)) }
+
+@Test func roundOnOneEdgeAndMitredCorner() {
+    let front = refs([base], { e in e.polyline.allSatisfy { abs($0.z - 5) < 1e-9 && abs($0.y + 15) < 1e-9 } })
+    let (m1, i1, snap) = chamfered([base], ChamferSpec(edges: front, profile: .round, distance: 2))
+    #expect(i1.isEmpty && MeshValidator.validate(m1).isWatertight)
+    #expect(abs(m1.volume - (6000 - 40 * roundArea(2))) < 1e-6)
+    let round = snap?.faces.first { $0.id.rawValue.hasPrefix("chamfer:") }
+    if case let .cylinder(_, axis, r)? = round?.surface { #expect(abs(r - 2) < 1e-12 && abs(abs(axis.x) - 1) < 1e-12) } else { Issue.record("round face is cylindrical") }
+    let top = refs([base], allAt(z: 5))
+    let (m4, i4, _) = chamfered([base], ChamferSpec(edges: top, profile: .round, distance: 1))
+    #expect(i4.isEmpty && MeshValidator.validate(m4).isWatertight)
+    #expect(m4.volume < 6000 - 138 * roundArea(1) && m4.volume > 6000 - 140 * roundArea(1))
+    #expect(ChamferSpec(edges: top, profile: .round, distance: 1).title == "Raccordo R1 mm ×4")
+}
+
+@Test func roundOnCylinderAndHoleRims() {
+    let centroid = (10 - 3 * Double.pi) / (12 - 3 * Double.pi)   // of the removed corner, in radii
+    let boss = Feature(name: "Perno", kind: .cylinder(radius: 10, height: 20))
+    let (m1, i1, snap) = chamfered([boss], ChamferSpec(edges: refs([boss], allAt(z: 20)), profile: .round, distance: 2))
+    #expect(i1.isEmpty && MeshValidator.validate(m1).isWatertight)
+    let removed1 = Profile2D.circle(radius: 10, segments: 64).area * 20 - m1.volume
+    let expected1 = 2 * .pi * (10 - 2 * centroid) * 4 * (1 - .pi / 4)
+    #expect(abs(removed1 - expected1) < expected1 * 0.03)
+    #expect(snap?.faces.contains { if case .torus = $0.surface { true } else { false } } == true)
+
+    let plate = Feature(name: "Piastra", kind: .box(width: 40, depth: 40, height: 10))
+    let hole = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(0, 0, 10)], fit: .manual, diameter: 6)), operation: .cut)
+    let mouth = refs([plate, hole], { e in e.faces.contains { $0.rawValue.contains("bore") } && e.polyline.allSatisfy { abs($0.z - 10) < 1e-9 } })
+    let drilled = DesignEvaluator.evaluate(CADDocument(features: [plate, hole]), revision: "r").bodies[0].mesh.volume
+    let (m2, i2, _) = chamfered([plate, hole], ChamferSpec(edges: mouth, profile: .round, distance: 1))
+    #expect(i2.isEmpty && MeshValidator.validate(m2).isWatertight)
+    let expected2 = 2 * .pi * (3 + centroid) * (1 - .pi / 4)
+    #expect(abs((drilled - m2.volume) - expected2) < expected2 * 0.05)
+}
+
+@Test func roundDecodesOldChamfers() throws {
+    let json = #"{"edges":[],"mode":"equalDistance","distance":1,"distance2":1,"angle":45,"flip":false}"#
+    let spec = try JSONDecoder().decode(ChamferSpec.self, from: Data(json.utf8))
+    #expect(spec.profile == .flat)
+}
+
+@Test func oversizedBevelIsReported() {
+    let cube = Feature(name: "Cubo", kind: .box(width: 20, depth: 20, height: 20))
+    let edge = refs([cube], { e in e.polyline.allSatisfy { abs($0.z - 20) < 1e-9 && abs($0.y + 10) < 1e-9 } })
+    let (mesh, issues, _) = chamfered([cube], ChamferSpec(edges: edge, profile: .round, distance: 21))
+    #expect(issues.contains { $0.message.contains("troppo grande") && $0.message.contains("20.0") })
+    #expect(abs(mesh.volume - 8000) < 1e-6)
+    let (_, ok, _) = chamfered([cube], ChamferSpec(edges: edge, profile: .round, distance: 20))
+    #expect(ok.isEmpty)
+    let boss = Feature(name: "Perno", kind: .cylinder(radius: 10, height: 3))
+    let (_, tall, _) = chamfered([boss], ChamferSpec(edges: refs([boss], allAt(z: 3)), profile: .round, distance: 4))
+    #expect(tall.contains { $0.message.contains("troppo grande") })
+}

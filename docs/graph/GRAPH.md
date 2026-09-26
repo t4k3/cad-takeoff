@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 12:24. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 14:06. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -143,7 +143,7 @@ flowchart LR
     T85["T85 · Smusso (chamfer) su spigoli selezionati<br/><i>claude</i>"]:::done
   end
   subgraph P25["Fase 3d"]
-    T86["T86 · Raccordo (fillet) a raggio costante su spigoli selezionati<br/><i>claude</i>"]:::todo
+    T86["T86 · Raccordo (fillet) a raggio costante su spigoli selezionati<br/><i>claude</i>"]:::done
   end
   T00 --> T02
   T00 --> T03
@@ -330,7 +330,6 @@ flowchart LR
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: claude
 - **T63** Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza — suggerito: claude
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: claude
-- **T86** Raccordo (fillet) a raggio costante su spigoli selezionati — suggerito: claude
 
 ## Tabella
 
@@ -422,4 +421,4 @@ flowchart LR
 | T83 | Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana | done | claude | T82 | Packages/CADCore/Sources/CADCore/Features<br>App/Sources/UI |
 | T84 | Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI | done | claude | T76, T82 | Packages/CADCore<br>App/Sources<br>Tests |
 | T85 | Smusso (chamfer) su spigoli selezionati | done | claude | T84 | Packages/CADCore<br>App/Sources |
-| T86 | Raccordo (fillet) a raggio costante su spigoli selezionati | todo | claude | T85 | Packages/CADCore<br>App/Sources |
+| T86 | Raccordo (fillet) a raggio costante su spigoli selezionati | done | claude | T85 | Packages/CADCore<br>App/Sources |

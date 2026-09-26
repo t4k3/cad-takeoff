@@ -66,7 +66,7 @@ extension BRepBody {
                     case let .cylinder(origin, axis, _):
                         let relative = point - origin
                         normals.append((relative - axis * relative.dot(axis)).normalized)
-                    case .cone:
+                    case .cone, .torus:
                         normals.append(face.normal)
                     }
                 }

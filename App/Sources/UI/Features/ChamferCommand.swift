@@ -1,14 +1,17 @@
 import CADCore
 import SwiftUI
 
-/// Chamfer panel (T85): pick edges in the viewport (each click adds or removes one), then
-/// equal distance, two distances or distance + angle.
+/// Chamfer / round panel (T85): pick edges in the viewport (each click adds or removes one),
+/// choose flat (chamfer) or round (fillet), set the size in the panel or with the drag arrow.
+/// The result is previewed live; the design changes only on OK (one undo step).
 @MainActor
 enum ChamferCommand {
     static let modes = ChamferSpec.Mode.allCases
+    static let profiles = ChamferSpec.Profile.allCases
 
-    static func start(workspace: WorkspaceState, model: DesignModel, editing feature: Feature? = nil) -> CommandSession {
-        var spec = ChamferSpec(edges: [])
+    static func start(workspace: WorkspaceState, model: DesignModel, editing feature: Feature? = nil,
+                      profile: ChamferSpec.Profile = .flat) -> CommandSession {
+        var spec = ChamferSpec(edges: [], profile: profile)
         if let feature, case let .chamfer(existing) = feature.kind { spec = existing }
         let original = feature
         if original == nil {
@@ -31,15 +34,41 @@ enum ChamferCommand {
             original == nil ? .references(workspace.geoSelection.map { "\($0)" }) : .references(spec.edges.map { "\($0.point)" })
         }
 
+        /// Where the drag arrow goes: the first edge, on the design as it is before this feature.
+        func handleEdge() -> (EdgeInfo, BodySnapshot)? {
+            if original == nil {
+                let bodies = model.evaluation().bodies
+                for ref in workspace.geoSelection {
+                    guard case let .edge(id) = ref.kind, let b = bodies.first(where: { $0.id == ref.feature }),
+                          let e = b.snapshot.edges.first(where: { $0.id == id }) else { continue }
+                    return (e, b.snapshot)
+                }
+                return nil
+            }
+            guard let first = spec.edges.first, let original,
+                  let at = model.document.timeline.firstIndex(where: { $0.id == original.id }) else { return nil }
+            var before = model.document
+            before.rollback = at
+            for b in DesignEvaluator.evaluate(before, revision: "handle").bodies {
+                if let e = ChamferGeometry.resolve(first, in: b.snapshot) { return (e, b.snapshot) }
+            }
+            return nil
+        }
+        let editHandle = original == nil ? nil : handleEdge()
+
         let fields: [CommandField] = [
             .init(id: "edges", label: "Spigoli", kind: .reference(prompt: "Clicca gli spigoli", maxCount: 500), value: edgeValue(),
                   help: original == nil ? "Clicca uno spigolo per aggiungerlo, cliccalo di nuovo per toglierlo" : "Gli spigoli restano quelli scelti alla creazione"),
-            .init(id: "mode", label: "Tipo", kind: .choice(modes.map(\.label)), value: .index(modes.firstIndex(of: spec.mode) ?? 0)),
-            .init(id: "d", label: "Distanza", kind: .length(0.01...1000), value: .number(spec.distance)),
+            .init(id: "profile", label: "Forma", kind: .choice(profiles.map(\.label)), value: .index(profiles.firstIndex(of: spec.profile) ?? 0),
+                  help: "Piatto: smusso a 45° o con due distanze/angolo. Tondo: raccordo a raggio costante."),
+            .init(id: "mode", label: "Misura", kind: .choice(modes.map(\.label)), value: .index(modes.firstIndex(of: spec.mode) ?? 0),
+                  help: "Solo per la forma piatta"),
+            .init(id: "d", label: spec.profile == .round ? "Raggio" : "Distanza", kind: .length(0.01...1000), value: .number(spec.distance),
+                  help: "Puoi anche trascinare la freccia sullo spigolo"),
             .init(id: "d2", label: "Distanza 2", kind: .length(0.01...1000), value: .number(spec.distance2),
-                  help: "Usata con «Due distanze»: arretramento sulla seconda faccia"),
+                  help: "Solo con «Due distanze»: arretramento sulla seconda faccia"),
             .init(id: "angle", label: "Angolo", kind: .angle(1...89), value: .number(spec.angle),
-                  help: "Usato con «Distanza e angolo»: angolo tra lo smusso e la prima faccia"),
+                  help: "Solo con «Distanza e angolo»: angolo tra lo smusso e la prima faccia"),
             .init(id: "flip", label: "Inverti lati", kind: .toggle, value: .flag(spec.flip),
                   help: "Scambia le due facce (conta con «Due distanze» e «Distanza e angolo»)"),
         ]
@@ -47,6 +76,7 @@ enum ChamferCommand {
         func read(_ f: [CommandField]) -> ChamferSpec {
             var s = spec
             func num(_ id: String) -> Double { f.first { $0.id == id }?.number ?? 0 }
+            if case let .index(i)? = f.first(where: { $0.id == "profile" })?.value { s.profile = profiles[i] }
             if case let .index(i)? = f.first(where: { $0.id == "mode" })?.value { s.mode = modes[i] }
             s.distance = num("d"); s.distance2 = num("d2"); s.angle = num("angle")
             if case let .flag(v)? = f.first(where: { $0.id == "flip" })?.value { s.flip = v }
@@ -54,53 +84,92 @@ enum ChamferCommand {
             return s
         }
 
-        /// Editing an existing chamfer: live preview on the design (like the other edit panels).
-        func apply(_ f: [CommandField]) {
-            guard let original, f.allSatisfy({ $0.validationMessage == nil }),
-                  let i = model.document.features.firstIndex(where: { $0.id == original.id }) else { return }
-            let s = read(f)
-            guard (try? s.validate()) != nil else { return }
-            model.document.features[i].kind = .chamfer(s)
-            // An automatic name ("Smusso 1 mm ×2") follows the new size; a name typed by the user stays.
-            if original.name == "Smusso " + spec.summary { model.document.features[i].name = "Smusso " + s.summary }
+        /// The design with this chamfer applied (added, or replacing the edited one).
+        func document(with s: ChamferSpec) -> (CADDocument, Feature) {
+            var doc = model.document
+            if let original, let i = doc.features.firstIndex(where: { $0.id == original.id }) {
+                var f = doc.features[i]
+                f.kind = .chamfer(s)
+                // An automatic name ("Smusso 1 mm ×2") follows the new size; a name typed by the user stays.
+                if original.name == spec.title { f.name = s.title }
+                doc.features[i] = f
+                return (doc, f)
+            }
+            let f = Feature(name: s.title, kind: .chamfer(s), operation: .cut)
+            doc.features.append(f)
+            return (doc, f)
         }
 
-        func finish() { workspace.edgePicking = false; workspace.onGeoSelectionChange = nil }
+        var session: CommandSession!
 
-        let session = CommandSession(
-            title: original == nil ? "Smusso" : "Modifica \(original!.name)", symbol: "skew",
+        func updateArrow(_ s: ChamferSpec) {
+            guard let (edge, snapshot) = editHandle ?? handleEdge(),
+                  let h = ChamferGeometry.handle(for: edge, in: snapshot) else { workspace.manipulator = nil; return }
+            let factor = s.profile == .round ? h.round : h.flat
+            let label = s.profile == .round ? "R" : "D"
+            if let m = workspace.manipulator {
+                m.origin = h.origin; m.inward = h.inward; m.factor = factor; m.label = label
+                m.range = 0.1...max(0.1, (h.limit * 10).rounded(.down) / 10)
+                if !m.isDragging { m.value = s.distance }
+            } else {
+                let m = DistanceManipulator(origin: h.origin, inward: h.inward, factor: factor, value: s.distance,
+                                            range: 0.1...max(0.1, (h.limit * 10).rounded(.down) / 10), label: label)
+                m.onChange = { [weak session] v in
+                    guard let session, let i = session.fields.firstIndex(where: { $0.id == "d" }) else { return }
+                    session.fields[i].value = .number(v)
+                }
+                workspace.manipulator = m
+            }
+        }
+
+        func preview(_ f: [CommandField]) {
+            let s = read(f)
+            // Field label follows the shape.
+            if let session, let i = session.fields.firstIndex(where: { $0.id == "d" }) {
+                let label = s.profile == .round ? "Raggio" : "Distanza"
+                if session.fields[i].label != label { session.fields[i].label = label }
+            }
+            updateArrow(s)
+            guard f.allSatisfy({ $0.validationMessage == nil }), (try? s.validate()) != nil else {
+                workspace.requestPreview(nil); return
+            }
+            workspace.requestPreview(document(with: s).0)
+        }
+
+        func finish() {
+            workspace.edgePicking = false
+            workspace.onGeoSelectionChange = nil
+            workspace.manipulator = nil
+            workspace.requestPreview(nil)
+        }
+
+        session = CommandSession(
+            title: original == nil ? (profile == .round ? "Raccordo" : "Smusso") : "Modifica \(original!.name)",
+            symbol: profile == .round ? "circle.bottomhalf.filled" : "skew",
             fields: fields,
-            onPreview: apply,
+            onPreview: preview,
             onCommit: { f in
                 defer { finish() }
                 let s = read(f)
                 do { try s.validate() } catch {
-                    model.statusMessage = s.edges.isEmpty ? "Smusso non creato: scegli almeno uno spigolo."
-                        : "Smusso non valido: \(error.localizedDescription)"
+                    model.statusMessage = s.edges.isEmpty ? "Scegli almeno uno spigolo."
+                        : "\(s.profile == .round ? "Raccordo" : "Smusso") non valido: \(error.localizedDescription)"
                     return
                 }
-                if let original {
-                    apply(f)
-                    if let issue = model.evaluation().issues.last(where: { $0.featureID == original.id }) { model.statusMessage = issue.message }
-                    return
-                }
-                let chamfer = Feature(name: "Smusso " + s.summary, kind: .chamfer(s), operation: .cut)
-                model.edit("Smusso " + s.summary, selected: .some(nil), changed: [chamfer.id]) { $0.features.append(chamfer) }
-                workspace.geoSelection = []
-                let problems = Set(model.evaluation().issues.filter { $0.featureID == chamfer.id }.map(\.message))
+                let (doc, feature) = document(with: s)
+                model.edit(original == nil ? s.title : "Modifica \(feature.name)", selected: .some(original == nil ? nil : feature.id),
+                           changed: [feature.id]) { $0 = doc }
+                if original == nil { workspace.geoSelection = [] }
+                let problems = Set(model.evaluation().issues.filter { $0.featureID == feature.id }.map(\.message))
                 if !problems.isEmpty { model.statusMessage = problems.sorted().joined(separator: " · ") }
             },
-            onCancel: {
-                finish()
-                if let original, let i = model.document.features.firstIndex(where: { $0.id == original.id }) {
-                    model.document.features[i] = original
-                }
-            })
-        // The edge count in the panel follows the viewport selection.
+            onCancel: { finish() })
+        // The edge count, the arrow and the preview follow the viewport selection.
         workspace.onGeoSelectionChange = { [weak session] in
             guard let session, let i = session.fields.firstIndex(where: { $0.id == "edges" }) else { return }
             session.fields[i].value = edgeValue()
         }
+        preview(session.fields)
         return session
     }
 }

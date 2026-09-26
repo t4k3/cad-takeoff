@@ -17,6 +17,10 @@ struct MetalViewport: NSViewRepresentable {
     var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
+    /// Mouse down on a draggable handle: return true to take the drag (no orbit, no click).
+    var onDragBegin: (Ray) -> Bool = { _ in false }
+    var onDragMove: (Ray) -> Void = { _ in }
+    var onDragEnd: () -> Void = {}
     /// Single-letter shortcuts, only while the viewport has keyboard focus (never while typing elsewhere).
     var onKey: (String) -> Bool = { _ in false }
     /// Receives the renderer once, so overlays (fit, picking) can query scene data.
@@ -44,6 +48,9 @@ struct MetalViewport: NSViewRepresentable {
         view.onClick = onClick
         view.onHover = onHover
         view.onKey = onKey
+        view.onDragBegin = onDragBegin
+        view.onDragMove = onDragMove
+        view.onDragEnd = onDragEnd
         guard let r = view.renderer else { return }
         r.update(features: features, snapshot: snapshot)
         r.selection = selection
@@ -65,9 +72,14 @@ final class CADMetalView: MTKView {
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
     var onKey: (String) -> Bool = { _ in false }
+    var onDragBegin: (Ray) -> Bool = { _ in false }
+    var onDragMove: (Ray) -> Void = { _ in }
+    var onDragEnd: () -> Void = {}
 
     private var dragStart: CGPoint?
     private var isDragging = false
+    /// A handle took this drag.
+    private var handleDrag = false
     private var trackingArea: NSTrackingArea?
 
     override var acceptsFirstResponder: Bool { true }
@@ -98,11 +110,16 @@ final class CADMetalView: MTKView {
         window?.makeFirstResponder(self)
         dragStart = topLeft(event)
         isDragging = false
+        handleDrag = onDragBegin(camera.ray(at: dragStart!, in: bounds.size))
     }
 
     override func mouseDragged(with event: NSEvent) {
         guard let start = dragStart else { return }
         let p = topLeft(event)
+        if handleDrag {
+            onDragMove(camera.ray(at: p, in: bounds.size))
+            return
+        }
         if !isDragging, hypot(p.x - start.x, p.y - start.y) < 3 { return }
         isDragging = true
         if event.modifierFlags.contains(.shift) {
@@ -114,7 +131,8 @@ final class CADMetalView: MTKView {
     }
 
     override func mouseUp(with event: NSEvent) {
-        defer { dragStart = nil; isDragging = false }
+        defer { dragStart = nil; isDragging = false; handleDrag = false }
+        if handleDrag { onDragEnd(); return }
         guard !isDragging else { return }
         let p = topLeft(event)
         onClick(p, camera.ray(at: p, in: bounds.size), event.modifierFlags)

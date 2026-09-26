@@ -38,6 +38,46 @@ final class WorkspaceState {
     var edgePicking = false
     @ObservationIgnored var onGeoSelectionChange: (() -> Void)?
 
+    /// Drag arrow of the open command (chamfer distance/radius), if any.
+    var manipulator: DistanceManipulator?
+
+    // MARK: Command preview (computed off the main thread; the newest request wins)
+
+    /// Geometry shown instead of the design while a command previews its result.
+    private(set) var previewSnapshot: DesignSnapshot?
+    private(set) var previewIssues: [DesignEvaluator.Issue] = []
+    @ObservationIgnored private var pendingPreview: CADDocument?
+    @ObservationIgnored private var previewBusy = false
+    @ObservationIgnored private var previewGeneration = 0
+
+    /// Shows `doc` evaluated in the viewport; nil goes back to the design.
+    func requestPreview(_ doc: CADDocument?) {
+        guard let doc else {
+            previewGeneration += 1; pendingPreview = nil
+            previewSnapshot = nil; previewIssues = []
+            return
+        }
+        pendingPreview = doc
+        if !previewBusy { runPreview() }
+    }
+
+    private func runPreview() {
+        guard let doc = pendingPreview else { previewBusy = false; return }
+        pendingPreview = nil; previewBusy = true
+        let generation = previewGeneration
+        let revision = "preview-\(UUID().uuidString)"
+        Task { [weak self] in
+            let result = await Task.detached(priority: .userInitiated) { DesignEvaluator.evaluate(doc, revision: revision) }.value
+            guard let self else { return }
+            if generation == self.previewGeneration {
+                self.previewSnapshot = DesignSnapshot(revision: revision, bodies: result.bodies.filter(\.isVisible).map(\.snapshot),
+                                                      issues: result.issues.map { .init(featureID: $0.featureID, message: $0.message) })
+                self.previewIssues = result.issues
+            }
+            self.runPreview()
+        }
+    }
+
     /// Command panel currently open (create/edit feature).
     var command: CommandSession?
     /// Hole centres being placed while the Hole panel is open.
@@ -48,10 +88,10 @@ final class WorkspaceState {
         if sketch != nil { exitSketch() }
         command = HoleCommand.start(workspace: self, model: model, editing: feature)
     }
-    func startChamfer(model: DesignModel, editing feature: Feature? = nil) {
+    func startChamfer(model: DesignModel, editing feature: Feature? = nil, profile: ChamferSpec.Profile = .flat) {
         command?.onCancel()
         if sketch != nil { exitSketch() }
-        command = ChamferCommand.start(workspace: self, model: model, editing: feature)
+        command = ChamferCommand.start(workspace: self, model: model, editing: feature, profile: profile)
     }
     /// Active sketch (v0, UI-only). nil = not sketching.
     var sketch: SketchSession?
@@ -123,7 +163,7 @@ extension Feature.Kind {
         case .cylinder: "cylinder"
         case .extrude: "square.stack.3d.up"
         case .hole: "circle.circle"
-        case .chamfer: "skew"
+        case let .chamfer(s): s.profile == .round ? "circle.bottomhalf.filled" : "skew"
         }
     }
 
@@ -133,7 +173,7 @@ extension Feature.Kind {
         case .cylinder: "Cilindro"
         case .extrude: "Estrusione"
         case .hole: "Foro"
-        case .chamfer: "Smusso"
+        case let .chamfer(s): s.profile == .round ? "Raccordo" : "Smusso"
         }
     }
 }

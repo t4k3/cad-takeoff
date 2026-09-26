@@ -99,6 +99,8 @@ public struct CSGSolid: Sendable {
 private let epsilon = 1e-6
 
 private final class BSPNode {
+    // Every traversal is iterative: tangent or nearly coplanar faces (rounds) make deep trees
+    // that would overflow the small stacks of background threads.
     var normal: Vec3?
     var w = 0.0
     var front: BSPNode?
@@ -107,48 +109,74 @@ private final class BSPNode {
 
     init(_ polygons: [CSGSolid.Polygon] = []) { build(polygons) }
 
-    func invert() {
-        polygons = polygons.map { $0.flipped(faceMap: { $0 }) }
-        if let n = normal { normal = -n; w = -w }
-        front?.invert(); back?.invert()
-        swap(&front, &back)
+    deinit {
+        // Releasing a deep tree recursively would overflow the stack too.
+        var stack = [front, back].compactMap { $0 }
+        front = nil; back = nil
+        while let node = stack.popLast() {
+            if let f = node.front { stack.append(f); node.front = nil }
+            if let b = node.back { stack.append(b); node.back = nil }
+        }
     }
 
-    func clipPolygons(_ list: [CSGSolid.Polygon]) -> [CSGSolid.Polygon] {
-        guard let n = normal else { return list }
-        var f: [CSGSolid.Polygon] = [], b: [CSGSolid.Polygon] = []
-        for p in list {
-            let r = split(p, n, w)
-            f += r.coFront + r.front
-            b += r.coBack + r.back
+    private var allNodes: [BSPNode] {
+        var out: [BSPNode] = [], stack = [self]
+        while let n = stack.popLast() {
+            out.append(n)
+            if let f = n.front { stack.append(f) }
+            if let b = n.back { stack.append(b) }
         }
-        f = front?.clipPolygons(f) ?? f
-        b = back?.clipPolygons(b) ?? []
-        return f + b
+        return out
+    }
+
+    func invert() {
+        for node in allNodes {
+            node.polygons = node.polygons.map { $0.flipped(faceMap: { $0 }) }
+            if let n = node.normal { node.normal = -n; node.w = -node.w }
+            swap(&node.front, &node.back)
+        }
+    }
+
+    /// Removes the parts of `list` inside this tree's solid.
+    func clipPolygons(_ list: [CSGSolid.Polygon]) -> [CSGSolid.Polygon] {
+        var out: [CSGSolid.Polygon] = []
+        var work: [(BSPNode, [CSGSolid.Polygon])] = [(self, list)]
+        while let (node, polys) = work.popLast() {
+            guard let n = node.normal else { out += polys; continue }
+            var f: [CSGSolid.Polygon] = [], b: [CSGSolid.Polygon] = []
+            for p in polys {
+                let r = split(p, n, node.w)
+                f += r.coFront + r.front
+                b += r.coBack + r.back
+            }
+            if let front = node.front { work.append((front, f)) } else { out += f }
+            if let back = node.back { work.append((back, b)) }   // no back child: inside, dropped
+        }
+        return out
     }
 
     func clip(to other: BSPNode) {
-        polygons = other.clipPolygons(polygons)
-        front?.clip(to: other); back?.clip(to: other)
+        for node in allNodes { node.polygons = other.clipPolygons(node.polygons) }
     }
 
-    func allPolygons() -> [CSGSolid.Polygon] {
-        polygons + (front?.allPolygons() ?? []) + (back?.allPolygons() ?? [])
-    }
+    func allPolygons() -> [CSGSolid.Polygon] { allNodes.flatMap(\.polygons) }
 
     func build(_ list: [CSGSolid.Polygon]) {
-        guard !list.isEmpty else { return }
-        if normal == nil { normal = list[0].normal; w = list[0].w }
-        let n = normal!
-        var f: [CSGSolid.Polygon] = [], b: [CSGSolid.Polygon] = []
-        for p in list {
-            let r = split(p, n, w)
-            polygons += r.coFront + r.coBack
-            f += r.front
-            b += r.back
+        var work: [(BSPNode, [CSGSolid.Polygon])] = [(self, list)]
+        while let (node, polys) = work.popLast() {
+            guard !polys.isEmpty else { continue }
+            if node.normal == nil { node.normal = polys[0].normal; node.w = polys[0].w }
+            let n = node.normal!
+            var f: [CSGSolid.Polygon] = [], b: [CSGSolid.Polygon] = []
+            for p in polys {
+                let r = split(p, n, node.w)
+                node.polygons += r.coFront + r.coBack
+                f += r.front
+                b += r.back
+            }
+            if !f.isEmpty { if node.front == nil { node.front = BSPNode() }; work.append((node.front!, f)) }
+            if !b.isEmpty { if node.back == nil { node.back = BSPNode() }; work.append((node.back!, b)) }
         }
-        if !f.isEmpty { if front == nil { front = BSPNode() }; front!.build(f) }
-        if !b.isEmpty { if back == nil { back = BSPNode() }; back!.build(b) }
     }
 }
 

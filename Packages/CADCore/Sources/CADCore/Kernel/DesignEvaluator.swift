@@ -180,7 +180,7 @@ public enum DesignEvaluator {
     private static func surface(_ f: CSGFace) -> SurfaceDescriptor {
         switch f.surface {
         case let .plane(o, n): .plane(origin: o, normal: f.flipped ? -n : n)
-        case .cylinder, .cone: f.surface
+        case .cylinder, .cone, .torus: f.surface
         }
     }
 
@@ -194,6 +194,11 @@ public enum DesignEvaluator {
             let d = p - apex
             let radial = (d - axis * d.dot(axis)).normalized
             let n = (radial * cos(half) - axis * sin(half)).normalized
+            return f.flipped ? -n : n
+        case let .torus(centre, axis, major, _):
+            let d = p - centre
+            let ring = centre + (d - axis * d.dot(axis)).normalized * major
+            let n = (p - ring).normalized
             return f.flipped ? -n : n
         case .plane:
             return nil

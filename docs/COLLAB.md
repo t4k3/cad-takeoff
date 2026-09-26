@@ -1136,3 +1136,9 @@ Inizio **Smusso (chamfer) su spigoli selezionati**. File: Packages/CADCore, App/
 
 ### 2026-09-26 12:24 · claude · DONE `T85`
 **Smusso (chamfer) su spigoli selezionati** — Smusso: EdgeRef stabile (coppia di facce + punto), prisma per spigoli dritti tra piani (arresto su parete dove il materiale continua), anello di rivoluzione per bordi di cilindri e fori; distanza uguale / due distanze / distanza+angolo / inverti; pannello con selezione spigoli a clic, modifica dalla timeline con anteprima dal vivo; strumento assistente add_chamfer (16 strumenti). Pulizia mesh CSG 80× più veloce (griglia + DDA per giunzioni a T, saldatura 27 celle). Foro: agganci a vertici/punti medi/centri/punti schizzo in spazio schermo, niente centri fuori faccia, coordinate X/Y/Z. 69 test core, CI 9/9, provato a schermo.
+
+### 2026-09-26 14:06 · claude · CLAIM `T86`
+Inizio **Raccordo (fillet) a raggio costante su spigoli selezionati**. File: Packages/CADCore, App/Sources
+
+### 2026-09-26 14:06 · claude · DONE `T86`
+**Raccordo (fillet) a raggio costante su spigoli selezionati** — Raccordo come forma «Tondo» dello Smusso (+ pulsante Raccordo): arco tangente per spigoli dritti (faccia cilindrica), profilo di rivoluzione con toro per bordi di cilindri/fori (nuova SurfaceDescriptor.torus). Controllo «troppo grande per questo spigolo». Freccia trascinabile (DistanceManipulator, misura sul piano dello schermo) e anteprima dal vivo calcolata in background (l'ultima richiesta vince) con selezione sugli spigoli reali. BSP iterativo (niente stack overflow su thread secondari). add_chamfer profile round. 73 test core, CI 9/9, provato a schermo.

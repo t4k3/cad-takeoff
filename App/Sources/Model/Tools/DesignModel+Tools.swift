@@ -205,7 +205,8 @@ extension DesignModel: CADToolProvider {
             value["direction"] = vector(s.direction)
         case let .chamfer(s):
             value["kind"] = "chamfer"
-            value["summary"] = .string(s.summary)
+            value["profile"] = .string(s.profile.rawValue)
+            value["summary"] = .string(s.title)
             value["mode"] = .string(s.mode.rawValue)
             value["distance"] = .number(s.distance)
             if s.mode == .twoDistances { value["distance2"] = .number(s.distance2) }
@@ -273,10 +274,14 @@ extension DesignModel: CADToolProvider {
             guard let m = ChamferSpec.Mode(rawValue: try string(args, "mode")) else { throw CADToolFailure("mode: equalDistance, twoDistances o distanceAngle.") }
             spec.mode = m
         }
+        if args["profile"] != nil {
+            guard let pr = ChamferSpec.Profile(rawValue: try string(args, "profile")) else { throw CADToolFailure("profile: flat o round.") }
+            spec.profile = pr
+        }
         spec.distance = try number(args, "distance")
         spec.distance2 = try optionalNumber(args, "distance2", spec.distance)
         spec.angle = try optionalNumber(args, "angle", 45)
-        let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "Smusso " + spec.summary,
+        let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? spec.title,
                         kind: .chamfer(spec), operation: .cut)
         try CADToolValidation.feature(f)
         var next = document
