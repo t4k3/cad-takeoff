@@ -128,6 +128,8 @@ final class WorkspaceState {
     }
     /// Active sketch (v0, UI-only). nil = not sketching.
     var sketch: SketchSession?
+    /// Asks the viewport for a standard view (e.g. 3/4 when extruding, so the arrow can be dragged).
+    var viewRequest: CameraController.StandardView?
     /// Asks the viewport to switch camera for sketch mode (true) or restore it (false).
     var sketchCameraRequest: Bool?
     /// Set by WorkspaceView: saved sketches and the model (for regenerating linked extrusions).

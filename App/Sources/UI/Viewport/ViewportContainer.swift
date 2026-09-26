@@ -141,6 +141,13 @@ struct ViewportContainer: View {
         canvas
         .overlay(alignment: .top) { sketchBanner }
         .background { sketchKeys }
+        .onChange(of: workspace.viewRequest) { _, view in
+            guard let view else { return }
+            viewport.camera.projection = .perspective
+            viewport.camera.show(view, bounds: viewport.renderer?.sceneBounds)
+            viewport.redraw()
+            workspace.viewRequest = nil
+        }
         .onChange(of: workspace.sketchCameraRequest) { _, request in
             guard let request else { return }
             viewport.applySketchCamera(request, plane: workspace.sketch?.sketch.plane ?? .xy, focus: workspace.sketchFocus)
@@ -311,7 +318,7 @@ struct ViewportContainer: View {
 
     /// Value next to the arrow tip, like Fusion's on-canvas input.
     @ViewBuilder private var manipulatorLabel: some View {
-        if let m = workspace.manipulator, let p = viewport.screenPoint(m.handle - m.inward * arrowLength) {
+        if let m = workspace.manipulator, let p = viewport.screenPoint(m.tip(length: arrowLength)) {
             let active = m.isDragging || m.isHot
             HStack(spacing: 4) {
                 Text(m.label).font(.system(size: 10, weight: .bold)).opacity(0.8)

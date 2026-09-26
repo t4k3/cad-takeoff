@@ -41,7 +41,7 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 - Lamiera: angoli chiusi con scarico, flange su flange (Z, cassette), orli, fori che attraversano una piega o asole nello sviluppo, tavola di piega.
 
 - Smusso/raccordo su **archi** parziali; angolo sferico dove si incontrano tre raccordi. (Spigoli concavi: fatti 26/09.)
-- Freccia di trascinamento anche per Estrudi, Foro (profondità) e parametri dei solidi.
+- Freccia di trascinamento anche per Foro (profondità) e parametri dei solidi. (Estrudi: fatto 26/09.)
 - Booleane più veloci: la mesh finale ora è unita per faccia (−50/−55% triangoli, 26/09), ma l'albero BSP lavora ancora sui frammenti; servono un BSP con poligoni convessi uniti o un motore diverso (anche per il filetto modellato).
 
 - Spigoli di selezione più spessi nel viewport (linee larghe via quad in Metal).

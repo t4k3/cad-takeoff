@@ -18,6 +18,12 @@ final class DistanceManipulator {
     var range: ClosedRange<Double>
     var label: String
     var isHot = false
+    /// The arrow points the way the value grows (extrusion height) instead of back out of the
+    /// material (chamfer/round).
+    var pointsAlong = false
+    /// Unit direction of the drawn arrow.
+    var arrowDirection: Vec3 { pointsAlong ? inward.normalized : -inward.normalized }
+    func tip(length: Double) -> Vec3 { handle + arrowDirection * length }
     private(set) var isDragging = false
     @ObservationIgnored var onChange: (Double) -> Void = { _ in }
     /// Value at the moment the drag started and where the grab happened on the axis.
@@ -39,7 +45,7 @@ final class DistanceManipulator {
     /// Solid arrow, Fusion style: a ball on the handle, a shaft and a cone pointing outward,
     /// `length` mm long (the caller keeps it a constant size on screen).
     func mesh(length: Double) -> GizmoMesh {
-        let dir = -inward.normalized
+        let dir = arrowDirection
         let helper = abs(dir.z) < 0.9 ? Vec3(0, 0, 1) : Vec3(1, 0, 0)
         let u = helper.cross(dir).normalized, v = dir.cross(u)
         let n = 24
@@ -83,7 +89,7 @@ final class DistanceManipulator {
 
     /// Screen-space hit test against the arrow; `tolerance(d)` = mm per few points at distance d.
     func hits(_ ray: Ray, length: Double, tolerance: (Double) -> Double) -> Bool {
-        let a = handle, b = handle - inward * length
+        let a = handle, b = tip(length: length)
         let ro = Vec3(Double(ray.origin.x), Double(ray.origin.y), Double(ray.origin.z))
         let rd = Vec3(Double(ray.direction.x), Double(ray.direction.y), Double(ray.direction.z)).normalized
         for k in 0...12 {

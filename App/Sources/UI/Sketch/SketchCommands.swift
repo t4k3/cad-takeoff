@@ -22,6 +22,20 @@ enum SketchCommands {
         }
         var lastOp = BooleanOperation.newBody
         weak var session: CommandSession?
+        // Arrow at the profile's centre, pointing out along the plane's normal.
+        let plane = sketch.sketch.plane, normal = plane.normal
+        let outline = shape.outline
+        let centre = plane.world(Vec2(outline.map(\.x).reduce(0, +) / Double(max(outline.count, 1)),
+                                      outline.map(\.y).reduce(0, +) / Double(max(outline.count, 1))))
+        let arrow = DistanceManipulator(origin: centre, inward: normal, factor: 1, value: 10, range: 0.1...10_000, label: "H")
+        arrow.pointsAlong = true
+        arrow.onChange = { v in
+            guard let i = session?.fields.firstIndex(where: { $0.id == "h" }) else { return }
+            session?.fields[i].value = .number(v)
+        }
+        workspace.manipulator = arrow
+        // Seen from above the arrow points at the camera: turn to a 3/4 view, as Fusion does.
+        workspace.viewRequest = .home
         let created = CommandSession(
             title: "Estrudi \(shape.typeName.lowercased())", symbol: "square.stack.3d.up",
             fields: [.init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
@@ -42,8 +56,14 @@ enum SketchCommands {
                 sketch.previewHeight = f.first?.number
                 sketch.previewIsCut = op == .cut
                 sketch.previewReversed = reversed(f)
+                // Drag arrow on the profile, along the extrusion.
+                if let m = workspace.manipulator {
+                    m.inward = normal * (reversed(f) ? -1 : 1)
+                    if !m.isDragging, let h = f.first?.number { m.value = h }
+                }
             },
             onCommit: { f in
+                workspace.manipulator = nil
                 let height = f.first?.number ?? 10
                 let op = operation(f)
                 sketch.previewHeight = nil
@@ -67,7 +87,7 @@ enum SketchCommands {
                 model.statusMessage = "Estrusione creata (\(fmt(height)) mm) — ⌘Z per annullare"
                 workspace.exitSketch()
             },
-            onCancel: { sketch.previewHeight = nil })
+            onCancel: { sketch.previewHeight = nil; workspace.manipulator = nil })
         session = created
         return created
     }
