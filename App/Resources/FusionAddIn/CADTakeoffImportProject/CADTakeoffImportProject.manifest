@@ -1,0 +1,12 @@
+{
+  "autodeskProduct": "Fusion360",
+  "type": "script",
+  "id": "5e2a9c41-7b3d-4f08-a6e1-2c9d8b7f4a10",
+  "author": "CAD Takeoff",
+  "description": {
+    "": "Esporta tutti i disegni di un progetto Fusion (con le sue cartelle) come .ftk per CAD Takeoff"
+  },
+  "supportedOS": "windows|mac",
+  "editEnabled": true,
+  "version": "1.0.0"
+}
