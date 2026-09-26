@@ -56,7 +56,15 @@ final class CameraController {
 
     var forward: SIMD3<Float> { simd_normalize(pose.target - eye) }
 
-    var viewMatrix: simd_float4x4 { .lookAt(eye: eye, target: pose.target, up: SIMD3(0, 0, 1)) }
+    /// Screen right and up in world space. Derived from the yaw, so they stay well defined looking
+    /// straight down or up (Sopra/Sotto), and shared by drawing and by mouse rays and pans: if they
+    /// disagreed, clicks and drags would come out mirrored in some views.
+    var basis: (right: SIMD3<Float>, up: SIMD3<Float>) {
+        let right = SIMD3(-sin(pose.yaw), cos(pose.yaw), 0)
+        return (right, simd_cross(right, forward))
+    }
+
+    var viewMatrix: simd_float4x4 { .lookAt(eye: eye, target: pose.target, up: basis.up) }
 
     /// Rotation-only part of the view, used by the ViewCube.
     var rotationMatrix: simd_float3x3 {
@@ -80,8 +88,7 @@ final class CameraController {
         let aspect = Float(size.width / max(size.height, 1))
         let ndc = SIMD2(Float(point.x / size.width) * 2 - 1, 1 - Float(point.y / size.height) * 2)
         let f = forward
-        let right = simd_normalize(simd_cross(f, SIMD3(0, 0, 1) + (abs(f.z) > 0.999 ? SIMD3(0, 0.001, 0) : .zero)))
-        let up = simd_cross(right, f)
+        let (right, up) = basis
         let halfH = tan(fovY / 2)
         switch projection {
         case .perspective:
@@ -104,9 +111,7 @@ final class CameraController {
     /// Pan by a screen delta (points) so the grabbed point stays under the cursor.
     func pan(dx: Float, dy: Float, viewHeight: Float) {
         stopAnimation()
-        let f = forward
-        let right = simd_normalize(simd_cross(f, SIMD3(0, 0, 1) + (abs(f.z) > 0.999 ? SIMD3(0, 0.001, 0) : .zero)))
-        let up = simd_cross(right, f)
+        let (right, up) = basis
         let mmPerPoint = 2 * pose.distance * tan(fovY / 2) / max(viewHeight, 1)
         pose.target += (-right * dx + up * dy) * mmPerPoint
     }

@@ -236,7 +236,7 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
 
         let aspect = Float(view.drawableSize.width / view.drawableSize.height)
         let eye = camera.eye
-        let right = simd_normalize(simd_cross(camera.forward, SIMD3(0, 0, 1) + SIMD3(0, 0.001, 0)))
+        let right = camera.basis.right
         let light = simd_normalize(-camera.forward + right * 0.5 + SIMD3(0, 0, 0.8))
         var frame = FrameUniforms(viewProjection: camera.projectionMatrix(aspect: aspect) * camera.viewMatrix,
                                   eye: SIMD4(eye, camera.pose.distance * 3 + 150), lightDir: SIMD4(light, 0))

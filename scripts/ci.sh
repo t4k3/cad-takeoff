@@ -31,6 +31,7 @@ run_step() {
 run_step 01-core swift test --package-path Packages/CADCore
 run_step 02-assistant bash scripts/test-assistant-tools.sh
 run_step 02b-history bash scripts/test-design-history.sh
+run_step 02c-camera bash scripts/test-camera.sh
 run_step 03-mcp bash scripts/test-mcp-integration.sh
 run_step 04-openai bash scripts/test-openai-provider.sh
 run_step 05-connector python3 -m unittest discover -s Tests/ChatGPTConnector -v
