@@ -68,7 +68,7 @@ struct AssistantToolsTests {
         expect(invalidShape.isError, "JSON shape validation")
         let missing = await m.call("get_feature", arguments: ["feature_id": .string(UUID().uuidString)])
         expect(missing.isError, "unknown ID")
-        expect(Set(m.tools.map(\.name)).count == 18, "18 unique tools")
+        expect(Set(m.tools.map(\.name)).count == 19, "19 unique tools")
         let partID = m.document.features[0].id
         let beforeColour = m.document
         let coloured = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "#E53935"])
@@ -178,6 +178,13 @@ struct AssistantToolsTests {
                                                 "face_point": ["x": 0, "y": 0, "z": 5], "face_normal": ["x": 0, "y": 0, "z": 1], "into_part": true])
         let pocketInfo = await m.call("scene_info", arguments: [:])
         expect(!pocket.isError && abs((pocketInfo.structured?["mesh_volume_mm3"]?.number ?? 0) - 5700) < 1e-6, "pocket from the top face")
+        // Mirror a plate about its left face, joined: twice the volume, one body.
+        m.newDesign()
+        let half = (await edit("add_box", ["width": 20, "depth": 10, "height": 5, "position": ["x": 10, "y": 0, "z": 0]])).structured?["feature_id"]?.string ?? ""
+        let mirror = await edit("add_pattern", ["body_feature_id": .string(half), "kind": "mirror", "plane": "yz", "offset": 0, "join": true])
+        let mirrorInfo = await m.call("scene_info", arguments: [:])
+        expect(!mirror.isError && mirrorInfo.structured?["body_count"]?.number == 1
+               && abs((mirrorInfo.structured?["mesh_volume_mm3"]?.number ?? 0) - 2000) < 1e-6, "mirror joined into one body")
         // Sheet metal: U channel in DC01 2 mm with the workshop rule.
         m.newDesign()
         let channel = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "width": 100, "depth": 40,

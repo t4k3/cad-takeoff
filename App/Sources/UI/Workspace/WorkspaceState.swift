@@ -107,6 +107,12 @@ final class WorkspaceState {
         command = SheetMetalCommand.start(workspace: self, model: model, editing: feature)
     }
 
+    func startPattern(model: DesignModel, kind: PatternSpec.Kind) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = PatternCommand.start(workspace: self, model: model, kind: kind)
+    }
+
     func startChamfer(model: DesignModel, editing feature: Feature? = nil, profile: ChamferSpec.Profile = .flat) {
         command?.onCancel()
         if sketch != nil { exitSketch() }
@@ -189,6 +195,10 @@ final class WorkspaceState {
             command = HoleCommand.start(workspace: self, model: model, editing: f)
             return
         }
+        if let f = model.document.features.first(where: { $0.id == id }), case let .pattern(p) = f.kind {
+            command = PatternCommand.start(workspace: self, model: model, kind: p.kind, editing: f)
+            return
+        }
         if let f = model.document.features.first(where: { $0.id == id }), case .sheetMetal = f.kind {
             showFlat = false
             command = SheetMetalCommand.start(workspace: self, model: model, editing: f)
@@ -213,6 +223,7 @@ extension Feature.Kind {
         case .sheetMetal: "square.stack.3d.down.forward"
         case .component: "puzzlepiece.extension"
         case .importedMesh: "square.and.arrow.down.on.square"
+        case let .pattern(p): p.kind == .mirror ? "arrow.left.and.right.righttriangle.left.righttriangle.right" : "square.grid.3x3"
         }
     }
 
@@ -226,6 +237,7 @@ extension Feature.Kind {
         case .sheetMetal: "Lamiera"
         case .component: "Componente"
         case .importedMesh: "Mesh importata"
+        case let .pattern(p): p.kind.label
         }
     }
 }

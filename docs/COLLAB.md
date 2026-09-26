@@ -1166,3 +1166,12 @@ Inizio **Assiemi fase 1: componenti collegati da file del progetto, posizione/ro
 
 ### 2026-09-26 15:20 · ? · DONE `T74`
 **Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home** — Import mesh STL/OBJ/3MF (facce piane riconosciute) + add-in Fusion 360 che scrive .ftk (corpi e componenti, colori, mm, Y-su→Z-su, anche a ogni salvataggio), installabile dall'app; collaudo con API Fusion simulata + CADCore reale (CI 07b). Da provare nel vero Fusion. Fase 2: storico parametrico.
+
+### 2026-09-26 15:32 · claude · NUOVO TASK `T88`
+Serie rettangolare/circolare e specchio di corpi (dipende da T84)
+
+### 2026-09-26 15:32 · claude · CLAIM `T88`
+Inizio **Serie rettangolare/circolare e specchio di corpi**. File: Packages/CADCore, App/Sources
+
+### 2026-09-26 15:32 · claude · DONE `T88`
+**Serie rettangolare/circolare e specchio di corpi** — PatternSpec (griglia, circolare attorno a un asse verticale, specchio su piani YZ/XZ/XY spostabili), copie come nuovo corpo (unite se si sovrappongono) o unite all'originale; specchio con avvolgimento corretto; pannello con anteprima, ispettore, add_pattern (19 strumenti). 80 test core, CI 10/10. Prova a schermo in sospeso.

@@ -1684,6 +1684,26 @@
       "notes": [
         "2026-09-26 15:10 claude: Feature.Kind.component(ComponentRef: percorso relativo alla radice + rotazione XYZ): il valutatore legge il file tramite un risolutore fornito dall'app (core puro), sposta e fonde i corpi del pezzo (facce/spigoli trasformati, ID prefissati), segnala mancanti e circolari, annidamento fino a 8 livelli. App: SOLIDO › ASSIEME › Inserisci (elenco disegni della libreria), Posiziona (pannello X/Y/Z e rotazioni con anteprima), Apri pezzo, Distinta base (quantità, materiale e massa per la lamiera, volume) con CSV. Test core e cronologia; prova a schermo in sospeso."
       ]
+    },
+    {
+      "id": "T88",
+      "title": "Serie rettangolare/circolare e specchio di corpi",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T84"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-26 15:32",
+      "finished": "2026-09-26 15:32",
+      "notes": [
+        "2026-09-26 15:32 claude: PatternSpec (griglia, circolare attorno a un asse verticale, specchio su piani YZ/XZ/XY spostabili), copie come nuovo corpo (unite se si sovrappongono) o unite all'originale; specchio con avvolgimento corretto; pannello con anteprima, ispettore, add_pattern (19 strumenti). 80 test core, CI 10/10. Prova a schermo in sospeso."
+      ]
     }
   ]
 }

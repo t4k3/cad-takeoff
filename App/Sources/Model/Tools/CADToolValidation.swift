@@ -60,6 +60,8 @@ enum CADToolValidation {
             for c in spec.centers { try coordinate(c.x); try coordinate(c.y); try coordinate(c.z) }
         case let .chamfer(spec):
             do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
+        case let .pattern(spec):
+            do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
         case let .importedMesh(m):
             guard m.mesh.triangleCount > 0, m.mesh.triangleCount <= MeshImport.triangleLimit else { throw CADToolFailure("Mesh importata vuota o troppo grande.") }
         case let .component(ref):

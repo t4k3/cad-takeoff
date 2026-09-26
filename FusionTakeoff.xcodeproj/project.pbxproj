@@ -62,6 +62,7 @@
 		D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */; };
 		D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */; };
 		DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */; };
+		DC033B9B3B5890AC57D182B5 /* PatternCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63320AFB5B8D43EF4528E264 /* PatternCommand.swift */; };
 		DCFE43EEC46D1E81506AAC2D /* CADCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDA8176070A4C4FA3CF13B40 /* CADCore */; };
 		DD8A6431CB4C5743F04C9097 /* OpenAIStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB6B876F0661B437E6E2EEA8 /* OpenAIStream.swift */; };
 		E4B462720F43A796681BA91D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C2A70420F010AE7D6A1393 /* main.swift */; };
@@ -126,6 +127,7 @@
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPanel.swift; sourceTree = "<group>"; };
 		62D38757828F98D2737425CF /* CADToolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolCatalog.swift; sourceTree = "<group>"; };
+		63320AFB5B8D43EF4528E264 /* PatternCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternCommand.swift; sourceTree = "<group>"; };
 		63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectLibrary.swift; sourceTree = "<group>"; };
 		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
@@ -307,6 +309,7 @@
 				F565E8DD894590B674296FD8 /* ChamferCommand.swift */,
 				14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
+				63320AFB5B8D43EF4528E264 /* PatternCommand.swift */,
 				E98CD345010D437D5502B155 /* SheetMetalCommand.swift */,
 			);
 			path = Features;
@@ -642,6 +645,7 @@
 				E6A4CECA1B0657934C158404 /* OpenAIProvider.swift in Sources */,
 				DD8A6431CB4C5743F04C9097 /* OpenAIStream.swift in Sources */,
 				276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */,
+				DC033B9B3B5890AC57D182B5 /* PatternCommand.swift in Sources */,
 				15B9E5F66063E99E492FD242 /* Picking.swift in Sources */,
 				3AC54D45E3D318B30B845B0B /* ProjectLibrary.swift in Sources */,
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,

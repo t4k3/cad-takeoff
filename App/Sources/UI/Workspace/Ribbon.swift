@@ -86,6 +86,14 @@ struct Ribbon: View {
                 .help("Fori semplici, lamati o svasati, per viti, filettature o inserti a caldo: clicca su una faccia piana")
         }
         ToolGroup("MODIFICA") {
+            Button { workspace.startPattern(model: model, kind: .rectangular) } label: { Label("Serie", systemImage: "square.grid.3x3") }
+                .disabled(model.selection == nil)
+                .help("Ripete il corpo selezionato in griglia o in cerchio")
+            Button { workspace.startPattern(model: model, kind: .mirror) } label: {
+                Label("Specchio", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right")
+            }
+            .disabled(model.selection == nil)
+            .help("Specchia il corpo selezionato rispetto a un piano (anche unito, per i pezzi simmetrici)")
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
                 .help("Arrotonda o smussa gli spigoli: clicca gli spigoli, scegli la forma (Tondo o Piatto) e la misura, o trascina la freccia")
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }

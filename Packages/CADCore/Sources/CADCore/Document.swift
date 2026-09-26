@@ -21,6 +21,89 @@ public enum BooleanOperation: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// Copies of a body (T88): rectangular grid, circular pattern around a vertical axis, or mirror
+/// image in a plane parallel to XY, XZ or YZ. The copies form one body (the pattern) or are joined
+/// to the original.
+public struct PatternSpec: Codable, Sendable, Equatable {
+    public enum Kind: String, Codable, Sendable, CaseIterable {
+        case rectangular, circular, mirror
+        public var label: String {
+            switch self { case .rectangular: "Serie rettangolare"; case .circular: "Serie circolare"; case .mirror: "Specchio" }
+        }
+    }
+    public enum MirrorPlane: String, Codable, Sendable, CaseIterable {
+        case yz, xz, xy
+        public var label: String { switch self { case .yz: "Piano YZ (specchia X)"; case .xz: "Piano XZ (specchia Y)"; case .xy: "Piano XY (specchia Z)" } }
+        var axis: Vec3 { switch self { case .yz: Vec3(1, 0, 0); case .xz: Vec3(0, 1, 0); case .xy: Vec3(0, 0, 1) } }
+    }
+
+    /// Feature that created the body to copy.
+    public var body: UUID
+    public var kind: Kind
+    /// Rectangular: counts (including the original) and spacing along X and Y.
+    public var countX: Int
+    public var spacingX: Double
+    public var countY: Int
+    public var spacingY: Double
+    /// Circular: count (including the original), total angle, centre of the vertical axis.
+    public var count: Int
+    public var angle: Double
+    public var center: Vec3
+    /// Mirror: plane and its offset along its normal (e.g. x = offset for YZ).
+    public var plane: MirrorPlane
+    public var offset: Double
+    /// Join the copies to the original body instead of making a new one.
+    public var join: Bool
+
+    public init(body: UUID, kind: Kind, countX: Int = 3, spacingX: Double = 30, countY: Int = 1, spacingY: Double = 30,
+                count: Int = 6, angle: Double = 360, center: Vec3 = .zero, plane: MirrorPlane = .yz, offset: Double = 0, join: Bool = false) {
+        self.body = body; self.kind = kind; self.countX = countX; self.spacingX = spacingX; self.countY = countY; self.spacingY = spacingY
+        self.count = count; self.angle = angle; self.center = center; self.plane = plane; self.offset = offset; self.join = join
+    }
+
+    public func validate() throws {
+        switch kind {
+        case .rectangular:
+            guard (1...100).contains(countX), (1...100).contains(countY), countX * countY >= 2, countX * countY <= 400,
+                  spacingX.isFinite, spacingY.isFinite else { throw KernelError.invalidParameter("serie: 1–100 copie per direzione (almeno 2 in tutto)") }
+        case .circular:
+            guard (2...360).contains(count), angle.isFinite, abs(angle) > 0.01, abs(angle) <= 360 else {
+                throw KernelError.invalidParameter("serie circolare: 2–360 copie, angolo fino a 360°")
+            }
+        case .mirror:
+            guard offset.isFinite else { throw KernelError.invalidParameter("specchio: posizione del piano non valida") }
+        }
+    }
+
+    /// Rigid motions of the copies (the original excluded); `reflect` for the mirror.
+    public func transforms() -> (copies: [(point: (Vec3) -> Vec3, direction: (Vec3) -> Vec3)], reflect: Bool) {
+        switch kind {
+        case .rectangular:
+            var out: [(point: (Vec3) -> Vec3, direction: (Vec3) -> Vec3)] = []
+            for j in 0..<countY {
+                for i in 0..<countX where i != 0 || j != 0 {
+                    let d = Vec3(Double(i) * spacingX, Double(j) * spacingY, 0)
+                    out.append(({ $0 + d }, { $0 }))
+                }
+            }
+            return (out, false)
+        case .circular:
+            // A full turn does not repeat the original on top of itself.
+            let step = (abs(angle) >= 360 - 1e-9 ? angle / Double(count) : angle / Double(count - 1)) * .pi / 180
+            let c = center
+            return ((1..<count).map { k in
+                let a = step * Double(k)
+                let rotate: (Vec3) -> Vec3 = { v in Vec3(v.x * cos(a) - v.y * sin(a), v.x * sin(a) + v.y * cos(a), v.z) }
+                return ({ rotate($0 - c) + c }, rotate)
+            }, false)
+        case .mirror:
+            let n = plane.axis, o = offset
+            let reflect: (Vec3) -> Vec3 = { v in v - n * (2 * v.dot(n)) }
+            return ([({ p in reflect(p) + n * (2 * o) }, reflect)], true)
+        }
+    }
+}
+
 /// An imported triangle mesh, stored compactly in the design (float32 positions, uint32 indices,
 /// base64): the file keeps working even if the original STL/3MF is moved.
 public struct ImportedMesh: Codable, Sendable, Equatable {
@@ -114,6 +197,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case component(ComponentRef)
         /// Triangle mesh from an STL/OBJ/3MF file (e.g. exported from Fusion 360).
         case importedMesh(ImportedMesh)
+        /// Copies of a body: rectangular or circular pattern, or mirror image.
+        case pattern(PatternSpec)
     }
 
     public var id: UUID
@@ -169,6 +254,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
             return build.folded.triangulated().mesh
         case .component: return Mesh(vertices: [], indices: [])   // geometry comes from the referenced file
         case let .importedMesh(m): return m.mesh.translated(by: position)
+        case .pattern: return Mesh(vertices: [], indices: [])   // copies of another body
         }
         return local.translated(by: position)
     }

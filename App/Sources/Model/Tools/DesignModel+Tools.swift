@@ -68,6 +68,7 @@ extension DesignModel: CADToolProvider {
             case "add_extrude": kind = .extrude(profile: Profile2D(points: try points(args)), height: try number(args, "height"))
             case "add_hole": kind = .hole(try holeSpec(args))
             case "add_sheet_metal": kind = .sheetMetal(try sheetSpec(args))
+            case "add_pattern": kind = .pattern(try patternSpec(args))
             default: throw CADToolFailure("Comando non supportato.")
             }
             var placement: FeaturePlacement?
@@ -86,7 +87,16 @@ extension DesignModel: CADToolProvider {
                             operation: name == "add_hole" ? .cut : (try operation(args) ?? .newBody),
                             placement: placement)
             try CADToolValidation.feature(f)
-            try CADToolValidation.mesh(f.buildMesh())
+            if case .pattern = f.kind {
+                // Copies exist only on the evaluated body: check the evaluation instead of a mesh.
+                var check = next
+                check.features.append(f)
+                if let issue = DesignEvaluator.evaluate(check, revision: "check", components: componentResolver).issues.first(where: { $0.featureID == f.id }) {
+                    throw CADToolFailure(issue.message)
+                }
+            } else {
+                try CADToolValidation.mesh(f.buildMesh())
+            }
             next.features.append(f); changed = f.id; selected = f.id
         } else {
             let i = try index(args)
@@ -111,7 +121,7 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole, .chamfer, .sheetMetal, .component, .importedMesh:
+                case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
                 case let .extrude(p, h):
                     legal = ["points", "height"]
@@ -242,6 +252,11 @@ extension DesignModel: CADToolProvider {
             if s.mode == .twoDistances { value["distance2"] = .number(s.distance2) }
             if s.mode == .distanceAngle { value["angle"] = .number(s.angle) }
             value["edge_count"] = .number(Double(s.edges.count))
+        case let .pattern(p):
+            value["kind"] = p.kind == .mirror ? "mirror" : "pattern"
+            value["pattern"] = .string(p.kind.rawValue)
+            value["body_feature_id"] = .string(p.body.uuidString)
+            value["join"] = .bool(p.join)
         case let .importedMesh(m):
             value["kind"] = "imported_mesh"
             value["source"] = .string(m.source)
@@ -283,8 +298,8 @@ extension DesignModel: CADToolProvider {
         guard let b else { return .null }
         return ["min": vector(b.min), "max": vector(b.max), "size": vector(b.size)]
     }
-    private func index(_ args: [String: JSONValue]) throws -> Int {
-        guard let id = UUID(uuidString: try string(args, "feature_id")), let i = document.features.firstIndex(where: { $0.id == id }) else {
+    private func index(_ args: [String: JSONValue], key: String = "feature_id") throws -> Int {
+        guard let id = UUID(uuidString: try string(args, key)), let i = document.features.firstIndex(where: { $0.id == id }) else {
             throw CADToolFailure("Geometria non trovata: rileggere list_features.")
         }
         return i
@@ -353,6 +368,24 @@ extension DesignModel: CADToolProvider {
         let failed = Set(messages).count == 1 && messages.count >= refs.count || messages.contains { $0.contains("senza effetto") }
         if failed { throw CADToolFailure("Smusso non applicabile: \(messages.first ?? "nessuno spigolo modificato").") }
         return (f, (refs.count, Array(Set(messages)).sorted()))
+    }
+
+    private func patternSpec(_ args: [String: JSONValue]) throws -> PatternSpec {
+        let source = document.features[try index(args, key: "body_feature_id")].id
+        guard evaluation().bodies.contains(where: { $0.id == source }) else { throw CADToolFailure("body_feature_id deve indicare una geometria che crea un corpo.") }
+        guard let kind = PatternSpec.Kind(rawValue: try string(args, "kind")) else { throw CADToolFailure("kind: rectangular, circular o mirror.") }
+        var s = PatternSpec(body: source, kind: kind)
+        s.countX = Int(try optionalNumber(args, "count_x", 1)); s.spacingX = try optionalNumber(args, "spacing_x", 0)
+        s.countY = Int(try optionalNumber(args, "count_y", 1)); s.spacingY = try optionalNumber(args, "spacing_y", 0)
+        s.count = Int(try optionalNumber(args, "count", 6)); s.angle = try optionalNumber(args, "angle", 360)
+        if let c = args["center"], let x = c["x"]?.number, let y = c["y"]?.number { s.center = Vec3(x, y, 0) }
+        if args["plane"] != nil {
+            guard let p = PatternSpec.MirrorPlane(rawValue: try string(args, "plane")) else { throw CADToolFailure("plane: yz, xz o xy.") }
+            s.plane = p
+        }
+        s.offset = try optionalNumber(args, "offset", 0)
+        s.join = args["join"]?.bool ?? false
+        return s
     }
 
     private func sheetSpec(_ args: [String: JSONValue]) throws -> SheetMetalSpec {

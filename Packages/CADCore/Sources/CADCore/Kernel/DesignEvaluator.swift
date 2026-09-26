@@ -102,6 +102,46 @@ public enum DesignEvaluator {
                 }
                 continue
             }
+            if case let .pattern(spec) = feature.kind {
+                do { try spec.validate() } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                guard let i = bodies.firstIndex(where: { $0.source.id == spec.body }) else {
+                    issues.append(.init(featureID: feature.id, message: "\(spec.kind.label): il corpo da copiare non esiste (deve venire prima nella timeline)."))
+                    continue
+                }
+                let source = bodies[i]
+                let (copies, reflect) = spec.transforms()
+                let placed = copies.enumerated().map { k, t in
+                    Placed(mesh: source.mesh, snapshot: source.snapshot, prefix: "pat:\(feature.id.uuidString)/\(k)/",
+                           point: t.point, direction: t.direction, reflect: reflect)
+                }
+                if spec.join {
+                    // Joined to the original: one boolean union.
+                    let copiesSolid = CSGSolid(merged(placed, bodyID: source.source.id, revision: revision).snapshot)
+                    bodies[i] = rebuilt(bodies[i], solidOf(source).union(copiesSolid), by: feature.id, revision: revision)
+                } else {
+                    // One new body; overlapping copies are united so the result stays a clean solid.
+                    let boxes = placed.map { p in bounds(BodySnapshot(bodyID: feature.id, revision: "", positions: p.snapshot.positions.map(p.point),
+                                                                      normals: [], triangles: [], triangleFace: [], triangleTopologyFace: [],
+                                                                      faces: [], edges: [], maximumSurfaceDeviation: 0)) }
+                    let overlapping = boxes.indices.contains { a in boxes.indices.contains { b in a < b && overlaps(boxes[a], boxes[b]) } }
+                    if overlapping {
+                        var solid: CSGSolid?
+                        for p in placed {
+                            let piece = CSGSolid(merged([p], bodyID: feature.id, revision: revision).snapshot)
+                            solid = solid.map { $0.union(piece) } ?? piece
+                        }
+                        let (mesh, triFace) = solid!.triangulated()
+                        bodies.append(Work(source: feature, snapshot: snapshot(of: solid!, mesh: mesh, triangleFace: triFace, bodyID: feature.id, revision: revision),
+                                           solid: solid, mesh: mesh, modifiedBy: []))
+                    } else {
+                        let m = merged(placed, bodyID: feature.id, revision: revision)
+                        bodies.append(Work(source: feature, snapshot: m.snapshot, solid: nil, mesh: m.mesh, modifiedBy: []))
+                    }
+                }
+                continue
+            }
             // The feature's own solid: exact kernel B-rep for primitives, CSG for sheet metal,
             // the referenced design for a component.
             let fresh: Work
@@ -198,38 +238,62 @@ public enum DesignEvaluator {
     /// The component's bodies moved into place and merged into one body (faces keep their IDs,
     /// prefixed per inner body so they stay unique).
     static func placeComponent(_ inner: [Body], ref: ComponentRef, position: Vec3, bodyID: UUID, revision: String) -> (mesh: Mesh, snapshot: BodySnapshot) {
-        func point(_ p: Vec3) -> Vec3 { ref.rotate(p) + position }
-        func direction(_ d: Vec3) -> Vec3 { ref.rotate(d) }
-        func surface(_ s: SurfaceDescriptor) -> SurfaceDescriptor {
-            switch s {
-            case let .plane(o, n): .plane(origin: point(o), normal: direction(n))
-            case let .cylinder(o, a, r): .cylinder(axisOrigin: point(o), axisDirection: direction(a), radius: r)
-            case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
-            case .freeform: .freeform
-            case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
-            }
-        }
+        merged(inner.map { b in
+            Placed(mesh: b.mesh, snapshot: b.snapshot, prefix: "comp:\(b.id.uuidString)/",
+                   point: { ref.rotate($0) + position }, direction: { ref.rotate($0) }, reflect: false)
+        }, bodyID: bodyID, revision: revision)
+    }
+
+    /// One body's geometry moved by a rigid motion (a reflection flips the winding).
+    struct Placed {
+        let mesh: Mesh
+        let snapshot: BodySnapshot
+        /// Keeps face and edge IDs unique among the merged copies.
+        let prefix: String
+        let point: (Vec3) -> Vec3
+        let direction: (Vec3) -> Vec3
+        let reflect: Bool
+    }
+
+    /// Several placed bodies merged into one body (exact surfaces moved along).
+    static func merged(_ parts: [Placed], bodyID: UUID, revision: String) -> (mesh: Mesh, snapshot: BodySnapshot) {
         var mesh = Mesh()
         var positions: [Vec3] = [], normals: [Vec3] = [], triangles: [UInt32] = [], triangleFace: [UInt32] = []
         var topology: [FaceID] = [], faces: [FaceInfo] = [], edges: [EdgeInfo] = []
         var deviation = 0.0
-        for b in inner {
-            let prefix = "comp:\(b.id.uuidString)/"
-            func fid(_ f: FaceID) -> FaceID { FaceID(rawValue: prefix + f.rawValue) }
+        for part in parts {
+            let point = part.point, direction = part.direction
+            func surface(_ s: SurfaceDescriptor) -> SurfaceDescriptor {
+                switch s {
+                case let .plane(o, n): .plane(origin: point(o), normal: direction(n))
+                case let .cylinder(o, a, r): .cylinder(axisOrigin: point(o), axisDirection: direction(a), radius: r)
+                case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
+                case .freeform: .freeform
+                case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
+                }
+            }
+            func fid(_ f: FaceID) -> FaceID { FaceID(rawValue: part.prefix + f.rawValue) }
+            // A mirror image turns the triangles inside out unless their order is reversed.
+            func wound(_ idx: [UInt32], offset: UInt32) -> [UInt32] {
+                guard part.reflect else { return idx.map { $0 + offset } }
+                var out = idx
+                for t in 0..<(idx.count / 3) { out[t * 3 + 1] = idx[t * 3 + 2]; out[t * 3 + 2] = idx[t * 3 + 1] }
+                return out.map { $0 + offset }
+            }
             let base = UInt32(mesh.vertices.count)
-            mesh.vertices += b.mesh.vertices.map(point)
-            mesh.indices += b.mesh.indices.map { $0 + base }
-            let s = b.snapshot
+            mesh.vertices += part.mesh.vertices.map(point)
+            mesh.indices += wound(part.mesh.indices, offset: base)
+            let s = part.snapshot
             let p0 = UInt32(positions.count), f0 = UInt32(faces.count)
             positions += s.positions.map(point)
             normals += s.normals.map(direction)
-            triangles += s.triangles.map { $0 + p0 }
+            triangles += wound(s.triangles, offset: p0)
             triangleFace += s.triangleFace.map { $0 + f0 }
             topology += s.triangleTopologyFace.map(fid)
             faces += s.faces.map { FaceInfo(id: fid($0.id), surface: surface($0.surface), area: $0.area, topologyFaceIDs: $0.topologyFaceIDs.map(fid)) }
             edges += s.edges.map { e in
-                EdgeInfo(id: EdgeID(rawValue: prefix + e.id.rawValue), polyline: e.polyline.map(point), isSharp: e.isSharp,
-                         faces: e.faces.map(fid), topologyEdgeIDs: e.topologyEdgeIDs.map { EdgeID(rawValue: prefix + $0.rawValue) })
+                EdgeInfo(id: EdgeID(rawValue: part.prefix + e.id.rawValue), polyline: e.polyline.map(point), isSharp: e.isSharp,
+                         faces: e.faces.map(fid), topologyEdgeIDs: e.topologyEdgeIDs.map { EdgeID(rawValue: part.prefix + $0.rawValue) })
             }
             deviation = max(deviation, s.maximumSurfaceDeviation)
         }

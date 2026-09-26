@@ -21,8 +21,8 @@ enum FeatureCommands {
                       .init(id: "h", label: "Altezza", kind: .length(length), value: .number(h))]
         case let .extrude(_, h):
             fields = [.init(id: "h", label: "Distanza", kind: .length(length), value: .number(h))]
-        case .hole, .chamfer, .sheetMetal:
-            return nil   // own panels (HoleCommand, ChamferCommand, SheetMetalCommand)
+        case .hole, .chamfer, .sheetMetal, .pattern:
+            return nil   // own panels (HoleCommand, ChamferCommand, SheetMetalCommand, PatternCommand)
         case let .component(ref):
             return component(id, ref: ref, original: original, model: model)
         case let .importedMesh(m):
@@ -42,7 +42,7 @@ enum FeatureCommands {
             case .box: f.kind = .box(width: v("w"), depth: v("d"), height: v("h"))
             case .cylinder: f.kind = .cylinder(radius: v("r"), height: v("h"))
             case let .extrude(p, _): f.kind = .extrude(profile: p, height: v("h"))
-            case .hole, .chamfer, .sheetMetal, .component: break
+            case .hole, .chamfer, .sheetMetal, .component, .pattern: break
             case .importedMesh: f.position.x = v("x"); f.position.y = v("y")
             }
             f.position.z = v("z")

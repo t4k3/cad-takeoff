@@ -115,6 +115,19 @@ struct InspectorPanel: View {
                 DimensionField(title: "Distanza 2", value: Binding(get: { spec.distance2 }, set: { var s = spec; s.distance2 = $0; kind.wrappedValue = .chamfer(s) }))
             }
             if spec.profile == .flat, spec.mode == .distanceAngle { info("Angolo", String(format: "%.0f°", spec.angle)) }
+        case let .pattern(p):
+            info("Tipo", p.kind.label)
+            info("Copia di", model.document.features.first { $0.id == p.body }?.name ?? "—")
+            switch p.kind {
+            case .rectangular: info("Griglia", "\(p.countX) × \(p.countY) · passo \(p.spacingX) × \(p.spacingY) mm")
+            case .circular: info("Copie", "\(p.count) su \(Int(p.angle))°")
+            case .mirror: info("Piano", p.plane.label + " a \(p.offset) mm")
+            }
+            info("Unito", p.join ? "sì, al corpo originale" : "no, corpo separato")
+            Button("Modifica…") {
+                if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
+            }
+            .controlSize(.small)
         case let .importedMesh(m):
             info("Origine", m.source)
             info("Triangoli", "\(m.mesh.triangleCount)")
