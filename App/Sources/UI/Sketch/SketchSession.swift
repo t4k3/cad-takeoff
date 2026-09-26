@@ -10,12 +10,12 @@ import simd
 final class SketchSession {
     enum Tool: String, CaseIterable, Identifiable {
         case select = "Seleziona", line = "Linea", rectangle = "Rettangolo", circle = "Cerchio",
-             polygon = "Poligono", slot = "Asola", arc = "Arco", fillet = "Raccordo", trim = "Taglia", extend = "Estendi",
+             polygon = "Poligono", slot = "Asola", arc = "Arco", fillet = "Raccordo", chamfer = "Smusso", trim = "Taglia", extend = "Estendi",
              offset = "Offset", mirror = "Specchio", dimension = "Quota"
         var id: String { rawValue }
         /// The drawing tools (Quota lives with the constraints, the editing tools under MODIFICA).
         static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc] }
-        static var modify: [Tool] { [.fillet, .trim, .extend, .offset, .mirror] }
+        static var modify: [Tool] { [.fillet, .chamfer, .trim, .extend, .offset, .mirror] }
         var symbol: String {
             switch self {
             case .select: "cursorarrow"
@@ -26,6 +26,7 @@ final class SketchSession {
             case .slot: "capsule"
             case .arc: "circle.bottomhalf.filled"
             case .fillet: "arrow.turn.up.right"
+            case .chamfer: "triangle.bottomhalf.filled"
             case .trim: "scissors"
             case .extend: "arrow.right.to.line"
             case .offset: "square.on.square.dashed"
@@ -43,6 +44,7 @@ final class SketchSession {
             case .slot: "Clicca il primo centro, il secondo centro, poi la larghezza."
             case .arc: "Clicca l'inizio, la fine, poi un punto dell'arco."
             case .fillet: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato."
+            case .chamfer: "Clicca l'angolo tra due linee: lo taglia una linea alla distanza impostata su entrambi i lati."
             case .trim: "Clicca il pezzo da togliere: si taglia fino alle linee che lo incrociano (in rosso sotto il cursore)."
             case .extend: "Clicca vicino all'estremo libero di una linea o di un arco: si allunga fino alla prima curva che incontra."
             case .offset: "Clicca una forma (con le linee e gli archi uniti a lei), poi il lato dove creare la copia alla distanza impostata."
@@ -54,7 +56,7 @@ final class SketchSession {
             switch self {
             case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .arc: "a"
             case .trim: "t"; case .offset: "o"
-            case .select, .fillet, .extend, .mirror: nil
+            case .select, .fillet, .chamfer, .extend, .mirror: nil
             }
         }
     }
@@ -118,6 +120,7 @@ final class SketchSession {
     /// Radius of the next 2D fillet (Raccordo tool).
     var filletRadius = 3.0
     var offsetDistance = 2.0
+    var chamferDistance = 2.0
     /// Values of the design's user parameters, for dimension expressions.
     var parameterValues: [String: Double] = [:]
     /// Offset: the shape picked first (then the side is clicked).
@@ -272,6 +275,7 @@ final class SketchSession {
         switch tool {
         case .dimension: break
         case .fillet: filletCorner(raw)
+        case .chamfer: filletCorner(raw, chamfer: true)
         case .trim: trim(raw)
         case .extend: extend(raw)
         case .offset: offsetClick(raw)
@@ -520,6 +524,7 @@ final class SketchSession {
                 return nil
             }
         case .fillet: return "R \(fmt(filletRadius)) mm"
+        case .chamfer: return "Smusso \(fmt(chamferDistance)) mm"
         case .offset: return offsetSource == nil ? nil : "Offset \(fmt(offsetDistance)) mm"
         case .select, .dimension, .trim, .extend, .mirror: return nil
         }

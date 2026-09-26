@@ -182,12 +182,19 @@ struct Ribbon: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Griglia 1 mm", isOn: Binding(get: { sketch.snapToGrid }, set: { sketch.snapToGrid = $0 }))
                         .toggleStyle(.checkbox)
-                    if sketch.tool == .fillet || sketch.tool == .offset {
-                        let fillet = sketch.tool == .fillet
+                    if [.fillet, .chamfer, .offset].contains(sketch.tool) {
+                        let tool = sketch.tool
                         HStack(spacing: 4) {
-                            Text(fillet ? "Raggio" : "Distanza")
-                            TextField("", value: Binding(get: { fillet ? sketch.filletRadius : sketch.offsetDistance },
-                                                         set: { if fillet { sketch.filletRadius = max(0.01, $0) } else { sketch.offsetDistance = max(0.01, $0) } }),
+                            Text(tool == .fillet ? "Raggio" : "Distanza")
+                            TextField("", value: Binding(get: { tool == .fillet ? sketch.filletRadius : tool == .chamfer ? sketch.chamferDistance : sketch.offsetDistance },
+                                                         set: { v in
+                                                             let v = max(0.01, v)
+                                                             switch tool {
+                                                             case .fillet: sketch.filletRadius = v
+                                                             case .chamfer: sketch.chamferDistance = v
+                                                             default: sketch.offsetDistance = v
+                                                             }
+                                                         }),
                                       format: .number.precision(.fractionLength(0...2)))
                                 .frame(width: 44).textFieldStyle(.roundedBorder)
                             Text("mm")

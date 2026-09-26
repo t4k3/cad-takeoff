@@ -14,6 +14,7 @@ enum ConstraintTool: String, CaseIterable, Identifiable {
     case equal = "Uguale"
     case concentric = "Concentrico"
     case midpoint = "Punto medio"
+    case symmetric = "Simmetrico"
     case fix = "Fisso"
 
     var id: String { rawValue }
@@ -28,6 +29,7 @@ enum ConstraintTool: String, CaseIterable, Identifiable {
         case .equal: "equal.square"
         case .concentric: "circle.circle"
         case .midpoint: "circle.bottomhalf.filled"
+        case .symmetric: "arrow.left.and.line.vertical.and.arrow.right"
         case .fix: "lock"
         }
     }
@@ -42,6 +44,7 @@ enum ConstraintTool: String, CaseIterable, Identifiable {
         case .equal: "Clicca due linee (stessa lunghezza) o due cerchi (stesso raggio)."
         case .concentric: "Clicca due cerchi."
         case .midpoint: "Clicca un punto, poi la linea."
+        case .symmetric: "Clicca due punti, poi la linea d'asse: i punti diventano simmetrici."
         case .fix: "Clicca un punto: resta dov'è."
         }
     }
@@ -85,6 +88,8 @@ extension SketchSession {
         case (.concentric, _): [.circle, .point]
         case (.midpoint, 0): [.point]
         case (.midpoint, _): [.segment]
+        case (.symmetric, 0), (.symmetric, 1): [.point]
+        case (.symmetric, _): [.segment]
         }
         guard let ref = pickRef(p, kinds: wanted) else { notice = "Niente da vincolare qui: " + tool.hint; return }
         if picked.last == ref { return }
@@ -114,6 +119,9 @@ extension SketchSession {
             kind = .equal(a, b)
         case .concentric: if let b { kind = .concentric(a, b) } else { return }
         case .midpoint: if let b { kind = .midpoint(a, b) } else { return }
+        case .symmetric:
+            guard picked.count == 3, let b else { return }
+            kind = .symmetric(a, b, picked[2])
         }
         picked = []
         if let kind { apply(SketchConstraint(kind)) }
@@ -433,25 +441,26 @@ extension SketchSession {
         return passes ? .arc(center: c, radius: r, start: ta, end: tb) : .arc(center: c, radius: r, start: tb, end: ta)
     }
 
-    /// Raccordo: the corner under `p` becomes a tangent arc of `filletRadius`.
-    func filletCorner(_ p: Vec2) {
+    /// Raccordo: the corner under `p` becomes a tangent arc of `filletRadius` (Smusso: a line
+    /// `chamferDistance` from the corner).
+    func filletCorner(_ p: Vec2, chamfer: Bool = false) {
         guard case let .point(id, i)? = pickRef(p, kinds: [.point]), let shape = shape(id) else {
             notice = "Clicca l'angolo tra due linee."; return
         }
         switch shape.kind {
         case .polyline: break
         case .rectangle where i < 4: break
-        default: notice = "Il raccordo si fa sull'angolo tra due linee (polilinea o rettangolo)."; return
+        default: notice = "Si fa sull'angolo tra due linee (polilinea o rettangolo)."; return
         }
         var next = sketch
         do {
-            let arc = try next.fillet(id, vertex: i, radius: filletRadius)
-            guard next.solve() else { notice = "Raccordo in conflitto con i vincoli dello schizzo."; return }
+            let arc = chamfer ? try next.chamfer(id, vertex: i, distance: chamferDistance) : try next.fillet(id, vertex: i, radius: filletRadius)
+            guard next.solve() else { notice = (chamfer ? "Smusso" : "Raccordo") + " in conflitto con i vincoli dello schizzo."; return }
             notice = nil
             sketch = next
             selection = arc
         } catch {
-            notice = "Raccordo: " + error.localizedDescription
+            notice = (chamfer ? "Smusso: " : "Raccordo: ") + error.localizedDescription
         }
     }
 }

@@ -565,8 +565,19 @@ extension Sketch {
     /// coincident and tangent constraints and a radius dimension. Returns the arc's ID.
     @discardableResult
     public mutating func fillet(_ shapeID: UUID, vertex i: Int, radius r: Double) throws -> UUID {
+        try cutCorner(shapeID, vertex: i, size: r, chamfer: false)
+    }
+
+    /// Sketch chamfer: the corner is cut by a line `distance` from it along both sides, joined
+    /// to them by coincident constraints. Returns the new line's ID.
+    @discardableResult
+    public mutating func chamfer(_ shapeID: UUID, vertex i: Int, distance d: Double) throws -> UUID {
+        try cutCorner(shapeID, vertex: i, size: d, chamfer: true)
+    }
+
+    private mutating func cutCorner(_ shapeID: UUID, vertex i: Int, size r: Double, chamfer: Bool) throws -> UUID {
         guard let k = shapes.firstIndex(where: { $0.id == shapeID }) else { throw SketchEditError.invalid("forma non trovata") }
-        guard r.isFinite, r > 0 else { throw SketchEditError.invalid("raggio non valido") }
+        guard r.isFinite, r > 0 else { throw SketchEditError.invalid(chamfer ? "distanza non valida" : "raggio non valido") }
         var shape = shapes[k]
         if case .rectangle = shape.kind, (0..<4).contains(i) {
             // Same vertex and side numbering as the rectangle: its constraints stay valid, and its
@@ -587,8 +598,9 @@ extension Sketch {
         let cosT = max(-1, min(1, u1.x * u2.x + u1.y * u2.y))
         let theta = acos(cosT)
         guard theta > 1e-3, theta < .pi - 1e-3 else { throw SketchEditError.invalid("raccordo: i due lati sono allineati") }
-        let d = r / tan(theta / 2)
+        let d = chamfer ? r : r / tan(theta / 2)
         guard d < la - 1e-6, d < lb - 1e-6 else {
+            if chamfer { throw SketchEditError.invalid(String(format: "smusso troppo grande per questi lati (massimo %.2f mm)", min(la, lb))) }
             throw SketchEditError.invalid(String(format: "raggio troppo grande per questo angolo (massimo %.2f mm)", min(la, lb) * tan(theta / 2)))
         }
         let t1 = p[i] + u1 * d, t2 = p[i] + u2 * d
@@ -597,8 +609,9 @@ extension Sketch {
         let a1 = atan2(t1.y - c.y, t1.x - c.x), a2 = atan2(t2.y - c.y, t2.x - c.x)
         // The short way round: start/end so that the counter-clockwise sweep is under half a turn.
         let (start, end, t1IsStart) = SketchShape.sweep(a1, a2) <= .pi ? (a1, a2, true) : (a2, a1, false)
-        let arc = SketchShape(kind: .arc(center: c, radius: r, start: start, end: end))
-        let t1Point = t1IsStart ? 1 : 2, t2Point = t1IsStart ? 2 : 1
+        let arc = chamfer ? SketchShape(kind: .polyline([t1, t2], closed: false), isConstruction: shape.isConstruction)
+                          : SketchShape(kind: .arc(center: c, radius: r, start: start, end: end))
+        let t1Point = chamfer ? 0 : (t1IsStart ? 1 : 2), t2Point = chamfer ? 1 : (t1IsStart ? 2 : 1)
 
         // The polyline (or its two halves) now ends at the tangent points. Constraints move to the
         // new numbering; those on the corner itself go, and so do lengths of the two trimmed sides.
@@ -635,18 +648,18 @@ extension Sketch {
             shape.kind = .polyline([t2] + order + [t1], closed: false)
             shapes[k] = shape
             let m = n + 1
-            added += [.init(.coincident(.point(shapeID, m - 1), .point(arc.id, t1Point))), .init(.coincident(.point(shapeID, 0), .point(arc.id, t2Point))),
-                      .init(.tangent(.segment(shapeID, m - 2), .circle(arc.id, 0))), .init(.tangent(.segment(shapeID, 0), .circle(arc.id, 0)))]
+            added += [.init(.coincident(.point(shapeID, m - 1), .point(arc.id, t1Point))), .init(.coincident(.point(shapeID, 0), .point(arc.id, t2Point)))]
+            if !chamfer { added += [.init(.tangent(.segment(shapeID, m - 2), .circle(arc.id, 0))), .init(.tangent(.segment(shapeID, 0), .circle(arc.id, 0)))] }
         } else {
             shape.kind = .polyline(Array(p[0..<i]) + [t1], closed: false)
             shapes[k] = shape
             let second = SketchShape(id: secondID, kind: .polyline([t2] + Array(p[(i + 1)...]), closed: false), isConstruction: shape.isConstruction)
             shapes.insert(second, at: k + 1)
-            added += [.init(.coincident(.point(shapeID, i), .point(arc.id, t1Point))), .init(.coincident(.point(second.id, 0), .point(arc.id, t2Point))),
-                      .init(.tangent(.segment(shapeID, i - 1), .circle(arc.id, 0))), .init(.tangent(.segment(second.id, 0), .circle(arc.id, 0)))]
+            added += [.init(.coincident(.point(shapeID, i), .point(arc.id, t1Point))), .init(.coincident(.point(second.id, 0), .point(arc.id, t2Point)))]
+            if !chamfer { added += [.init(.tangent(.segment(shapeID, i - 1), .circle(arc.id, 0))), .init(.tangent(.segment(second.id, 0), .circle(arc.id, 0)))] }
         }
         shapes.insert(arc, at: k + 1)
-        constraints += added + [.init(.radius(.circle(arc.id, 0), r))]
+        constraints += added + (chamfer ? [] : [.init(.radius(.circle(arc.id, 0), r))])
         return arc.id
     }
 }

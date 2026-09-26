@@ -187,3 +187,16 @@ private func length(_ s: SketchShape, _ i: Int) -> Double {
     let ok2 = s2.solve()
     #expect(ok2)
 }
+
+@Test func chamferCutsACornerWithALine() throws {
+    let r = SketchShape(kind: .rectangle(corner: Vec2(0, 0), width: 40, height: 20))
+    var sketch = Sketch(name: "S", shapes: [r])
+    let line = try sketch.chamfer(r.id, vertex: 2, distance: 4)
+    let ok = sketch.solve()
+    #expect(ok)
+    let c = sketch.shapes.first { $0.id == line }!
+    #expect(c.pointCount == 2 && (c.point(0)! - c.point(1)!).length > 5.6 && (c.point(0)! - c.point(1)!).length < 5.7)
+    #expect(sketch.faces.count == 1 && abs(sketch.faces[0].area - (800 - 8)) < 1e-6)
+    #expect(!sketch.constraints.contains { if case .tangent = $0.kind { true } else { false } })
+    #expect(throws: SketchEditError.self) { var s = sketch; try s.chamfer(r.id, vertex: 1, distance: 50) }
+}
