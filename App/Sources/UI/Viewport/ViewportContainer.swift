@@ -38,26 +38,17 @@ final class ViewportState {
     func home() { camera.show(.home, bounds: renderer?.sceneBounds); redraw() }
     func fit() { camera.fit(renderer?.sceneBounds); redraw() }
 
-    // MARK: Faces and edges (T72, provisional topology)
-
-    @ObservationIgnored private var topoCache: [Feature.ID: (Feature, DerivedTopology)] = [:]
-
-    func topology(_ body: ViewportRenderer.Body) -> DerivedTopology {
-        if let (f, t) = topoCache[body.feature.id], f == body.feature { return t }
-        let t = DerivedTopology(body.mesh)
-        topoCache[body.feature.id] = (body.feature, t)
-        return t
-    }
+    // MARK: Faces and edges (stable kernel IDs, T76)
 
     func pickGeo(_ ray: Ray, filter: SelectionFilter) -> GeoRef? {
         guard let bodies = renderer?.visibleBodies else { return nil }
         switch filter {
         case .body: return nil
-        case .face: return GeoPicking.face(ray, bodies: bodies, topology: topology)
+        case .face: return GeoPicking.face(ray, bodies: bodies)
         case .edge:
             // ~7 screen points at the hit distance.
             let h = Float(max(viewSize.height, 1)), tanHalf = tan(camera.fovY / 2)
-            return GeoPicking.edge(ray, bodies: bodies, topology: topology) { [camera] d in
+            return GeoPicking.edge(ray, bodies: bodies) { [camera] d in
                 let depth = camera.projection == .perspective ? max(d, 1) : camera.pose.distance
                 return 7 * 2 * depth * tanHalf / h
             }
@@ -89,7 +80,7 @@ struct ViewportContainer: View {
         ZStack {
             LinearGradient(colors: [Color(white: 0.30), Color(white: 0.17)], startPoint: .top, endPoint: .bottom)
                 .overlay(Theme.Palette.canvas.opacity(0.0))
-            MetalViewport(features: model.document.activeFeatures,
+            MetalViewport(features: model.document.activeFeatures, snapshot: model.snapshot(),
                           // In face/edge mode only the picked face/edge is highlighted, not the whole body.
                           selection: workspace.selectionFilter == .body ? model.selection : nil,
                           hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,
@@ -196,19 +187,18 @@ struct ViewportContainer: View {
         func f(_ v: Vec3) -> SIMD3<Float> { SIMD3(Float(v.x), Float(v.y), Float(v.z)) }
         func add(_ ref: GeoRef, selected: Bool) {
             guard let body = viewport.body(ref.feature) else { return }
-            let topo = viewport.topology(body)
             let accent = Theme.Palette.bodySelected
             switch ref.kind {
-            case let .face(i) where i < topo.faces.count:
+            case let .face(id):
                 let c = SIMD4(accent, selected ? 0.45 : 0.22)
-                for t in topo.faces[i].triangles {
-                    let (a, b, cc) = body.mesh.triangle(t)
+                for t in body.triangles(of: id) {
+                    let (a, b, cc) = body.triangle(t)
                     tris.append((f(a), f(b), f(cc), c))
                 }
-            case let .edge(i) where i < topo.edges.count:
+            case let .edge(id):
+                guard let e = body.edge(id) else { return }
                 let c = selected ? SIMD4(accent, 1) : SIMD4(accent * 0.7 + 0.3, 0.9)
-                for (a, b) in topo.edges[i].segments { lines.append((f(a), f(b), c)) }
-            default: break
+                for (a, b) in zip(e.polyline, e.polyline.dropFirst()) { lines.append((f(a), f(b), c)) }
             }
         }
         for ref in workspace.geoSelection { add(ref, selected: true) }
@@ -216,31 +206,36 @@ struct ViewportContainer: View {
         return (tris, lines)
     }
 
-    /// Measurements of the face/edge selection (Fusion's "measure" at a glance).
+    /// Measurements of the face/edge selection, from the kernel's exact descriptions.
     @ViewBuilder private var measureChip: some View {
         if workspace.sketch == nil, !workspace.geoSelection.isEmpty {
-            let items = workspace.geoSelection.compactMap { ref -> (GeoRef, DerivedTopology)? in
-                viewport.body(ref.feature).map { (ref, viewport.topology($0)) }
+            let faces = workspace.geoSelection.compactMap { ref -> FaceInfo? in
+                if case let .face(id) = ref.kind { viewport.body(ref.feature)?.face(id) } else { nil }
             }
-            let faces = items.compactMap { ref, t -> DerivedTopology.Face? in
-                if case let .face(i) = ref.kind, i < t.faces.count { return t.faces[i] } else { return nil }
-            }
-            let edges = items.compactMap { ref, t -> DerivedTopology.Edge? in
-                if case let .edge(i) = ref.kind, i < t.edges.count { return t.edges[i] } else { return nil }
+            let edges = workspace.geoSelection.compactMap { ref -> EdgeInfo? in
+                if case let .edge(id) = ref.kind { viewport.body(ref.feature)?.edge(id) } else { nil }
             }
             VStack(alignment: .leading, spacing: 3) {
                 if faces.count == 1, let face = faces.first {
-                    Text(face.isPlanar ? "Faccia piana" : "Faccia curva").font(.system(size: 11, weight: .semibold))
-                    Text("Area \(fmt(face.area)) mm²")
-                    if let n = face.planeNormal { Text("Normale \(fmt(n.x)) · \(fmt(n.y)) · \(fmt(n.z))") }
+                    switch face.surface {
+                    case let .plane(_, n):
+                        Text("Faccia piana").font(.system(size: 11, weight: .semibold))
+                        Text("Area \(fmt(face.area)) mm²")
+                        Text("Normale \(fmt(n.x)) · \(fmt(n.y)) · \(fmt(n.z))")
+                    case let .cylinder(_, axis, r):
+                        Text("Faccia cilindrica").font(.system(size: 11, weight: .semibold))
+                        Text("Ø \(fmt(2 * r)) mm · R \(fmt(r)) mm")
+                        Text("Asse \(fmt(axis.x)) · \(fmt(axis.y)) · \(fmt(axis.z))")
+                        Text("Area \(fmt(face.area)) mm²")
+                    }
                 } else if faces.count > 1 {
                     Text("\(faces.count) facce").font(.system(size: 11, weight: .semibold))
                     Text("Area totale \(fmt(faces.reduce(0) { $0 + $1.area })) mm²")
-                    if faces.count == 2, let n1 = faces[0].planeNormal, let n2 = faces[1].planeNormal {
+                    if faces.count == 2, case let .plane(o1, n1) = faces[0].surface, case let .plane(o2, n2) = faces[1].surface {
                         let ang = acos(max(-1, min(1, n1.dot(n2)))) * 180 / .pi
                         Text("Angolo tra le facce \(fmt(ang))°")
-                        if abs(abs(n1.dot(n2)) - 1) < 1e-6, let pa = anyPoint(items[0]), let pb = anyPoint(items[1]) {
-                            Text("Distanza tra i piani \(fmt(abs((pb - pa).dot(n1)))) mm")
+                        if abs(abs(n1.dot(n2)) - 1) < 1e-6 {
+                            Text("Distanza tra i piani \(fmt(abs((o2 - o1).dot(n1)))) mm")
                         }
                     }
                 }
@@ -257,12 +252,6 @@ struct ViewportContainer: View {
             .padding(.horizontal, 8).padding(.vertical, 6)
             .overlayChip()
         }
-    }
-
-    private func anyPoint(_ item: (GeoRef, DerivedTopology)) -> Vec3? {
-        guard case let .face(i) = item.0.kind, let body = viewport.body(item.0.feature),
-              let t = item.1.faces[safe: i]?.triangles.first else { return nil }
-        return body.mesh.triangle(t).0
     }
 
     // MARK: Sketch overlays

@@ -18,7 +18,7 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 |---|---|---|
 | 0 | Annulla/Ripeti veri per ogni modifica + avviso alla chiusura | **Fatta** — in attesa di prova di Ross |
 | 1 | Documento v2 unico con storico (solidi, schizzi, lamiera) + migrazione file | **Fatta** — timeline, marker, soppressione; lamiera nel formato ma non ancora disegnata (T79) |
-| 2 | Vista 3D e selezione sul motore B-rep | — |
+| 2 | Vista 3D e selezione sul motore B-rep | **Fatta** — ID stabili di facce/spigoli, normali lisce, diagnosi geometrie non valide |
 | 3 | Booleane: Unisci / Taglia / Interseca | — |
 | 3b | **Foro** (richiesta Ross 26/09): semplice, svasato, lamato; filettatura cosmetica o modellata (per stampa 3D), su faccia piana con punto dallo schizzo | — (serve fasi 1-3) |
 

@@ -39,7 +39,6 @@
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
 		89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */; };
 		8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */; };
-		910716B033642A8AAC278D65 /* DerivedTopology.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445542A3EE5F7AD6E9698285 /* DerivedTopology.swift */; };
 		9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891E4E944492E6539912AE18 /* MCPHost.swift */; };
 		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
@@ -102,7 +101,6 @@
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
-		445542A3EE5F7AD6E9698285 /* DerivedTopology.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DerivedTopology.swift; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
@@ -301,7 +299,6 @@
 		A3A5D1508574B5B604AD5C7B /* Selection */ = {
 			isa = PBXGroup;
 			children = (
-				445542A3EE5F7AD6E9698285 /* DerivedTopology.swift */,
 				B072E2898F0A20B8861C13F8 /* GeoSelection.swift */,
 			);
 			path = Selection;
@@ -553,7 +550,6 @@
 				A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */,
 				865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */,
 				1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */,
-				910716B033642A8AAC278D65 /* DerivedTopology.swift in Sources */,
 				B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */,
 				777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,

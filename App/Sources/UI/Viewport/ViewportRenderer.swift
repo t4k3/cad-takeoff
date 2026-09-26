@@ -2,8 +2,8 @@ import CADCore
 import MetalKit
 import simd
 
-/// Draws grid, axes and bodies. GPU buffers are cached per feature and rebuilt
-/// only when that feature changes.
+/// Draws grid, axes and bodies. Bodies come from the kernel snapshot (B-rep faces/edges
+/// with stable IDs, T76); GPU buffers are cached per feature and rebuilt only when it changes.
 @MainActor
 final class ViewportRenderer: NSObject, MTKViewDelegate {
     enum DisplayStyle: String, CaseIterable, Identifiable {
@@ -22,11 +22,30 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
 
     struct Body {
         var feature: Feature
-        var mesh: Mesh
+        var snapshot: BodySnapshot
         var triangles: MTLBuffer?
         var triangleVertexCount: Int
         var edges: MTLBuffer?
         var edgeVertexCount: Int
+        var bounds: BoundingBox?
+
+        var triangleCount: Int { snapshot.triangles.count / 3 }
+        func triangle(_ i: Int) -> (Vec3, Vec3, Vec3) {
+            let t = snapshot.triangles, p = snapshot.positions
+            return (p[Int(t[i * 3])], p[Int(t[i * 3 + 1])], p[Int(t[i * 3 + 2])])
+        }
+        /// Selection face of a triangle (stable FaceID from the kernel).
+        func face(ofTriangle i: Int) -> FaceInfo? {
+            guard i < snapshot.triangleFace.count else { return nil }
+            let f = Int(snapshot.triangleFace[i])
+            return f < snapshot.faces.count ? snapshot.faces[f] : nil
+        }
+        func face(_ id: FaceID) -> FaceInfo? { snapshot.faces.first { $0.id == id } }
+        func edge(_ id: EdgeID) -> EdgeInfo? { snapshot.edges.first { $0.id == id } }
+        func triangles(of face: FaceID) -> [Int] {
+            guard let f = snapshot.faces.firstIndex(where: { $0.id == face }) else { return [] }
+            return snapshot.triangleFace.indices.filter { Int(snapshot.triangleFace[$0]) == f }
+        }
     }
 
     private struct MeshVertex { var position: SIMD4<Float>; var normal: SIMD4<Float> }
@@ -114,18 +133,27 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
 
     // MARK: Scene updates
 
-    func update(features: [Feature]) {
-        order = features.map(\.id)
-        let alive = Set(order)
-        bodies = bodies.filter { alive.contains($0.key) }
-        for f in features where bodies[f.id]?.feature != f {
-            bodies[f.id] = makeBody(f)
+    /// Bodies = the snapshot's valid bodies (hidden and invalid features are absent).
+    func update(features: [Feature], snapshot: DesignSnapshot) {
+        let byID = Dictionary(features.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        var next: [Feature.ID: Body] = [:]
+        order = []
+        for body in snapshot.bodies {
+            guard let f = byID[body.bodyID] else { continue }
+            order.append(f.id)
+            if var cached = bodies[f.id], cached.feature == f {
+                cached.snapshot = body          // same geometry, newer revision
+                next[f.id] = cached
+            } else {
+                next[f.id] = makeBody(f, body)
+            }
         }
+        bodies = next
     }
 
     /// Bounds of the visible bodies (for Fit / Home).
     var sceneBounds: BoundingBox? {
-        let boxes = order.compactMap { bodies[$0] }.filter(\.feature.isVisible).compactMap(\.mesh.bounds)
+        let boxes = order.compactMap { bodies[$0] }.compactMap(\.bounds)
         guard var b = boxes.first else { return nil }
         for o in boxes.dropFirst() {
             b.min = Vec3(min(b.min.x, o.min.x), min(b.min.y, o.min.y), min(b.min.z, o.min.z))
@@ -134,42 +162,33 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         return b
     }
 
-    var visibleBodies: [Body] { order.compactMap { bodies[$0] }.filter(\.feature.isVisible) }
+    var visibleBodies: [Body] { order.compactMap { bodies[$0] } }
 
-    private func makeBody(_ f: Feature) -> Body {
-        let mesh = f.buildMesh()
-        var tris: [MeshVertex] = []
-        tris.reserveCapacity(mesh.triangleCount * 3)
-        for i in 0..<mesh.triangleCount {
-            let (a, b, c) = mesh.triangle(i)
-            let n = mesh.normal(ofTriangle: i)
-            let nn = SIMD4(Float(n.x), Float(n.y), Float(n.z), 0)
-            for v in [a, b, c] { tris.append(MeshVertex(position: SIMD4(Float(v.x), Float(v.y), Float(v.z), 1), normal: nn)) }
+    private func makeBody(_ f: Feature, _ snap: BodySnapshot) -> Body {
+        func v4(_ v: Vec3, _ w: Float) -> SIMD4<Float> { SIMD4(Float(v.x), Float(v.y), Float(v.z), w) }
+        let tris = snap.triangles.map { i in
+            MeshVertex(position: v4(snap.positions[Int(i)], 1), normal: v4(snap.normals[Int(i)], 0))
         }
-        let edges = featureEdges(mesh)
-        return Body(feature: f, mesh: mesh, triangles: buffer(tris), triangleVertexCount: tris.count,
-                    edges: buffer(edges), edgeVertexCount: edges.count)
-    }
-
-    /// Crease edges (dihedral angle > 25°) and open boundaries: the CAD "edge" look.
-    private func featureEdges(_ mesh: Mesh) -> [LineVertex] {
-        struct Key: Hashable { let a: Vec3; let b: Vec3 }
-        var faces: [Key: [Vec3]] = [:]
-        for t in 0..<mesh.triangleCount {
-            let (a, b, c) = mesh.triangle(t)
-            let n = mesh.normal(ofTriangle: t)
-            for (p, q) in [(a, b), (b, c), (c, a)] {
-                let k = (p.x, p.y, p.z) < (q.x, q.y, q.z) ? Key(a: p, b: q) : Key(a: q, b: p)
-                faces[k, default: []].append(n)
+        // Real B-rep edges only (no tessellation lines on curved faces).
+        let color = SIMD4<Float>(0.05, 0.06, 0.08, 1)
+        var lines: [LineVertex] = []
+        for e in snap.edges {
+            for (a, b) in zip(e.polyline, e.polyline.dropFirst()) {
+                lines.append(LineVertex(position: v4(a, 1), color: color))
+                lines.append(LineVertex(position: v4(b, 1), color: color))
             }
         }
-        let color = SIMD4<Float>(0.05, 0.06, 0.08, 1)
-        var out: [LineVertex] = []
-        for (k, normals) in faces where normals.count != 2 || normals[0].dot(normals[1]) < cos(25 * .pi / 180) {
-            out.append(LineVertex(position: SIMD4(Float(k.a.x), Float(k.a.y), Float(k.a.z), 1), color: color))
-            out.append(LineVertex(position: SIMD4(Float(k.b.x), Float(k.b.y), Float(k.b.z), 1), color: color))
+        var bounds: BoundingBox?
+        if let first = snap.positions.first {
+            var lo = first, hi = first
+            for p in snap.positions {
+                lo = Vec3(min(lo.x, p.x), min(lo.y, p.y), min(lo.z, p.z))
+                hi = Vec3(max(hi.x, p.x), max(hi.y, p.y), max(hi.z, p.z))
+            }
+            bounds = BoundingBox(min: lo, max: hi)
         }
-        return out
+        return Body(feature: f, snapshot: snap, triangles: buffer(tris), triangleVertexCount: tris.count,
+                    edges: buffer(lines), edgeVertexCount: lines.count, bounds: bounds)
     }
 
     private func makeGrid(extent: Float, step: Float, major: Float) -> (MTLBuffer, Int)? {

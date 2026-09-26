@@ -82,6 +82,12 @@ struct BrowserPanel: View {
         return TreeRow(indent: 1, symbol: feature.kind.symbol, title: feature.name,
                 isSelected: model.selection == feature.id, isHovered: workspace.hovered == feature.id,
                 isDimmed: !feature.isVisible || !active) {
+            if let issue = model.snapshot().issues.first(where: { $0.featureID == feature.id }) {
+                Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 10))
+                    .foregroundStyle(.orange)
+                    .help("Geometria non valida: \(issue.message)")
+                    .accessibilityLabel("Geometria non valida: \(issue.message)")
+            }
             if !active {
                 Image(systemName: "clock.arrow.circlepath").font(.system(size: 10))
                     .foregroundStyle(Theme.Palette.textSecondary)

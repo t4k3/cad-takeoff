@@ -1418,7 +1418,7 @@
       "id": "T76",
       "title": "Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology",
       "phase": "M1 · Ciclo Fusion",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T72",
         "T75"
@@ -1429,7 +1429,12 @@
         "App/Sources/UI/Workspace"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-26 10:18",
+      "finished": "2026-09-26 10:21",
+      "notes": [
+        "2026-09-26 10:21 claude: Renderer e selezione sullo snapshot del kernel: corpi da BodySnapshot (normali lisce, spigoli B-rep reali, bounds), picking corpi su triangoli dello snapshot, facce/spigoli per FaceID/EdgeID stabili (DerivedTopology rimossa), misure dalla superficie esatta (piano: area/normale/distanza tra piani; cilindro: Ø, R, asse), diagnosi geometrie non valide nel Browser, selezioni obsolete rimosse dopo modifiche. Verificato: fianco cilindro Ø20 → dopo raggio 15 via MCP la selezione resta e mostra Ø30."
+      ]
     },
     {
       "id": "T77",
@@ -1551,7 +1556,7 @@
       "suggested": "claude",
       "owner": "claude",
       "started": "2026-09-26 10:11",
-      "finished": "2026-09-26 10:17",
+      "finished": "2026-09-26 10:21",
       "notes": [
         "2026-09-26 10:17 claude: CADDocument v2: timeline ordinata di TimelineItem (feature, schizzo, lamiera) con soppressione e marker di rollback; features/sketches/sheetMetalParts come viste modificabili sulla timeline (nuovi passi inseriti al marker); activeFeatures per calcolo/render/export/snapshot/strumenti; migrazione automatica dei file v1 (schizzo prima del primo solido collegato), rifiuto di formati più recenti. Model: moveRollback, setSuppressed, deleteStep (annullabili, titoli). Timeline UI: ordine reale, marker trascinabile (anche da VoiceOver), menu Modifica/Sopprimi/Porta il marker/Elimina, passi inattivi attenuati; Browser con icona 'non calcolato'. Test: 7 core nuovi (43 totali), 8 controlli timeline nella cronologia (28). Verificato a schermo: trascinamento marker e 'Alla fine'."
       ]

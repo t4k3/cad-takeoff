@@ -44,6 +44,8 @@ public struct BoundingBox: Equatable, Sendable {
     public var min: Vec3
     public var max: Vec3
 
+    public init(min: Vec3, max: Vec3) { self.min = min; self.max = max }
+
     public var size: Vec3 { max - min }
     public var center: Vec3 { (min + max) * 0.5 }
 }

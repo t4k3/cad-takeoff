@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 10:17. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 10:21. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -115,7 +115,7 @@ flowchart LR
     T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>claude</i>"]:::todo
     T72["T72 · UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)<br/><i>claude</i>"]:::done
     T75["T75 · Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70)<br/><i>codex</i>"]:::done
-    T76["T76 · Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology<br/><i>claude</i>"]:::todo
+    T76["T76 · Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology<br/><i>claude</i>"]:::done
   end
   subgraph P17["Coordinamento"]
     T71["T71 · Allineare roadmap e regole sulle dipendenze alla richiesta di Ross<br/><i>codex</i>"]:::done
@@ -318,7 +318,6 @@ flowchart LR
 - **T63** Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza — suggerito: claude
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: claude
 - **T70** Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT — suggerito: claude
-- **T76** Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology — suggerito: claude
 - **T83** Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana — suggerito: claude
 
 ## Tabella
@@ -401,7 +400,7 @@ flowchart LR
 | T73 | Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard | in_progress | claude | T17 | App/Sources/Integration/Projects<br>App/Sources/UI/Home<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/FusionTakeoff.entitlements |
 | T74 | Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home | todo | claude | T73 | Tools/FusionAddin<br>App/Sources/Integration/FusionImport<br>App/Sources/UI/Home |
 | T75 | Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70) | done | codex | T24 | docs/requirements/KERNEL_V1.md |
-| T76 | Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology | todo | claude | T72, T75 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
+| T76 | Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology | done | claude | T72, T75 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T77 | Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file | in_progress | claude | T61 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests/SketchTests.swift<br>App/Sources/UI/Sketch<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Sources/Integration/Projects |
 | T78 | Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF | done | codex | T75 | Packages/CADCore/Sources/CADCore/SheetMetal<br>Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift<br>Tests/SheetMetal<br>scripts/test-sheet-metal.sh<br>scripts/ci.sh<br>docs/requirements/SHEET_METAL.md<br>docs/requirements/SHEET_METAL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
 | T79 | Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo | todo | claude | T78, T77 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>Tests/SheetMetalIntegration<br>scripts/test-sheet-metal-integration.sh<br>docs/requirements/SHEET_METAL_V1.md |

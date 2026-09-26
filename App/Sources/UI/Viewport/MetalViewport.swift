@@ -6,6 +6,8 @@ import SwiftUI
 /// selection, reports clicks/hover through callbacks.
 struct MetalViewport: NSViewRepresentable {
     var features: [Feature]
+    /// Kernel geometry for these features (same revision).
+    var snapshot: DesignSnapshot
     var selection: Feature.ID?
     var hovered: Feature.ID?
     var style: ViewportRenderer.DisplayStyle
@@ -43,7 +45,7 @@ struct MetalViewport: NSViewRepresentable {
         view.onHover = onHover
         view.onKey = onKey
         guard let r = view.renderer else { return }
-        r.update(features: features)
+        r.update(features: features, snapshot: snapshot)
         r.selection = selection
         r.hovered = hovered
         r.style = style

@@ -2,7 +2,7 @@ import CADCore
 import simd
 
 /// Viewport hit-testing (interaction, not modelling): nearest body under a ray.
-/// Per-face/edge picking will extend this once T24 defines topological IDs.
+/// Faces/edges: see GeoPicking (stable kernel IDs).
 enum Picking {
     struct Hit {
         var featureID: Feature.ID
@@ -15,10 +15,9 @@ enum Picking {
     static func pick(_ ray: Ray, in bodies: [ViewportRenderer.Body]) -> Hit? {
         var best: Hit?
         for body in bodies {
-            guard let b = body.mesh.bounds, intersects(ray, b) else { continue }
-            let m = body.mesh
-            for t in 0..<m.triangleCount {
-                let (a, bb, c) = m.triangle(t)
+            guard let b = body.bounds, intersects(ray, b) else { continue }
+            for t in 0..<body.triangleCount {
+                let (a, bb, c) = body.triangle(t)
                 if let d = intersect(ray, f(a), f(bb), f(c)), d < (best?.distance ?? .infinity) {
                     best = Hit(featureID: body.feature.id, triangle: t, distance: d,
                                point: ray.origin + ray.direction * d)

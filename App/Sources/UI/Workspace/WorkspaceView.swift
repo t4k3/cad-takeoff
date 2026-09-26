@@ -45,6 +45,19 @@ struct WorkspaceView: View {
                 if workspace?.sketch != nil { workspace?.exitSketch() }
             }
         }
+        .onChange(of: model.designRevision) { _, _ in
+            // Drop face/edge references that no longer exist after an edit (stable IDs survive resizes).
+            let bodies = model.snapshot().bodies
+            func exists(_ r: GeoRef) -> Bool {
+                guard let b = bodies.first(where: { $0.bodyID == r.feature }) else { return false }
+                switch r.kind {
+                case let .face(id): return b.faces.contains { $0.id == id }
+                case let .edge(id): return b.edges.contains { $0.id == id }
+                }
+            }
+            workspace.geoSelection.removeAll { !exists($0) }
+            if let h = workspace.geoHover, !exists(h) { workspace.geoHover = nil }
+        }
         .onChange(of: model.selection) { _, id in
             // Selecting a body from the viewport/browser shows its parameters, unless the user is chatting.
             if id != nil, workspace.sideTab == .parameters { workspace.showInspector = true }
