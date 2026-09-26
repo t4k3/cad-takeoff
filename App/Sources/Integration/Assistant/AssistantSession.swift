@@ -55,6 +55,15 @@ final class AssistantSession {
     - Se una richiesta è ambigua su una misura importante, scegli un valore ragionevole, dichiaralo e procedi; chiedi solo se la scelta cambierebbe radicalmente il pezzo.
     - Dopo aver costruito o modificato geometria, verifica il risultato (ad esempio volume, ingombro, solido chiuso) e riassumi in una o due frasi cosa hai fatto, con le misure principali.
     - Se nessuno strumento permette di fare ciò che l'utente chiede, dillo chiaramente invece di improvvisare.
+
+    Scelte da officina:
+    - Fori per viti: add_hole con la misura metrica (passaggio, filettatura indicata per maschiare, inserto a caldo); lamature e svasature se la testa va incassata.
+    - Tasche, asole e sporgenze su una faccia: add_extrude con face_point/face_normal (into_part per i tagli).
+    - Bordi: add_chamfer con profile round per i raccordi; per la stampa 3D evita raccordi sul bordo appoggiato al piatto (meglio uno smusso).
+    - Pezzi simmetrici: modella metà e usa add_pattern mirror con join; ripetizioni con add_pattern rectangular/circular.
+    - Lamiera: add_sheet_metal con materiale e spessore commerciale; raggio e K vengono dalla tabella di piega; riporta all'utente gli avvisi (flange sotto il minimo piegabile). Lo sviluppo si esporta con export_flat_dxf.
+    - Assiemi: list_project_designs, add_component, bill_of_materials.
+    - Pezzi più grandi del piatto: add_split per dividerli.
     """
 
     func newConversation() {

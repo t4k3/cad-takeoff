@@ -68,7 +68,7 @@ struct AssistantToolsTests {
         expect(invalidShape.isError, "JSON shape validation")
         let missing = await m.call("get_feature", arguments: ["feature_id": .string(UUID().uuidString)])
         expect(missing.isError, "unknown ID")
-        expect(Set(m.tools.map(\.name)).count == 20, "20 unique tools")
+        expect(Set(m.tools.map(\.name)).count == 23, "23 unique tools")
         let partID = m.document.features[0].id
         let beforeColour = m.document
         let coloured = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "#E53935"])
@@ -188,6 +188,21 @@ struct AssistantToolsTests {
         let cut = await edit("add_split", ["body_feature_id": .string(half), "plane": "xy", "offset": 2])
         let cutInfo = await m.call("scene_info", arguments: [:])
         expect(!cut.isError && cutInfo.structured?["body_count"]?.number == 2, "split in two bodies")
+        // Assembly through the tools: list the project, insert two parts, read the BOM.
+        m.newDesign()
+        let bracketPart = CADDocument(features: [Feature(name: "Staffa", kind: .sheetMetal(SheetMetalSpec(material: "dc01", thickness: 2,
+                                               width: 40, depth: 60, flanges: [.front: SheetFlange(length: 30)])))])
+        m.componentResolver = { $0 == "Macchina/Staffa.ftk" ? bracketPart : nil }
+        m.projectDesigns = { ["Macchina/Staffa.ftk"] }
+        let designs = await m.call("list_project_designs", arguments: [:])
+        expect(designs.structured?["designs"]?.array?.first?["path"]?.string == "Macchina/Staffa.ftk", "project designs listed")
+        _ = await edit("add_component", ["path": "Macchina/Staffa.ftk"])
+        let second = await edit("add_component", ["path": "Macchina/Staffa.ftk", "position": ["x": 0, "y": 80, "z": 0], "rotation": ["x": 0, "y": 0, "z": 180]])
+        let unknownPart = await edit("add_component", ["path": "Macchina/Nulla.ftk"])
+        let bom = await m.call("bill_of_materials", arguments: [:])
+        expect(!second.isError && unknownPart.isError, "components inserted, unknown path refused")
+        expect(bom.structured?["rows"]?.array?.first?["quantity"]?.number == 2, "BOM quantity 2")
+        m.componentResolver = nil; m.projectDesigns = nil
         // Sheet metal: U channel in DC01 2 mm with the workshop rule.
         m.newDesign()
         let channel = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "width": 100, "depth": 40,

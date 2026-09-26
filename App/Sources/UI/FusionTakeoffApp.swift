@@ -27,6 +27,7 @@ struct FusionTakeoffApp: App {
                     mcp.start()
                     sketches.model = model
                     model.componentResolver = library.componentResolver
+                    model.projectDesigns = { [library] in library.allDesigns.map { library.componentPath(for: $0.url) } }
                     library.adoptInitialDesign(model)
                     AppDelegate.confirmQuit = { [library, model] in library.confirmDiscard(model) }
                 }

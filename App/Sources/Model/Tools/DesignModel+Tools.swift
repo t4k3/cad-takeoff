@@ -28,6 +28,16 @@ extension DesignModel: CADToolProvider {
             case "scene_info": return try sceneInfo()
             case "export_stl": return try export(args)
             case "export_3mf": return try export3MF(args)
+            case "list_project_designs":
+                let paths = projectDesigns?() ?? []
+                return result("\(paths.count) disegni nel progetto", ["designs": .array(paths.map { p in
+                    ["path": .string(p), "name": .string(ComponentRef(path: p).partName)] })])
+            case "bill_of_materials":
+                let rows = billOfMaterials()
+                return result("\(rows.count) righe di distinta", ["rows": .array(rows.enumerated().map { i, r in
+                    ["position": .number(Double(i + 1)), "name": .string(r.name), "quantity": .number(Double(r.quantity)),
+                     "material": .string(r.material), "volume_mm3": .number(r.volume),
+                     "mass_kg": r.mass.map { .number($0) } ?? .null, "path": .string(r.path)] })])
             case "export_flat_dxf":
                 let id = args["feature_id"] == nil ? nil : document.features[try index(args)].id
                 let (name, dxf) = try flatPatternDXF(id)
@@ -69,6 +79,12 @@ extension DesignModel: CADToolProvider {
             case "add_hole": kind = .hole(try holeSpec(args))
             case "add_sheet_metal": kind = .sheetMetal(try sheetSpec(args))
             case "add_pattern": kind = .pattern(try patternSpec(args))
+            case "add_component":
+                let path = try string(args, "path")
+                guard componentResolver?(path) != nil else { throw CADToolFailure("Disegno non trovato: \(path). Usa list_project_designs.") }
+                var rotation = Vec3.zero
+                if let r = args["rotation"], let x = r["x"]?.number, let y = r["y"]?.number, let z = r["z"]?.number { rotation = Vec3(x, y, z) }
+                kind = .component(ComponentRef(path: path, rotation: rotation))
             case "add_split":
                 let source = document.features[try index(args, key: "body_feature_id")].id
                 guard let plane = PatternSpec.MirrorPlane(rawValue: try string(args, "plane")) else { throw CADToolFailure("plane: yz, xz o xy.") }
@@ -85,7 +101,9 @@ extension DesignModel: CADToolProvider {
                 placement = FeaturePlacement(plane: SketchPlane.onFace(point: Vec3(px, py, pz), normal: Vec3(nx, ny, nz)),
                                              reversed: args["into_part"]?.bool ?? false)
             }
-            let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "\(title) \(next.features.count + 1)",
+            var defaultName = "\(title) \(next.features.count + 1)"
+            if case let .component(ref) = kind { defaultName = ref.partName }
+            let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? defaultName,
                             kind: kind, position: try position(args) ?? .zero,
                             color: try args["color"].map { _ in try color(args) }
                                 ?? (name == "add_sheet_metal" ? PartColor(hex: "#7F8B97")! : .defaultColor),
@@ -478,7 +496,7 @@ extension Feature.Kind {
     /// Features that change or copy bodies made earlier (no mesh of their own to validate).
     var actsOnBodies: Bool {
         switch self {
-        case .pattern, .split: true
+        case .pattern, .split, .component: true
         default: false
         }
     }

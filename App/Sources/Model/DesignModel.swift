@@ -70,6 +70,8 @@ final class DesignModel {
     @ObservationIgnored var finishPendingEdits: () -> Void = {}
     /// Reads assembly components from the project library (set by the app).
     @ObservationIgnored var componentResolver: DesignEvaluator.ComponentResolver?
+    /// Designs of the project library as component paths (set by the app; for the assistant).
+    @ObservationIgnored var projectDesigns: (() -> [String])?
     @ObservationIgnored private var cachedSnapshot: DesignSnapshot?
     @ObservationIgnored private var cachedFlat: (snapshot: DesignSnapshot, bends: [(Vec3, Vec3, SheetBendDirection, Bool)])?
     @ObservationIgnored private var cachedEvaluation: (revision: String, bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue])?
