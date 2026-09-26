@@ -41,6 +41,9 @@ targets:
       properties:
         CFBundleDisplayName: CAD Takeoff
         CFBundleName: CAD Takeoff
+        # Version and build come from the build settings (the archive script sets the build number).
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSApplicationCategoryType: public.app-category.graphics-design
         # Only standard HTTPS (Anthropic/OpenAI APIs) and a localhost MCP server: exempt.
         ITSAppUsesNonExemptEncryption: false
