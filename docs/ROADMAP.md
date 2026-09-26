@@ -34,7 +34,7 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 | 6 | **Assistente che usa tutto quanto sopra** (strumenti v2) | L'assistente sa fare schizzi su facce, tagli, smussi e correggere lo storico | Codex + Claude | — |
 | 7 | **Parti e assiemi** | Inserire i pezzi del progetto in un assieme, posizionarli, distinta base | Claude | **Fase 1 fatta 26/09**: componenti collegati ai file (si aggiornano), posizione e rotazione, Apri pezzo, distinta base con CSV. Poi: giunti/vincoli di accoppiamento, interferenze, componente attivo, esplosi |
 | 8 | **Lamiera** | Campione piegato + sviluppo DXF/3MF e operazioni salvate | Claude | **Base integrata (26/09): scheda LAMIERA, materiali con regole da pressa piegatrice (V, raggio, K DIN 6935, flangia minima), piastra + flange sui 4 lati, sviluppo, DXF, assistente.** Poi: altezze per lato nel pannello, fori riportati nello sviluppo/DXF. Prossimo: angoli chiusi, flange su flange. [Dettagli](requirements/SHEET_METAL_V1.md) |
-| 9 | **Prima release TestFlight ai colleghi** | — | Ross + Claude | — |
+| 9 | **Prima release TestFlight ai colleghi** | I colleghi installano da TestFlight e usano la propria chiave | Ross + Claude | **Preparata 26/09**: icona, privacy manifest, crittografia esente, build Release, `scripts/archive-testflight.sh`. **Tocca a Ross**: account in Xcode, app in App Store Connect, primo caricamento → [guida](TESTFLIGHT.md) |
 
 ## Da valutare (non iniziati)
 

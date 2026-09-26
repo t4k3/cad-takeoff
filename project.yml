@@ -41,6 +41,9 @@ targets:
       properties:
         CFBundleDisplayName: Fusion Takeoff
         LSApplicationCategoryType: public.app-category.graphics-design
+        # Only standard HTTPS (Anthropic/OpenAI APIs) and a localhost MCP server: exempt.
+        ITSAppUsesNonExemptEncryption: false
+        NSHumanReadableCopyright: "© 2026 Fusion Takeoff"
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: com.takeoff.fusiontakeoff.design
             UTTypeDescription: Fusion Takeoff Design
@@ -51,6 +54,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff
         CODE_SIGN_ENTITLEMENTS: App/FusionTakeoff.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     scheme:
       testTargets: []
   ftk-mcp:

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00F4B54DB5EC90153C2FA6BE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */; };
 		05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */; };
 		0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */; };
 		0E767B03A5E12FC1C9C65E1E /* AssistantSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA831E610F555E8A4BC81923 /* AssistantSession.swift */; };
@@ -55,6 +56,7 @@
 		BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA251AD54A99FF5A9A16C764 /* Keychain.swift */; };
 		C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */; };
 		CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A604770FA67CFFA12BACDB /* ViewCube.swift */; };
+		CE170F2CBCC50AEF128AC113 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D65234D73DDB270D86ADBB51 /* Assets.xcassets */; };
 		CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */; };
 		CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A384B92C6A6894EA9A5831 /* SketchSession.swift */; };
 		D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */; };
@@ -124,6 +126,7 @@
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPanel.swift; sourceTree = "<group>"; };
 		62D38757828F98D2737425CF /* CADToolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolCatalog.swift; sourceTree = "<group>"; };
+		63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectLibrary.swift; sourceTree = "<group>"; };
 		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
 		6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchStore.swift; sourceTree = "<group>"; };
@@ -149,6 +152,7 @@
 		CE04E5C771D6558145AEF42B /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
 		D15DE039BD31C92AE427C66E /* TimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineBar.swift; sourceTree = "<group>"; };
 		D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceState.swift; sourceTree = "<group>"; };
+		D65234D73DDB270D86ADBB51 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DA831E610F555E8A4BC81923 /* AssistantSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSession.swift; sourceTree = "<group>"; };
 		DD59C218754E0D11BA7F1DD8 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Tools.swift"; sourceTree = "<group>"; };
@@ -207,6 +211,8 @@
 			isa = PBXGroup;
 			children = (
 				5CAB5E2F59180CD118CF8961 /* .gitkeep */,
+				D65234D73DDB270D86ADBB51 /* Assets.xcassets */,
+				63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */,
 				E4B1A91129EF63A88EF293AD /* FusionAddIn */,
 			);
 			path = Resources;
@@ -582,8 +588,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE170F2CBCC50AEF128AC113 /* Assets.xcassets in Resources */,
 				829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */,
 				FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */,
+				00F4B54DB5EC90153C2FA6BE /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
