@@ -38,7 +38,12 @@ struct InspectorPanel: View {
                             .help("Nuovo corpo, oppure unisci/taglia/interseca i corpi che questo passo tocca")
                         }
                         section("Colore") { PartColorPicker(feature: feature) }
-                        section("Dimensioni") { parameters(for: $model.document.features[i].kind) }
+                        section("Dimensioni") {
+                            parameters(for: $model.document.features[i].kind)
+                            if !feature.holes.isEmpty {
+                                info(feature.holes.count == 1 ? "Foro" : "Fori", feature.holes.map(\.entitiesDescription).joined(separator: " · "))
+                            }
+                        }
                         section("Posizione") {
                             DimensionField(title: "X", value: $model.document.features[i].position.x)
                             DimensionField(title: "Y", value: $model.document.features[i].position.y)

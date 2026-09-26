@@ -46,6 +46,8 @@ extension CADDocument {
                   let i = features.firstIndex(where: { $0.id == link.featureID }),
                   case let .extrude(_, height) = features[i].kind else { continue }
             features[i].kind = .extrude(profile: profile, height: height)
+            // Holes follow their shapes; a deleted or opened one stops being a hole.
+            features[i].holes = link.holeShapeIDs.compactMap { id in sketch.shapes.first { $0.id == id }?.profile }
         }
     }
 

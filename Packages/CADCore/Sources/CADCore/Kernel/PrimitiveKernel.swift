@@ -17,6 +17,34 @@ public enum PrimitiveKernel {
         return try body.placed(on: placement.plane, depthOffset: placement.reversed ? -height : 0, translation: feature.position)
     }
 
+    /// An extrusion with holes: the outline's solid minus a prism per hole, 1 mm past both ends.
+    /// The hole walls get stable IDs derived from the feature's (they are real faces of the part).
+    public static func solidWithHoles(_ feature: Feature, revision: String = "") throws -> CSGSolid {
+        guard case let .extrude(_, height) = feature.kind else { throw KernelError.invalidParameter("fori solo nelle estrusioni") }
+        var outer = feature
+        outer.holes = []
+        var solid = CSGSolid(try build(outer).snapshot(revision: revision))
+        for (k, hole) in feature.holes.enumerated() {
+            var tool = outer
+            var bytes = feature.id.uuid
+            bytes.15 ^= UInt8(truncatingIfNeeded: k + 1); bytes.14 ^= 0xA5
+            tool.id = UUID(uuid: bytes)
+            tool.kind = .extrude(profile: hole, height: height + 2)
+            let body: BRepBody
+            if let placement = feature.placement {
+                var local = tool
+                local.placement = nil; local.position = Vec3(0, 0, -1)
+                body = try buildLocal(local, cylinderSegments: 64)
+                    .placed(on: placement.plane, depthOffset: placement.reversed ? -height : 0, translation: feature.position)
+            } else {
+                tool.position = feature.position - Vec3(0, 0, 1)
+                body = try buildLocal(tool, cylinderSegments: 64)
+            }
+            solid = solid.subtracting(CSGSolid(body.snapshot(revision: revision)))
+        }
+        return solid
+    }
+
     private static func buildLocal(_ feature: Feature, cylinderSegments: Int) throws -> BRepBody {
         guard feature.position.isFinite,
               [feature.position.x, feature.position.y, feature.position.z].allSatisfy({ abs($0) <= 100_000 }) else {

@@ -233,14 +233,18 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public var operation: BooleanOperation
     /// Sketch plane the solid is built on (sketch on face); nil = world XY.
     public var placement: FeaturePlacement?
+    /// Extrusion of a sketch region with holes (the ring between two circles): these profiles
+    /// are left open through the whole height.
+    public var holes: [Profile2D]
 
     public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true,
-                color: PartColor = .defaultColor, operation: BooleanOperation = .newBody, placement: FeaturePlacement? = nil) {
+                color: PartColor = .defaultColor, operation: BooleanOperation = .newBody, placement: FeaturePlacement? = nil,
+                holes: [Profile2D] = []) {
         self.id = id; self.name = name; self.kind = kind; self.position = position; self.isVisible = isVisible
-        self.color = color; self.operation = operation; self.placement = placement
+        self.color = color; self.operation = operation; self.placement = placement; self.holes = holes
     }
 
-    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -253,6 +257,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         color = try c.decodeIfPresent(PartColor.self, forKey: .color) ?? .defaultColor
         operation = try c.decodeIfPresent(BooleanOperation.self, forKey: .operation) ?? .newBody
         placement = try c.decodeIfPresent(FeaturePlacement.self, forKey: .placement)
+        holes = try c.decodeIfPresent([Profile2D].self, forKey: .holes) ?? []
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -261,9 +266,11 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         try c.encode(position, forKey: .position); try c.encode(isVisible, forKey: .isVisible)
         try c.encode(color, forKey: .color); try c.encode(operation, forKey: .operation)
         try c.encodeIfPresent(placement, forKey: .placement)
+        if !holes.isEmpty { try c.encode(holes, forKey: .holes) }
     }
 
     public func buildMesh() -> Mesh {
+        if !holes.isEmpty { return (try? PrimitiveKernel.solidWithHoles(self))?.triangulated().mesh ?? Mesh() }
         if placement != nil, let brep = try? PrimitiveKernel.build(self) { return brep.mesh }
         let local: Mesh
         switch kind {

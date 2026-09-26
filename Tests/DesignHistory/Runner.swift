@@ -119,6 +119,20 @@ struct DesignHistoryTests {
         // Opening a file starts a fresh history.
         m.replaceDocument(CADDocument(), status: "Aperto")
         expect(!m.canUndo && !m.canRedo, "open/new clears history")
+        // A ring extruded from two circles follows the sketch: the hole grows with the inner circle.
+        let outerC = SketchShape(kind: .circle(center: Vec2(0, 0), radius: 20))
+        let innerC = SketchShape(kind: .circle(center: Vec2(0, 0), radius: 5))
+        var ringSketch = Sketch(name: "Anelli", shapes: [outerC, innerC])
+        let area = ringSketch.areas(selected: [outerC.id])[0]
+        let ring = Feature(name: "Anello", kind: .extrude(profile: area.profile, height: 4), holes: area.holes)
+        var ringDoc = CADDocument(features: [ring], sketches: [ringSketch],
+                                  sketchLinks: [SketchLink(featureID: ring.id, sketchID: ringSketch.id, shapeID: outerC.id, holeShapeIDs: [innerC.id])])
+        ringSketch.shapes[1].kind = .circle(center: Vec2(0, 0), radius: 8)
+        ringDoc.regenerate(from: ringSketch)
+        expect(abs(ringDoc.features[0].holes[0].area - Profile2D.circle(radius: 8).area) < 1e-9, "hole follows the inner circle")
+        ringSketch.shapes.removeLast()
+        ringDoc.regenerate(from: ringSketch)
+        expect(ringDoc.features[0].holes.isEmpty, "deleting the inner circle fills the hole")
         print("PASS: \(checks) undo/redo assertions (manual, merged typing, delete, sketch transactions, assistant rule)")
     }
 }

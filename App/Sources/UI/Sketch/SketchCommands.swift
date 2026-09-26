@@ -1,14 +1,16 @@
 import CADCore
 import SwiftUI
 
-/// "Estrudi" from a sketch profile: distance with wireframe preview; OK adds the validated solid,
-/// saves the sketch and links them in one undoable step. Profile dimensions are edited in
-/// the Parametri panel before extruding.
+/// "Estrudi" from sketch profiles, as in Fusion: click the areas to extrude (the ring between two
+/// circles keeps its hole; neighbouring areas merge), distance with wireframe preview; OK adds the
+/// validated solids, saves the sketch and links them in one undoable step.
 @MainActor
 enum SketchCommands {
     static func extrude(sketch: SketchSession, model: DesignModel, workspace: WorkspaceState) -> CommandSession? {
-        guard let shape = sketch.extrudeCandidate, shape.profile != nil else { return nil }
-        sketch.selection = shape.id
+        guard !sketch.sketch.regions.isEmpty else { return nil }
+        // Starts from the selected (or only) closed shape's area; clicks add or remove areas.
+        sketch.selectedRegions = sketch.extrudeCandidate.map { [$0.id] } ?? []
+        sketch.pickingRegions = true
         sketch.previewHeight = 10
         sketch.previewReversed = false
         let onFace = !sketch.sketch.plane.isXY
@@ -22,12 +24,18 @@ enum SketchCommands {
         }
         var lastOp = BooleanOperation.newBody
         weak var session: CommandSession?
-        // Arrow at the profile's centre, pointing out along the plane's normal.
+        // Arrow at the first area's centre, pointing out along the plane's normal.
         let plane = sketch.sketch.plane, normal = plane.normal
-        let outline = shape.outline
-        let centre = plane.world(Vec2(outline.map(\.x).reduce(0, +) / Double(max(outline.count, 1)),
-                                      outline.map(\.y).reduce(0, +) / Double(max(outline.count, 1))))
-        let arrow = DistanceManipulator(origin: centre, inward: normal, factor: 1, value: 10, range: 0.1...10_000, label: "H")
+        func arrowOrigin() -> Vec3 {
+            let outline = sketch.sketch.areas(selected: sketch.selectedRegions).first?.profile.points
+                ?? sketch.sketch.regions.first?.outline ?? []
+            return plane.world(Vec2(outline.map(\.x).reduce(0, +) / Double(max(outline.count, 1)),
+                                    outline.map(\.y).reduce(0, +) / Double(max(outline.count, 1))))
+        }
+        func areasLabel() -> CommandField.Value {
+            .references(sketch.sketch.areas(selected: sketch.selectedRegions).map { "\($0.shapeID)" })
+        }
+        let arrow = DistanceManipulator(origin: arrowOrigin(), inward: normal, factor: 1, value: 10, range: 0.1...10_000, label: "H")
         arrow.pointsAlong = true
         arrow.onChange = { v in
             guard let i = session?.fields.firstIndex(where: { $0.id == "h" }) else { return }
@@ -36,9 +44,18 @@ enum SketchCommands {
         workspace.manipulator = arrow
         // Seen from above the arrow points at the camera: turn to a 3/4 view, as Fusion does.
         workspace.viewRequest = .home
+        func finish() {
+            sketch.previewHeight = nil
+            sketch.pickingRegions = false
+            sketch.selectedRegions = []
+            sketch.onRegionsChange = {}
+            workspace.manipulator = nil
+        }
         let created = CommandSession(
-            title: "Estrudi \(shape.typeName.lowercased())", symbol: "square.stack.3d.up",
-            fields: [.init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
+            title: "Estrudi", symbol: "square.stack.3d.up",
+            fields: [.init(id: "areas", label: "Profili", kind: .reference(prompt: "Clicca le aree da estrudere", maxCount: 500), value: areasLabel(),
+                           help: "Clicca un'area per aggiungerla o toglierla: l'anello tra due cerchi lascia il foro, aree vicine si uniscono"),
+                     .init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
                            help: onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z"),
                      .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
                            help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca"),
@@ -53,42 +70,58 @@ enum SketchCommands {
                     return
                 }
                 lastOp = op
-                sketch.previewHeight = f.first?.number
+                sketch.previewHeight = f.first { $0.id == "h" }?.number
                 sketch.previewIsCut = op == .cut
                 sketch.previewReversed = reversed(f)
                 // Drag arrow on the profile, along the extrusion.
                 if let m = workspace.manipulator {
                     m.inward = normal * (reversed(f) ? -1 : 1)
-                    if !m.isDragging, let h = f.first?.number { m.value = h }
+                    if !m.isDragging, let h = f.first(where: { $0.id == "h" })?.number { m.value = h }
                 }
             },
             onCommit: { f in
-                workspace.manipulator = nil
-                let height = f.first?.number ?? 10
+                let height = f.first { $0.id == "h" }?.number ?? 10
                 let op = operation(f)
-                sketch.previewHeight = nil
-                guard let current = sketch.shape(shape.id), let profile = current.profile else { return }
+                let areas = sketch.sketch.areas(selected: sketch.selectedRegions)
+                finish()
+                guard !areas.isEmpty else { model.statusMessage = "Clicca almeno un'area da estrudere."; return }
                 let placement = onFace ? FeaturePlacement(plane: sketch.sketch.plane, reversed: reversed(f)) : nil
-                let feature = Feature(name: (op == .cut ? "Taglio " : "Estrusione ") + "\(model.document.features.count + 1)",
-                                      kind: .extrude(profile: profile, height: height), operation: op, placement: placement)
-                do {
-                    try CADToolValidation.feature(feature)
-                } catch {
-                    model.statusMessage = "Estrusione non riuscita: \(error.localizedDescription)"
-                    return
+                // One solid per area (disjoint areas are separate bodies, as in Fusion).
+                var features: [Feature] = []
+                for area in areas {
+                    let feature = Feature(name: (op == .cut ? "Taglio " : "Estrusione ") + "\(model.document.features.count + features.count + 1)",
+                                          kind: .extrude(profile: area.profile, height: height), operation: op, placement: placement,
+                                          holes: area.holes)
+                    do {
+                        try CADToolValidation.feature(feature)
+                    } catch {
+                        model.statusMessage = "Estrusione non riuscita: \(error.localizedDescription)"
+                        return
+                    }
+                    features.append(feature)
                 }
-                // One undo step: saves the sketch, adds the solid and links it to the shape.
+                // One undo step: saves the sketch, adds the solids and links them to their shapes.
                 let saved = sketch.sketch
-                model.edit((op == .newBody ? "Estrudi " : op.label + ": ") + current.typeName.lowercased(), selected: .some(feature.id), changed: [feature.id]) { doc in
+                let what = areas.count == 1 ? (sketch.shape(areas[0].shapeID)?.typeName.lowercased() ?? "profilo") : "\(areas.count) profili"
+                model.edit((op == .newBody ? "Estrudi " : op.label + ": ") + what, selected: .some(features[0].id), changed: features.map(\.id)) { doc in
                     doc.upsert(saved)
-                    doc.features.append(feature)
-                    doc.sketchLinks.append(SketchLink(featureID: feature.id, sketchID: saved.id, shapeID: current.id))
+                    for (feature, area) in zip(features, areas) {
+                        doc.features.append(feature)
+                        doc.sketchLinks.append(SketchLink(featureID: feature.id, sketchID: saved.id, shapeID: area.shapeID,
+                                                          holeShapeIDs: area.holeShapeIDs))
+                    }
                 }
                 model.statusMessage = "Estrusione creata (\(fmt(height)) mm) — ⌘Z per annullare"
                 workspace.exitSketch()
             },
-            onCancel: { sketch.previewHeight = nil; workspace.manipulator = nil })
+            onCancel: { finish() })
         session = created
+        // Picking an area updates the count, the arrow's place and the preview.
+        sketch.onRegionsChange = { [weak created] in
+            guard let created else { return }
+            created.update("areas") { $0.value = areasLabel() }
+            workspace.manipulator?.origin = arrowOrigin()
+        }
         return created
     }
 }

@@ -184,7 +184,7 @@ struct ViewportContainer: View {
                   selection: workspace.selectionFilter == .body ? model.selection : nil,
                   hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,
                   overlayLines: sketchLines,
-                  highlightTriangles: geoHighlight.triangles,
+                  highlightTriangles: geoHighlight.triangles + (workspace.sketch?.regionFill() ?? []),
                   highlightLines: geoHighlight.lines,
                   gizmos: workspace.manipulator.map { [$0.mesh(length: arrowLength)] } ?? [],
                   cursor: workspace.sketch != nil || workspace.holePlacement != nil || workspace.pickingSketchPlane ? .crosshair : nil,
@@ -227,6 +227,7 @@ struct ViewportContainer: View {
             return
         }
         if let sketch = workspace.sketch {
+            if sketch.pickingRegions, let p = sketch.intersect(ray) { sketch.toggleRegion(at: p); return }
             guard workspace.command == nil, let p = sketch.intersect(ray) else { return }
             sketch.vertexSnap = 8 * viewport.mmPerPoint
             sketch.click(p)

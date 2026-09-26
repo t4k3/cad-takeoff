@@ -163,8 +163,8 @@ struct Ribbon: View {
             }
             ToolGroup("CREA") {
                 Button { workspace.extrudeSketch(model: model) } label: { Label("Estrudi", systemImage: "square.stack.3d.up") }
-                    .disabled(sketch.extrudeCandidate == nil || workspace.command != nil)
-                    .help(sketch.extrudeCandidate == nil ? "Disegna o seleziona un profilo chiuso" : "Estrudi il profilo selezionato (E)")
+                    .disabled(sketch.sketch.profiles.isEmpty || workspace.command != nil)
+                    .help(sketch.sketch.profiles.isEmpty ? "Disegna un profilo chiuso" : "Estrudi: clicca le aree da estrudere (E)")
                 Button { sketch.deleteSelection() } label: { Label("Elimina", systemImage: "trash") }
                     .disabled(sketch.selection == nil)
             }

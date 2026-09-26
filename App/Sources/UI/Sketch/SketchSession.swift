@@ -63,6 +63,33 @@ final class SketchSession {
     var previewReversed = false
     /// Snap radius in mm (~8 screen points), set by the viewport from the camera scale.
     var vertexSnap = 1.0
+    /// While the Extrude panel is open, clicks pick areas (regions) instead of drawing, as with
+    /// Fusion's profiles: the ring between two circles, the disc inside…
+    var pickingRegions = false
+    /// Picked regions, by the shape that bounds them.
+    var selectedRegions: Set<UUID> = []
+    @ObservationIgnored var onRegionsChange: () -> Void = {}
+
+    /// Adds or removes the region under a point of the plane.
+    func toggleRegion(at world: SIMD3<Float>) {
+        guard let r = sketch.region(at: local(world)) else { return }
+        if selectedRegions.contains(r.shapeID) { selectedRegions.remove(r.shapeID) } else { selectedRegions.insert(r.shapeID) }
+        onRegionsChange()
+    }
+
+    /// Shading of the picked regions (and, fainter, the one under the cursor) for the viewport.
+    func regionFill() -> [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
+        guard pickingRegions else { return [] }
+        var out: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+        func fill(_ profile: Profile2D, _ holes: [Profile2D], _ color: SIMD4<Float>) {
+            for (a, b, c) in profile.triangulate(holes: holes) { out.append((world(a, 0.01), world(b, 0.01), world(c, 0.01), color)) }
+        }
+        for area in sketch.areas(selected: selectedRegions) { fill(area.profile, area.holes, SIMD4(0.2, 0.55, 1, 0.35)) }
+        if let raw = rawCursor, let r = sketch.region(at: raw), !selectedRegions.contains(r.shapeID) {
+            fill(Profile2D(points: r.outline), r.holes.map { Profile2D(points: $0) }, SIMD4(0.2, 0.55, 1, 0.14))
+        }
+        return out
+    }
 
     /// Edges of the part lying on the sketch plane, in sketch coordinates (projected references:
     /// drawn dashed, snap targets; not part of the sketch).
@@ -385,7 +412,7 @@ final class SketchSession {
             var color = selected ? selectedColor : sketchColor
             if s.isConstruction { color *= SIMD4(1, 1, 1, 0.45) }
             ring(s.outline, closed: s.isClosed, color)
-            if selected, let h0 = previewHeight, h0 > 0, s.profile != nil {
+            if selected, !pickingRegions, let h0 = previewHeight, h0 > 0, s.profile != nil {
                 let h = previewReversed ? -h0 : h0
                 let pc = previewIsCut ? SIMD4<Float>(0.95, 0.25, 0.25, 0.9) : previewColor
                 ring(s.outline, closed: true, pc, z: h)
@@ -402,6 +429,24 @@ final class SketchSession {
             case let .circle(c, _): out += cross(c, size: vertexSnap * 0.35, color: color)
             case let .slot(a, b, _): out += cross(a, size: vertexSnap * 0.35, color: color) + cross(b, size: vertexSnap * 0.35, color: color)
             case .polyline, .rectangle, .polygon: for p in s.outline { out += cross(p, size: vertexSnap * 0.3, color: color) }
+            }
+        }
+        // Extrusion preview of the picked areas: outlines and holes at the top, side lines at corners.
+        if pickingRegions, let h0 = previewHeight, h0 > 0 {
+            let h = previewReversed ? -h0 : h0
+            let pc = previewIsCut ? SIMD4<Float>(0.95, 0.25, 0.25, 0.9) : previewColor
+            for area in sketch.areas(selected: selectedRegions) {
+                for id in [area.shapeID] + area.holeShapeIDs {
+                    guard let s = shape(id) else { continue }
+                    ring(s.outline, closed: true, pc, z: h)
+                    let n = s.outline.count
+                    let sides: [Int] = switch s.kind {
+                    case .circle: [0, n / 4, n / 2, 3 * n / 4]
+                    case .slot: [0, n / 2 - 1, n / 2, n - 1]
+                    default: Array(0..<n)
+                    }
+                    for i in sides where i < n { out.append((w(s.outline[i]), w(s.outline[i], h), pc)) }
+                }
             }
         }
         if let c = cursor, !pending.isEmpty {
