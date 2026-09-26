@@ -26,6 +26,8 @@ struct MetalViewport: NSViewRepresentable {
     var onDragEnd: () -> Void = {}
     /// Single-letter shortcuts, only while the viewport has keyboard focus (never while typing elsewhere).
     var onKey: (String) -> Bool = { _ in false }
+    /// Right click (or control-click) without dragging: the menu to show there, if any.
+    var onContextMenu: (CGPoint, Ray) -> NSMenu? = { _, _ in nil }
     /// Receives the renderer once, so overlays (fit, picking) can query scene data.
     var onReady: (ViewportRenderer) -> Void = { _ in }
 
@@ -51,6 +53,7 @@ struct MetalViewport: NSViewRepresentable {
         view.onClick = onClick
         view.onHover = onHover
         view.onKey = onKey
+        view.onContextMenu = onContextMenu
         view.onDragBegin = onDragBegin
         view.onDragMove = onDragMove
         view.onDragEnd = onDragEnd
@@ -80,10 +83,14 @@ final class CADMetalView: MTKView {
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
     var onKey: (String) -> Bool = { _ in false }
+    var onContextMenu: (CGPoint, Ray) -> NSMenu? = { _, _ in nil }
     var onDragBegin: (Ray) -> Bool = { _ in false }
     var onDragMove: (Ray) -> Void = { _ in }
     var onDragEnd: () -> Void = {}
     var viewCursor: NSCursor?
+    /// Right button: pans when dragged, opens the context menu when just clicked.
+    private var rightStart: CGPoint?
+    private var rightDragged = false
 
     override func resetCursorRects() {
         super.resetCursorRects()
@@ -122,6 +129,7 @@ final class CADMetalView: MTKView {
 
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
+        if event.modifierFlags.contains(.control) { showContextMenu(event); return }
         dragStart = topLeft(event)
         isDragging = false
         handleDrag = onDragBegin(camera.ray(at: dragStart!, in: bounds.size))
@@ -152,7 +160,30 @@ final class CADMetalView: MTKView {
         onClick(p, camera.ray(at: p, in: bounds.size), event.modifierFlags)
     }
 
-    override func rightMouseDragged(with event: NSEvent) { panDrag(event) }
+    override func rightMouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        rightStart = topLeft(event); rightDragged = false
+    }
+
+    override func rightMouseDragged(with event: NSEvent) {
+        if !rightDragged, let start = rightStart {
+            let p = topLeft(event)
+            guard hypot(p.x - start.x, p.y - start.y) >= 3 else { return }
+        }
+        rightDragged = true
+        panDrag(event)
+    }
+
+    override func rightMouseUp(with event: NSEvent) {
+        defer { rightStart = nil; rightDragged = false }
+        if !rightDragged { showContextMenu(event) }
+    }
+
+    private func showContextMenu(_ event: NSEvent) {
+        let p = topLeft(event)
+        guard let menu = onContextMenu(p, camera.ray(at: p, in: bounds.size)) else { return }
+        NSMenu.popUpContextMenu(menu, with: event, for: self)
+    }
     override func otherMouseDragged(with event: NSEvent) {
         if event.modifierFlags.contains(.shift) {
             camera.orbit(dx: Float(event.deltaX), dy: Float(event.deltaY)); redraw()
@@ -182,7 +213,9 @@ final class CADMetalView: MTKView {
         if event.hasPreciseScrollingDeltas {
             // Trackpad: two-finger scroll pans; with shift it orbits.
             if event.modifierFlags.contains(.shift) {
-                camera.orbit(dx: Float(-event.scrollingDeltaX), dy: Float(-event.scrollingDeltaY))
+                // Same way round as dragging: follow the fingers, whatever the "natural scrolling" setting.
+                let s: CGFloat = event.isDirectionInvertedFromDevice ? 1 : -1
+                camera.orbit(dx: Float(s * event.scrollingDeltaX), dy: Float(s * event.scrollingDeltaY))
             } else {
                 camera.pan(dx: Float(event.scrollingDeltaX), dy: Float(event.scrollingDeltaY), viewHeight: Float(bounds.height))
             }
@@ -196,4 +229,20 @@ final class CADMetalView: MTKView {
         camera.zoom(factor: Float(1 / (1 + event.magnification)), towards: topLeft(event), in: bounds.size)
         redraw()
     }
+}
+
+/// Menu item that runs a closure (context menus built in SwiftUI code).
+final class ClosureMenuItem: NSMenuItem {
+    private let handler: () -> Void
+
+    init(_ title: String, symbol: String? = nil, _ handler: @escaping () -> Void) {
+        self.handler = handler
+        super.init(title: title, action: #selector(run), keyEquivalent: "")
+        target = self
+        if let symbol { image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
+    }
+
+    required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    @objc private func run() { handler() }
 }

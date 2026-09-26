@@ -102,10 +102,12 @@ final class CameraController {
 
     // MARK: Interaction
 
+    /// Screen delta in points (x right, y down), as the mouse moved.
     func orbit(dx: Float, dy: Float) {
         stopAnimation()
         pose.yaw -= dx * 0.008
-        pose.pitch = min(.pi / 2 - 0.0001, max(-.pi / 2 + 0.0001, pose.pitch + dy * 0.008))
+        // Ross 26/09: dragging down lowers the eye (the view turns towards the underside).
+        pose.pitch = min(.pi / 2 - 0.0001, max(-.pi / 2 + 0.0001, pose.pitch - dy * 0.008))
     }
 
     /// Pan by a screen delta (points) so the grabbed point stays under the cursor.

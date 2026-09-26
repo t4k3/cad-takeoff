@@ -194,6 +194,7 @@ struct ViewportContainer: View {
                   onDragMove: { ray in workspace.manipulator?.drag(ray) },
                   onDragEnd: { workspace.manipulator?.endDrag() },
                   onKey: handleKey,
+                  onContextMenu: contextMenu,
                   onReady: { renderer in
                       viewport.renderer = renderer
                       viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
@@ -301,6 +302,36 @@ struct ViewportContainer: View {
         if workspace.hovered != id { workspace.hovered = id }
     }
 
+    /// Right click on a body: select it and offer what Fusion's marking menu does most.
+    /// In empty space: view commands. Nothing while sketching or in a command.
+    private func contextMenu(_ point: CGPoint, _ ray: Ray) -> NSMenu? {
+        guard workspace.sketch == nil, workspace.command == nil, workspace.holePlacement == nil,
+              !workspace.pickingSketchPlane, workspace.previewSnapshot == nil else { return nil }
+        let menu = NSMenu()
+        guard let id = viewport.pick(ray), let feature = model.document.features.first(where: { $0.id == id }) else {
+            menu.addItem(ClosureMenuItem("Adatta alla vista", symbol: "arrow.up.left.and.arrow.down.right") { viewport.fit() })
+            menu.addItem(ClosureMenuItem("Vista Home", symbol: "house") { workspace.viewRequest = .home })
+            return menu
+        }
+        if workspace.selectionFilter == .body { model.selection = id }
+        let title = NSMenuItem(title: feature.name, action: nil, keyEquivalent: "")
+        title.isEnabled = false
+        menu.addItem(title)
+        menu.addItem(ClosureMenuItem("Modifica…", symbol: "slider.horizontal.3") { workspace.editFeature(id, model: model) })
+        menu.addItem(ClosureMenuItem("Nascondi", symbol: "eye.slash") {
+            if let i = model.document.features.firstIndex(where: { $0.id == id }) { model.document.features[i].isVisible = false }
+        })
+        menu.addItem(.separator())
+        let delete = ClosureMenuItem("Elimina", symbol: "trash") {
+            model.selection = id
+            model.deleteSelected()
+        }
+        delete.keyEquivalent = "\u{8}"
+        delete.keyEquivalentModifierMask = []
+        menu.addItem(delete)
+        return menu
+    }
+
     private func handleKey(_ key: String) -> Bool {
         if let sketch = workspace.sketch, workspace.command == nil {
             if let tool = SketchSession.Tool.allCases.first(where: { $0.key == key }) {
@@ -309,6 +340,10 @@ struct ViewportContainer: View {
             if key == "e" { workspace.extrudeSketch(model: model); return true }
         }
         if key == "f" { viewport.fit(); return true }
+        // ⌫ / ⌦ delete the selected body (sketch entities are handled by the sketch's own shortcut).
+        if key == "\u{7f}" || key == "\u{f728}", workspace.sketch == nil, workspace.command == nil, model.selection != nil {
+            model.deleteSelected(); return true
+        }
         return false
     }
 
