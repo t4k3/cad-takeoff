@@ -213,9 +213,100 @@ final class ProjectLibrary {
 
     var currentName: String { currentURL?.deletingPathExtension().lastPathComponent ?? "Senza titolo" }
 
-    /// New empty design saved right away in `folder`, then opened.
+    // MARK: Tabs (Fusion style: several designs open, one shown)
+
+    struct Tab: Identifiable {
+        let id = UUID()
+        var url: URL?
+        var savedRevision: String?
+        /// The design while the tab is in the background (nil for the tab shown).
+        var session: DesignModel.Session?
+        var name: String { url?.deletingPathExtension().lastPathComponent ?? "Senza titolo" }
+        var isDirty: Bool {
+            guard let session else { return false }
+            return savedRevision == nil ? !session.document.features.isEmpty : session.revision != savedRevision
+        }
+    }
+
+    /// Open designs in tab order; the shown one is `activeTab` (its live state is in the model and
+    /// in `currentURL`/`savedRevision`).
+    private(set) var tabs: [Tab] = [Tab()]
+    private(set) var activeTab: Tab.ID?
+
+    private var activeIndex: Int {
+        if activeTab == nil { activeTab = tabs.first?.id }
+        return tabs.firstIndex { $0.id == activeTab } ?? 0
+    }
+
+    /// The shown tab is an untitled design with no changes (the one at launch, a new one): opening
+    /// a file reuses it instead of leaving an empty tab behind.
+    private func activeIsPristine(_ model: DesignModel) -> Bool {
+        currentURL == nil && !isDirty(model)
+    }
+
+    /// Parks the shown design in its tab and makes a new tab the shown one (model state unchanged:
+    /// the caller loads or creates the design for it).
+    private func pushNewTab(_ model: DesignModel) {
+        model.willSwitchDesign()
+        let i = activeIndex
+        tabs[i].url = currentURL; tabs[i].savedRevision = savedRevision; tabs[i].session = model.captureSession()
+        let tab = Tab()
+        tabs.insert(tab, at: i + 1)
+        activeTab = tab.id
+    }
+
+    /// Shows another open design.
+    func activate(_ id: Tab.ID, model: DesignModel) {
+        guard id != activeTab, model.loading == nil, let j = tabs.firstIndex(where: { $0.id == id }), let session = tabs[j].session else {
+            showHome = false; return
+        }
+        model.willSwitchDesign()
+        let i = activeIndex
+        tabs[i].url = currentURL; tabs[i].savedRevision = savedRevision; tabs[i].session = model.captureSession()
+        currentURL = tabs[j].url; savedRevision = tabs[j].savedRevision
+        tabs[j].session = nil
+        activeTab = id
+        model.restoreSession(session)
+        showHome = false
+    }
+
+    /// The tab's X: asks to save changes, then shows the neighbour (or the Home when it was the last).
+    func closeTab(_ id: Tab.ID, model: DesignModel) {
+        guard model.loading == nil else { return }
+        if id != activeTab { activate(id, model: model) }
+        guard id == activeTab, confirmDiscard(model) else { return }
+        let i = activeIndex
+        if tabs.count == 1 {
+            model.newDesign()
+            model.statusMessage = "Pronto"
+            currentURL = nil
+            savedRevision = model.designRevision
+            tabs = [Tab()]; activeTab = tabs[0].id
+            showHome = true
+            return
+        }
+        let next = tabs[i + 1 < tabs.count ? i + 1 : i - 1]
+        model.willSwitchDesign()
+        tabs.remove(at: i)
+        currentURL = next.url; savedRevision = next.savedRevision
+        if let n = tabs.firstIndex(where: { $0.id == next.id }) { tabs[n].session = nil }
+        activeTab = next.id
+        if let session = next.session { model.restoreSession(session) }
+        showHome = false
+    }
+
+    /// Quitting: every design with changes asks to be saved (Annulla stops the quit).
+    func confirmDiscardAll(_ model: DesignModel) -> Bool {
+        for tab in tabs where tab.id != activeTab && tab.isDirty {
+            activate(tab.id, model: model)
+            guard confirmDiscard(model) else { return false }
+        }
+        return confirmDiscard(model)
+    }
+
+    /// New empty design saved right away in `folder`, then opened (in a new tab).
     func newDesign(in folder: URL, model: DesignModel) {
-        guard confirmDiscard(model) else { return }
+        if !activeIsPristine(model) { pushNewTab(model) }
         run {
             let url = uniqueURL(folder.appendingPathComponent("Nuovo disegno.\(Self.designExtension)"))
             model.newDesign()
@@ -226,8 +317,13 @@ final class ProjectLibrary {
     }
 
     func open(_ url: URL, model: DesignModel) {
-        guard url != currentURL || !isDirty(model) else { showHome = false; return }
-        guard model.loading == nil, confirmDiscard(model) else { return }
+        guard model.loading == nil else { return }
+        // Already open: show its tab.
+        if url == currentURL { showHome = false; return }
+        if let tab = tabs.first(where: { $0.url == url && $0.id != activeTab }) { activate(tab.id, model: model); return }
+        // A new tab, unless the shown one is an untouched empty design.
+        let previous = activeTab
+        if !activeIsPristine(model) { pushNewTab(model) }
         // Read and evaluated in the background (progress bar); the Home stays until it is ready.
         model.loadInBackground(from: url) { [weak self] result in
             guard let self else { return }
@@ -242,6 +338,11 @@ final class ProjectLibrary {
                 self.showHome = false
             case let .failure(error):
                 self.lastError = error.localizedDescription
+                // Back to the design that was shown (the new tab is dropped).
+                if let previous, previous != self.activeTab, let tab = self.activeTab {
+                    self.activate(previous, model: model)
+                    self.tabs.removeAll { $0.id == tab }
+                }
                 model.statusMessage = "Apertura non riuscita: \(error.localizedDescription)"
             }
         }
@@ -255,18 +356,14 @@ final class ProjectLibrary {
         open(url, model: model)
     }
 
-    /// Closes the open design (asking to save changes) and goes back to the Home.
+    /// ⌘W: closes the shown design's tab.
     func closeDesign(model: DesignModel) {
-        guard model.loading == nil, confirmDiscard(model) else { return }
-        model.newDesign()
-        model.statusMessage = "Pronto"
-        currentURL = nil
-        savedRevision = model.designRevision
-        showHome = true
+        closeTab(activeTab ?? tabs[0].id, model: model)
     }
 
+    /// ⌘N: a new untitled design in a new tab.
     func newUntitled(model: DesignModel) {
-        guard confirmDiscard(model) else { return }
+        if !activeIsPristine(model) { pushNewTab(model) }
         model.newDesign()
         currentURL = nil
         savedRevision = model.designRevision

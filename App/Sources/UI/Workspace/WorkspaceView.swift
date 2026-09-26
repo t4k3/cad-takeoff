@@ -12,6 +12,7 @@ struct WorkspaceView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            DesignTabs()
             Ribbon()
             Divider()
             HStack(spacing: 0) {
@@ -52,6 +53,18 @@ struct WorkspaceView: View {
             workspace.sketchStore = sketches; workspace.model = model
             model.finishPendingEdits = { [weak workspace] in
                 if workspace?.sketch != nil { workspace?.exitSketch() }
+            }
+            model.willSwitchDesign = { [weak workspace] in
+                guard let workspace else { return }
+                if workspace.sketch != nil { workspace.exitSketch() }
+                workspace.command?.onCancel()
+                workspace.command = nil
+                workspace.geoSelection = []
+                workspace.manipulator = nil
+            }
+            model.captureView = { [viewport] in viewport.camera.pose }
+            model.restoreView = { [viewport] saved in
+                if let pose = saved as? CameraController.Pose { viewport.camera.restore(pose); viewport.redraw() }
             }
         }
         .onChange(of: model.designRevision) { _, _ in

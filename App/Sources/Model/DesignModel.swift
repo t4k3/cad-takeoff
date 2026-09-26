@@ -202,6 +202,44 @@ final class DesignModel {
 
     func newDesign() { replaceDocument(CADDocument(), status: "Nuovo design") }
 
+    // MARK: Tabs (several designs open, one shown)
+
+    /// Everything that belongs to one open design, kept while another tab is shown: switching
+    /// back is instant (the evaluation comes back with it, nothing is recomputed).
+    struct Session {
+        var document: CADDocument
+        var history: EditHistory
+        var selection: Feature.ID?
+        var revision: String
+        var evaluation: (revision: String, bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue])?
+        var status: String
+        /// The viewport's camera (opaque to the model).
+        var view: Any?
+    }
+
+    /// Set by the workspace: closes an open command/sketch before another design is shown, and
+    /// saves/restores the camera per tab.
+    @ObservationIgnored var willSwitchDesign: () -> Void = {}
+    @ObservationIgnored var captureView: () -> Any? = { nil }
+    @ObservationIgnored var restoreView: (Any?) -> Void = { _ in }
+
+    func captureSession() -> Session {
+        Session(document: document, history: history, selection: selection, revision: designRevision,
+                evaluation: cachedEvaluation, status: statusMessage, view: captureView())
+    }
+
+    func restoreSession(_ s: Session) {
+        applyingHistoryChange = true
+        document = s.document
+        applyingHistoryChange = false
+        history = s.history
+        selection = s.selection
+        designRevision = s.revision
+        cachedEvaluation = s.evaluation
+        statusMessage = s.status
+        restoreView(s.view)
+    }
+
     // MARK: Opening in the background
 
     /// A design being opened: its name and how many history steps are done (progress bar).

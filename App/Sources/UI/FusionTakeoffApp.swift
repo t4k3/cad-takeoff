@@ -29,7 +29,7 @@ struct FusionTakeoffApp: App {
                     model.componentResolver = library.componentResolver
                     model.projectDesigns = { [library] in library.allDesigns.map { library.componentPath(for: $0.url) } }
                     library.adoptInitialDesign(model)
-                    AppDelegate.confirmQuit = { [library, model] in library.confirmDiscard(model) }
+                    AppDelegate.confirmQuit = { [library, model] in library.confirmDiscardAll(model) }
                 }
                 .onChange(of: library.rootURL) { _, _ in model.componentResolver = library.componentResolver }
                 .frame(minWidth: 1100, minHeight: 700)

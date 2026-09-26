@@ -159,6 +159,12 @@ final class CameraController {
         animate(to: framing(bounds, yaw: pose.yaw, pitch: pose.pitch))
     }
 
+    /// Back to a saved view (switching design tabs), without animation.
+    func restore(_ saved: Pose) {
+        stopAnimation()
+        pose = saved
+    }
+
     func setOrientation(yaw: Float, pitch: Float) {
         var to = pose
         to.yaw = yaw; to.pitch = pitch
