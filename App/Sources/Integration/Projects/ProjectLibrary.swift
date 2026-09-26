@@ -255,6 +255,16 @@ final class ProjectLibrary {
         open(url, model: model)
     }
 
+    /// Closes the open design (asking to save changes) and goes back to the Home.
+    func closeDesign(model: DesignModel) {
+        guard model.loading == nil, confirmDiscard(model) else { return }
+        model.newDesign()
+        model.statusMessage = "Pronto"
+        currentURL = nil
+        savedRevision = model.designRevision
+        showHome = true
+    }
+
     func newUntitled(model: DesignModel) {
         guard confirmDiscard(model) else { return }
         model.newDesign()

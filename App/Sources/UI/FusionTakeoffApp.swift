@@ -48,6 +48,8 @@ struct FusionTakeoffApp: App {
                 Button("Home") { library.showHome.toggle() }.keyboardShortcut("h", modifiers: [.command, .shift])
                 Button("Nuovo disegno") { library.newUntitled(model: model) }.keyboardShortcut("n")
                 Button("Apri…") { library.openWithPanel(model: model) }.keyboardShortcut("o")
+                Button("Chiudi disegno") { library.closeDesign(model: model) }.keyboardShortcut("w")
+                    .disabled(library.currentURL == nil && model.document.features.isEmpty && model.document.sketches.isEmpty)
                 Button("Importa mesh (STL, OBJ, 3MF)…") { model.importMeshWithPanel() }.keyboardShortcut("i", modifiers: [.command, .shift])
                 Button("Installa add-in in Fusion 360…") { model.statusMessage = FusionAddInInstaller.installWithPanel() }
             }
