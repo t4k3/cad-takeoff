@@ -172,8 +172,16 @@ public enum ChamferGeometry {
         case let (.plane(oa, na), .plane(ob, nb)):
             return try straight(edge, a: (fa, oa, na), b: (fb, ob, nb), spec: spec, snapshot: snapshot, prefix: prefix)
         case let (.plane(o, n), .cylinder(ax, dir, r)):
+            if abs(dir.normalized.dot(n)) < 0.01 {
+                return try alongCylinder(edge, plane: (fa, o, n), cylinder: (fb, ax, dir, r), spec: spec, snapshot: snapshot, prefix: prefix)
+            }
             return try circular(edge, plane: (o, n), cylinder: (fb, ax, dir, r), planeFirst: true, spec: spec, snapshot: snapshot, prefix: prefix)
         case let (.cylinder(ax, dir, r), .plane(o, n)):
+            if abs(dir.normalized.dot(n)) < 0.01 {
+                var swapped = spec
+                if spec.profile == .flat { swap(&swapped.distance, &swapped.distance2) }
+                return try alongCylinder(edge, plane: (fb, o, n), cylinder: (fa, ax, dir, r), spec: swapped, snapshot: snapshot, prefix: prefix)
+            }
             return try circular(edge, plane: (o, n), cylinder: (fa, ax, dir, r), planeFirst: false, spec: spec, snapshot: snapshot, prefix: prefix)
         default:
             // Circular edges where a bevel's cone meets a plane, a wall or another cone (rounds on
@@ -272,8 +280,9 @@ public enum ChamferGeometry {
         }
         let (na, nb) = (a.2, b.2)
         // In-face directions away from the edge, from the face's own triangles.
-        guard let ta = inFaceDirection(face: a.0, edgeStart: e0, dir: dir, normal: na, snapshot: snapshot),
-              let tb = inFaceDirection(face: b.0, edgeStart: e0, dir: dir, normal: nb, snapshot: snapshot) else {
+        let length = (e1 - e0).length
+        guard let ta = inFaceDirection(face: a.0, edgeStart: e0, dir: dir, normal: na, snapshot: snapshot, length: length),
+              let tb = inFaceDirection(face: b.0, edgeStart: e0, dir: dir, normal: nb, snapshot: snapshot, length: length) else {
             throw KernelError.invalidTopology("smusso: facce dello spigolo non trovate")
         }
         // Convex: each face runs away from the other's outside. Concave (inside corner): towards it;
@@ -343,6 +352,18 @@ public enum ChamferGeometry {
             reach = e
         }
 
+        return prism(section: section, special: special, surface: surface, probe: probe, reach: reach, from: e0, to: e1,
+                     faces: (a.0, b.0), convex: convex, spec: spec, snapshot: snapshot, prefix: prefix)
+    }
+
+    /// The tool as the cross-section swept along a straight edge from `e0` to `e1`, with its ends
+    /// past free ends of the edge or on the wall it runs into.
+    private static func prism(section: [Vec3], special: Set<Int>, surface: SurfaceDescriptor, probe: Vec3, reach: Double,
+                              from e0: Vec3, to e1: Vec3, faces pair: (Int, Int), convex: Bool, spec: ChamferSpec,
+                              snapshot: BodySnapshot, prefix: String) -> (solid: CSGSolid, adds: Bool) {
+        let dir = (e1 - e0).normalized
+        let a = (pair.0, 0), b = (pair.1, 0)
+        let concave = !convex
         // Ends: past a free end the tool overshoots; where the material continues (the edge
         // runs into a wall) it stops on that wall's plane.
         func cap(_ p: Vec3, outward w: Vec3) -> (centre: Vec3, ring: [Vec3]) {
@@ -390,19 +411,136 @@ public enum ChamferGeometry {
         return (oriented(polys, faces), concave)
     }
 
-    /// Unit vector in the face plane, perpendicular to the edge, pointing into the face.
-    private static func inFaceDirection(face: Int, edgeStart e0: Vec3, dir: Vec3, normal: Vec3, snapshot: BodySnapshot) -> Vec3? {
-        let candidate = normal.cross(dir).normalized
-        var side = 0.0
-        for t in 0..<snapshot.triangleFace.count where Int(snapshot.triangleFace[t]) == face {
-            let v = (0..<3).map { snapshot.positions[Int(snapshot.triangles[t * 3 + $0])] }
-            let touches = v.contains { p in let d = p - e0; return (d - dir * d.dot(dir)).length < 1e-5 }
-            guard touches else { continue }
-            let c = (v[0] + v[1] + v[2]) * (1.0 / 3)
-            side += (c - e0).dot(candidate)
+    /// Straight edge along a cylinder that meets a plane parallel to its axis (a wheel arch cut
+    /// through the underside, a half-round boss on a plate). In the section across the edge the
+    /// plane is a line and the cylinder a circle: the round is the circle tangent to both, the bevel
+    /// a straight cut; either is swept along the edge like a straight edge's tool.
+    private static func alongCylinder(_ edge: EdgeInfo, plane: (Int, Vec3, Vec3), cylinder: (Int, Vec3, Vec3, Double),
+                                      spec: ChamferSpec, snapshot: BodySnapshot, prefix: String) throws -> (solid: CSGSolid, adds: Bool) {
+        let pts = edge.polyline
+        guard let e0 = pts.first, let e1 = pts.last, (e1 - e0).length > 1e-6 else { throw KernelError.invalidParameter("smusso: spigolo troppo corto") }
+        let dir = (e1 - e0).normalized
+        let (fa, _, na) = plane, (fb, axisOrigin, axisDir, radius) = cylinder
+        guard abs(dir.dot(axisDir.normalized)) > 0.9999 else { throw KernelError.invalidParameter("smusso: spigolo non parallelo al cilindro") }
+        // Circle of the cylinder in the section through e0 (relative to e0).
+        let c = axisOrigin + axisDir.normalized * (e0 - axisOrigin).dot(axisDir.normalized) - e0
+        let radial = (-c).normalized   // from the centre out to the edge
+        let length = (e1 - e0).length
+        guard let ta = inFaceDirection(face: fa, edgeStart: e0, dir: dir, normal: na, snapshot: snapshot, length: length),
+              let tb = inFaceDirection(face: fb, edgeStart: e0, dir: dir, normal: radial, snapshot: snapshot, length: length) else {
+            throw KernelError.invalidTopology("smusso: facce dello spigolo non trovate")
         }
-        guard abs(side) > 1e-12 else { return nil }
-        return side > 0 ? candidate : -candidate
+        // Material outside the cylinder (a hole, an arch) or inside it (a boss)? The wall's own
+        // triangles at the edge face out of the material (a point test would trip on the facets).
+        var wallNormal = Vec3.zero
+        for t in 0..<snapshot.triangleFace.count where Int(snapshot.triangleFace[t]) == fb {
+            let v = (0..<3).map { snapshot.positions[Int(snapshot.triangles[t * 3 + $0])] }
+            let middle = ((v[0] + v[1] + v[2]) * (1.0 / 3) - e0).dot(dir)
+            guard middle > 0, middle < length, v.contains(where: { p in
+                let d = p - e0, along = d.dot(dir)
+                return (d - dir * along).length < 1e-5 && along > -1e-6 && along < length + 1e-6
+            }) else { continue }
+            wallNormal = wallNormal + (v[1] - v[0]).cross(v[2] - v[0])
+        }
+        guard wallNormal.length > 1e-12 else { throw KernelError.invalidTopology("smusso: facce dello spigolo non trovate") }
+        let hole = wallNormal.dot(radial) < 0
+        let nb = hole ? -radial : radial   // outward of the body on the wall, at the edge
+        let convex = ta.dot(nb) < -1e-6 && tb.dot(na) < -1e-6
+        let concave = ta.dot(nb) > 1e-6 && tb.dot(na) > 1e-6
+        guard convex || concave else { throw KernelError.invalidParameter("smusso: spigolo tangente o degenere") }
+        let widthA = extent(ofFace: fa, from: pts, snapshot), widthB = extent(ofFace: fb, from: pts, snapshot)
+        let out = (na + nb).normalized * (convex ? 1.0 : -1.0)
+        // Point on the circle `s` mm along it from the edge, towards the wall.
+        func onWall(_ arc: Double) -> Vec3 {
+            let t = arc / radius
+            let sweep = tb.dot(radial.cross(dir)) > 0 ? 1.0 : -1.0
+            let w = radial.cross(dir) * sweep
+            return c + (radial * cos(t) + w * sin(t)) * radius
+        }
+        let section: [Vec3], special: Set<Int>, surface: SurfaceDescriptor, probe: Vec3, reach: Double
+        if spec.profile == .round {
+            let r = spec.distance
+            // Centre of the round: r from the plane on the fill side, R ± r from the axis.
+            let sideA = convex ? -1.0 : 1.0
+            let rho = radius + r * (hole == convex ? 1 : -1)
+            guard rho > 1e-9 else { throw tooBig(spec, max: radius * 0.98) }
+            let d = na * (sideA * r) - c
+            let bq = d.dot(ta), disc = bq * bq - d.dot(d) + rho * rho
+            guard disc >= 0 else { throw tooBig(spec, max: min(widthA, widthB)) }
+            let roots = [-bq - disc.squareRoot(), -bq + disc.squareRoot()].filter { $0 > 1e-9 }
+            guard let lambda = roots.min() else { throw KernelError.invalidParameter("smusso: spigolo tangente o degenere") }
+            let q = na * (sideA * r) + ta * lambda
+            let tA = ta * lambda, tB = c + (q - c).normalized * radius
+            guard lambda <= widthA + 1e-6, (tB - .zero).length <= widthB + r + 1e-6 else { throw tooBig(spec, max: min(widthA, widthB)) }
+            let from = tA - q, to = tB - q
+            let theta = acos(max(-1, min(1, from.dot(to) / (r * r))))
+            guard theta > 1e-6, theta < .pi - 1e-6 else { throw KernelError.invalidParameter("smusso: spigolo tangente o degenere") }
+            let n = max(3, Int((theta / (2 * .pi) * Double(segments) - 1e-9).rounded(.up)))
+            let arc = (0...n).map { i -> Vec3 in
+                let t = Double(i) / Double(n)
+                return q + (from * sin((1 - t) * theta) + to * sin(t * theta)) * (1 / sin(theta))
+            }
+            if convex {
+                let m = r + lead
+                section = arc + [tB + nb * m, out * (2 * m + q.length), tA + na * m]
+            } else {
+                let ov = min(0.2, 0.25 * r)
+                section = arc + [tB - nb * ov, (na + nb) * (-ov), tA - na * ov]
+            }
+            special = Set(0..<n)
+            surface = .cylinder(axisOrigin: e0 + q, axisDirection: dir, radius: r)
+            probe = (q + (tA + tB) * 0.5) * 0.25
+            reach = lambda + lead
+        } else {
+            let dihedral = acos(max(-1, min(1, ta.dot(tb))))
+            let (d1, d2) = try spec.distances(dihedral: dihedral)
+            guard d1 <= widthA + 1e-6, d2 <= widthB + 1e-6, d2 < radius * 1.5 else { throw tooBig(spec, max: min(widthA, widthB)) }
+            let qa = ta * d1, qb = onWall(d2)
+            let u = (qb - qa).normalized
+            let perp = qa - u * qa.dot(u)
+            let nline = -perp.normalized
+            let e = max(d1, d2) + lead
+            if convex {
+                let h = 2 * perp.length / max(out.dot(nline), 0.1) + lead + d2
+                section = [qa - u * e, qb + u * e, qb + u * e + out * h, qa - u * e + out * h]
+            } else {
+                let ov = min(0.2, 0.25 * min(d1, d2))
+                section = [qa, qb, qb - nb * ov, (na + nb) * (-ov), qa - na * ov]
+            }
+            special = [0]
+            surface = .plane(origin: e0 + qa, normal: convex ? nline : -nline)
+            probe = (qa + qb) * 0.25
+            reach = e
+        }
+        return prism(section: section, special: special, surface: surface, probe: probe, reach: reach, from: e0, to: e1,
+                     faces: (fa, fb), convex: convex, spec: spec, snapshot: snapshot, prefix: prefix)
+    }
+
+    /// Unit vector in the face plane, perpendicular to the edge, pointing into the face. Only the
+    /// face's triangles along the edge itself count (past its ends the face may lie on the other
+    /// side of the same line, as the underside does beyond a wheel arch).
+    private static func inFaceDirection(face: Int, edgeStart e0: Vec3, dir: Vec3, normal: Vec3, snapshot: BodySnapshot,
+                                        length: Double = .infinity) -> Vec3? {
+        let candidate = normal.cross(dir).normalized
+        // Triangles beside the edge (their middle along it); else touching it within its ends
+        // (long slivers of a face reach past them); else touching its line anywhere.
+        for level in 0..<3 {
+            var side = 0.0
+            for t in 0..<snapshot.triangleFace.count where Int(snapshot.triangleFace[t]) == face {
+                let v = (0..<3).map { snapshot.positions[Int(snapshot.triangles[t * 3 + $0])] }
+                let c = (v[0] + v[1] + v[2]) * (1.0 / 3)
+                let middle = (c - e0).dot(dir)
+                if level == 0, !(middle > 0 && middle < length) { continue }
+                let touches = v.contains { p in
+                    let d = p - e0, along = d.dot(dir)
+                    return (d - dir * along).length < 1e-5 && (level == 2 || (along > -1e-6 && along < length + 1e-6))
+                }
+                guard touches else { continue }
+                side += (c - e0).dot(candidate)
+            }
+            if abs(side) > 1e-12 { return side > 0 ? candidate : -candidate }
+        }
+        return nil
     }
 
     // MARK: Circular edge between a plane and a cylinder

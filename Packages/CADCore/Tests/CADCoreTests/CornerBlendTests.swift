@@ -47,6 +47,55 @@ private func roundedCircle(_ c: Vec2, _ r: Double, _ n: Int = 32) -> [Vec2] {
         let result = DesignEvaluator.evaluate(d, revision: "\(profile)\(size)")
         let report = MeshValidator.validate(result.bodies[0].mesh)
         #expect(report.isWatertight, "\(profile) \(size): \(report)")
+        // Every edge takes it, except those too short for the size.
+        #expect(result.issues.allSatisfy { $0.message.contains("troppo grande") }, "\(Set(result.issues.map(\.message)))")
         #expect(result.bodies[0].mesh.volume < base.bodies[0].mesh.volume)
     }
+}
+
+/// Rounds and bevels where a plane meets a cylinder along its length: an arch cut through the
+/// underside of a block (convex edges) and a half-round boss lying on a plate (inside corners).
+@Test func roundsAlongACylinderThatMeetsAPlane() throws {
+    let block = Feature(name: "Blocco", kind: .box(width: 40, depth: 30, height: 20))
+    let across = SketchPlane(origin: Vec3(0, 25, 3), xAxis: Vec3(1, 0, 0), yAxis: Vec3(0, 0, 1))
+    let arch = Feature(name: "Arco", kind: .cylinder(radius: 8, height: 50), operation: .cut, placement: FeaturePlacement(plane: across))
+    let doc = CADDocument(features: [block, arch])
+    let base = DesignEvaluator.evaluate(doc, revision: "a")
+    #expect(base.issues.isEmpty)
+    let snap = base.bodies[0].snapshot
+    let lines = snap.edges.filter { e in
+        let kinds = e.faces.compactMap { id in snap.faces.first { $0.id == id }?.surface }
+        return kinds.contains { if case .cylinder = $0 { true } else { false } } && kinds.contains { if case .plane = $0 { true } else { false } }
+            && abs(e.polyline.first!.x - e.polyline.last!.x) < 1e-6 && abs(e.polyline.first!.y - e.polyline.last!.y) > 20
+    }
+    #expect(lines.count == 2)
+    for (profile, size) in [(ChamferSpec.Profile.round, 1.0), (.round, 3), (.flat, 1.5)] {
+        var d = doc
+        d.features.append(Feature(name: "R", kind: .chamfer(ChamferSpec(edges: lines.compactMap(EdgeRef.init), profile: profile, distance: size))))
+        let r = DesignEvaluator.evaluate(d, revision: "\(profile)\(size)")
+        #expect(r.issues.isEmpty, "\(r.issues.map(\.message))")
+        #expect(MeshValidator.validate(r.bodies[0].mesh).isWatertight)
+        #expect(r.bodies[0].mesh.volume < base.bodies[0].mesh.volume)
+    }
+
+    // A half-round boss joined along a plate: filled inside corners add material.
+    let plate = Feature(name: "Piastra", kind: .box(width: 40, depth: 30, height: 5))
+    let along = SketchPlane(origin: Vec3(-20, 0, 5), xAxis: Vec3(0, 1, 0), yAxis: Vec3(0, 0, 1))
+    let boss = Feature(name: "Tondo", kind: .cylinder(radius: 6, height: 40), operation: .join, placement: FeaturePlacement(plane: along))
+    let doc2 = CADDocument(features: [plate, boss])
+    let base2 = DesignEvaluator.evaluate(doc2, revision: "p")
+    #expect(base2.issues.isEmpty && base2.bodies.count == 1)
+    let snap2 = base2.bodies[0].snapshot
+    let inside = snap2.edges.filter { e in
+        let kinds = e.faces.compactMap { id in snap2.faces.first { $0.id == id }?.surface }
+        return kinds.contains { if case .cylinder = $0 { true } else { false } }
+            && e.polyline.allSatisfy { abs($0.z - 5) < 1e-6 } && abs(e.polyline.first!.x - e.polyline.last!.x) > 30
+    }
+    #expect(inside.count == 2)
+    var d2 = doc2
+    d2.features.append(Feature(name: "R", kind: .chamfer(ChamferSpec(edges: inside.compactMap(EdgeRef.init), profile: .round, distance: 1.5))))
+    let r2 = DesignEvaluator.evaluate(d2, revision: "q")
+    #expect(r2.issues.isEmpty, "\(r2.issues.map(\.message))")
+    #expect(MeshValidator.validate(r2.bodies[0].mesh).isWatertight)
+    #expect(r2.bodies[0].mesh.volume > base2.bodies[0].mesh.volume)
 }
