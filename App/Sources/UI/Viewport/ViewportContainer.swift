@@ -732,10 +732,10 @@ private struct ConstraintLabel: View {
                         .textFieldStyle(.plain)
                         .font(.system(size: 11.5, weight: .semibold).monospacedDigit())
                         .multilineTextAlignment(.center)
-                        .frame(width: 56)
+                        .frame(width: max(56, CGFloat(text.count) * 7.5))
                         .focused($focused)
                         .onAppear {
-                            text = annotation.value.map { String(format: "%g", $0).replacingOccurrences(of: ".", with: ",") } ?? ""
+                            text = annotation.expression ?? annotation.value.map { String(format: "%g", $0).replacingOccurrences(of: ".", with: ",") } ?? ""
                             DispatchQueue.main.async { focused = true }
                         }
                         .onSubmit { commit() }
@@ -763,9 +763,7 @@ private struct ConstraintLabel: View {
     }
 
     private func commit() {
-        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
-            .replacingOccurrences(of: "mm", with: "").replacingOccurrences(of: "°", with: "").replacingOccurrences(of: "⌀", with: "")
         sketch.editingDimension = nil
-        if let v = Double(clean.trimmingCharacters(in: .whitespaces)) { sketch.setDimension(annotation.id, value: v) }
+        sketch.setDimension(annotation.id, text: text)
     }
 }

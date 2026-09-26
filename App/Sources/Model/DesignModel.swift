@@ -57,7 +57,12 @@ final class DesignModel {
             guard document != oldValue else { return }
             designRevision = UUID().uuidString
             // Direct writes (inspector bindings, visibility…) are recorded too, so ⌘Z always works.
-            if !applyingHistoryChange { recordDirectEdit(from: oldValue) }
+            if !applyingHistoryChange {
+                // A size typed or dragged by hand replaces the expression that drove it.
+                var fresh = document
+                if fresh.dropStaleExpressions() { applyingHistoryChange = true; document = fresh; applyingHistoryChange = false }
+                recordDirectEdit(from: oldValue)
+            }
         }
     }
     private(set) var designRevision = UUID().uuidString
@@ -180,6 +185,8 @@ final class DesignModel {
     }
 
     func commitEdit(_ next: CADDocument, selected: UUID?, title: String, changed: [UUID]) {
+        var next = next
+        next.dropStaleExpressions()
         guard next != document else { return }
         let author: EditHistory.Author = title.hasPrefix("Assistente") ? .assistant : .user
         push(EditHistory.Entry(before: document, after: next, selectionBefore: selection,

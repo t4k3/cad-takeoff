@@ -101,6 +101,8 @@ struct Ribbon: View {
                 .help("Clicca una faccia e trascina la freccia (Q): l'alto o il basso di un'estrusione ne cambia l'altezza, le altre facce si estrudono")
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
                 .help("Arrotonda o smussa gli spigoli: clicca gli spigoli, scegli la forma (Tondo o Piatto) e la misura, o trascina la freccia")
+            Button { workspace.showParameters = true } label: { Label("Parametri", systemImage: "function") }
+                .help("Valori con un nome da usare nelle quote e nelle misure (es. «larghezza / 2»)")
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }
                 .disabled(model.selection == nil)
                 .help("Elimina la feature selezionata (⌫)")
@@ -158,6 +160,8 @@ struct Ribbon: View {
                 Button { sketch.constraintTool = nil; sketch.tool = .dimension } label: { Label("Quota", systemImage: "ruler") }
                     .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == .dimension, tint: Theme.Palette.sketch))
                     .help(SketchSession.Tool.dimension.hint + " (D)")
+                Button { workspace.showParameters = true } label: { Label("Parametri", systemImage: "function") }
+                    .help("Valori con un nome: nelle quote scrivi «larghezza / 2» e la quota li segue")
                 Grid(horizontalSpacing: 2, verticalSpacing: 2) {
                     ForEach(0..<2, id: \.self) { row in
                         GridRow {

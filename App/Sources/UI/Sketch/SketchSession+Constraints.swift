@@ -225,17 +225,47 @@ extension SketchSession {
         if apply(c) { editingDimension = c.id }
     }
 
+    /// Sets a dimension from what was typed: a number, or an expression of the design's
+    /// parameters (it then follows them). False when it is invalid or the sketch cannot take it.
+    @discardableResult
+    func setDimension(_ id: SketchConstraint.ID, text: String) -> Bool {
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "⌀", with: "")
+        guard !clean.isEmpty else { return false }
+        do {
+            let value = try Formula.evaluate(clean, parameterValues)
+            return setDimension(id, value: value, expression: Formula.isNumber(clean) ? nil : clean)
+        } catch {
+            notice = "Quota: " + error.localizedDescription
+            return false
+        }
+    }
+
     /// Sets a dimension's value (typed or from a parameter); false when the sketch cannot take it.
     @discardableResult
-    func setDimension(_ id: SketchConstraint.ID, value: Double) -> Bool {
+    func setDimension(_ id: SketchConstraint.ID, value: Double, expression: String? = nil) -> Bool {
         guard let i = sketch.constraints.firstIndex(where: { $0.id == id }), value.isFinite else { return false }
         if case .angle = sketch.constraints[i].kind {} else { guard value > 0 else { notice = "Il valore deve essere positivo."; return false } }
         var next = sketch
         next.constraints[i].kind = next.constraints[i].kind.with(value: value)
+        next.constraints[i].expression = expression
         guard next.solve(after: next.constraints[i].id) else { notice = "Con \(fmt(value)) i vincoli non si possono rispettare: valore non applicato."; return false }
         notice = nil
         sketch = next
         return true
+    }
+
+    /// Re-evaluates the dimensions driven by expressions (after the parameters changed).
+    func refreshExpressions() {
+        var next = sketch
+        var touched = false
+        for i in next.constraints.indices {
+            guard let e = next.constraints[i].expression, next.constraints[i].kind.value != nil,
+                  let v = try? Formula.evaluate(e, parameterValues), v != next.constraints[i].kind.value else { continue }
+            next.constraints[i].kind = next.constraints[i].kind.with(value: v)
+            touched = true
+        }
+        guard touched else { return }
+        if next.solve() { sketch = next } else { notice = "Lo schizzo non riesce a seguire i nuovi parametri." }
     }
 
     // MARK: Dragging
@@ -284,6 +314,8 @@ extension SketchSession {
         let text: String
         let isDimension: Bool
         let value: Double?
+        /// The parameter expression driving the dimension, if any (label "fx: …").
+        let expression: String?
     }
 
     /// One label per constraint: a small symbol for geometric ones, the value for dimensions.
@@ -291,7 +323,9 @@ extension SketchSession {
         let off = vertexSnap * 2.2
         return sketch.constraints.compactMap { c -> Annotation? in
             guard let (at, text) = placement(c.kind, offset: off) else { return nil }
-            return Annotation(id: c.id, anchor: world(at, 0.05), text: text, isDimension: c.kind.value != nil, value: c.kind.value)
+            let driven = c.kind.value != nil ? c.expression : nil
+            return Annotation(id: c.id, anchor: world(at, 0.05), text: driven == nil ? text : "fx: " + text,
+                              isDimension: c.kind.value != nil, value: c.kind.value, expression: driven)
         }
     }
 

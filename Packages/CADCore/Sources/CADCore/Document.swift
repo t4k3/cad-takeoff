@@ -236,6 +236,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     /// Extrusion of a sketch region with holes (the ring between two circles): these profiles
     /// are left open through the whole height.
     public var holes: [Profile2D]
+    /// Sizes driven by parameter expressions, by key ("height" → "spessore * 2").
+    public var expressions: [String: String] = [:]
 
     public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true,
                 color: PartColor = .defaultColor, operation: BooleanOperation = .newBody, placement: FeaturePlacement? = nil,
@@ -244,7 +246,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         self.color = color; self.operation = operation; self.placement = placement; self.holes = holes
     }
 
-    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes, expressions }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -258,6 +260,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         operation = try c.decodeIfPresent(BooleanOperation.self, forKey: .operation) ?? .newBody
         placement = try c.decodeIfPresent(FeaturePlacement.self, forKey: .placement)
         holes = try c.decodeIfPresent([Profile2D].self, forKey: .holes) ?? []
+        expressions = try c.decodeIfPresent([String: String].self, forKey: .expressions) ?? [:]
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -267,6 +270,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         try c.encode(color, forKey: .color); try c.encode(operation, forKey: .operation)
         try c.encodeIfPresent(placement, forKey: .placement)
         if !holes.isEmpty { try c.encode(holes, forKey: .holes) }
+        if !expressions.isEmpty { try c.encode(expressions, forKey: .expressions) }
     }
 
     public func buildMesh() -> Mesh {
@@ -335,6 +339,8 @@ public struct CADDocument: Codable, Sendable, Equatable {
     /// Number of history steps evaluated; nil = all ("end of timeline").
     public var rollback: Int?
     public var sketchLinks: [SketchLink] = []
+    /// User parameters (Fusion's «Parametri»), used by dimension and size expressions.
+    public var parameters: [UserParameter] = []
 
     public init(features: [Feature] = [], sketches: [Sketch] = [], sketchLinks: [SketchLink] = []) {
         timeline = Self.orderedV1(features: features, sketches: sketches, links: sketchLinks)
@@ -406,12 +412,13 @@ public struct CADDocument: Codable, Sendable, Equatable {
 
     // MARK: Coding (v2, with v1 migration)
 
-    private enum CodingKeys: String, CodingKey { case version, timeline, rollback, sketchLinks, features, sketches }
+    private enum CodingKeys: String, CodingKey { case version, timeline, rollback, sketchLinks, features, sketches, parameters }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let fileVersion = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
         sketchLinks = try c.decodeIfPresent([SketchLink].self, forKey: .sketchLinks) ?? []
+        parameters = try c.decodeIfPresent([UserParameter].self, forKey: .parameters) ?? []
         if let tl = try c.decodeIfPresent([TimelineItem].self, forKey: .timeline) {
             timeline = tl
             rollback = try c.decodeIfPresent(Int.self, forKey: .rollback)
@@ -434,6 +441,7 @@ public struct CADDocument: Codable, Sendable, Equatable {
         try c.encode(timeline, forKey: .timeline)
         try c.encodeIfPresent(rollback, forKey: .rollback)
         if !sketchLinks.isEmpty { try c.encode(sketchLinks, forKey: .sketchLinks) }
+        if !parameters.isEmpty { try c.encode(parameters, forKey: .parameters) }
     }
 
     /// v1 had no global order: each sketch goes right before the first solid made from it.

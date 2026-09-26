@@ -63,7 +63,8 @@ enum SketchCommands {
             fields: [.init(id: "areas", label: "Profili", kind: .reference(prompt: "Clicca le aree da estrudere", maxCount: 500), value: areasLabel(),
                            help: "Clicca un'area per aggiungerla o toglierla: l'anello tra due cerchi lascia il foro, aree vicine si uniscono"),
                      .init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
-                           help: onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z"),
+                           help: (onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z") + " · anche un'espressione dei Parametri",
+                           acceptsExpression: true),
                      .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
                            help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca"),
                      .init(id: "dir", label: "Direzione", kind: .choice(["Fuori dalla faccia", "Dentro il pezzo"]), value: .index(0),
@@ -88,6 +89,7 @@ enum SketchCommands {
             },
             onCommit: { f in
                 let height = f.first { $0.id == "h" }?.number ?? 10
+                let heightExpression = f.first { $0.id == "h" }?.expression
                 let op = operation(f)
                 let seeds = sketch.selectedSeeds
                 let areas = sketch.pickedAreas
@@ -97,9 +99,10 @@ enum SketchCommands {
                 // One solid per area (disjoint areas are separate bodies, as in Fusion).
                 var features: [Feature] = []
                 for area in areas {
-                    let feature = Feature(name: (op == .cut ? "Taglio " : "Estrusione ") + "\(model.document.features.count + features.count + 1)",
+                    var feature = Feature(name: (op == .cut ? "Taglio " : "Estrusione ") + "\(model.document.features.count + features.count + 1)",
                                           kind: .extrude(profile: Profile2D(points: area.outline), height: height), operation: op, placement: placement,
                                           holes: area.holes.map { Profile2D(points: $0) })
+                    if let heightExpression { feature.expressions["height"] = heightExpression }
                     do {
                         try CADToolValidation.feature(feature)
                     } catch {
@@ -125,6 +128,7 @@ enum SketchCommands {
                 workspace.exitSketch()
             },
             onCancel: { finish() })
+        created.parameterValues = sketch.parameterValues
         session = created
         // Picking an area updates the count, the arrow's place and the preview.
         sketch.onRegionsChange = { [weak created] in

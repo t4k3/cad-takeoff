@@ -118,6 +118,8 @@ final class SketchSession {
     /// Radius of the next 2D fillet (Raccordo tool).
     var filletRadius = 3.0
     var offsetDistance = 2.0
+    /// Values of the design's user parameters, for dimension expressions.
+    var parameterValues: [String: Double] = [:]
     /// Offset: the shape picked first (then the side is clicked).
     var offsetSource: SketchShape.ID?
     /// Specchio: the axis line picked first (then the shapes to mirror).

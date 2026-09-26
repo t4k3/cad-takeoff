@@ -1,3 +1,4 @@
+import CADCore
 import SwiftUI
 
 /// Floating command dialog over the viewport. Return = OK, Esc = Cancel.
@@ -58,6 +59,8 @@ struct CommandPanel: View {
         let f = field.wrappedValue
         VStack(alignment: .leading, spacing: 3) {
             switch f.kind {
+            case .length where f.acceptsExpression:
+                ExpressionDimensionField(field: field, values: session.parameterValues, unit: "mm") { session.message = $0 }
             case .length:
                 DimensionField(title: f.label, value: number(field), unit: "mm")
             case .angle:
@@ -142,4 +145,59 @@ struct CommandPanel: View {
 
     /// Drop the text-field focus first, so no stale focus ring survives the panel.
     private func endEditing() { NSApp.keyWindow?.makeFirstResponder(nil) }
+}
+
+/// A length that takes a number or an expression of the design's parameters («spessore * 2»).
+/// Shows "fx" while an expression drives it; dragging the arrow turns it back into a number.
+struct ExpressionDimensionField: View {
+    @Binding var field: CommandField
+    let values: [String: Double]
+    var unit = "mm"
+    var report: (String?) -> Void
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(field.label).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
+            Spacer(minLength: 8)
+            if field.expression != nil {
+                Text("fx").font(.system(size: 10, weight: .bold, design: .serif)).italic()
+                    .foregroundStyle(Theme.Palette.accent)
+                    .help(fmt(field.number) + " " + unit)
+            }
+            TextField(field.label, text: $text)
+                .labelsHidden()
+                .multilineTextAlignment(.trailing)
+                .font(Theme.Typeface.mono)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 84)
+                .focused($focused)
+                .onSubmit(commit)
+                .onChange(of: focused) { _, f in if !f { commit() } }
+            Text(unit).font(Theme.Typeface.mono).foregroundStyle(Theme.Palette.textSecondary)
+                .frame(width: 24, alignment: .leading)
+        }
+        .onAppear(perform: refresh)
+        .onChange(of: field.number) { _, v in
+            // Changed elsewhere (the arrow): an expression that no longer gives it is dropped.
+            if let e = field.expression, (try? Formula.evaluate(e, values)) != v { field.expression = nil }
+            if !focused { refresh() }
+        }
+    }
+
+    private func refresh() { text = field.expression ?? fmt(field.number) }
+
+    private func commit() {
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { refresh(); return }
+        do {
+            let v = try Formula.evaluate(clean, values)
+            field.expression = Formula.isNumber(clean) ? nil : clean
+            field.value = .number(v)
+            report(nil)
+        } catch {
+            report(field.label + ": " + error.localizedDescription)
+        }
+    }
 }

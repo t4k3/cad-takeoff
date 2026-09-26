@@ -48,6 +48,7 @@ struct WorkspaceView: View {
         .animation(.easeOut(duration: 0.15), value: library.showHome)
         .sheet(isPresented: $workspace.showComponentPicker) { ComponentPickerSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showBOM) { BOMSheet().environment(workspace) }
+        .sheet(isPresented: $workspace.showParameters) { ParametersSheet().environment(workspace) }
         .environment(workspace)
         .onAppear {
             workspace.sketchStore = sketches; workspace.model = model

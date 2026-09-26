@@ -30,6 +30,9 @@ struct CommandField: Identifiable, Equatable {
     var help: String?
     /// Not relevant with the current choices (e.g. flange fields while no side has a flange).
     var isHidden = false
+    /// Lengths that take parameter expressions ("spessore * 2"): the text driving the value.
+    var acceptsExpression = false
+    var expression: String?
 
     var number: Double { if case let .number(v) = value { v } else { 0 } }
 
@@ -63,6 +66,8 @@ final class CommandSession: Identifiable {
     /// Field currently waiting for a viewport pick, if any.
     var activeReference: String?
     var message: String?
+    /// The design's parameter values, for fields that take expressions.
+    var parameterValues: [String: Double] = [:]
 
     @ObservationIgnored var onPreview: ([CommandField]) -> Void
     @ObservationIgnored var onCommit: ([CommandField]) -> Void

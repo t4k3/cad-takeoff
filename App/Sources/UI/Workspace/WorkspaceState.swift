@@ -98,6 +98,7 @@ final class WorkspaceState {
     /// ASSIEME: sheets for inserting a component and for the bill of materials.
     var showComponentPicker = false
     var showBOM = false
+    var showParameters = false
 
     /// LAMIERA tab: show sheet-metal parts developed flat (with bend lines) instead of folded.
     var showFlat = false
@@ -171,6 +172,7 @@ final class WorkspaceState {
         if !session.sketch.plane.isXY, let model {
             session.projectReferences(from: model.evaluation().bodies.map(\.snapshot))
         }
+        session.parameterValues = (try? model?.document.parameterValues()) ?? [:]
         sketch = session
         model?.localUndoTarget = session
         tab = .sketch

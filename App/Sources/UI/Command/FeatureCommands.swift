@@ -30,6 +30,13 @@ enum FeatureCommands {
                       .init(id: "x", label: "Posizione X", kind: .length(-100_000...100_000), value: .number(original.position.x)),
                       .init(id: "y", label: "Posizione Y", kind: .length(-100_000...100_000), value: .number(original.position.y))]
         }
+        // Sizes can be parameter expressions (Fusion: «spessore * 2»).
+        let sizeKey = ["w": "width", "d": "depth", "h": "height", "r": "radius"]
+        for i in fields.indices {
+            guard let key = sizeKey[fields[i].id], original.size(key) != nil else { continue }
+            fields[i].acceptsExpression = true
+            fields[i].expression = original.expressions[key]
+        }
         fields += [.init(id: "z", label: "Offset Z", kind: .length(-1000...1000), value: .number(original.position.z)),
                    .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)),
                          value: .index(BooleanOperation.allCases.firstIndex(of: original.operation) ?? 0))]
@@ -46,12 +53,15 @@ enum FeatureCommands {
             case .importedMesh: f.position.x = v("x"); f.position.y = v("y")
             }
             f.position.z = v("z")
+            for field in fields where field.acceptsExpression {
+                if let key = sizeKey[field.id] { f.expressions[key] = field.expression }
+            }
             if case let .index(i)? = fields.first(where: { $0.id == "op" })?.value { f.operation = BooleanOperation.allCases[i] }
             // TODO(R1): model.updateFeature(id, actionName:) — direct write until the command exists.
             model.document.features[i] = f
         }
 
-        return CommandSession(
+        let session = CommandSession(
             title: "Modifica \(original.name)", symbol: original.kind.symbol, fields: fields,
             onPreview: { fields in
                 if fields.allSatisfy({ $0.validationMessage == nil }) { apply(fields) }
@@ -62,6 +72,8 @@ enum FeatureCommands {
                     model.document.features[i] = original
                 }
             })
+        session.parameterValues = (try? model.document.parameterValues()) ?? [:]
+        return session
     }
 
     /// Component placement: position and rotation, previewed live on the design.
