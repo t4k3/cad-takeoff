@@ -133,6 +133,49 @@ extension SketchSession {
         return true
     }
 
+    // MARK: Automatic constraints (as Fusion infers them while drawing)
+
+    /// What a new shape implies as drawn: sides exactly horizontal/vertical, points on other shapes'
+    /// points (coincident), on their midpoints (midpoint), centres on other centres (concentric).
+    func autoConstraints(for new: SketchShape) -> [SketchConstraint] {
+        var out: [SketchConstraint] = []
+        let eps = 1e-6
+        if case .polyline = new.kind {
+            for i in 0..<new.segmentCount {
+                guard let (a, b) = new.segment(i), dist(a, b) > eps else { continue }
+                if abs(a.y - b.y) < eps { out.append(.init(.horizontal(.segment(new.id, i)))) }
+                else if abs(a.x - b.x) < eps { out.append(.init(.vertical(.segment(new.id, i)))) }
+            }
+        }
+        // Defining points only (a rectangle's corners, a circle's centre…), never derived ones.
+        let ownPoints: [Int] = switch new.kind {
+        case let .polyline(p, _): Array(p.indices)
+        case .rectangle: [0, 1, 2, 3]
+        case .circle, .polygon: [0]
+        case .slot: [0, 1]
+        }
+        for i in ownPoints {
+            guard let p = new.point(i) else { continue }
+            var linked = false
+            for other in shapes where other.id != new.id {
+                // Centre on a centre: concentric circles.
+                if case .circle = new.kind, let c = other.circle(0), dist(c.center, p) < eps {
+                    out.append(.init(.concentric(.circle(new.id, 0), .circle(other.id, 0)))); linked = true; break
+                }
+                if let j = (0..<other.pointCount).first(where: { other.point($0).map { dist($0, p) < eps } ?? false }) {
+                    out.append(.init(.coincident(.point(new.id, i), .point(other.id, j)))); linked = true; break
+                }
+            }
+            if linked { continue }
+            for other in shapes where other.id != new.id {
+                if let k = (0..<other.segmentCount).first(where: { other.segment($0).map { dist(($0.0 + $0.1) * 0.5, p) < eps } ?? false }) {
+                    out.append(.init(.midpoint(.point(new.id, i), .segment(other.id, k)))); break
+                }
+            }
+        }
+        return out
+    }
+
     // MARK: Dimensions
 
     func pickForDimension(_ p: Vec2) {

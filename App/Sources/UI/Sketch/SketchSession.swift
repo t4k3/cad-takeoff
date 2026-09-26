@@ -181,13 +181,18 @@ final class SketchSession {
     func shape(_ id: SketchShape.ID) -> SketchShape? { shapes.first { $0.id == id } }
 
     func replace(_ id: SketchShape.ID, with kind: SketchShape.Kind) {
-        guard let i = sketch.shapes.firstIndex(where: { $0.id == id }) else { return }
-        sketch.shapes[i].kind = kind
+        update(id) { $0.kind = kind }
     }
 
+    /// Edits a shape (Parametri panel) and re-solves the constraints around the new value.
     func update(_ id: SketchShape.ID, _ change: (inout SketchShape) -> Void) {
         guard let i = sketch.shapes.firstIndex(where: { $0.id == id }) else { return }
-        change(&sketch.shapes[i])
+        var next = sketch
+        change(&next.shapes[i])
+        if !next.constraints.isEmpty, !next.solve() {
+            notice = "La modifica non rispetta i vincoli dello schizzo: togli un vincolo o cambia una quota."
+        }
+        sketch = next
     }
 
     func deleteSelection() {
@@ -277,7 +282,22 @@ final class SketchSession {
 
     private func commit(_ kind: SketchShape.Kind) {
         let s = SketchShape(kind: kind)
-        sketch.shapes.append(s)
+        // The shape and the constraints it implies (as drawn) in one undo step.
+        var next = sketch
+        next.shapes.append(s)
+        let implied = autoConstraints(for: s)
+        if !implied.isEmpty {
+            var withAll = next
+            withAll.constraints += implied
+            if withAll.solve() { next = withAll } else {
+                for c in implied {
+                    var one = next
+                    one.constraints.append(c)
+                    if one.solve() { next = one }
+                }
+            }
+        }
+        sketch = next
         pending = []
         selection = s.id
     }
