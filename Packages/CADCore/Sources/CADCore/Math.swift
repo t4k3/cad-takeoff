@@ -36,6 +36,8 @@ public struct Vec2: Hashable, Codable, Sendable {
     public init(_ x: Double, _ y: Double) { self.x = x; self.y = y }
 
     public static func - (a: Vec2, b: Vec2) -> Vec2 { Vec2(a.x - b.x, a.y - b.y) }
+    public static func + (a: Vec2, b: Vec2) -> Vec2 { Vec2(a.x + b.x, a.y + b.y) }
+    public static func * (a: Vec2, s: Double) -> Vec2 { Vec2(a.x * s, a.y * s) }
     public func cross(_ b: Vec2) -> Double { x * b.y - y * b.x }
 }
 

@@ -428,6 +428,11 @@ extension DesignModel: CADToolProvider {
         }
         var spec = SheetMetalSpec(material: m.id, thickness: t, width: try number(args, "width"), depth: try number(args, "depth"))
         if args["inside_radius"] != nil { spec.radiusOverride = try number(args, "inside_radius") }
+        if args["corners"] != nil {
+            guard let style = SheetCornerStyle(rawValue: try string(args, "corners")) else { throw CADToolFailure("corners: open o closed.") }
+            spec.corners = style
+        }
+        if args["corner_gap"] != nil { spec.cornerGap = try number(args, "corner_gap") }
         if let list = args["flange_sides"]?.array {
             let direction: SheetBendDirection = args["flange_direction"] == nil ? .up
                 : (SheetBendDirection(rawValue: try string(args, "flange_direction")) ?? .up)

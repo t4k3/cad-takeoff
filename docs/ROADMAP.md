@@ -33,12 +33,12 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 | 5 | **Operazioni sui solidi, una per volta**: Estrudi con Unisci/Taglia/Interseca → Smusso → Raccordo → Specchio → Dividi con piano → piani di costruzione | Ogni operazione arriva completa (pannello, anteprima, storico) prima della successiva | Claude | Fatti: booleane, foro, smusso/raccordo, **serie, specchio, dividi con piano** (26/09). **piani di base XZ/YZ e piani sfalsati per gli schizzi** (26/09). Passo 5 completo per ora |
 | 6 | **Assistente che usa tutto quanto sopra** (strumenti v2) | L'assistente sa fare schizzi su facce, tagli, smussi e correggere lo storico | Codex + Claude | — |
 | 7 | **Parti e assiemi** | Inserire i pezzi del progetto in un assieme, posizionarli, distinta base | Claude | **Fase 1 fatta 26/09**: componenti collegati ai file (si aggiornano), posizione e rotazione, Apri pezzo, distinta base con CSV. Poi: giunti/vincoli di accoppiamento, interferenze, componente attivo, esplosi |
-| 8 | **Lamiera** | Campione piegato + sviluppo DXF/3MF e operazioni salvate | Claude | **Base integrata (26/09): scheda LAMIERA, materiali con regole da pressa piegatrice (V, raggio, K DIN 6935, flangia minima), piastra + flange sui 4 lati, sviluppo, DXF, assistente.** Poi: altezze per lato nel pannello, fori riportati nello sviluppo/DXF. Prossimo: angoli chiusi, flange su flange. [Dettagli](requirements/SHEET_METAL_V1.md) |
+| 8 | **Lamiera** | Campione piegato + sviluppo DXF/3MF e operazioni salvate | Claude | **Base integrata (26/09): scheda LAMIERA, materiali con regole da pressa piegatrice (V, raggio, K DIN 6935, flangia minima), piastra + flange sui 4 lati, sviluppo, DXF, assistente.** Poi: altezze per lato nel pannello, fori riportati nello sviluppo/DXF. Angoli chiusi con scarico quadro (scatole, 26/09). Prossimo: flange su flange. [Dettagli](requirements/SHEET_METAL_V1.md) |
 | 9 | **Prima release TestFlight ai colleghi** | I colleghi installano da TestFlight e usano la propria chiave | Ross + Claude | **Preparata 26/09**: icona, privacy manifest, crittografia esente, build Release, `scripts/archive-testflight.sh`. **Tocca a Ross**: account in Xcode, app in App Store Connect, primo caricamento → [guida](TESTFLIGHT.md) |
 
 ## Da valutare (non iniziati)
 
-- Lamiera: angoli chiusi con scarico, flange su flange (Z, cassette), orli, fori che attraversano una piega o asole nello sviluppo, tavola di piega.
+- Lamiera: flange su flange (Z, cassette), orli, fori che attraversano una piega o asole nello sviluppo, tavola di piega.
 
 - Smusso/raccordo su **archi** parziali; angolo sferico dove si incontrano tre raccordi. (Spigoli concavi: fatti 26/09.)
 - Freccia di trascinamento anche per Foro (profondità) e parametri dei solidi. (Estrudi: fatto 26/09.)

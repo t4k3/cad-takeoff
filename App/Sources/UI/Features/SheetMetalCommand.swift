@@ -9,6 +9,7 @@ enum SheetMetalCommand {
     static let materials = SheetMaterial.all
     static let directions = SheetBendDirection.allCases
     static let references = SheetFlangeReference.allCases
+    static let cornerStyles = SheetCornerStyle.allCases
 
     /// Display colour of a new part, by material family.
     static func colour(_ material: String) -> PartColor {
@@ -72,6 +73,11 @@ enum SheetMetalCommand {
             .init(id: "reference", label: "Quota", kind: .choice(references.map(\.label)),
                   value: .index(references.firstIndex(of: firstFlange.reference) ?? 0),
                   help: "Quota esterna: l'altezza misurata fuori tutto, come sul disegno d'officina"),
+            .init(id: "corners", label: "Angoli", kind: .choice(cornerStyles.map(\.label)),
+                  value: .index(cornerStyles.firstIndex(of: spec.cornerStyle) ?? 0),
+                  help: "Chiusi: le pareti davanti e dietro coprono l'angolo, quelle laterali ci arrivano contro (scatola); scarico quadrato nello sviluppo"),
+            .init(id: "gap", label: "Gioco negli angoli", kind: .length(0...5), value: .number(spec.gap),
+                  isHidden: spec.cornerStyle == .open),
             .init(id: "result", label: "", kind: .note(warning: false), value: .flag(false)),
             .init(id: "warnings", label: "", kind: .note(warning: true), value: .flag(false), isHidden: true),
         ]
@@ -86,6 +92,8 @@ enum SheetMetalCommand {
             s.thickness = m.thicknesses[min(idx("thickness"), m.thicknesses.count - 1)]
             s.radiusOverride = flag("autoRadius") ? nil : num("radius")
             s.width = num("width"); s.depth = num("depth")
+            s.corners = cornerStyles[min(idx("corners"), cornerStyles.count - 1)]
+            s.cornerGap = num("gap")
             let flange = SheetFlange(length: num("length"), angle: num("angle"),
                                      direction: directions[min(idx("direction"), directions.count - 1)],
                                      reference: references[min(idx("reference"), references.count - 1)])
@@ -118,6 +126,10 @@ enum SheetMetalCommand {
             let perSide = { if case let .flag(b)? = f.first(where: { $0.id == "perSide" })?.value { b } else { false } }()
             for id in ["angle", "direction", "reference", "perSide"] { session.update(id) { $0.isHidden = !anyFlange } }
             session.update("length") { $0.isHidden = !anyFlange || perSide }
+            // Corners exist where a front/back flange meets a side one.
+            let anyCorner = [SheetEdge.front, .back].contains { s[$0] != nil } && [SheetEdge.left, .right].contains { s[$0] != nil }
+            session.update("corners") { $0.isHidden = !anyCorner }
+            session.update("gap") { $0.isHidden = !anyCorner || s.cornerStyle == .open }
             for e in SheetEdge.allCases { session.update("length-" + e.rawValue) { $0.isHidden = !perSide || s[e] == nil } }
 
             do {

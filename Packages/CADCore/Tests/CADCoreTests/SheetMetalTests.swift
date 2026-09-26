@@ -133,3 +133,45 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     let dxf = SheetMetalDXF.export(flat, rule: build.rule, name: "Forata")
     #expect(dxf.components(separatedBy: "\nCIRCLE\n").count - 1 == 2)
 }
+
+@Test func closedCornersMakeABox() throws {
+    var box = SheetMetalSpec(material: "dc01", thickness: 1.5, width: 120, depth: 80)
+    for e in SheetEdge.allCases { box[e] = SheetFlange(length: 30) }
+    box.corners = .closed
+    let build = try SheetMetalGeometry.build(box, featureID: UUID())
+    #expect(build.warnings.isEmpty)
+    let r = build.rule.insideRadius, t = 1.5, sb = r + t, gap = 0.2
+    let straight = 30 - sb, allowance = .pi / 2 * (r + build.rule.kFactor * t)
+    let plateW = 120 - 2 * sb, plateD = 80 - 2 * sb
+    // Front/back walls run on over the corners (to the side walls' outer face), the side walls
+    // stop `gap` short of the front/back walls' inner face.
+    let cover = sb, butt = sb - t - gap
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    #expect(abs(mesh.bounds!.min.x + 60) < 1e-9 && abs(mesh.bounds!.max.y - 40) < 1e-9 && abs(mesh.bounds!.max.z - 30) < 1e-9)
+    let bend = bendSection(r, t, .pi / 2, 16)
+    let volume = plateW * plateD * t + 2 * plateW * (bend + straight * t) + 2 * plateD * (bend + straight * t)
+        + 4 * cover * straight * t + 4 * butt * straight * t
+    #expect(abs(mesh.volume - volume) < 1e-6)
+    // Blank: the cross plus the run-on tabs, a square relief where the bends meet.
+    let open = plateW * plateD + 2 * (allowance + straight) * (plateW + plateD)
+    #expect(abs(build.flat.area - (open + 4 * cover * straight + 4 * butt * straight)) < 1e-9)
+    #expect(build.flat.outline.count == 28)
+    #expect(MeshValidator.validate(SheetMetalGeometry.flatMesh(build.flat)).isWatertight)
+    #expect(abs(build.flat.size.width - (plateW + 2 * (allowance + straight))) < 1e-9)
+    // A hole in a corner tab unfolds onto the tab.
+    let x = -60 + sb / 2
+    let (flat, skipped) = build.flat(adding: [HoleSpec(centers: [Vec3(x, -40, 20)], direction: Vec3(0, 1, 0), fit: .manual, diameter: 1)])
+    #expect(skipped == 0 && abs(flat.holes[0].center.x - x) < 1e-9)
+    #expect(abs(flat.holes[0].center.y - (-40 + sb - allowance - (20 - sb))) < 1e-9)
+
+    // Only 90° flanges bent the same way close; others stay open with a note.
+    box.left = SheetFlange(length: 30, angle: 60)
+    box.back = SheetFlange(length: 30, direction: .down)
+    let mixed = try SheetMetalGeometry.build(box, featureID: UUID())
+    #expect(mixed.warnings.count == 3)
+    #expect(MeshValidator.validate(mixed.folded.triangulated().mesh).isWatertight)
+    // Old files (no corner style) stay open.
+    let decoded = try JSONDecoder().decode(SheetMetalSpec.self, from: JSONEncoder().encode(SheetMetalSpec()))
+    #expect(decoded.cornerStyle == .open && decoded.gap == 0.2)
+}

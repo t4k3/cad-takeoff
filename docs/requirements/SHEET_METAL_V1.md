@@ -48,6 +48,8 @@ striscia sviluppata = BA + tratto dritto
 
 La piastra piana va dalla linea di stampo esterna meno OSSB su ogni lato con flangia. Gli **angoli tra flange sono aperti**: ogni flangia copre il tratto piano del suo lato, così lo sviluppo (a croce) non si sovrappone mai e non servono scarichi.
 
+**Angoli chiusi** (opzione «Angoli: Chiusi», scatole): tra flange a 90° piegate nello stesso verso, le pareti davanti/dietro proseguono oltre la piega fino alla faccia esterna della parete laterale (OSSB), le pareti laterali arrivano a un gioco (0,2 mm di default) dalla loro faccia interna (OSSB − t − gioco). Nello sviluppo le alette di prolungamento stanno sul tratto dritto delle strisce e dove le pieghe si incontrano resta uno scarico quadrato BA × BA. Gli angoli con flange di angolo o verso diversi restano aperti, con un avviso.
+
 ## Verifiche
 
 - `swift test --package-path Packages/CADCore`: regole dei materiali (V, raggi, K DIN, flangia minima), piastra, staffa a L con quote esterne e volume esatto della sezione, vassoio a 4 flange, piega in giù, avvisi e rifiuti, foro sul piegato, salvataggio, DXF.
@@ -55,7 +57,7 @@ La piastra piana va dalla linea di stampo esterna meno OSSB su ogni lato con fla
 
 ## Limiti (prossimi passi)
 
-- Angoli chiusi con scarico (tondo/quadro) come in Fusion.
+- Scarico tondo negli angoli chiusi; angoli chiusi con flange non a 90°.
 - Flange su flange (profili a Z, cassette chiuse), orli (hem), flange parziali, forme della piastra da schizzo.
 - Fori che attraversano una piega, fori ciechi o obliqui: non riportati nello sviluppo (l'export lo dice). Asole e tagli da schizzo.
 - Tavola di piega (sequenza, angoli, quote) e compensazione del ritorno elastico.

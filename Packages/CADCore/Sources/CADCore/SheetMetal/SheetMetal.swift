@@ -6,7 +6,8 @@ import Foundation
 //
 // Dimensions are workshop style: width/depth are the OUTSIDE footprint (mould lines), flange
 // lengths are outside/inside/tangent lengths. Corners between flanges are open (each flange spans
-// the flat part of its side), so the blank never overlaps itself; closed corners come later.
+// the flat part of its side) or closed: front/back walls run on over the corner, the side walls
+// stop a small gap short of them, and the blank gets a square relief where the bends meet.
 
 public enum SheetEdge: String, Codable, CaseIterable, Sendable {
     case front, right, back, left
@@ -44,6 +45,18 @@ public enum SheetFlangeReference: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// How two neighbouring flanges meet.
+public enum SheetCornerStyle: String, Codable, CaseIterable, Sendable {
+    /// Each flange spans its side only: a notch at every corner (simple, any angle).
+    case open
+    /// A closed box corner: the front/back walls cover the corner, the left/right walls butt
+    /// against them with `cornerGap` of clearance; square relief where the bends meet.
+    /// Only between flanges bent 90° the same way (others stay open, with a warning).
+    case closed
+
+    public var label: String { self == .open ? "Aperti" : "Chiusi" }
+}
+
 public struct SheetFlange: Codable, Equatable, Sendable {
     public var length: Double
     /// Degrees from flat (90 = right angle), 5–135.
@@ -71,6 +84,13 @@ public struct SheetMetalSpec: Codable, Equatable, Sendable {
     public var right: SheetFlange?
     public var back: SheetFlange?
     public var left: SheetFlange?
+    /// Nil = open (files written before closed corners existed).
+    public var corners: SheetCornerStyle?
+    /// Clearance between a side wall and the wall it butts against, closed corners (nil = 0.2 mm).
+    public var cornerGap: Double?
+
+    public var cornerStyle: SheetCornerStyle { corners ?? .open }
+    public var gap: Double { cornerGap ?? 0.2 }
 
     public init(material: String = "dc01", thickness: Double = 1.5, width: Double = 80, depth: Double = 50,
                 flanges: [SheetEdge: SheetFlange] = [:], radiusOverride: Double? = nil, kOverride: Double? = nil) {
@@ -201,6 +221,8 @@ public struct SheetMetalBuild: Sendable {
 struct SheetLayout: Sendable {
     struct Bent: Sendable {
         let edge: SheetEdge; let theta: Double; let straight: Double; let allowance: Double; let up: Bool
+        /// Straight part run on past the side's start/end (closed corners).
+        var extStart = 0.0, extEnd = 0.0
     }
     let x0: Double, x1: Double, y0: Double, y1: Double
     let r: Double, t: Double
@@ -234,7 +256,8 @@ struct SheetLayout: Sendable {
             let across = abs((u - mid.x) * -d.y + (w - mid.y) * d.x)
             // The flange's normal in world: perpendicular to d in the (out, z) plane.
             let normal = Vec3(out.x * -d.y, out.y * -d.y, d.x)
-            guard s >= -e, s <= span + e, along2 >= -e, along2 <= b.straight + e, across <= t / 2 + e,
+            let inBend = along2 < e
+            guard s >= -e - (inBend ? 0 : b.extStart), s <= span + e + (inBend ? 0 : b.extEnd), along2 >= -e, along2 <= b.straight + e, across <= t / 2 + e,
                   abs(normal.dot(axis)) > 0.999 else { continue }
             let reach = b.allowance + along2
             return Vec2(origin.x + along.x * s + out.x * reach, origin.y + along.y * s + out.y * reach)
@@ -293,6 +316,30 @@ public enum SheetMetalGeometry {
                               allowance: rule.allowance(angleDegrees: f.angle), setback: outer)
         }
 
+        // Closed corners: which side runs on over each corner, and by how much.
+        var ext: [SheetEdge: (start: Double, end: Double)] = [:]
+        if spec.cornerStyle == .closed {
+            let gap = spec.gap
+            guard gap.isFinite, (0...5).contains(gap) else { throw SheetMetalError.invalidParameter("gioco negli angoli 0–5 mm") }
+            // (front/back side, left/right side, is it at the front/back side's start?)
+            let corners: [(SheetEdge, SheetEdge, Bool)] = [(.front, .left, true), (.front, .right, false), (.back, .left, true), (.back, .right, false)]
+            for (cover, butt, atStart) in corners {
+                guard let a = bent[cover], let b = bent[butt] else { continue }
+                guard a.flange.direction == b.flange.direction, abs(a.flange.angle - 90) < 1e-6, abs(b.flange.angle - 90) < 1e-6 else {
+                    warnings.append("Angolo \(cover.label.lowercased())-\(butt.label.lowercased()) lasciato aperto: si chiude solo tra flange a 90° piegate nello stesso verso")
+                    continue
+                }
+                // Cover wall reaches the outer face of the side wall; the side wall stops `gap`
+                // short of the cover wall's inner face (a 90° wall stands `setback − t` past the plate).
+                let over = b.setback, short = a.setback - t - gap
+                if atStart { ext[cover, default: (0, 0)].start = over } else { ext[cover, default: (0, 0)].end = over }
+                // The side walls run along +Y: the front corner is at their start.
+                if short > 1e-6 {
+                    if cover == .front { ext[butt, default: (0, 0)].start = short } else { ext[butt, default: (0, 0)].end = short }
+                }
+            }
+        }
+
         // Flat plate between the tangent lines.
         let x0 = -spec.width / 2 + (bent[.left]?.setback ?? 0), x1 = spec.width / 2 - (bent[.right]?.setback ?? 0)
         let y0 = -spec.depth / 2 + (bent[.front]?.setback ?? 0), y1 = spec.depth / 2 - (bent[.back]?.setback ?? 0)
@@ -310,13 +357,43 @@ public enum SheetMetalGeometry {
                                origin: frame.origin + position, out: frame.out, along: frame.along, span: frame.span,
                                prefix: prefix + "/" + edge.rawValue)
             solid = solid.union(piece)
+            // Closed corners: the straight wall runs on past the bend.
+            let e = ext[edge] ?? (0, 0)
+            for (from, to, name) in [(-e.start, 0.0, "corner-a"), (frame.span, frame.span + e.end, "corner-b")] where to - from > 1e-9 {
+                solid = solid.union(flange(b.flange, theta: b.theta, straight: b.straight, r: r, t: t,
+                                           origin: frame.origin + position + frame.along * from, out: frame.out, along: frame.along,
+                                           span: to - from, prefix: prefix + "/" + edge.rawValue + "/" + name, straightOnly: true))
+            }
         }
 
-        // Flat pattern: plate plus one strip per flange (allowance + straight), cross-shaped.
-        let reach: [SheetEdge: Double] = bent.mapValues { $0.allowance + $0.straight }
-        let lf = reach[.front] ?? 0, lr = reach[.right] ?? 0, lb = reach[.back] ?? 0, ll = reach[.left] ?? 0
-        let raw = [Vec2(x0, y0 - lf), Vec2(x1, y0 - lf), Vec2(x1, y0), Vec2(x1 + lr, y0), Vec2(x1 + lr, y1), Vec2(x1, y1),
-                   Vec2(x1, y1 + lb), Vec2(x0, y1 + lb), Vec2(x0, y1), Vec2(x0 - ll, y1), Vec2(x0 - ll, y0), Vec2(x0, y0)]
+        // Flat pattern: plate plus one strip per flange (allowance + straight), cross-shaped; at a
+        // closed corner the strips' straight parts run on and the bend zones leave a square relief.
+        func outward(_ e: SheetEdge) -> Vec2 {
+            switch e { case .front: Vec2(0, -1); case .right: Vec2(1, 0); case .back: Vec2(0, 1); case .left: Vec2(-1, 0) }
+        }
+        // Counter-clockwise: each corner goes from the incoming side's strip to the outgoing one's.
+        let walk: [(corner: Vec2, incoming: SheetEdge, outgoing: SheetEdge)] = [
+            (Vec2(x1, y0), .front, .right), (Vec2(x1, y1), .right, .back), (Vec2(x0, y1), .back, .left), (Vec2(x0, y0), .left, .front),
+        ]
+        func runOn(_ side: SheetEdge, at corner: Vec2) -> Double {
+            let e = ext[side] ?? (0, 0)
+            let atStart = side == .front || side == .back ? corner.x == x0 : corner.y == y0
+            return atStart ? e.start : e.end
+        }
+        var raw: [Vec2] = []
+        for (p, i, o) in walk {
+            let ni = outward(i), no = outward(o)
+            let reachI = bent[i].map { $0.allowance + $0.straight } ?? 0, reachO = bent[o].map { $0.allowance + $0.straight } ?? 0
+            let eI = runOn(i, at: p), eO = runOn(o, at: p)
+            if eI > 0 || eO > 0, let bi = bent[i], let bo = bent[o] {
+                raw += [p + ni * reachI + no * eI, p + ni * bi.allowance + no * eI, p + ni * bi.allowance, p,
+                        p + no * bo.allowance, p + no * bo.allowance + ni * eO, p + no * reachO + ni * eO]
+            } else {
+                raw += [p + ni * reachI, p, p + no * reachO]
+            }
+        }
+        // Start at the front strip's left end, as before closed corners (stable DXF output).
+        raw = [raw.removeLast()] + raw
         var bends: [SheetFlatPattern.Bend] = []
         for edge in SheetEdge.allCases {
             guard let b = bent[edge] else { continue }
@@ -335,7 +412,8 @@ public enum SheetMetalGeometry {
         let flat = SheetFlatPattern(outline: simplified(raw), bends: bends, thickness: t, origin: position)
         let layout = SheetLayout(x0: x0, x1: x1, y0: y0, y1: y1, r: r, t: t, position: position,
                                  flanges: SheetEdge.allCases.compactMap { e in bent[e].map {
-                                     .init(edge: e, theta: $0.theta, straight: $0.straight, allowance: $0.allowance, up: $0.flange.direction == .up)
+                                     .init(edge: e, theta: $0.theta, straight: $0.straight, allowance: $0.allowance, up: $0.flange.direction == .up,
+                                           extStart: ext[e]?.start ?? 0, extEnd: ext[e]?.end ?? 0)
                                  } })
         return SheetMetalBuild(rule: rule, folded: solid, flat: flat, warnings: warnings, layout: layout)
     }
@@ -397,7 +475,8 @@ public enum SheetMetalGeometry {
     /// Bend + straight flange swept along a side. Section in (u outward from the tangent line,
     /// w up); a downward bend is the upward one mirrored about the plate's mid-plane.
     private static func flange(_ f: SheetFlange, theta: Double, straight: Double, r: Double, t: Double,
-                               origin: Vec3, out: Vec3, along: Vec3, span: Double, prefix: String) -> CSGSolid {
+                               origin: Vec3, out: Vec3, along: Vec3, span: Double, prefix: String,
+                               straightOnly: Bool = false) -> CSGSolid {
         let up = f.direction == .up
         let n = max(2, Int((Double(bendSegments) * theta / (.pi / 2)).rounded(.up)))
         func mirror(_ p: Vec2) -> Vec2 { up ? p : Vec2(p.x, t - p.y) }
@@ -416,20 +495,25 @@ public enum SheetMetalGeometry {
         func face(_ name: String, _ surface: SurfaceDescriptor, flipped: Bool = false) -> Int {
             faces.append(CSGFace(id: FaceID(rawValue: prefix + "/" + name), surface: surface, flipped: flipped)); return faces.count - 1
         }
-        let bendOut = face("bend-out", .cylinder(axisOrigin: axis, axisDirection: along, radius: r + t))
-        let bendIn = face("bend-in", .cylinder(axisOrigin: axis, axisDirection: along, radius: r), flipped: true)
+        let bendOut = straightOnly ? -1 : face("bend-out", .cylinder(axisOrigin: axis, axisDirection: along, radius: r + t))
+        let bendIn = straightOnly ? -1 : face("bend-in", .cylinder(axisOrigin: axis, axisDirection: along, radius: r), flipped: true)
         func plane(_ name: String, _ a: Vec2, _ b: Vec2) -> Int {
             let pa = world(a, 0), pb = world(b, 0)
             return face(name, .plane(origin: pa, normal: (pb - pa).cross(along).normalized))
         }
         // Section outline, counter-clockwise in (u, w) for an up bend: outer arc, tip, inner arc back, joint.
+        // `straightOnly`: just the straight wall (a closed corner's run-on), closed at the bend end.
         var loop: [(Vec2, Int)] = []
-        for i in 0..<n { loop.append((outer[i], bendOut)) }
+        if !straightOnly { for i in 0..<n { loop.append((outer[i], bendOut)) } }
         loop.append((outer[n], plane("flange-out", outer[n], outerTip)))
         loop.append((outerTip, plane("tip", outerTip, innerTip)))
         loop.append((innerTip, plane("flange-in", innerTip, inner[n])))
-        for i in stride(from: n, to: 0, by: -1) { loop.append((inner[i], bendIn)) }
-        loop.append((inner[0], plane("joint", inner[0], outer[0])))
+        if straightOnly {
+            loop.append((inner[n], plane("foot", inner[n], outer[n])))
+        } else {
+            for i in stride(from: n, to: 0, by: -1) { loop.append((inner[i], bendIn)) }
+            loop.append((inner[0], plane("joint", inner[0], outer[0])))
+        }
 
         var polys: [CSGSolid.Polygon] = []
         for k in loop.indices {
@@ -439,7 +523,7 @@ public enum SheetMetalGeometry {
         // End caps: convex quads between the arcs, plus the straight part.
         let capA = face("end-a", .plane(origin: origin, normal: -along))
         let capB = face("end-b", .plane(origin: origin + along * span, normal: along))
-        var quads: [[Vec2]] = (0..<n).map { [outer[$0], outer[$0 + 1], inner[$0 + 1], inner[$0]] }
+        var quads: [[Vec2]] = straightOnly ? [] : (0..<n).map { [outer[$0], outer[$0 + 1], inner[$0 + 1], inner[$0]] }
         quads.append([outer[n], outerTip, innerTip, inner[n]])
         for q in quads {
             // Same winding rule as the sides: the start cap runs against the section loop.

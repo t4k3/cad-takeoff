@@ -218,6 +218,14 @@ struct AssistantToolsTests {
         let dxf = await m.call("export_flat_dxf", arguments: [:])
         let dxfText = dxf.structured?["data"]?.string.flatMap { Data(base64Encoded: $0) }.flatMap { String(data: $0, encoding: .utf8) } ?? ""
         expect(!dxf.isError && dxfText.contains("BEND_UP") && dxfText.hasSuffix("EOF\n"), "flat pattern DXF via tool")
+        // Closed box corners.
+        m.newDesign()
+        let sheetBox = await edit("add_sheet_metal", ["material": "dc01", "thickness": 1.5, "width": 120, "depth": 80,
+                                                "flange_sides": .array(["front", "right", "back", "left"]), "flange_length": 30,
+                                                "corners": "closed"])
+        let boxInfo = await m.call("scene_info", arguments: [:])
+        let badCorners = await edit("add_sheet_metal", ["material": "dc01", "thickness": 1.5, "width": 50, "depth": 50, "corners": "welded"])
+        expect(!sheetBox.isError && boxInfo.structured?["edge_closed"]?.bool == true && badCorners.isError, "closed-corner box via tool")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }
