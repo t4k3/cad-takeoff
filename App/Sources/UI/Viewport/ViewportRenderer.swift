@@ -59,6 +59,7 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     private let meshPipeline: MTLRenderPipelineState
     private let linePipeline: MTLRenderPipelineState
     private let edgePipeline: MTLRenderPipelineState
+    private let thickPipeline: MTLRenderPipelineState
     private let gizmoPipeline: MTLRenderPipelineState
     private let depthWrite: MTLDepthStencilState
     private let depthReadOnly: MTLDepthStencilState
@@ -113,8 +114,9 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         guard let mesh = pipeline("meshVertex", "meshFragment", blend: false),
               let line = pipeline("lineVertex", "lineFragment", blend: true),
               let edge = pipeline("lineVertex", "edgeFragment", blend: true),
-              let gizmo = pipeline("gizmoVertex", "meshFragment", blend: false) else { return nil }
-        meshPipeline = mesh; linePipeline = line; edgePipeline = edge; gizmoPipeline = gizmo
+              let gizmo = pipeline("gizmoVertex", "meshFragment", blend: false),
+              let thick = pipeline("thickLineVertex", "edgeFragment", blend: true) else { return nil }
+        meshPipeline = mesh; linePipeline = line; edgePipeline = edge; gizmoPipeline = gizmo; thickPipeline = thick
 
         let dw = MTLDepthStencilDescriptor()
         dw.depthCompareFunction = .less
@@ -288,24 +290,14 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
                 enc.setVertexBuffer(buf, offset: 0, index: 0)
                 enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: tris.count)
             }
-            let lines = highlightLines.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.2),
-                                                  LineVertex(position: SIMD4($0.1, 1), color: $0.2)] }
-            if let buf = buffer(lines) {
-                enc.setVertexBuffer(buf, offset: 0, index: 0)
-                enc.drawPrimitives(type: .line, vertexStart: 0, vertexCount: lines.count)
-            }
+            drawThick(highlightLines, width: 3.5, view: view, encoder: enc)
             enc.setDepthBias(0, slopeScale: 0, clamp: 0)
         }
         if !overlayLines.isEmpty {
-            let v = overlayLines.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.2), LineVertex(position: SIMD4($0.1, 1), color: $0.2)] }
-            if let buf = buffer(v) {
-                var none = DrawUniforms(color: .zero)
-                enc.setFragmentBytes(&none, length: MemoryLayout<DrawUniforms>.stride, index: 2)
-                enc.setRenderPipelineState(edgePipeline)
-                enc.setDepthStencilState(depthAlways)
-                enc.setVertexBuffer(buf, offset: 0, index: 0)
-                enc.drawPrimitives(type: .line, vertexStart: 0, vertexCount: v.count)
-            }
+            var none = DrawUniforms(color: .zero)
+            enc.setFragmentBytes(&none, length: MemoryLayout<DrawUniforms>.stride, index: 2)
+            enc.setDepthStencilState(depthAlways)
+            drawThick(overlayLines, width: 2.2, view: view, encoder: enc)
         }
         if !gizmos.isEmpty {
             enc.setRenderPipelineState(gizmoPipeline)
@@ -322,6 +314,32 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         enc.endEncoding()
         command.present(drawable)
         command.commit()
+    }
+
+    private struct ThickVertex { var position: SIMD4<Float>; var other: SIMD4<Float>; var color: SIMD4<Float>; var params: SIMD4<Float> }
+
+    /// Lines `width` points wide (screen space), as two triangles per segment.
+    private func drawThick(_ lines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)], width: Float, view: MTKView,
+                           encoder enc: MTLRenderCommandEncoder) {
+        guard !lines.isEmpty else { return }
+        let scale = Float(view.window?.backingScaleFactor ?? 2)
+        let px = width * scale
+        var v: [ThickVertex] = []
+        v.reserveCapacity(lines.count * 6)
+        for (a, b, c) in lines {
+            let pa = SIMD4(a, 1), pb = SIMD4(b, 1)
+            func at(_ p: SIMD4<Float>, _ o: SIMD4<Float>, _ side: Float) -> ThickVertex {
+                ThickVertex(position: p, other: o, color: c, params: SIMD4(side, px, 0, 0))
+            }
+            // At B the direction is reversed: its side −1 is A's side +1.
+            v += [at(pa, pb, 1), at(pa, pb, -1), at(pb, pa, -1), at(pa, pb, -1), at(pb, pa, 1), at(pb, pa, -1)]
+        }
+        guard let buf = buffer(v) else { return }
+        var viewport = SIMD2<Float>(Float(view.drawableSize.width), Float(view.drawableSize.height))
+        enc.setRenderPipelineState(thickPipeline)
+        enc.setVertexBuffer(buf, offset: 0, index: 0)
+        enc.setVertexBytes(&viewport, length: MemoryLayout<SIMD2<Float>>.stride, index: 3)
+        enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: v.count)
     }
 
     /// Edge colour override: accent for the selection, light accent on hover, else baked (a = 0).

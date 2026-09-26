@@ -187,6 +187,7 @@ struct ViewportContainer: View {
                   highlightTriangles: geoHighlight.triangles,
                   highlightLines: geoHighlight.lines,
                   gizmos: workspace.manipulator.map { [$0.mesh(length: arrowLength)] } ?? [],
+                  cursor: workspace.sketch != nil || workspace.holePlacement != nil || workspace.pickingSketchPlane ? .crosshair : nil,
                   onClick: handleClick,
                   onHover: handleHover,
                   onDragBegin: dragBegin,

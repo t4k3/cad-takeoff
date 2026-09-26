@@ -83,6 +83,35 @@ vertex LineOut lineVertex(uint id [[vertex_id]],
     return o;
 }
 
+// Thick lines (sketch, overlays, highlights): each segment is a strip of `params.y` pixels,
+// built in screen space. params.x = side (±1); each end is pushed half a width away from the
+// other end so consecutive segments join without gaps.
+struct ThickVertex { float4 position; float4 other; float4 color; float4 params; };
+
+vertex LineOut thickLineVertex(uint id [[vertex_id]],
+                               const device ThickVertex *v [[buffer(0)]],
+                               constant FrameUniforms &frame [[buffer(1)]],
+                               constant float2 &viewport [[buffer(3)]]) {
+    ThickVertex t = v[id];
+    float4 a = frame.viewProjection * t.position;
+    float4 b = frame.viewProjection * t.other;
+    float2 half_vp = viewport * 0.5;
+    float2 sa = a.xy / max(a.w, 1e-6) * half_vp;
+    float2 sb = b.xy / max(b.w, 1e-6) * half_vp;
+    float2 d = sb - sa;
+    float len = length(d);
+    float2 dir = len > 1e-5 ? d / len : float2(1.0, 0.0);
+    float2 n = float2(-dir.y, dir.x);
+    float w = t.params.y * 0.5;
+    float2 offset = n * t.params.x * w - dir * w;
+    a.xy += offset / half_vp * a.w;
+    LineOut o;
+    o.position = a;
+    o.color = t.color;
+    o.fade = 1.0;
+    return o;
+}
+
 fragment float4 lineFragment(LineOut in [[stage_in]]) {
     return float4(in.color.rgb, in.color.a * in.fade);
 }

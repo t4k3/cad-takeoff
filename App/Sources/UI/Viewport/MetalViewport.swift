@@ -16,6 +16,8 @@ struct MetalViewport: NSViewRepresentable {
     var highlightTriangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var gizmos: [GizmoMesh] = []
+    /// Cursor over the viewport (crosshair while sketching or placing).
+    var cursor: NSCursor? = nil
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
     /// Mouse down on a draggable handle: return true to take the drag (no orbit, no click).
@@ -52,6 +54,10 @@ struct MetalViewport: NSViewRepresentable {
         view.onDragBegin = onDragBegin
         view.onDragMove = onDragMove
         view.onDragEnd = onDragEnd
+        if view.viewCursor !== cursor {
+            view.viewCursor = cursor
+            view.window?.invalidateCursorRects(for: view)
+        }
         guard let r = view.renderer else { return }
         r.update(features: features, snapshot: snapshot)
         r.selection = selection
@@ -77,6 +83,12 @@ final class CADMetalView: MTKView {
     var onDragBegin: (Ray) -> Bool = { _ in false }
     var onDragMove: (Ray) -> Void = { _ in }
     var onDragEnd: () -> Void = {}
+    var viewCursor: NSCursor?
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        if let viewCursor { addCursorRect(bounds, cursor: viewCursor) }
+    }
 
     private var dragStart: CGPoint?
     private var isDragging = false

@@ -217,27 +217,83 @@ final class SketchSession {
         return shapes.last { $0.isClosed && contains($0.outline, p) }?.id
     }
 
-    private func snap(_ p: Vec2) -> Vec2 {
-        let vertices = shapes.flatMap { s -> [Vec2] in
+    // MARK: Snapping (vertices, midpoints, centres — as in Fusion)
+
+    enum SnapKind { case vertex, midpoint, center }
+    struct SnapPoint { let point: Vec2; let kind: SnapKind }
+
+    /// What the cursor is snapped to (drawn with Fusion's glyphs: □ vertex, △ midpoint, ○ centre).
+    private(set) var snapped: SnapPoint?
+    /// Unsnapped cursor, to light up the midpoints of the segments it is close to.
+    private(set) var rawCursor: Vec2?
+
+    /// Straight segments of the sketch and of the projected references (their midpoints snap).
+    private var segments: [(Vec2, Vec2)] {
+        var out: [(Vec2, Vec2)] = []
+        for s in shapes {
             switch s.kind {
-            case let .circle(c, _): return [c]
-            case let .slot(a, b, _): return [a, b]
-            case let .polygon(c, _, _, _, _): return [c] + s.outline
-            default: return s.outline
+            case .circle, .slot: continue
+            default:
+                let o = s.outline
+                guard o.count >= 2 else { continue }
+                for i in 0..<(s.isClosed ? o.count : o.count - 1) { out.append((o[i], o[(i + 1) % o.count])) }
             }
-        } + pending + references.flatMap { line -> [Vec2] in
-            // Ends and midpoints of straight references; every point of curved ones (circle rims).
-            guard let a = line.first, let b = line.last else { return [] }
-            if line.count <= 2 { return [a, b, Vec2((a.x + b.x) / 2, (a.y + b.y) / 2)] }
+        }
+        for line in references {
+            guard line.count >= 2 else { continue }
+            let closed = dist(line.first!, line.last!) < 1e-6
+            if closed, line.count > 8 { continue }   // circle rims: centre snap only
+            for (a, b) in zip(line, line.dropFirst()) { out.append((a, b)) }
+        }
+        return out
+    }
+
+    private var snapPoints: [SnapPoint] {
+        var out: [SnapPoint] = []
+        func mid(_ a: Vec2, _ b: Vec2) -> Vec2 { Vec2((a.x + b.x) / 2, (a.y + b.y) / 2) }
+        for s in shapes {
+            switch s.kind {
+            case let .circle(c, _): out.append(.init(point: c, kind: .center))
+            case let .slot(a, b, _):
+                out += [.init(point: a, kind: .center), .init(point: b, kind: .center), .init(point: mid(a, b), kind: .midpoint)]
+            case let .polygon(c, _, _, _, _):
+                out.append(.init(point: c, kind: .center))
+                out += s.outline.map { .init(point: $0, kind: .vertex) }
+            case .rectangle:
+                let o = s.outline
+                out += o.map { .init(point: $0, kind: .vertex) }
+                out.append(.init(point: mid(o[0], o[2]), kind: .center))
+            case .polyline:
+                out += s.outline.map { .init(point: $0, kind: .vertex) }
+            }
+        }
+        out += segments.map { .init(point: mid($0.0, $0.1), kind: .midpoint) }
+        out += pending.map { .init(point: $0, kind: .vertex) }
+        for line in references {
+            guard let a = line.first, let b = line.last else { continue }
             let closed = dist(a, b) < 1e-6
             let pts = closed ? Array(line.dropLast()) : line
             if closed, pts.count > 8 {
                 let c = Vec2(pts.map(\.x).reduce(0, +) / Double(pts.count), pts.map(\.y).reduce(0, +) / Double(pts.count))
-                return [c] + stride(from: 0, to: pts.count, by: max(1, pts.count / 4)).map { pts[$0] }
+                out.append(.init(point: c, kind: .center))
+                out += stride(from: 0, to: pts.count, by: max(1, pts.count / 4)).map { .init(point: pts[$0], kind: .vertex) }
+            } else {
+                out += pts.map { .init(point: $0, kind: .vertex) }
             }
-            return pts
         }
-        if let v = vertices.min(by: { dist($0, p) < dist($1, p) }), dist(v, p) < vertexSnap { return v }
+        return out
+    }
+
+    private func snap(_ p: Vec2) -> Vec2 {
+        rawCursor = p
+        // Nearest target; at the same distance a vertex wins over a midpoint over a centre.
+        func rank(_ k: SnapKind) -> Double { k == .vertex ? 0 : (k == .midpoint ? 1e-9 : 2e-9) }
+        if let best = snapPoints.min(by: { dist($0.point, p) + rank($0.kind) < dist($1.point, p) + rank($1.kind) }),
+           dist(best.point, p) < vertexSnap {
+            snapped = best
+            return best.point
+        }
+        snapped = nil
         guard snapToGrid else { return p }
         return Vec2((p.x / gridStep).rounded() * gridStep, (p.y / gridStep).rounded() * gridStep)
     }
@@ -356,13 +412,35 @@ final class SketchSession {
             if tool == .line { ring(pending + [c], closed: false, rubber) }
             if let preview { let s = SketchShape(kind: preview); ring(s.outline, closed: true, rubber) }
         }
-        if let c = cursor, tool != .select { out += cross(c, size: vertexSnap * 0.8, color: sketchColor) }
+        // Midpoints of the segments near the cursor light up (then snap when closer).
+        if let raw = rawCursor, tool != .select {
+            let faint = SIMD4<Float>(1, 0.62, 0.25, 0.55)
+            for (a, b) in segments where distanceToSegment(raw, a, b) < vertexSnap * 3 {
+                out += glyph(Vec2((a.x + b.x) / 2, (a.y + b.y) / 2), .midpoint, size: vertexSnap * 0.45, color: faint)
+            }
+        }
+        if let c = cursor, tool != .select {
+            let snapColor = SIMD4<Float>(1, 0.62, 0.2, 1)
+            out += cross(c, size: vertexSnap * 1.6, color: snapped == nil ? sketchColor : snapColor)
+            if let s = snapped { out += glyph(s.point, s.kind, size: vertexSnap * 0.6, color: snapColor) }
+        }
         return out
     }
 
     private func cross(_ p: Vec2, size: Double, color: SIMD4<Float>) -> [Line] {
         [(world(Vec2(p.x - size, p.y), 0.03), world(Vec2(p.x + size, p.y), 0.03), color),
          (world(Vec2(p.x, p.y - size), 0.03), world(Vec2(p.x, p.y + size), 0.03), color)]
+    }
+
+    /// Fusion's snap glyphs: square (vertex), triangle (midpoint), circle (centre).
+    private func glyph(_ p: Vec2, _ kind: SnapKind, size r: Double, color: SIMD4<Float>) -> [Line] {
+        let corners: [Vec2]
+        switch kind {
+        case .vertex: corners = [Vec2(p.x - r, p.y - r), Vec2(p.x + r, p.y - r), Vec2(p.x + r, p.y + r), Vec2(p.x - r, p.y + r)]
+        case .midpoint: corners = [Vec2(p.x - r, p.y - r * 0.7), Vec2(p.x + r, p.y - r * 0.7), Vec2(p.x, p.y + r * 1.1)]
+        case .center: corners = (0..<12).map { k in let t = Double(k) / 12 * 2 * .pi; return Vec2(p.x + r * cos(t), p.y + r * sin(t)) }
+        }
+        return corners.indices.map { i in (world(corners[i], 0.04), world(corners[(i + 1) % corners.count], 0.04), color) }
     }
 
     /// World position of sketch coordinates, `height` off the plane (overlays sit just above it).
