@@ -37,3 +37,11 @@ Nota per la revisione: «App di progettazione CAD. L'assistente in chat usa la c
 
 - Il bridge MCP `ftk-mcp` è dentro l'app e ha la sua sandbox: funziona anche nella versione TestFlight.
 - I file `.ftk` sono JSON: si scambiano tra colleghi via cartelle condivise; i componenti di un assieme sono percorsi relativi alla cartella dei progetti, quindi conviene la stessa struttura di cartelle.
+
+## Senza TestFlight: .dmg firmato e notarizzato
+
+```bash
+scripts/make-dmg.sh
+```
+
+Archivia in Release, firma con Developer ID (firma gestita da Apple tramite l'account di Xcode: nessun certificato locale), invia alla notarizzazione, attende l'esito, attacca il biglietto all'app e crea `build/dmg/CAD-Takeoff-<versione>-<build>.dmg` con l'app e il collegamento ad Applicazioni. Chi lo riceve apre il .dmg e trascina l'app in Applicazioni: nessun avviso di Gatekeeper. Non si aggiorna da solo: per una nuova versione si manda un nuovo .dmg.
