@@ -29,6 +29,13 @@ struct InspectorPanel: View {
                                 Text(feature.kind.typeName).font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                             }
                         }
+                        section("Operazione") {
+                            Picker("Operazione", selection: $model.document.features[i].operation) {
+                                ForEach(BooleanOperation.allCases, id: \.self) { Text($0.label).tag($0) }
+                            }
+                            .labelsHidden()
+                            .help("Nuovo corpo, oppure unisci/taglia/interseca i corpi che questo passo tocca")
+                        }
                         section("Colore") { PartColorPicker(feature: feature) }
                         section("Dimensioni") { parameters(for: $model.document.features[i].kind) }
                         section("Posizione") {

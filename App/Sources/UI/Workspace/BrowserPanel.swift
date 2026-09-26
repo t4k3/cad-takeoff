@@ -27,13 +27,13 @@ struct BrowserPanel: View {
                     if sketchesExpanded {
                         ForEach(sketches.sketches) { sk in sketchRow(sk) }
                     }
-                    DisclosureRow(title: "Corpi", symbol: "shippingbox", count: model.document.features.count,
+                    DisclosureRow(title: "Corpi", symbol: "shippingbox", count: model.evaluation().bodies.count,
                                   isExpanded: $bodiesExpanded)
                     if bodiesExpanded {
-                        ForEach(model.document.features) { feature in
+                        ForEach(bodyFeatures) { feature in
                             bodyRow(feature)
                         }
-                        if model.document.features.isEmpty {
+                        if bodyFeatures.isEmpty {
                             Text("Nessun corpo. Usa CREA nella barra in alto.")
                                 .font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
                                 .padding(.leading, 34).padding(.vertical, 6)
@@ -44,6 +44,17 @@ struct BrowserPanel: View {
             }
         }
         .background(Theme.Palette.panel)
+    }
+
+    /// Features shown under "Corpi": those whose body exists after evaluation, plus body-creating
+    /// steps that are not evaluated (suppressed, after the marker, invalid) so they can be found.
+    /// Cut/join/intersect steps are operations: they live in the timeline, not here.
+    private var bodyFeatures: [Feature] {
+        let alive = Set(model.evaluation().bodies.map(\.id))
+        let broken = Set(model.evaluation().issues.map(\.featureID))
+        return model.document.features.filter { f in
+            alive.contains(f.id) || (f.operation == .newBody && (!model.document.isActive(f.id) || broken.contains(f.id)))
+        }
     }
 
     private func sketchRow(_ sk: Sketch) -> some View {

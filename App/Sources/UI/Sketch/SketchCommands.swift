@@ -13,14 +13,21 @@ enum SketchCommands {
         return CommandSession(
             title: "Estrudi \(shape.typeName.lowercased())", symbol: "square.stack.3d.up",
             fields: [.init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
-                           help: "Altezza dell'estrusione verso +Z")],
-            onPreview: { f in sketch.previewHeight = f.first?.number },
+                           help: "Altezza dell'estrusione verso +Z"),
+                     .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
+                           help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca")],
+            onPreview: { f in
+                sketch.previewHeight = f.first?.number
+                if case let .index(i)? = f.last?.value { sketch.previewIsCut = BooleanOperation.allCases[i] == .cut }
+            },
             onCommit: { f in
                 let height = f.first?.number ?? 10
+                var op = BooleanOperation.newBody
+                if case let .index(i)? = f.last?.value { op = BooleanOperation.allCases[i] }
                 sketch.previewHeight = nil
                 guard let current = sketch.shape(shape.id), let profile = current.profile else { return }
-                let feature = Feature(name: "Estrusione \(model.document.features.count + 1)",
-                                      kind: .extrude(profile: profile, height: height))
+                let feature = Feature(name: (op == .cut ? "Taglio " : "Estrusione ") + "\(model.document.features.count + 1)",
+                                      kind: .extrude(profile: profile, height: height), operation: op)
                 do {
                     try CADToolValidation.feature(feature)
                 } catch {
@@ -29,7 +36,7 @@ enum SketchCommands {
                 }
                 // One undo step: saves the sketch, adds the solid and links it to the shape.
                 let saved = sketch.sketch
-                model.edit("Estrudi \(current.typeName.lowercased())", selected: .some(feature.id), changed: [feature.id]) { doc in
+                model.edit((op == .newBody ? "Estrudi " : op.label + ": ") + current.typeName.lowercased(), selected: .some(feature.id), changed: [feature.id]) { doc in
                     doc.upsert(saved)
                     doc.features.append(feature)
                     doc.sketchLinks.append(SketchLink(featureID: feature.id, sketchID: saved.id, shapeID: current.id))

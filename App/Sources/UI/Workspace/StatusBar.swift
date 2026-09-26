@@ -8,8 +8,8 @@ struct StatusBar: View {
         HStack(spacing: 14) {
             Text(model.statusMessage).lineLimit(1)
             Spacer()
-            let visible = model.document.activeFeatures.filter(\.isVisible)
-            let mesh = model.document.buildMesh()
+            let visible = model.evaluation().bodies.filter(\.isVisible)
+            let mesh = Mesh.merged(model.evaluation().bodies.filter(\.isVisible).map(\.mesh))
             Label("\(visible.count) corpi", systemImage: "shippingbox")
             Label("\(mesh.triangleCount) triangoli", systemImage: "triangle")
             Label(String(format: "%.2f cm³", mesh.volume / 1000), systemImage: "cube.transparent")

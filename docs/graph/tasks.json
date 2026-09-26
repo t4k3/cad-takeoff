@@ -1293,7 +1293,7 @@
       "id": "T70",
       "title": "Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT",
       "phase": "M1 · Ciclo Fusion",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T24"
       ],
@@ -1310,12 +1310,14 @@
         "docs/architecture"
       ],
       "suggested": "claude",
-      "owner": null,
-      "started": "2026-09-25 11:14",
+      "owner": "claude",
+      "started": "2026-09-26 10:37",
       "notes": [
         "2026-09-25 11:30 codex: Prima base completata e verificata nella milestone T75; codice e contratto pronti, T76 integra UI. T70 resta aperto per booleane robuste e genealogia/rimappatura split-merge previste nelle tappe successive, non implementate ora. Storico T63 e snapshot v2 T30 dipendono dalla base T75, senza attendere le booleane. Per riprendere leggere KERNEL_V1.md e rispettare ordine ROADMAP.",
-        "2026-09-26 09:07 ?: Presa in carico da Claude (Ross 26/09): base T75 fatta, restano booleane robuste e genealogia split/merge"
-      ]
+        "2026-09-26 09:07 ?: Presa in carico da Claude (Ross 26/09): base T75 fatta, restano booleane robuste e genealogia split/merge",
+        "2026-09-26 10:47 claude: Kernel base (T75) + booleane (T84) completati; genealogia split/merge oltre l'identità per faccia sorgente resta come miglioria futura."
+      ],
+      "finished": "2026-09-26 10:47"
     },
     {
       "id": "T71",
@@ -1572,6 +1574,58 @@
       "paths": [
         "Packages/CADCore/Sources/CADCore/Features",
         "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T84",
+      "title": "Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI",
+      "phase": "Fase 3",
+      "status": "done",
+      "deps": [
+        "T76",
+        "T82"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources",
+        "Tests"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-26 10:37",
+      "finished": "2026-09-26 10:47",
+      "notes": [
+        "2026-09-26 10:47 claude: CSG BSP nostro (CSGSolid: unione, sottrazione, intersezione) con pulizia a mesh chiusa (saldatura 1e-5 mm, riparazione giunzioni a T, triangolazione sicura) e identità delle facce (parete del foro = faccia cilindrica del tool, invertita); DesignEvaluator: timeline → corpi con Nuovo corpo/Unisci/Taglia/Interseca, corpi non toccati mantengono gli ID del kernel, taglio senza effetto segnalato, ID duplicati esclusi; snapshot dei risultati con normali lisce e spigoli tra facce (non tra facce complanari). Model/vista/export STL-3MF/miniature/barra di stato/strumenti sul valutatore; operation negli strumenti (assistente fora una piastra). UI: operazione in Estrudi (anteprima rossa per Taglia), Modifica…, Parametri; segni −/+/∩ in timeline; Corpi nel Browser = corpi risultanti. Test: 9 core CSG/valutatore (52 totali), 4 assistente. Verificato a schermo: piastra con foro Ø12 e nervatura unita, 1 corpo chiuso 7535,42 mm³."
+      ]
+    },
+    {
+      "id": "T85",
+      "title": "Smusso (chamfer) su spigoli selezionati",
+      "phase": "Fase 3c",
+      "status": "todo",
+      "deps": [
+        "T84"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T86",
+      "title": "Raccordo (fillet) a raggio costante su spigoli selezionati",
+      "phase": "Fase 3d",
+      "status": "todo",
+      "deps": [
+        "T85"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources"
       ],
       "suggested": "claude",
       "owner": null

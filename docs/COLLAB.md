@@ -1103,3 +1103,24 @@ Inizio **Collegare selezione e renderer allo snapshot CADCore al posto di Derive
 
 ### 2026-09-26 10:21 · claude · DONE `T82`
 **Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1** — completato
+
+### 2026-09-26 10:37 · claude · CLAIM `T70`
+Inizio **Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT**. File: Packages/CADCore/Sources/CADCore/Kernel, Packages/CADCore/Tests/CADCoreTests, App/Sources/Model, scripts/test-assistant-tools.sh, scripts/test-mcp-integration.sh, scripts/test-3mf.sh, Tests/AssistantTools/Runner.swift, docs/requirements/KERNEL_V1.md, docs/ROADMAP.md, docs/architecture
+
+### 2026-09-26 10:37 · claude · NUOVO TASK `T84`
+Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI (dipende da T76,T82)
+
+### 2026-09-26 10:37 · claude · CLAIM `T84`
+Inizio **Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI**. File: Packages/CADCore, App/Sources, Tests
+
+### 2026-09-26 10:47 · claude · DONE `T84`
+**Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI** — CSG BSP nostro (CSGSolid: unione, sottrazione, intersezione) con pulizia a mesh chiusa (saldatura 1e-5 mm, riparazione giunzioni a T, triangolazione sicura) e identità delle facce (parete del foro = faccia cilindrica del tool, invertita); DesignEvaluator: timeline → corpi con Nuovo corpo/Unisci/Taglia/Interseca, corpi non toccati mantengono gli ID del kernel, taglio senza effetto segnalato, ID duplicati esclusi; snapshot dei risultati con normali lisce e spigoli tra facce (non tra facce complanari). Model/vista/export STL-3MF/miniature/barra di stato/strumenti sul valutatore; operation negli strumenti (assistente fora una piastra). UI: operazione in Estrudi (anteprima rossa per Taglia), Modifica…, Parametri; segni −/+/∩ in timeline; Corpi nel Browser = corpi risultanti. Test: 9 core CSG/valutatore (52 totali), 4 assistente. Verificato a schermo: piastra con foro Ø12 e nervatura unita, 1 corpo chiuso 7535,42 mm³.
+
+### 2026-09-26 10:47 · claude · DONE `T70`
+**Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT** — Kernel base (T75) + booleane (T84) completati; genealogia split/merge oltre l'identità per faccia sorgente resta come miglioria futura.
+
+### 2026-09-26 10:47 · claude · NUOVO TASK `T85`
+Smusso (chamfer) su spigoli selezionati (dipende da T84)
+
+### 2026-09-26 10:47 · claude · NUOVO TASK `T86`
+Raccordo (fillet) a raggio costante su spigoli selezionati (dipende da T85)

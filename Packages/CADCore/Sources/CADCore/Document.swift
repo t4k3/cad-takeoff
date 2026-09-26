@@ -1,5 +1,26 @@
 import Foundation
 
+/// How a feature combines with the existing bodies (phase 3).
+public enum BooleanOperation: String, Codable, Sendable, CaseIterable {
+    /// Creates a separate body.
+    case newBody
+    /// Merges with the bodies it touches.
+    case join
+    /// Removes its volume from the bodies it touches (holes, pockets, slots).
+    case cut
+    /// Keeps only the overlap with the bodies it touches.
+    case intersect
+
+    public var label: String {
+        switch self {
+        case .newBody: "Nuovo corpo"
+        case .join: "Unisci"
+        case .cut: "Taglia"
+        case .intersect: "Interseca"
+        }
+    }
+}
+
 /// A parametric feature in the timeline. The mesh is always regenerated from parameters.
 public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public enum Kind: Codable, Sendable, Equatable {
@@ -14,13 +35,15 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public var position: Vec3
     public var isVisible: Bool
     public var color: PartColor
+    public var operation: BooleanOperation
 
-    public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true, color: PartColor = .defaultColor) {
+    public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true,
+                color: PartColor = .defaultColor, operation: BooleanOperation = .newBody) {
         self.id = id; self.name = name; self.kind = kind; self.position = position; self.isVisible = isVisible
-        self.color = color
+        self.color = color; self.operation = operation
     }
 
-    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -31,6 +54,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         isVisible = try c.decode(Bool.self, forKey: .isVisible)
         // Existing v1 documents have no colour field. Invalid supplied colours still fail decoding.
         color = try c.decodeIfPresent(PartColor.self, forKey: .color) ?? .defaultColor
+        operation = try c.decodeIfPresent(BooleanOperation.self, forKey: .operation) ?? .newBody
     }
 
     public func buildMesh() -> Mesh {
@@ -160,9 +184,9 @@ public struct CADDocument: Codable, Sendable, Equatable {
 
     // MARK: Evaluation
 
-    /// Combined printable mesh of active, visible solids (concatenation; booleans come in phase 3).
+    /// Combined printable mesh of the evaluated, visible bodies (booleans applied).
     public func buildMesh() -> Mesh {
-        Mesh.merged(activeFeatures.filter(\.isVisible).map { $0.buildMesh() })
+        Mesh.merged(DesignEvaluator.evaluate(self, revision: "").bodies.filter(\.isVisible).map(\.mesh))
     }
 
     // MARK: Coding (v2, with v1 migration)

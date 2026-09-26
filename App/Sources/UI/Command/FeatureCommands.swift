@@ -22,7 +22,9 @@ enum FeatureCommands {
         case let .extrude(_, h):
             fields = [.init(id: "h", label: "Distanza", kind: .length(length), value: .number(h))]
         }
-        fields += [.init(id: "z", label: "Offset Z", kind: .length(-1000...1000), value: .number(original.position.z))]
+        fields += [.init(id: "z", label: "Offset Z", kind: .length(-1000...1000), value: .number(original.position.z)),
+                   .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)),
+                         value: .index(BooleanOperation.allCases.firstIndex(of: original.operation) ?? 0))]
 
         func apply(_ fields: [CommandField]) {
             guard let i = model.document.features.firstIndex(where: { $0.id == id }) else { return }
@@ -34,6 +36,7 @@ enum FeatureCommands {
             case let .extrude(p, _): f.kind = .extrude(profile: p, height: v("h"))
             }
             f.position.z = v("z")
+            if case let .index(i)? = fields.first(where: { $0.id == "op" })?.value { f.operation = BooleanOperation.allCases[i] }
             // TODO(R1): model.updateFeature(id, actionName:) — direct write until the command exists.
             model.document.features[i] = f
         }

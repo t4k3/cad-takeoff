@@ -88,6 +88,12 @@ struct TimelineBar: View {
             Image(systemName: symbol(item))
                 .font(.system(size: 13))
                 .foregroundStyle(selected ? .white : tint)
+            if let f = item.feature, f.operation != .newBody {
+                Text(f.operation == .cut ? "−" : f.operation == .join ? "+" : "∩")
+                    .font(.system(size: 9, weight: .heavy))
+                    .foregroundStyle(f.operation == .cut ? Theme.Palette.danger : Theme.Palette.success)
+                    .offset(x: 10, y: -9)
+            }
             if item.isSuppressed {
                 Rectangle().fill(Theme.Palette.danger).frame(width: 26, height: 1.5).rotationEffect(.degrees(-35))
             }

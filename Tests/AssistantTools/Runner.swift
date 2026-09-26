@@ -130,6 +130,16 @@ struct AssistantToolsTests {
         expect(m.snapshot().issues.count == 1 && !m.snapshot().bodies.contains { $0.bodyID == visibleID }, "duplicate IDs cannot create ambiguous renderer references")
         m.newDesign()
         expect(m.snapshot().bodies.isEmpty && m.snapshot().issues.isEmpty, "new document clears cached bodies")
+        // Phase 3: the assistant can drill a through hole with operation cut.
+        _ = await edit("add_box", ["width": 40, "depth": 30, "height": 5, "name": "Piastra"])
+        let drilled = await edit("add_cylinder", ["radius": 3, "height": 20, "position": ["x": 0, "y": 0, "z": -5], "operation": "cut"])
+        let info = await m.call("scene_info", arguments: [:])
+        let expectedVolume = 6000 - Profile2D.circle(radius: 3, segments: 64).area * 5
+        expect(!drilled.isError && info.structured?["body_count"]?.number == 1, "cut modifies the plate, no new body")
+        expect(abs((info.structured?["mesh_volume_mm3"]?.number ?? 0) - expectedVolume) < 1e-3, "hole volume removed")
+        expect(info.structured?["edge_closed"]?.bool == true, "drilled plate is closed")
+        let badOp = await edit("add_box", ["width": 1, "depth": 1, "height": 1, "operation": "weld"])
+        expect(badOp.isError, "unknown operation rejected")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

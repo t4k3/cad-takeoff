@@ -69,6 +69,7 @@ final class DesignModel {
     /// opening another file or quitting never silently drops it.
     @ObservationIgnored var finishPendingEdits: () -> Void = {}
     @ObservationIgnored private var cachedSnapshot: DesignSnapshot?
+    @ObservationIgnored private var cachedEvaluation: (revision: String, bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue])?
     var selection: Feature.ID?
     var statusMessage = "Pronto"
 
@@ -78,25 +79,20 @@ final class DesignModel {
     /// A document edit invalidates the cache through designRevision, including undo/reopen.
     func snapshot() -> DesignSnapshot {
         if let cachedSnapshot, cachedSnapshot.revision == designRevision { return cachedSnapshot }
-        var bodies: [BodySnapshot] = [], issues: [DesignSnapshot.Issue] = []
-        let groups = Dictionary(grouping: document.activeFeatures, by: \.id)
-        var duplicateIDs = Set<UUID>()
-        for feature in document.activeFeatures where feature.isVisible {
-            guard groups[feature.id]?.count == 1 else {
-                if duplicateIDs.insert(feature.id).inserted {
-                    issues.append(.init(featureID: feature.id, message: "Identificatore di parte duplicato nel documento."))
-                }
-                continue
-            }
-            do {
-                bodies.append(try PrimitiveKernel.build(feature).snapshot(revision: designRevision))
-            } catch {
-                issues.append(.init(featureID: feature.id, message: error.localizedDescription))
-            }
-        }
-        let result = DesignSnapshot(revision: designRevision, bodies: bodies, issues: issues)
+        let e = evaluation()
+        let result = DesignSnapshot(revision: designRevision,
+                                    bodies: e.bodies.filter(\.isVisible).map(\.snapshot),
+                                    issues: e.issues.map { .init(featureID: $0.featureID, message: $0.message) })
         cachedSnapshot = result
         return result
+    }
+
+    /// Bodies of the design after running the active history with its booleans (cached per revision).
+    func evaluation() -> (bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue]) {
+        if let c = cachedEvaluation, c.revision == designRevision { return (c.bodies, c.issues) }
+        let (bodies, issues) = DesignEvaluator.evaluate(document, revision: designRevision)
+        cachedEvaluation = (designRevision, bodies, issues)
+        return (bodies, issues)
     }
 
     // MARK: Features
@@ -293,7 +289,7 @@ final class DesignModel {
     }
 
     func exportSTLWithPanel() {
-        let mesh = document.buildMesh()
+        let mesh = Mesh.merged(evaluation().bodies.filter(\.isVisible).map(\.mesh))
         guard !mesh.isEmpty else { statusMessage = "Niente da esportare"; return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType(filenameExtension: "stl") ?? .data]
@@ -309,16 +305,19 @@ final class DesignModel {
 
     /// Export visible parts, or the explicit feature even when hidden. Does not change the scene.
     func export3MFData(featureID: UUID? = nil) throws -> Data {
-        let features: [Feature]
+        let all = evaluation().bodies
+        let bodies: [DesignEvaluator.Body]
         if let featureID {
-            guard let feature = document.features.first(where: { $0.id == featureID }) else {
-                throw CADToolFailure("Geometria non trovata.")
+            guard let body = all.first(where: { $0.id == featureID }) else {
+                throw CADToolFailure(document.features.contains { $0.id == featureID }
+                    ? "Questa operazione non crea un corpo (taglio/unione): esporta il corpo che modifica."
+                    : "Geometria non trovata.")
             }
-            features = [feature]
-        } else { features = document.activeFeatures.filter(\.isVisible) }
-        let parts = try features.map { feature -> ThreeMFPart in
-            try CADToolValidation.feature(feature)
-            return ThreeMFPart(id: feature.id, name: feature.name, mesh: feature.buildMesh(), color: feature.color)
+            bodies = [body]
+        } else { bodies = all.filter(\.isVisible) }
+        let parts = try bodies.map { body -> ThreeMFPart in
+            try CADToolValidation.mesh(body.mesh)
+            return ThreeMFPart(id: body.id, name: body.source.name, mesh: body.mesh, color: body.source.color)
         }
         return try ThreeMFExporter.archive(parts: parts)
     }

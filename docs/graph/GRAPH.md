@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 10:21. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 10:47. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -112,7 +112,7 @@ flowchart LR
     T66["T66 · UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0<br/><i>claude</i>"]:::todo
     T67["T67 · UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore<br/><i>claude</i>"]:::todo
     T68["T68 · UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione<br/><i>claude</i>"]:::todo
-    T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>claude</i>"]:::todo
+    T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>claude</i>"]:::done
     T72["T72 · UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30)<br/><i>claude</i>"]:::done
     T75["T75 · Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70)<br/><i>codex</i>"]:::done
     T76["T76 · Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology<br/><i>claude</i>"]:::done
@@ -135,6 +135,15 @@ flowchart LR
   end
   subgraph P22["Fase 3b"]
     T83["T83 · Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana<br/><i>claude</i>"]:::todo
+  end
+  subgraph P23["Fase 3"]
+    T84["T84 · Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI<br/><i>claude</i>"]:::done
+  end
+  subgraph P24["Fase 3c"]
+    T85["T85 · Smusso (chamfer) su spigoli selezionati<br/><i>claude</i>"]:::todo
+  end
+  subgraph P25["Fase 3d"]
+    T86["T86 · Raccordo (fillet) a raggio costante su spigoli selezionati<br/><i>claude</i>"]:::todo
   end
   T00 --> T02
   T00 --> T03
@@ -306,6 +315,10 @@ flowchart LR
   T25 --> T80
   T81 --> T82
   T82 --> T83
+  T76 --> T84
+  T82 --> T84
+  T84 --> T85
+  T85 --> T86
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -317,8 +330,8 @@ flowchart LR
 - **T03** Validazione input + CADError nel core (porta test Codex) — suggerito: claude
 - **T63** Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza — suggerito: claude
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: claude
-- **T70** Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT — suggerito: claude
 - **T83** Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana — suggerito: claude
+- **T85** Smusso (chamfer) su spigoli selezionati — suggerito: claude
 
 ## Tabella
 
@@ -394,7 +407,7 @@ flowchart LR
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
 | T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | todo | claude | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |
-| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | todo | claude | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
+| T70 | Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT | done | claude | T24 | Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/Model<br>scripts/test-assistant-tools.sh<br>scripts/test-mcp-integration.sh<br>scripts/test-3mf.sh<br>Tests/AssistantTools/Runner.swift<br>docs/requirements/KERNEL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
 | T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | done | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
 | T72 | UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) | done | claude | T19 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T73 | Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard | in_progress | claude | T17 | App/Sources/Integration/Projects<br>App/Sources/UI/Home<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/FusionTakeoff.entitlements |
@@ -408,3 +421,6 @@ flowchart LR
 | T81 | Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura | done | claude | — | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>App/Sources/UI<br>App/Sources/Integration/Projects |
 | T82 | Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1 | done | claude | T81 | Packages/CADCore<br>App/Sources<br>Tests |
 | T83 | Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana | todo | claude | T82 | Packages/CADCore/Sources/CADCore/Features<br>App/Sources/UI |
+| T84 | Fase 3: booleane (CSG BSP nostro) + valutazione timeline Nuovo/Unisci/Taglia/Interseca + export uniti + UI | done | claude | T76, T82 | Packages/CADCore<br>App/Sources<br>Tests |
+| T85 | Smusso (chamfer) su spigoli selezionati | todo | claude | T84 | Packages/CADCore<br>App/Sources |
+| T86 | Raccordo (fillet) a raggio costante su spigoli selezionati | todo | claude | T85 | Packages/CADCore<br>App/Sources |

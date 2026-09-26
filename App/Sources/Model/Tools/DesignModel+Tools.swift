@@ -52,7 +52,8 @@ extension DesignModel: CADToolProvider {
             }
             let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "\(title) \(next.features.count + 1)",
                             kind: kind, position: try position(args) ?? .zero,
-                            color: try args["color"].map { _ in try color(args) } ?? .defaultColor)
+                            color: try args["color"].map { _ in try color(args) } ?? .defaultColor,
+                            operation: try operation(args) ?? .newBody)
             try CADToolValidation.feature(f)
             try CADToolValidation.mesh(f.buildMesh())
             next.features.append(f); changed = f.id; selected = f.id
@@ -70,6 +71,7 @@ extension DesignModel: CADToolProvider {
                 if args["name"] != nil { f.name = try string(args, "name") }
                 if args["color"] != nil { f.color = try color(args) }
                 if let p = try position(args) { f.position = p }
+                if let op = try operation(args) { f.operation = op }
                 let legal: Set<String>
                 switch f.kind {
                 case let .box(w, d, h):
@@ -82,7 +84,7 @@ extension DesignModel: CADToolProvider {
                     legal = ["points", "height"]
                     f.kind = .extrude(profile: args["points"] == nil ? p : Profile2D(points: try points(args)), height: try optionalNumber(args, "height", h))
                 }
-                let supplied = Set(args.keys).subtracting(["name", "position", "color", "feature_id", "expected_revision"])
+                let supplied = Set(args.keys).subtracting(["name", "position", "color", "operation", "feature_id", "expected_revision"])
                 guard supplied.isSubset(of: legal) else { throw CADToolFailure("Parametro non applicabile al tipo di geometria selezionato.") }
                 try CADToolValidation.feature(f)
                 try CADToolValidation.mesh(f.buildMesh())
@@ -110,28 +112,35 @@ extension DesignModel: CADToolProvider {
     }
 
     private func sceneInfo() throws -> ToolResult {
-        let visible = document.activeFeatures.filter(\.isVisible)
-        var meshes: [Mesh] = []
-        for f in visible { try CADToolValidation.feature(f); let m = f.buildMesh(); try CADToolValidation.mesh(m); meshes.append(m) }
-        let mesh = Mesh.merged(meshes)
+        let (bodies, issues) = evaluation()
+        let visible = bodies.filter(\.isVisible)
+        let mesh = Mesh.merged(visible.map(\.mesh))
         let report = mesh.isEmpty ? nil : MeshValidator.validate(mesh)
         return result("Scena in millimetri, Z verso l'alto", [
             "units": "mm", "up_axis": "Z", "feature_count": .number(Double(document.features.count)),
             "visible_count": .number(Double(visible.count)), "triangles": .number(Double(mesh.triangleCount)),
             "mesh_volume_mm3": .number(mesh.volume), "bounds": bounds(mesh.bounds),
             "edge_closed": report.map { .bool($0.isWatertight) } ?? .null,
-            "warning": "Solidi indipendenti: volume sommato, nessuna unione booleana; chiusura dei bordi non certifica stampabilità.",
-            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "parameter_update", "session_undo", "stl", "part_color", "3mf"],
-            "unavailable": ["boolean", "persistent_parametric_history", "sheet_metal", "assemblies", "step", "dxf"]
+            "body_count": .number(Double(bodies.count)),
+            "issues": .array(issues.map { ["feature_id": .string($0.featureID.uuidString), "message": .string($0.message)] }),
+            "warning": "Corpi separati non si fondono tra loro: usa operation join per unirli. La chiusura dei bordi non certifica la stampabilità.",
+            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "boolean_join_cut_intersect", "parameter_update",
+                             "timeline_rollback_suppress", "session_undo", "stl", "part_color", "3mf"],
+            "unavailable": ["hole_feature", "fillet", "chamfer", "sheet_metal_ui", "assemblies", "step", "dxf"]
         ])
     }
 
     private func export(_ args: [String: JSONValue]) throws -> ToolResult {
-        let features = args["feature_id"] == nil ? document.activeFeatures.filter(\.isVisible) : [document.features[try index(args)]]
-        guard !features.isEmpty else { throw CADToolFailure("Niente da esportare.") }
-        var meshes: [Mesh] = []
-        for f in features { try CADToolValidation.feature(f); let m = f.buildMesh(); try CADToolValidation.mesh(m); meshes.append(m) }
-        let mesh = Mesh.merged(meshes)
+        let all = evaluation().bodies
+        let bodies: [DesignEvaluator.Body]
+        if args["feature_id"] != nil {
+            let id = document.features[try index(args)].id
+            guard let b = all.first(where: { $0.id == id }) else { throw CADToolFailure("Questa operazione non crea un corpo: esporta il corpo che modifica.") }
+            bodies = [b]
+        } else { bodies = all.filter(\.isVisible) }
+        guard !bodies.isEmpty else { throw CADToolFailure("Niente da esportare.") }
+        for b in bodies { try CADToolValidation.mesh(b.mesh) }
+        let mesh = Mesh.merged(bodies.map(\.mesh))
         // STL stores Float32. Validate the actual quantized geometry before promising a closed export.
         let floatMesh = Mesh(vertices: mesh.vertices.map { Vec3(Double(Float($0.x)), Double(Float($0.y)), Double(Float($0.z))) }, indices: mesh.indices)
         try CADToolValidation.mesh(floatMesh)
@@ -165,7 +174,7 @@ extension DesignModel: CADToolProvider {
     }
 
     private func describe(_ f: Feature) -> JSONValue {
-        var value: [String: JSONValue] = ["id": .string(f.id.uuidString), "name": .string(f.name), "position": vector(f.position), "visible": .bool(f.isVisible), "color": .string(f.color.hex)]
+        var value: [String: JSONValue] = ["id": .string(f.id.uuidString), "name": .string(f.name), "position": vector(f.position), "visible": .bool(f.isVisible), "color": .string(f.color.hex), "operation": .string(f.operation.rawValue)]
         switch f.kind {
         case let .box(w, d, h): value.merge(["kind": "box", "width": .number(w), "depth": .number(d), "height": .number(h)]) { _, b in b }
         case let .cylinder(r, h): value.merge(["kind": "cylinder", "radius": .number(r), "height": .number(h)]) { _, b in b }
@@ -195,6 +204,14 @@ extension DesignModel: CADToolProvider {
     private func optionalNumber(_ args: [String: JSONValue], _ key: String, _ fallback: Double) throws -> Double {
         args[key] == nil ? fallback : try number(args, key)
     }
+    private func operation(_ args: [String: JSONValue]) throws -> BooleanOperation? {
+        guard args["operation"] != nil else { return nil }
+        guard let op = BooleanOperation(rawValue: try string(args, "operation")) else {
+            throw CADToolFailure("operation deve essere newBody, join, cut o intersect.")
+        }
+        return op
+    }
+
     private func color(_ args: [String: JSONValue]) throws -> PartColor {
         guard let color = PartColor(hex: try string(args, "color")) else {
             throw CADToolFailure("color deve essere un colore sRGB opaco nel formato #RRGGBB.")

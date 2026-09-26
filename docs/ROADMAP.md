@@ -19,8 +19,10 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 | 0 | Annulla/Ripeti veri per ogni modifica + avviso alla chiusura | **Fatta** — in attesa di prova di Ross |
 | 1 | Documento v2 unico con storico (solidi, schizzi, lamiera) + migrazione file | **Fatta** — timeline, marker, soppressione; lamiera nel formato ma non ancora disegnata (T79) |
 | 2 | Vista 3D e selezione sul motore B-rep | **Fatta** — ID stabili di facce/spigoli, normali lisce, diagnosi geometrie non valide |
-| 3 | Booleane: Unisci / Taglia / Interseca | — |
-| 3b | **Foro** (richiesta Ross 26/09): semplice, svasato, lamato; filettatura cosmetica o modellata (per stampa 3D), su faccia piana con punto dallo schizzo | — (serve fasi 1-3) |
+| 3 | Booleane: Unisci / Taglia / Interseca | **Fatta** — motore CSG nostro, risultati chiusi, facce con identità, export uniti |
+| 3b | **Foro** (richiesta Ross 26/09): semplice, svasato, lamato; filettatura cosmetica o modellata (per stampa 3D), su faccia piana con punto dallo schizzo | prossima |
+| 3c | **Smusso** (chamfer, richiesta Ross 26/09): distanza uguale / due distanze / distanza+angolo, su spigoli selezionati | — |
+| 3d | **Raccordo** (fillet, richiesta Ross 26/09): raggio costante su spigoli selezionati, tangenza automatica | — |
 
 | # | Passo | Cosa vede Ross alla fine | Chi | Stato |
 |---|---|---|---|---|

@@ -57,6 +57,8 @@ final class SketchSession {
     var polygonCircumscribed = false
     /// Height shown as wireframe while the Extrude panel is open.
     var previewHeight: Double?
+    /// Preview drawn red when the extrusion cuts.
+    var previewIsCut = false
     /// Snap radius in mm (~8 screen points), set by the viewport from the camera scale.
     var vertexSnap = 1.0
 
@@ -274,9 +276,10 @@ final class SketchSession {
             if s.isConstruction { color *= SIMD4(1, 1, 1, 0.45) }
             ring(s.outline, closed: s.isClosed, color)
             if selected, let h = previewHeight, h > 0, s.profile != nil {
-                ring(s.outline, closed: true, previewColor, z: h)
+                let pc = previewIsCut ? SIMD4<Float>(0.95, 0.25, 0.25, 0.9) : previewColor
+                ring(s.outline, closed: true, pc, z: h)
                 let step = max(1, s.outline.count / 16)
-                for (i, p) in s.outline.enumerated() where i % step == 0 { out.append((w(p), w(p, h), previewColor)) }
+                for (i, p) in s.outline.enumerated() where i % step == 0 { out.append((w(p), w(p, h), pc)) }
             }
             switch s.kind {
             case let .circle(c, _): out += cross(c, size: vertexSnap * 0.35, color: color)

@@ -141,7 +141,8 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         for body in snapshot.bodies {
             guard let f = byID[body.bodyID] else { continue }
             order.append(f.id)
-            if var cached = bodies[f.id], cached.feature == f {
+            if var cached = bodies[f.id], cached.feature == f, cached.snapshot.positions == body.positions,
+               cached.snapshot.triangles == body.triangles {
                 cached.snapshot = body          // same geometry, newer revision
                 next[f.id] = cached
             } else {
