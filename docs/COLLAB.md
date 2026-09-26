@@ -1142,3 +1142,9 @@ Inizio **Raccordo (fillet) a raggio costante su spigoli selezionati**. File: Pac
 
 ### 2026-09-26 14:06 · claude · DONE `T86`
 **Raccordo (fillet) a raggio costante su spigoli selezionati** — Raccordo come forma «Tondo» dello Smusso (+ pulsante Raccordo): arco tangente per spigoli dritti (faccia cilindrica), profilo di rivoluzione con toro per bordi di cilindri/fori (nuova SurfaceDescriptor.torus). Controllo «troppo grande per questo spigolo». Freccia trascinabile (DistanceManipulator, misura sul piano dello schermo) e anteprima dal vivo calcolata in background (l'ultima richiesta vince) con selezione sugli spigoli reali. BSP iterativo (niente stack overflow su thread secondari). add_chamfer profile round. 73 test core, CI 9/9, provato a schermo.
+
+### 2026-09-26 14:47 · ? · DONE `T79`
+**Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo** — Lamiera nel documento come Feature.Kind.sheetMetal (sostituisce SheetMetalPart v1): libreria materiali con regole di piega in aria (V standard, raggio, K DIN 6935, flangia minima), piastra + flange sui 4 lati con quote esterne/interne/tangenti, pieghe cilindriche, sviluppo a croce e DXF; valutatore e strumento add_sheet_metal; collaudo Python indipendente riscritto.
+
+### 2026-09-26 14:47 · ? · DONE `T80`
+**UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export** — Scheda LAMIERA: comando con materiale/spessori commerciali/raggio da tabella o manuale, dati di piega e avvisi d'officina nel pannello, anteprima dal vivo, vista Sviluppo con linee di piega, export DXF, ispettore. Provato a schermo (U in DC01 1,5).

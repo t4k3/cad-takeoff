@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 14:06. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 14:47. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -124,8 +124,8 @@ flowchart LR
     T78["T78 · Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF<br/><i>codex</i>"]:::done
   end
   subgraph P19["Altro"]
-    T79["T79 · Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo<br/><i>claude</i>"]:::todo
-    T80["T80 · UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export<br/><i>claude</i>"]:::todo
+    T79["T79 · Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo<br/><i>claude</i>"]:::done
+    T80["T80 · UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export<br/><i>claude</i>"]:::done
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
@@ -414,8 +414,8 @@ flowchart LR
 | T76 | Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology | done | claude | T72, T75 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T77 | Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file | in_progress | claude | T61 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests/SketchTests.swift<br>App/Sources/UI/Sketch<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Sources/Integration/Projects |
 | T78 | Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF | done | codex | T75 | Packages/CADCore/Sources/CADCore/SheetMetal<br>Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift<br>Tests/SheetMetal<br>scripts/test-sheet-metal.sh<br>scripts/ci.sh<br>docs/requirements/SHEET_METAL.md<br>docs/requirements/SHEET_METAL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
-| T79 | Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo | todo | claude | T78, T77 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>Tests/SheetMetalIntegration<br>scripts/test-sheet-metal-integration.sh<br>docs/requirements/SHEET_METAL_V1.md |
-| T80 | UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export | todo | claude | T79, T25 | App/Sources/UI/SheetMetal<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport<br>App/Sources/Integration/Projects |
+| T79 | Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo | done | claude | T78, T77 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>Tests/SheetMetalIntegration<br>scripts/test-sheet-metal-integration.sh<br>docs/requirements/SHEET_METAL_V1.md |
+| T80 | UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export | done | claude | T79, T25 | App/Sources/UI/SheetMetal<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport<br>App/Sources/Integration/Projects |
 | T81 | Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura | done | claude | — | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>App/Sources/UI<br>App/Sources/Integration/Projects |
 | T82 | Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1 | done | claude | T81 | Packages/CADCore<br>App/Sources<br>Tests |
 | T83 | Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana | done | claude | T82 | Packages/CADCore/Sources/CADCore/Features<br>App/Sources/UI |

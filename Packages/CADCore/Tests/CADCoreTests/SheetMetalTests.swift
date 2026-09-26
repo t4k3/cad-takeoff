@@ -2,184 +2,113 @@ import Foundation
 import Testing
 @testable import CADCore
 
-@Suite struct SheetMetalTests {
-    private func rule(k: Double = 0.4) throws -> SheetMetalRule {
-        try .init(name: "Fixture, non calibrata", thickness: 2, insideRadius: 3, kFactor: k)
-    }
-    private func base() throws -> SheetMetalPart {
-        try .init(name: "Staffa L", rule: rule(), width: 40, baseLength: 60)
-    }
-    private func bracket(direction: SheetMetalBendDirection = .up, segments: Int = 24) throws -> SheetMetalPart {
-        try base().addingFlange(.init(length: 30, angleDegrees: 90, direction: direction, bendSegments: segments))
-    }
+/// Area of an annular sector drawn with n chords (the folded body's bend section).
+private func bendSection(_ r: Double, _ t: Double, _ theta: Double, _ n: Int) -> Double {
+    Double(n) / 2 * sin(theta / Double(n)) * ((r + t) * (r + t) - r * r)
+}
 
-    @Test func baseIsAClosedPlateWithExactFlatOutline() throws {
-        let part = try base(), result = try SheetMetalEngine.rebuild(part)
-        try result.foldedBody.validate()
-        #expect(result.foldedBody.vertices.count == 8 && result.foldedBody.faces.count == 6)
-        #expect(result.foldedBody.mesh.bounds?.min == Vec3(-60, -20, 0))
-        #expect(result.foldedBody.mesh.bounds?.max == Vec3(0, 20, 2))
-        #expect(abs(result.foldedBody.mesh.volume - 4800) < 1e-8)
-        #expect(result.flatPattern.bendZones.isEmpty)
-        #expect(result.flatPattern.developedLength == 60 && result.flatPattern.blankArea == 2400)
-        #expect(result.flatPattern.isCurrent(for: part))
-        #expect(MeshValidator.validate(result.foldedBody.mesh).isWatertight)
-        #expect(MeshValidator.validate(result.flatPattern.mesh).isWatertight)
-    }
+private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignEvaluator.Body?, [DesignEvaluator.Issue]) {
+    let f = Feature(name: "Lamiera", kind: .sheetMetal(spec))
+    let (bodies, issues) = DesignEvaluator.evaluate(CADDocument(features: [f] + extra), revision: "r")
+    return (bodies.first, issues)
+}
 
-    @Test func rightAngleBracketMatchesSectionAndNeutralLength() throws {
-        let part = try bracket(), result = try SheetMetalEngine.rebuild(part)
-        let body = result.foldedBody, flat = result.flatPattern
-        // Straight dimensions are 60 and 30 from tangencies. R=3, t=2, K=0.4.
-        let allowance = Double.pi / 2 * 3.8
-        #expect(abs(flat.developedLength - (90 + allowance)) < 1e-12)
-        #expect(flat.bendZones.count == 1 && flat.bendZones[0].startX == 0)
-        #expect(abs(flat.bendZones[0].centerX - allowance / 2) < 1e-12)
-        #expect(body.mesh.bounds?.min == Vec3(-60, -20, 0))
-        #expect(abs(body.mesh.bounds!.max.x - 5) < 1e-12)
-        #expect(abs(body.mesh.bounds!.max.z - 35) < 1e-12)
-        let chordArea = 24 * sin(.pi / 48) * (25.0 - 9.0) / 2
-        #expect(abs(body.mesh.volume - 40 * (2 * 90 + chordArea)) < 1e-7)
-        #expect(abs(flat.mesh.volume - 40 * 2 * flat.developedLength) < 1e-8)
-        #expect(abs(body.maximumSurfaceDeviation - 5 * (1 - cos(.pi / 96))) < 1e-14)
-        // The two annular arcs have radial thickness 2 at their vertices.
-        let positions = body.vertices.map(\.position)
-        #expect(positions.contains { abs($0.x - 3) < 1e-12 && abs($0.z - 5) < 1e-12 })
-        #expect(positions.contains { abs($0.x - 5) < 1e-12 && abs($0.z - 5) < 1e-12 })
-        try body.validate()
-        #expect(MeshValidator.validate(body.mesh).isWatertight)
-        let data = try ThreeMFExporter.archive(parts: [.init(id: part.id, name: part.name, mesh: body.mesh)])
-        #expect(data.starts(with: [0x50, 0x4b, 0x03, 0x04]))
-    }
+@Test func materialRulesFollowPressBrakePractice() throws {
+    let dc01 = SheetMaterial.named("dc01")!
+    #expect(dc01.vDie(thickness: 1) == 8 && dc01.insideRadius(thickness: 1) == 1.3 && dc01.minimumFlange(thickness: 1) == 6.5)
+    #expect(dc01.vDie(thickness: 2) == 16 && dc01.insideRadius(thickness: 2) == 2.6)
+    // DIN 6935: k = 0.65 + 0.5·log10(r/t), K = k/2 → r = t gives 0.325, r ≥ 5t gives 0.5.
+    #expect(abs(SheetMaterial.kFactor(insideRadius: 2, thickness: 2) - 0.325) < 1e-12)
+    #expect(SheetMaterial.kFactor(insideRadius: 20, thickness: 2) == 0.5)
+    // Stainless springs back more (larger radius), hard 6082-T6 needs ≥ 3t.
+    #expect(SheetMaterial.named("aisi304")!.insideRadius(thickness: 1.5) == 2.6)
+    #expect(SheetMaterial.named("al6082")!.insideRadius(thickness: 2) == 6)
+    #expect(SheetMaterial.named("s235")!.vDie(thickness: 5) == 50)
+    let rule = try SheetMetalSpec(material: "dc01", thickness: 1).rule()
+    #expect(rule.radiusIsDefault && abs(rule.kFactor - (0.65 + 0.5 * log10(1.3)) / 2) < 1e-12)
+    let custom = try SheetMetalSpec(material: "dc01", thickness: 1, radiusOverride: 2, kOverride: 0.4).rule()
+    #expect(custom.insideRadius == 2 && custom.kFactor == 0.4 && !custom.radiusIsDefault)
+}
 
-    @Test func downBendPreservesWindingAndFlatGeometry() throws {
-        let up = try SheetMetalEngine.rebuild(bracket())
-        let down = try SheetMetalEngine.rebuild(bracket(direction: .down))
-        try down.foldedBody.validate()
-        #expect(abs(up.foldedBody.mesh.volume - down.foldedBody.mesh.volume) < 1e-8)
-        #expect(abs(down.foldedBody.mesh.bounds!.min.z + 33) < 1e-12)
-        #expect(abs(down.foldedBody.mesh.bounds!.max.z - 2) < 1e-12)
-        #expect(up.flatPattern.outline == down.flatPattern.outline)
-        #expect(down.flatPattern.bendZones[0].direction == .down)
-    }
+@Test func flatPlateIsAClosedBox() throws {
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 80, depth: 50)
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID())
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight && abs(mesh.volume - 8000) < 1e-6)
+    #expect(build.flat.outline.count == 4 && abs(build.flat.area - 4000) < 1e-9 && build.flat.bends.isEmpty)
+}
 
-    @Test func flatLengthDoesNotDependOnDisplayTessellation() throws {
-        let part = try bracket(segments: 8)
-        let coarse = try SheetMetalEngine.rebuild(part)
-        let finePart = try part.editingFlange(.init(length: 30, angleDegrees: 90, bendSegments: 60))
-        let fine = try SheetMetalEngine.rebuild(finePart)
-        #expect(coarse.flatPattern.developedLength == fine.flatPattern.developedLength)
-        #expect(coarse.foldedBody.maximumSurfaceDeviation > fine.foldedBody.maximumSurfaceDeviation)
-        let analytic = 40 * (180 + Double.pi / 4 * 16)
-        #expect(abs(fine.foldedBody.mesh.volume - analytic) < abs(coarse.foldedBody.mesh.volume - analytic))
-    }
+@Test func lBracketFromOutsideDimensions() throws {
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 40, depth: 60, flanges: [.front: SheetFlange(length: 30)])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID())
+    let r = 2.6, t = 2.0, k = build.rule.kFactor
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    // Outside dimensions: 40 wide, 60 deep, 30 tall (outer mould lines).
+    let b = mesh.bounds!
+    #expect(abs(b.min.y + 30) < 1e-9 && abs(b.max.y - 30) < 1e-9 && abs(b.max.z - 30) < 1e-9 && abs(b.min.z) < 1e-9)
+    let setback = r + t, straight = 30 - setback, plate = 60 - setback
+    let volume = 40 * (plate * t + bendSection(r, t, .pi / 2, 16) + straight * t)
+    #expect(abs(mesh.volume - volume) < 1e-6)
+    // Blank: plate + bend allowance on the neutral line + straight flange.
+    let allowance = .pi / 2 * (r + k * t)
+    #expect(abs(build.flat.area - 40 * (plate + allowance + straight)) < 1e-9)
+    #expect(build.flat.bends.count == 1 && build.flat.bends[0].tangents.count == 2)
+    #expect(abs(build.flat.bends[0].line.0.y - (-30 + setback - allowance / 2)) < 1e-9)
+    // Bends are real cylinders in the folded body.
+    let body = evaluate(spec).0!
+    #expect(body.snapshot.faces.contains { if case let .cylinder(_, _, radius) = $0.surface { abs(radius - (r + t)) < 1e-12 } else { false } })
+}
 
-    @Test func savedOperationsReplayWithStableOperationIDs() throws {
-        let original = try bracket()
-        let reopened = try SheetMetalPart.decode(original.encoded())
-        #expect(original == reopened)
-        let before = try SheetMetalEngine.rebuild(original)
-        let after = try SheetMetalEngine.rebuild(reopened)
-        #expect(before.foldedBody.mesh == after.foldedBody.mesh)
-        #expect(before.flatPattern == after.flatPattern)
-        let resized = try original.editingBase(width: 55, length: 80)
-        #expect(resized.operations.map(\.id) == original.operations.map(\.id))
-        #expect(resized.revision == original.revision + 1)
-        let edited = try resized.editingFlange(.init(length: 15, angleDegrees: 45))
-        #expect(edited.operations[1].id == original.operations[1].id)
-        #expect(try SheetMetalEngine.rebuild(edited).flatPattern.developedLength > 95)
-    }
+@Test func trayWithFourFlangesAndDownBend() throws {
+    var tray = SheetMetalSpec(material: "aisi304", thickness: 1.5, width: 120, depth: 80)
+    for e in SheetEdge.allCases { tray[e] = SheetFlange(length: 20) }
+    let build = try SheetMetalGeometry.build(tray, featureID: UUID())
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    #expect(abs(mesh.bounds!.max.x - 60) < 1e-9 && abs(mesh.bounds!.max.z - 20) < 1e-9)
+    #expect(build.flat.outline.count == 12 && build.flat.bends.count == 4)
+    // Cross-shaped blank: plate + 4 strips, no overlap (open corners).
+    let r = build.rule.insideRadius, t = 1.5, sb = r + t
+    let reach = .pi / 2 * (r + build.rule.kFactor * t) + (20 - sb)
+    let plateW = 120 - 2 * sb, plateD = 80 - 2 * sb
+    #expect(abs(build.flat.area - (plateW * plateD + 2 * reach * plateW + 2 * reach * plateD)) < 1e-9)
+    #expect(MeshValidator.validate(SheetMetalGeometry.flatMesh(build.flat)).isWatertight)
 
-    @Test func suppressionAndRollbackKeepOriginalHistory() throws {
-        let part = try bracket()
-        let suppressed = try part.suppressingFlange(true)
-        #expect(suppressed.operations.count == 2 && suppressed.operations[1].isSuppressed)
-        #expect(try SheetMetalEngine.rebuild(suppressed).flatPattern.developedLength == 60)
-        #expect(try suppressed.suppressingFlange(true) == suppressed)
-        let restored = try suppressed.suppressingFlange(false)
-        #expect(try SheetMetalEngine.rebuild(restored).foldedBody.mesh == SheetMetalEngine.rebuild(part).foldedBody.mesh)
-        let rolled = try part.rolledBack(through: part.operations[0].id)
-        #expect(rolled.operations.count == 1 && part.operations.count == 2)
-        #expect(rolled.operations[0].id == part.operations[0].id)
-        #expect(try SheetMetalEngine.rebuild(rolled).foldedBody.faces.count == 6)
-        #expect(throws: SheetMetalError.self) { try part.rolledBack(through: UUID()) }
-    }
+    let z = SheetMetalSpec(material: "dc01", thickness: 2, width: 40, depth: 60,
+                           flanges: [.back: SheetFlange(length: 25, direction: .down)])
+    let down = try SheetMetalGeometry.build(z, featureID: UUID()).folded.triangulated().mesh
+    #expect(MeshValidator.validate(down).isWatertight)
+    #expect(abs(down.bounds!.min.z - (2 - 25)) < 1e-9 && abs(down.bounds!.max.z - 2) < 1e-9)
+}
 
-    @Test func ruleChangesInvalidateDerivedPatternAndAffectGeometry() throws {
-        let part = try bracket(), old = try SheetMetalEngine.rebuild(part)
-        let changedRule = try part.rule.revised(thickness: 3, insideRadius: 4, kFactor: 0.5)
-        let changed = try part.replacingRule(changedRule)
-        let rebuilt = try SheetMetalEngine.rebuild(changed)
-        #expect(changedRule.id == part.rule.id && changedRule.revision == part.rule.revision + 1)
-        #expect(rebuilt.flatPattern.ruleRevision == changedRule.revision)
-        #expect(!old.flatPattern.isCurrent(for: changed) && rebuilt.flatPattern.isCurrent(for: changed))
-        #expect(abs(rebuilt.flatPattern.developedLength - (90 + .pi / 2 * 5.5)) < 1e-12)
-        #expect(abs(rebuilt.foldedBody.mesh.bounds!.max.z - 37) < 1e-12)
-        #expect(throws: SheetMetalError.staleFlatPattern) { try SheetMetalDXF.export(old.flatPattern, for: changed) }
-        let reused = try SheetMetalRule(id: part.rule.id, revision: part.rule.revision, name: "bad", thickness: 3, insideRadius: 3, kFactor: 0.4)
-        #expect(throws: SheetMetalError.self) { try part.replacingRule(reused) }
-    }
+@Test func workshopChecks() throws {
+    // Shorter than the bend itself: impossible.
+    let tiny = SheetMetalSpec(material: "dc01", thickness: 2, width: 40, depth: 60, flanges: [.front: SheetFlange(length: 4)])
+    #expect(throws: SheetMetalError.self) { try SheetMetalGeometry.build(tiny, featureID: UUID()) }
+    // Possible but below the press-brake minimum: warned.
+    let short = SheetMetalSpec(material: "dc01", thickness: 2, width: 40, depth: 60, flanges: [.front: SheetFlange(length: 8)])
+    let w = try SheetMetalGeometry.build(short, featureID: UUID()).warnings
+    #expect(w.contains { $0.contains("minimo piegabile") && $0.contains("V16") })
+    let hard = SheetMetalSpec(material: "al6082", thickness: 2, width: 40, depth: 60, flanges: [.front: SheetFlange(length: 20)], radiusOverride: 2)
+    #expect(try SheetMetalGeometry.build(hard, featureID: UUID()).warnings.contains { $0.contains("cricche") })
+    #expect(throws: SheetMetalError.self) { try SheetMetalSpec(material: "legno").rule() }
+    let (_, issues) = evaluate(SheetMetalSpec(material: "dc01", thickness: 2, width: 5, depth: 5,
+                                              flanges: [.front: SheetFlange(length: 20), .back: SheetFlange(length: 20)]))
+    #expect(issues.contains { $0.message.contains("base troppo piccola") })
+}
 
-    @Test func dxfSeparatesCutBendAndTangentLayers() throws {
-        for direction in [SheetMetalBendDirection.up, .down] {
-            let part = try bracket(direction: direction), flat = try SheetMetalEngine.rebuild(part).flatPattern
-            let dxf = try SheetMetalDXF.export(flat, for: part)
-            #expect(dxf.contains("9\n$INSUNITS\n70\n4\n"))
-            #expect(dxf.contains("0\nLWPOLYLINE\n100\nAcDbEntity\n8\nCUT\n"))
-            #expect(dxf.contains("90\n4\n70\n1\n"))
-            #expect(dxf.contains("8\n\(direction == .up ? "BEND_UP" : "BEND_DOWN")\n100\nAcDbLine"))
-            #expect(dxf.components(separatedBy: "0\nLINE\n").count - 1 == 3)
-            #expect(dxf.hasSuffix("0\nEOF\n"))
-        }
-        let plate = try base(), flat = try SheetMetalEngine.rebuild(plate).flatPattern
-        #expect(try !SheetMetalDXF.export(flat, for: plate).contains("0\nLINE\n"))
-    }
-
-    @Test func invalidInputNeverProducesAPartOrSilentCorrection() throws {
-        for value in [Double.nan, .infinity, -1, 0, 0.001, 10_001] {
-            #expect(throws: SheetMetalError.self) { try SheetMetalRule(name: "x", thickness: value, insideRadius: 3, kFactor: 0.4) }
-            #expect(throws: SheetMetalError.self) { try base().editingBase(width: value, length: 40) }
-        }
-        for k in [Double.nan, .infinity, -0.001, 1.001] {
-            #expect(throws: SheetMetalError.self) { try rule(k: k) }
-        }
-        for angle in [Double.nan, .infinity, -90, 0, 4.99, 135.01, 180] {
-            #expect(throws: SheetMetalError.self) { try base().addingFlange(.init(length: 20, angleDegrees: angle)) }
-        }
-        #expect(throws: SheetMetalError.self) { try bracket().addingFlange(.init(length: 10, angleDegrees: 90)) }
-        #expect(throws: SheetMetalError.self) { try base().addingFlange(.init(length: 10, angleDegrees: 90, bendSegments: Int.max)) }
-    }
-
-    @Test func alteredAndFutureDocumentsAreRejectedOrInvalidatePattern() throws {
-        let part = try bracket(), flat = try SheetMetalEngine.rebuild(part).flatPattern
-        var object = try JSONSerialization.jsonObject(with: part.encoded()) as! [String: Any]
-        object["version"] = 99
-        #expect(throws: SheetMetalError.self) { try SheetMetalPart.decode(JSONSerialization.data(withJSONObject: object)) }
-        object["version"] = 1
-        var storedRule = object["rule"] as! [String: Any]
-        storedRule["thickness"] = 4
-        object["rule"] = storedRule
-        let altered = try SheetMetalPart.decode(JSONSerialization.data(withJSONObject: object))
-        #expect(altered.revision == part.revision && !flat.isCurrent(for: altered))
-        #expect(throws: SheetMetalError.staleFlatPattern) { try SheetMetalDXF.export(flat, for: altered) }
-        storedRule["kFactor"] = 2; object["rule"] = storedRule
-        // Also reject invalid values decoded via the standard synthesized Codable path at rebuild.
-        let invalid = try JSONDecoder().decode(SheetMetalPart.self, from: JSONSerialization.data(withJSONObject: object))
-        #expect(throws: SheetMetalError.self) { try SheetMetalEngine.rebuild(invalid) }
-    }
-
-    @Test func parameterSweepKeepsClosedGeometryAndAnalyticFlatLength() throws {
-        for angle in [15.0, 45, 90, 120, 135] {
-            for direction in [SheetMetalBendDirection.up, .down] {
-                for k in [0.0, 0.5, 1] {
-                    let p = try SheetMetalPart(name: "Sweep", rule: rule(k: k), width: 12, baseLength: 18)
-                        .addingFlange(.init(length: 9, angleDegrees: angle, direction: direction, bendSegments: 12))
-                    let r = try SheetMetalEngine.rebuild(p)
-                    try r.foldedBody.validate()
-                    #expect(MeshValidator.validate(r.foldedBody.mesh).isWatertight)
-                    #expect(abs(r.flatPattern.developedLength - (27 + angle * .pi / 180 * (3 + k * 2))) < 1e-12)
-                }
-            }
-        }
-    }
+@Test func sheetMetalInTheDesign() throws {
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 40, depth: 60, flanges: [.front: SheetFlange(length: 30)])
+    let sheet = Feature(name: "Staffa", kind: .sheetMetal(spec), position: Vec3(10, 0, 0))
+    // A hole through the plate cuts the folded part like any body.
+    let hole = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(10, 10, 2)], fit: .clearance, size: "M4")), operation: .cut)
+    let (bodies, issues) = DesignEvaluator.evaluate(CADDocument(features: [sheet, hole]), revision: "r")
+    #expect(issues.isEmpty && bodies.count == 1 && MeshValidator.validate(bodies[0].mesh).isWatertight)
+    #expect(bodies[0].mesh.volume < sheet.buildMesh().volume - 30)
+    let doc = CADDocument(features: [sheet])
+    #expect(try CADDocument.decode(doc.encoded()) == doc)
+    let dxf = SheetMetalDXF.export(try SheetMetalGeometry.build(spec, featureID: sheet.id).flat, rule: try spec.rule(), name: "Staffa")
+    #expect(dxf.contains("BEND_UP") && dxf.contains("$INSUNITS") && dxf.hasSuffix("EOF\n"))
+    #expect(dxf.components(separatedBy: "\nLINE\n").count - 1 == 3)
 }

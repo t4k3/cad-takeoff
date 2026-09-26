@@ -25,6 +25,9 @@ public enum PrimitiveKernel {
         case let .hole(spec):
             try spec.validate()
             throw KernelError.invalidParameter("il foro è un taglio: viene calcolato dal valutatore")
+        case let .sheetMetal(spec):
+            _ = try spec.rule()
+            throw KernelError.invalidParameter("la lamiera viene calcolata dal valutatore")
         case let .chamfer(spec):
             try spec.validate()
             throw KernelError.invalidParameter("lo smusso modifica un corpo esistente: viene calcolato dal valutatore")

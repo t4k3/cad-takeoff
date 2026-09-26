@@ -95,16 +95,26 @@ public enum DesignEvaluator {
                 }
                 continue
             }
-            let brep: BRepBody
-            do { brep = try PrimitiveKernel.build(feature) } catch {
-                issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+            // The feature's own solid: exact kernel B-rep for primitives, CSG for sheet metal.
+            let fresh: Work
+            if case let .sheetMetal(spec) = feature.kind {
+                let solid: CSGSolid
+                do { solid = try SheetMetalGeometry.build(spec, featureID: feature.id, position: feature.position).folded } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                let (mesh, triFace) = solid.triangulated()
+                fresh = Work(source: feature, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: feature.id, revision: revision),
+                             solid: solid, mesh: mesh, modifiedBy: [])
+            } else {
+                let brep: BRepBody
+                do { brep = try PrimitiveKernel.build(feature) } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                fresh = Work(source: feature, snapshot: brep.snapshot(revision: revision), solid: nil, mesh: brep.mesh, modifiedBy: [])
             }
-            let snap = brep.snapshot(revision: revision)
-            guard feature.operation != .newBody else {
-                bodies.append(Work(source: feature, snapshot: snap, solid: nil, mesh: brep.mesh, modifiedBy: []))
-                continue
-            }
-            let tool = CSGSolid(snap)
+            let snap = fresh.snapshot
+            guard feature.operation != .newBody else { bodies.append(fresh); continue }
+            let tool = solidOf(fresh)
             let toolBox = bounds(snap)
             let touched = bodies.indices.filter { overlaps(bounds(bodies[$0].snapshot), toolBox) }
             switch feature.operation {
@@ -113,7 +123,7 @@ public enum DesignEvaluator {
             case .join:
                 guard let first = touched.first else {
                     // Touches nothing: behaves like a new body (as in Fusion).
-                    bodies.append(Work(source: feature, snapshot: snap, solid: nil, mesh: brep.mesh, modifiedBy: []))
+                    bodies.append(fresh)
                     continue
                 }
                 var solid = solidOf(bodies[first]).union(tool)

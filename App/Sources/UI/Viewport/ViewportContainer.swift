@@ -171,7 +171,8 @@ struct ViewportContainer: View {
     }
 
     private var metal: some View {
-    MetalViewport(features: model.document.activeFeatures, snapshot: workspace.previewSnapshot ?? model.snapshot(),
+    MetalViewport(features: workspace.previewSnapshot == nil ? model.document.activeFeatures : workspace.previewFeatures,
+                  snapshot: displayedSnapshot,
                   // In face/edge mode only the picked face/edge is highlighted, not the whole body.
                   selection: workspace.selectionFilter == .body ? model.selection : nil,
                   hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,
@@ -190,6 +191,23 @@ struct ViewportContainer: View {
                       viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
                       DispatchQueue.main.async { viewport.fitOnce() }
                   })
+    }
+
+    /// Command preview, flat patterns (LAMIERA › Sviluppo) or the design.
+    private var displayedSnapshot: DesignSnapshot {
+        if let preview = workspace.previewSnapshot { return preview }
+        if workspace.showFlat, model.hasSheetMetal { return model.flatView().snapshot }
+        return model.snapshot()
+    }
+
+    /// Bend lines on the flat patterns: red = up, blue = down; tangents faint.
+    private var flatLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
+        guard workspace.showFlat, workspace.previewSnapshot == nil, model.hasSheetMetal else { return [] }
+        func f(_ v: Vec3) -> SIMD3<Float> { SIMD3(Float(v.x), Float(v.y), Float(v.z)) }
+        return model.flatView().bends.map { a, b, direction, centre in
+            let c: SIMD4<Float> = direction == .up ? SIMD4(0.95, 0.3, 0.25, 1) : SIMD4(0.25, 0.55, 1, 1)
+            return (f(a), f(b), centre ? c : c * SIMD4(1, 1, 1, 0.45))
+        }
     }
 
     // MARK: Viewport input
@@ -380,7 +398,7 @@ struct ViewportContainer: View {
     // MARK: Sketch overlays
 
     private var sketchLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
-        savedSketchLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
+        savedSketchLines + flatLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
                                   previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
     }

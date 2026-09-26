@@ -60,6 +60,8 @@ enum CADToolValidation {
             for c in spec.centers { try coordinate(c.x); try coordinate(c.y); try coordinate(c.z) }
         case let .chamfer(spec):
             do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
+        case let .sheetMetal(spec):
+            do { _ = try SheetMetalGeometry.build(spec, featureID: feature.id) } catch { throw CADToolFailure(error.localizedDescription) }
         }
     }
     static func mesh(_ mesh: Mesh) throws {

@@ -18,16 +18,21 @@ struct CommandPanel: View {
             .background(Theme.Palette.panel)
             Divider()
 
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach($session.fields) { $field in
-                    row($field)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach($session.fields) { $field in
+                        if !field.isHidden { row($field) }
+                    }
+                    if let message = session.message {
+                        Label(message, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption).foregroundStyle(Theme.Palette.danger)
+                    }
                 }
-                if let message = session.message {
-                    Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption).foregroundStyle(Theme.Palette.danger)
-                }
+                .padding(12)
             }
-            .padding(12)
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxHeight: 560)
+            .fixedSize(horizontal: false, vertical: true)
 
             Divider()
             HStack {
@@ -77,6 +82,15 @@ struct CommandPanel: View {
                 .font(Theme.Typeface.body)
             case let .reference(prompt, _):
                 referenceRow(f, prompt: prompt)
+            case let .note(warning):
+                if warning {
+                    Label(f.label, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption).foregroundStyle(Color.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(f.label).font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             if let msg = f.validationMessage, !isReference(f) {
                 Text(msg).font(.caption2).foregroundStyle(Theme.Palette.danger)

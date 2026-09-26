@@ -112,7 +112,6 @@ struct TimelineBar: View {
         .onHover { workspace.hovered = $0 ? item.id : (workspace.hovered == item.id ? nil : workspace.hovered) }
         .contextMenu {
             Button(item.sketch != nil ? "Modifica schizzo" : "Modifica…") { edit(item) }
-                .disabled(item.sheetMetal != nil)
             Button(item.isSuppressed ? "Ripristina" : "Sopprimi") { model.setSuppressed(item.id, !item.isSuppressed) }
             Button("Porta il marker dopo questo passo") { model.moveRollback(to: index + 1) }
             Divider()
@@ -133,7 +132,6 @@ struct TimelineBar: View {
         switch item.content {
         case let .feature(f): f.kind.symbol
         case .sketch: "pencil.and.outline"
-        case .sheetMetal: "rectangle.portrait.and.arrow.right"
         }
     }
 
@@ -145,7 +143,6 @@ struct TimelineBar: View {
         let kind = switch item.content {
         case let .feature(f): f.kind.typeName
         case .sketch: "Schizzo"
-        case .sheetMetal: "Lamiera"
         }
         let state = item.isSuppressed ? " — soppresso" : (active ? "" : " — dopo il marker")
         return "\(index + 1). \(item.name) — \(kind)\(state). Doppio clic per modificare."

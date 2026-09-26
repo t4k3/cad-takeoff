@@ -12,6 +12,8 @@ struct CommandField: Identifiable, Equatable {
         case choice([String])
         /// Geometry to pick in the viewport (faces, edges, profiles…).
         case reference(prompt: String, maxCount: Int)
+        /// Read-only text (the label): computed data or a workshop warning.
+        case note(warning: Bool)
     }
 
     enum Value: Equatable {
@@ -26,6 +28,8 @@ struct CommandField: Identifiable, Equatable {
     var kind: Kind
     var value: Value
     var help: String?
+    /// Not relevant with the current choices (e.g. flange fields while no side has a flange).
+    var isHidden = false
 
     var number: Double { if case let .number(v) = value { v } else { 0 } }
 
@@ -73,7 +77,15 @@ final class CommandSession: Identifiable {
         activeReference = fields.first { if case .reference = $0.kind { true } else { false } }?.id
     }
 
-    var isValid: Bool { fields.allSatisfy { $0.validationMessage == nil } }
+    var isValid: Bool { fields.allSatisfy { $0.isHidden || $0.validationMessage == nil } }
+
+    /// Updates a field in place (label, options, value, visibility) only when something changes.
+    func update(_ id: String, _ change: (inout CommandField) -> Void) {
+        guard let i = fields.firstIndex(where: { $0.id == id }) else { return }
+        var f = fields[i]
+        change(&f)
+        if f != fields[i] { fields[i] = f }
+    }
 
     subscript(_ id: String) -> CommandField? { fields.first { $0.id == id } }
 }

@@ -51,6 +51,7 @@ struct Ribbon: View {
                 switch workspace.tab {
                 case .solid: solidTools
                 case .sketch: sketchTools
+                case .sheetMetal: sheetMetalTools
                 case .print: printTools
                 }
                 Spacer()
@@ -82,6 +83,37 @@ struct Ribbon: View {
             Button(role: .destructive) { model.deleteSelected() } label: { Label("Elimina", systemImage: "trash") }
                 .disabled(model.selection == nil)
                 .help("Elimina la feature selezionata (⌫)")
+        }
+    }
+
+    /// The selected sheet-metal part, if the selection is one.
+    private var selectedSheet: Feature? {
+        guard let id = model.selection, let f = model.document.features.first(where: { $0.id == id }),
+              case .sheetMetal = f.kind else { return nil }
+        return f
+    }
+
+    @ViewBuilder private var sheetMetalTools: some View {
+        ToolGroup("CREA") {
+            Button { workspace.startSheetMetal(model: model) } label: { Label("Lamiera", systemImage: "square.stack.3d.down.forward") }
+                .help("Nuova lamiera piegata: materiale, spessore, ingombro esterno e flange sui lati")
+        }
+        ToolGroup("MODIFICA") {
+            Button { if let f = selectedSheet { workspace.startSheetMetal(model: model, editing: f) } } label: {
+                Label("Modifica", systemImage: "slider.horizontal.3")
+            }
+            .disabled(selectedSheet == nil)
+            .help("Modifica la lamiera selezionata (anche doppio clic nella timeline)")
+        }
+        ToolGroup("SVILUPPO") {
+            Button { workspace.showFlat.toggle() } label: {
+                Label(workspace.showFlat ? "Piegato" : "Sviluppo", systemImage: workspace.showFlat ? "cube" : "square.dashed")
+            }
+            .disabled(!model.hasSheetMetal)
+            .help(workspace.showFlat ? "Torna al pezzo piegato" : "Mostra lo sviluppo in piano con le linee di piega")
+            Button { model.exportFlatDXFWithPanel(selectedSheet?.id) } label: { Label("DXF", systemImage: "square.and.arrow.up") }
+                .disabled(!model.hasSheetMetal)
+                .help("Esporta lo sviluppo in DXF (mm): contorno di taglio e linee di piega per il laser e la piegatrice")
         }
     }
 

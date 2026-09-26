@@ -114,9 +114,29 @@ struct InspectorPanel: View {
                 DimensionField(title: "Distanza 2", value: Binding(get: { spec.distance2 }, set: { var s = spec; s.distance2 = $0; kind.wrappedValue = .chamfer(s) }))
             }
             if spec.profile == .flat, spec.mode == .distanceAngle { info("Angolo", String(format: "%.0f°", spec.angle)) }
+        case let .sheetMetal(spec):
+            if let rule = try? spec.rule() {
+                info("Materiale", rule.material.name)
+                info("Spessore", SheetMetalCommand.mm(rule.thickness) + " mm")
+                info("Raggio interno", SheetMetalCommand.mm(rule.insideRadius) + " mm" + (rule.radiusIsDefault ? " (tabella)" : ""))
+                info("K-factor", String(format: "%.3f", rule.kFactor))
+                info("Matrice", "V" + SheetMetalCommand.mm(rule.vDie))
+            }
+            info("Ingombro", SheetMetalCommand.mm(spec.width) + " × " + SheetMetalCommand.mm(spec.depth) + " mm")
+            info("Flange", SheetEdge.allCases.filter { spec[$0] != nil }.map(\.label).joined(separator: ", ").ifEmpty("nessuna"))
+            Button("Modifica lamiera…") {
+                if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) {
+                    workspace.startSheetMetal(model: model, editing: f)
+                }
+            }
+            .controlSize(.small)
         case let .extrude(p, h):
             info("Profilo", "\(p.points.count) vertici")
             DimensionField(title: "Altezza", value: Binding(get: { h }, set: { kind.wrappedValue = .extrude(profile: p, height: $0) }))
         }
     }
+}
+
+private extension String {
+    func ifEmpty(_ fallback: String) -> String { isEmpty ? fallback : self }
 }

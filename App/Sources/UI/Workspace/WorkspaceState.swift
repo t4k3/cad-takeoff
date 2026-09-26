@@ -9,6 +9,7 @@ final class WorkspaceState {
     enum Tab: String, CaseIterable, Identifiable {
         case solid = "SOLIDO"
         case sketch = "SCHIZZO"
+        case sheetMetal = "LAMIERA"
         case print = "STAMPA"
         var id: String { rawValue }
     }
@@ -46,6 +47,8 @@ final class WorkspaceState {
     /// Geometry shown instead of the design while a command previews its result.
     private(set) var previewSnapshot: DesignSnapshot?
     private(set) var previewIssues: [DesignEvaluator.Issue] = []
+    /// Features of the previewed document (a new part is not in the design yet).
+    private(set) var previewFeatures: [Feature] = []
     @ObservationIgnored private var pendingPreview: CADDocument?
     @ObservationIgnored private var previewBusy = false
     @ObservationIgnored private var previewGeneration = 0
@@ -73,6 +76,7 @@ final class WorkspaceState {
                 self.previewSnapshot = DesignSnapshot(revision: revision, bodies: result.bodies.filter(\.isVisible).map(\.snapshot),
                                                       issues: result.issues.map { .init(featureID: $0.featureID, message: $0.message) })
                 self.previewIssues = result.issues
+                self.previewFeatures = doc.activeFeatures
             }
             self.runPreview()
         }
@@ -88,6 +92,16 @@ final class WorkspaceState {
         if sketch != nil { exitSketch() }
         command = HoleCommand.start(workspace: self, model: model, editing: feature)
     }
+    /// LAMIERA tab: show sheet-metal parts developed flat (with bend lines) instead of folded.
+    var showFlat = false
+
+    func startSheetMetal(model: DesignModel, editing feature: Feature? = nil) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        showFlat = false
+        command = SheetMetalCommand.start(workspace: self, model: model, editing: feature)
+    }
+
     func startChamfer(model: DesignModel, editing feature: Feature? = nil, profile: ChamferSpec.Profile = .flat) {
         command?.onCancel()
         if sketch != nil { exitSketch() }
@@ -148,6 +162,11 @@ final class WorkspaceState {
             command = HoleCommand.start(workspace: self, model: model, editing: f)
             return
         }
+        if let f = model.document.features.first(where: { $0.id == id }), case .sheetMetal = f.kind {
+            showFlat = false
+            command = SheetMetalCommand.start(workspace: self, model: model, editing: f)
+            return
+        }
         if let f = model.document.features.first(where: { $0.id == id }), case .chamfer = f.kind {
             command = ChamferCommand.start(workspace: self, model: model, editing: f)
             return
@@ -164,6 +183,7 @@ extension Feature.Kind {
         case .extrude: "square.stack.3d.up"
         case .hole: "circle.circle"
         case let .chamfer(s): s.profile == .round ? "circle.bottomhalf.filled" : "skew"
+        case .sheetMetal: "square.stack.3d.down.forward"
         }
     }
 
@@ -174,6 +194,7 @@ extension Feature.Kind {
         case .extrude: "Estrusione"
         case .hole: "Foro"
         case let .chamfer(s): s.profile == .round ? "Raccordo" : "Smusso"
+        case .sheetMetal: "Lamiera"
         }
     }
 }

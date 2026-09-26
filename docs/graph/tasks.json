@@ -1489,7 +1489,7 @@
       "id": "T79",
       "title": "Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo",
       "phase": "Altro",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T78",
         "T77"
@@ -1502,13 +1502,17 @@
         "docs/requirements/SHEET_METAL_V1.md"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": null,
+      "finished": "2026-09-26 14:47",
+      "notes": [
+        "2026-09-26 14:47 ?: Lamiera nel documento come Feature.Kind.sheetMetal (sostituisce SheetMetalPart v1): libreria materiali con regole di piega in aria (V standard, raggio, K DIN 6935, flangia minima), piastra + flange sui 4 lati con quote esterne/interne/tangenti, pieghe cilindriche, sviluppo a croce e DXF; valutatore e strumento add_sheet_metal; collaudo Python indipendente riscritto."
+      ]
     },
     {
       "id": "T80",
       "title": "UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export",
       "phase": "Altro",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T79",
         "T25"
@@ -1520,7 +1524,11 @@
         "App/Sources/Integration/Projects"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": null,
+      "finished": "2026-09-26 14:47",
+      "notes": [
+        "2026-09-26 14:47 ?: Scheda LAMIERA: comando con materiale/spessori commerciali/raggio da tabella o manuale, dati di piega e avvisi d'officina nel pannello, anteprima dal vivo, vista Sviluppo con linee di piega, export DXF, ispettore. Provato a schermo (U in DC01 1,5)."
+      ]
     },
     {
       "id": "T81",

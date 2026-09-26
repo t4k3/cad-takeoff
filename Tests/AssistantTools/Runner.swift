@@ -68,7 +68,7 @@ struct AssistantToolsTests {
         expect(invalidShape.isError, "JSON shape validation")
         let missing = await m.call("get_feature", arguments: ["feature_id": .string(UUID().uuidString)])
         expect(missing.isError, "unknown ID")
-        expect(Set(m.tools.map(\.name)).count == 16, "16 unique tools")
+        expect(Set(m.tools.map(\.name)).count == 17, "17 unique tools")
         let partID = m.document.features[0].id
         let beforeColour = m.document
         let coloured = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "#E53935"])
@@ -170,6 +170,18 @@ struct AssistantToolsTests {
         let roundedVolume: Double = roundInfo.structured?["mesh_volume_mm3"]?.number ?? 0
         expect(roundedVolume < chamferedVolume - 20, "round removes the corners")
         expect(roundInfo.structured?["edge_closed"]?.bool == true, "rounded plate closed")
+        // Sheet metal: U channel in DC01 2 mm with the workshop rule.
+        m.newDesign()
+        let channel = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "width": 100, "depth": 40,
+                                                    "flange_sides": .array(["front", "back"]), "flange_length": 25])
+        let sheetInfo = await m.call("scene_info", arguments: [:])
+        expect(!channel.isError && channel.structured?["inside_radius"]?.number == 2.6, "sheet metal with table radius")
+        expect(sheetInfo.structured?["edge_closed"]?.bool == true && sheetInfo.structured?["body_count"]?.number == 1, "sheet metal body closed")
+        let oddThickness = await edit("add_sheet_metal", ["material": "dc01", "thickness": 1.7, "width": 50, "depth": 50])
+        expect(oddThickness.isError, "non-commercial thickness rejected")
+        let tooShort = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "width": 50, "depth": 50,
+                                                     "flange_sides": .array(["left"]), "flange_length": 3])
+        expect(tooShort.isError, "flange shorter than the bend rejected")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

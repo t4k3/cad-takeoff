@@ -69,6 +69,7 @@ final class DesignModel {
     /// opening another file or quitting never silently drops it.
     @ObservationIgnored var finishPendingEdits: () -> Void = {}
     @ObservationIgnored private var cachedSnapshot: DesignSnapshot?
+    @ObservationIgnored private var cachedFlat: (snapshot: DesignSnapshot, bends: [(Vec3, Vec3, SheetBendDirection, Bool)])?
     @ObservationIgnored private var cachedEvaluation: (revision: String, bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue])?
     var selection: Feature.ID?
     var statusMessage = "Pronto"
@@ -320,6 +321,68 @@ final class DesignModel {
             return ThreeMFPart(id: body.id, name: body.source.name, mesh: body.mesh, color: body.source.color)
         }
         return try ThreeMFExporter.archive(parts: parts)
+    }
+
+    // MARK: Sheet metal (T79)
+
+    var hasSheetMetal: Bool { document.activeFeatures.contains { if case .sheetMetal = $0.kind { true } else { false } } }
+
+    /// The design with every sheet-metal part developed flat (LAMIERA › Sviluppo), and the
+    /// bend lines to draw on it. Cached per revision.
+    func flatView() -> (snapshot: DesignSnapshot, bends: [(Vec3, Vec3, SheetBendDirection, Bool)]) {
+        if let cachedFlat, cachedFlat.snapshot.revision == "flat-" + designRevision { return cachedFlat }
+        let base = snapshot()
+        var bodies = base.bodies
+        var lines: [(Vec3, Vec3, SheetBendDirection, Bool)] = []
+        for (f, build) in sheetParts() {
+            let flat = build.flat
+            let plate = Feature(id: f.id, name: f.name, kind: .extrude(profile: Profile2D(points: flat.outline), height: flat.thickness),
+                                position: flat.origin)
+            guard let brep = try? PrimitiveKernel.build(plate) else { continue }
+            let snap = brep.snapshot(revision: "flat-" + designRevision)
+            if let i = bodies.firstIndex(where: { $0.bodyID == f.id }) { bodies[i] = snap } else { bodies.append(snap) }
+            let z = flat.origin.z + flat.thickness + 0.02
+            func p(_ v: Vec2) -> Vec3 { Vec3(v.x + flat.origin.x, v.y + flat.origin.y, z) }
+            for b in flat.bends {
+                lines.append((p(b.line.0), p(b.line.1), b.direction, true))
+                for tl in b.tangents { lines.append((p(tl.0), p(tl.1), b.direction, false)) }
+            }
+        }
+        let result = (DesignSnapshot(revision: "flat-" + designRevision, bodies: bodies, issues: base.issues), lines)
+        cachedFlat = result
+        return result
+    }
+
+
+    /// Active sheet-metal parts with their bending rule and flat pattern.
+    /// Flat pattern and rule only: the folded solid comes from `evaluation()`.
+    func sheetParts() -> [(feature: Feature, build: SheetMetalBuild)] {
+        document.activeFeatures.compactMap { f in
+            guard case let .sheetMetal(spec) = f.kind,
+                  let build = try? SheetMetalGeometry.build(spec, featureID: f.id, position: f.position, folded: false) else { return nil }
+            return (f, build)
+        }
+    }
+
+    /// DXF of a part's flat pattern (the selected part, or the only one).
+    func flatPatternDXF(_ id: UUID? = nil) throws -> (name: String, dxf: String) {
+        let parts = sheetParts()
+        guard let part = id.flatMap({ id in parts.first { $0.feature.id == id } }) ?? (parts.count == 1 ? parts.first : nil) else {
+            throw CADToolFailure(parts.isEmpty ? "Nessuna lamiera nel disegno." : "Seleziona la lamiera da sviluppare.")
+        }
+        return (part.feature.name, SheetMetalDXF.export(part.build.flat, rule: part.build.rule, name: part.feature.name))
+    }
+
+    func exportFlatDXFWithPanel(_ id: UUID? = nil) {
+        do {
+            let (name, dxf) = try flatPatternDXF(id)
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [UTType(filenameExtension: "dxf") ?? .data]
+            panel.nameFieldStringValue = "\(name) - sviluppo.dxf"
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            try dxf.write(to: url, atomically: true, encoding: .utf8)
+            statusMessage = "Esportato \(url.lastPathComponent) — taglio (CUT) e linee di piega (BEND_UP/BEND_DOWN), in mm"
+        } catch { statusMessage = "Errore export DXF: \(error.localizedDescription)" }
     }
 
     func export3MFWithPanel() {

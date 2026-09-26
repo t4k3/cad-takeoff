@@ -62,11 +62,3 @@ private func box(_ n: String) -> Feature { Feature(name: n, kind: .box(width: 10
     #expect(doc.rollback == 1 && doc.activeFeatures.map(\.name) == ["B"])
 }
 
-@Test func sheetMetalLivesInTheTimeline() throws {
-    let rule = try SheetMetalRule(name: "R", thickness: 2, insideRadius: 3, kFactor: 0.4)
-    let part = try SheetMetalPart(name: "Staffa", rule: rule, width: 40, baseLength: 60)
-    var doc = CADDocument(features: [box("A")])
-    doc.sheetMetalParts.append(part)
-    let back = try CADDocument.decode(doc.encoded())
-    #expect(back.sheetMetalParts == [part] && back.timeline.map(\.name) == ["A", "Staffa"])
-}

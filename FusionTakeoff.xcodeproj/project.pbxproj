@@ -40,6 +40,7 @@
 		89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */; };
 		8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */; };
 		9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891E4E944492E6539912AE18 /* MCPHost.swift */; };
+		94D9C9F09E67E17A68189E85 /* SheetMetalCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98CD345010D437D5502B155 /* SheetMetalCommand.swift */; };
 		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
 		9E390BBDAE0C6659CE5ECBC6 /* ChamferCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = F565E8DD894590B674296FD8 /* ChamferCommand.swift */; };
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
@@ -145,6 +146,7 @@
 		DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Tools.swift"; sourceTree = "<group>"; };
 		E739A2954E6A9A303F24F96F /* SketchCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchCommands.swift; sourceTree = "<group>"; };
 		E8DCACC31C8A1D1083704390 /* Ribbon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ribbon.swift; sourceTree = "<group>"; };
+		E98CD345010D437D5502B155 /* SheetMetalCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetMetalCommand.swift; sourceTree = "<group>"; };
 		EB6B876F0661B437E6E2EEA8 /* OpenAIStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIStream.swift; sourceTree = "<group>"; };
 		ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettings.swift; sourceTree = "<group>"; };
 		EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalHTTPTransport.swift; sourceTree = "<group>"; };
@@ -281,6 +283,7 @@
 				F565E8DD894590B674296FD8 /* ChamferCommand.swift */,
 				14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
+				E98CD345010D437D5502B155 /* SheetMetalCommand.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -592,6 +595,7 @@
 				3AC54D45E3D318B30B845B0B /* ProjectLibrary.swift in Sources */,
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
+				94D9C9F09E67E17A68189E85 /* SheetMetalCommand.swift in Sources */,
 				1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */,
 				2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */,
 				CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */,

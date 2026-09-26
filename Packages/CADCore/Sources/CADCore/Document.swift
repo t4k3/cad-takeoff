@@ -31,6 +31,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case hole(HoleSpec)
         /// Bevel on selected edges of existing bodies (always removes material).
         case chamfer(ChamferSpec)
+        /// Bent sheet-metal part: plate + flanges with a material bending rule (T79).
+        case sheetMetal(SheetMetalSpec)
     }
 
     public var id: UUID
@@ -69,6 +71,9 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case let .extrude(profile, h): local = Operations.extrude(profile, height: h)
         case let .hole(spec): return HoleGeometry.mesh(spec, featureID: id)
         case .chamfer: return Mesh(vertices: [], indices: [])   // exists only on the body it modifies
+        case let .sheetMetal(spec):
+            guard let build = try? SheetMetalGeometry.build(spec, featureID: id, position: position) else { return Mesh() }
+            return build.folded.triangulated().mesh
         }
         return local.translated(by: position)
     }
@@ -79,7 +84,6 @@ public struct TimelineItem: Identifiable, Codable, Sendable, Equatable {
     public enum Content: Codable, Sendable, Equatable {
         case feature(Feature)
         case sketch(Sketch)
-        case sheetMetal(SheetMetalPart)
     }
 
     public var content: Content
@@ -94,7 +98,6 @@ public struct TimelineItem: Identifiable, Codable, Sendable, Equatable {
         switch content {
         case let .feature(f): f.id
         case let .sketch(s): s.id
-        case let .sheetMetal(p): p.id
         }
     }
 
@@ -102,17 +105,15 @@ public struct TimelineItem: Identifiable, Codable, Sendable, Equatable {
         switch content {
         case let .feature(f): f.name
         case let .sketch(s): s.name
-        case let .sheetMetal(p): p.name
         }
     }
 
     public var feature: Feature? { if case let .feature(f) = content { f } else { nil } }
     public var sketch: Sketch? { if case let .sketch(s) = content { s } else { nil } }
-    public var sheetMetal: SheetMetalPart? { if case let .sheetMetal(p) = content { p } else { nil } }
 }
 
-/// The design (format v2, T82): an ordered history (`timeline`) of sketches, solids and
-/// sheet-metal parts, with a rollback marker. Serialized as JSON (`.ftk`).
+/// The design (format v2, T82): an ordered history (`timeline`) of sketches and features
+/// (solids, holes, rounds, sheet metal), with a rollback marker. Serialized as JSON (`.ftk`).
 /// v1 files (`features` + optional `sketches`) are migrated on decode.
 public struct CADDocument: Codable, Sendable, Equatable {
     public static let formatVersion = 2
@@ -148,10 +149,6 @@ public struct CADDocument: Codable, Sendable, Equatable {
         set { replace(newValue.map { .sketch($0) }, matching: { $0.sketch != nil }) }
     }
 
-    public var sheetMetalParts: [SheetMetalPart] {
-        get { timeline.compactMap(\.sheetMetal) }
-        set { replace(newValue.map { .sheetMetal($0) }, matching: { $0.sheetMetal != nil }) }
-    }
 
     /// Index where new steps go (the rollback marker, or the end).
     public var insertionIndex: Int { min(rollback ?? timeline.count, timeline.count) }

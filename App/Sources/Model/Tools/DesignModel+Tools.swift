@@ -57,11 +57,13 @@ extension DesignModel: CADToolProvider {
             case "add_cylinder": kind = .cylinder(radius: try number(args, "radius"), height: try number(args, "height"))
             case "add_extrude": kind = .extrude(profile: Profile2D(points: try points(args)), height: try number(args, "height"))
             case "add_hole": kind = .hole(try holeSpec(args))
+            case "add_sheet_metal": kind = .sheetMetal(try sheetSpec(args))
             default: throw CADToolFailure("Comando non supportato.")
             }
             let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "\(title) \(next.features.count + 1)",
                             kind: kind, position: try position(args) ?? .zero,
-                            color: try args["color"].map { _ in try color(args) } ?? .defaultColor,
+                            color: try args["color"].map { _ in try color(args) }
+                                ?? (name == "add_sheet_metal" ? PartColor(hex: "#7F8B97")! : .defaultColor),
                             operation: name == "add_hole" ? .cut : (try operation(args) ?? .newBody))
             try CADToolValidation.feature(f)
             try CADToolValidation.mesh(f.buildMesh())
@@ -89,8 +91,8 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole, .chamfer:
-                    legal = []   // re-create with add_hole/add_chamfer or edit in the app
+                case .hole, .chamfer, .sheetMetal:
+                    legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
                 case let .extrude(p, h):
                     legal = ["points", "height"]
                     f.kind = .extrude(profile: args["points"] == nil ? p : Profile2D(points: try points(args)), height: try optionalNumber(args, "height", h))
@@ -105,7 +107,15 @@ extension DesignModel: CADToolProvider {
         }
         guard next != document else { return result("Nessuna modifica necessaria", ["changed": false]) }
         commitEdit(next, selected: selected, title: "Assistente: \(title)", changed: [changed])
-        return result(statusMessage, ["changed": true, "feature_id": .string(changed.uuidString)], changed: [changed])
+        var fields: [String: JSONValue] = ["changed": true, "feature_id": .string(changed.uuidString)]
+        if let f = next.features.first(where: { $0.id == changed }), case let .sheetMetal(spec) = f.kind,
+           let build = try? SheetMetalGeometry.build(spec, featureID: f.id, position: f.position) {
+            fields["inside_radius"] = .number(build.rule.insideRadius)
+            fields["k_factor"] = .number(build.rule.kFactor)
+            fields["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
+            fields["warnings"] = .array(build.warnings.map { .string($0) })
+        }
+        return result(statusMessage, fields, changed: [changed])
     }
 
     /// The assistant may only undo/redo its own steps: a change made by the user is never undone by it.
@@ -135,9 +145,9 @@ extension DesignModel: CADToolProvider {
             "body_count": .number(Double(bodies.count)),
             "issues": .array(issues.map { ["feature_id": .string($0.featureID.uuidString), "message": .string($0.message)] }),
             "warning": "Corpi separati non si fondono tra loro: usa operation join per unirli. La chiusura dei bordi non certifica la stampabilità.",
-            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "boolean_join_cut_intersect", "hole", "chamfer",
+            "capabilities": ["box", "cylinder", "simple_polygon_extrude", "boolean_join_cut_intersect", "hole", "chamfer", "fillet", "sheet_metal",
                              "parameter_update", "timeline_rollback_suppress", "session_undo", "stl", "part_color", "3mf"],
-            "unavailable": ["fillet", "modeled_thread", "concave_chamfer", "sheet_metal_ui", "assemblies", "step", "dxf"]
+            "unavailable": ["modeled_thread", "concave_chamfer", "sheet_metal_closed_corners", "assemblies", "step"]
         ])
     }
 
@@ -212,6 +222,31 @@ extension DesignModel: CADToolProvider {
             if s.mode == .twoDistances { value["distance2"] = .number(s.distance2) }
             if s.mode == .distanceAngle { value["angle"] = .number(s.angle) }
             value["edge_count"] = .number(Double(s.edges.count))
+        case let .sheetMetal(s):
+            value["kind"] = "sheet_metal"
+            value["summary"] = .string(s.summary)
+            value["material"] = .string(s.material)
+            value["thickness"] = .number(s.thickness)
+            value["width"] = .number(s.width)
+            value["depth"] = .number(s.depth)
+            if let rule = try? s.rule() {
+                value["inside_radius"] = .number(rule.insideRadius)
+                value["k_factor"] = .number(rule.kFactor)
+                value["v_die"] = .number(rule.vDie)
+                value["minimum_flange"] = .number(rule.minimumFlange)
+            }
+            var flanges: [String: JSONValue] = [:]
+            for e in SheetEdge.allCases {
+                if let f = s[e] {
+                    flanges[e.rawValue] = ["length": .number(f.length), "angle": .number(f.angle),
+                                           "direction": .string(f.direction.rawValue), "reference": .string(f.reference.rawValue)]
+                }
+            }
+            value["flanges"] = .object(flanges)
+            if let build = try? SheetMetalGeometry.build(s, featureID: f.id, position: f.position) {
+                value["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
+                value["warnings"] = .array(build.warnings.map { .string($0) })
+            }
         }
         return .object(value)
     }
@@ -290,6 +325,32 @@ extension DesignModel: CADToolProvider {
         let failed = Set(messages).count == 1 && messages.count >= refs.count || messages.contains { $0.contains("senza effetto") }
         if failed { throw CADToolFailure("Smusso non applicabile: \(messages.first ?? "nessuno spigolo modificato").") }
         return (f, (refs.count, Array(Set(messages)).sorted()))
+    }
+
+    private func sheetSpec(_ args: [String: JSONValue]) throws -> SheetMetalSpec {
+        let material = try string(args, "material")
+        guard let m = SheetMaterial.named(material) else {
+            throw CADToolFailure("material: uno di \(SheetMaterial.all.map(\.id).joined(separator: ", ")).")
+        }
+        let t = try number(args, "thickness")
+        guard m.thicknesses.contains(where: { abs($0 - t) < 1e-9 }) else {
+            throw CADToolFailure("Spessore non commerciale per \(m.name): usa \(m.thicknesses.map { String($0) }.joined(separator: ", ")) mm.")
+        }
+        var spec = SheetMetalSpec(material: m.id, thickness: t, width: try number(args, "width"), depth: try number(args, "depth"))
+        if args["inside_radius"] != nil { spec.radiusOverride = try number(args, "inside_radius") }
+        if let list = args["flange_sides"]?.array {
+            let direction: SheetBendDirection = args["flange_direction"] == nil ? .up
+                : (SheetBendDirection(rawValue: try string(args, "flange_direction")) ?? .up)
+            let reference: SheetFlangeReference = args["flange_reference"] == nil ? .outside
+                : (SheetFlangeReference(rawValue: try string(args, "flange_reference")) ?? .outside)
+            let flange = SheetFlange(length: try number(args, "flange_length"),
+                                     angle: try optionalNumber(args, "flange_angle", 90), direction: direction, reference: reference)
+            for side in list {
+                guard let raw = side.string, let e = SheetEdge(rawValue: raw) else { throw CADToolFailure("flange_sides: front, right, back, left.") }
+                spec[e] = flange
+            }
+        }
+        return spec
     }
 
     private func holeSpec(_ args: [String: JSONValue]) throws -> HoleSpec {
