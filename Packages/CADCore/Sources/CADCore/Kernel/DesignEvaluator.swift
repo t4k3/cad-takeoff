@@ -227,8 +227,9 @@ public enum DesignEvaluator {
                 let placed = placeComponent(inner, ref: ref, position: feature.position, bodyID: feature.id, revision: revision)
                 fresh = Work(source: feature, snapshot: placed.snapshot, solid: nil, mesh: placed.mesh, modifiedBy: [])
             } else if case let .importedMesh(imported) = feature.kind {
-                let solid = MeshFaces.solid(imported.mesh.translated(by: feature.position), featureID: feature.id)
-                let (mesh, triFace) = solid.triangulated()
+                var (solid, mesh, triFace) = MeshFaces.faces(imported.mesh.translated(by: feature.position), featureID: feature.id)
+                // Seams with duplicated vertices: the full clean-up welds them (slow, so only then).
+                if !MeshValidator.validate(mesh).isWatertight { (mesh, triFace) = solid.triangulated() }
                 if !MeshValidator.validate(mesh).isWatertight {
                     issues.append(.init(featureID: feature.id, message: "Mesh importata non chiusa: si vede e si esporta, ma fori e tagli potrebbero non riuscire."))
                 }
