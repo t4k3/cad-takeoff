@@ -699,7 +699,7 @@ private struct ManipulatorLabel: View {
 
     private func commit() {
         editing = false
-        let clean = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
             .replacingOccurrences(of: "mm", with: "").trimmingCharacters(in: .whitespaces)
         guard let v = Double(clean), v.isFinite else { return }
         let m = manipulator
@@ -763,7 +763,7 @@ private struct ConstraintLabel: View {
     }
 
     private func commit() {
-        let clean = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
             .replacingOccurrences(of: "mm", with: "").replacingOccurrences(of: "°", with: "").replacingOccurrences(of: "⌀", with: "")
         sketch.editingDimension = nil
         if let v = Double(clean.trimmingCharacters(in: .whitespaces)) { sketch.setDimension(annotation.id, value: v) }

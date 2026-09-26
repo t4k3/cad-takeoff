@@ -118,3 +118,72 @@ private func length(_ s: SketchShape, _ i: Int) -> Double {
     let okS = s.solve()
     #expect(okS && s.constraints.isEmpty)
 }
+
+@Test func filletRoundsARectangleCornerIntoAProfile() throws {
+    let r = SketchShape(kind: .rectangle(corner: Vec2(0, 0), width: 40, height: 20))
+    var sketch = Sketch(name: "S", shapes: [r])
+    let arcID = try sketch.fillet(r.id, vertex: 2, radius: 5)
+    let ok = sketch.solve()
+    #expect(ok)
+    // One face: the rectangle with the corner cut by a quarter round (tessellated arc).
+    let faces = sketch.faces
+    #expect(faces.count == 1)
+    let quarterLoss = 25 - Double.pi * 25 / 4
+    #expect(abs(faces[0].area - (800 - quarterLoss)) < 0.05)
+    // The arc is tangent to both sides and carries its radius dimension.
+    let arc = sketch.shapes.first { $0.id == arcID }!
+    #expect(arc.circle(0)!.radius == 5)
+    #expect(sketch.constraints.contains { if case .radius = $0.kind { true } else { false } })
+    #expect(sketch.constraints.filter { if case .tangent = $0.kind { true } else { false } }.count == 2)
+    // All four corners: still one face, each corner rounded.
+    for _ in 0..<3 {
+        // Next sharp corner: an inner vertex of any polyline whose sides are perpendicular.
+        var found: (UUID, Int)?
+        for poly in sketch.shapes {
+            guard case let .polyline(p, _) = poly.kind, p.count >= 3 else { continue }
+            if let j = (1..<(p.count - 1)).first(where: { j in
+                let a = p[j - 1] - p[j], b = p[j + 1] - p[j]
+                return abs(a.x * b.x + a.y * b.y) < 1e-9
+            }) { found = (poly.id, j); break }
+        }
+        guard let (id, corner) = found else { break }
+        try sketch.fillet(id, vertex: corner, radius: 5)
+    }
+    let four = sketch.faces
+    #expect(four.count == 1 && abs(four[0].area - (800 - 4 * quarterLoss)) < 0.2)
+    #expect(throws: SketchEditError.self) { var s = Sketch(name: "T", shapes: [SketchShape(kind: .rectangle(corner: Vec2(0, 0), width: 4, height: 4))]); try s.fillet(s.shapes[0].id, vertex: 0, radius: 10) }
+}
+
+/// A filleted rectangle stays a rectangle: its sides keep H/V, so changing the radius only moves the
+/// tangent points; the constraints of an L drawn as a polyline follow the new numbering.
+@Test func filletKeepsTheSidesStraightWhenTheRadiusChanges() throws {
+    let r = SketchShape(kind: .rectangle(corner: Vec2(0, 0), width: 40, height: 20))
+    var sketch = Sketch(name: "S", shapes: [r])
+    try sketch.fillet(r.id, vertex: 0, radius: 3)
+    let i = sketch.constraints.firstIndex { if case .radius = $0.kind { true } else { false } }!
+    sketch.constraints[i].kind = sketch.constraints[i].kind.with(value: 6)
+    let ok = sketch.solve(after: sketch.constraints[i].id)
+    #expect(ok)
+    let poly = sketch.shapes.first { $0.id == r.id }!
+    for j in 0..<poly.segmentCount {
+        let (a, b) = poly.segment(j)!
+        #expect(near(a.x, b.x, 1e-6) || near(a.y, b.y, 1e-6))
+    }
+    let quarterLoss = 36 - Double.pi * 36 / 4
+    #expect(abs(sketch.faces[0].area - (800 - quarterLoss)) < 0.2)
+
+    // Open L with H/V and a length on the far side: the length survives on the second half.
+    let l = SketchShape(kind: .polyline([Vec2(0, 20), Vec2(0, 0), Vec2(30, 0), Vec2(30, 10)], closed: false))
+    var s2 = Sketch(name: "L", shapes: [l], constraints: [
+        .init(.vertical(.segment(l.id, 0))), .init(.horizontal(.segment(l.id, 1))), .init(.vertical(.segment(l.id, 2))),
+        .init(.length(.segment(l.id, 2), 10)), .init(.length(.segment(l.id, 1), 30)),
+    ])
+    try s2.fillet(l.id, vertex: 1, radius: 4)
+    #expect(s2.shapes.count == 3)
+    #expect(!s2.constraints.contains { if case .length(_, 30) = $0.kind { true } else { false } })   // trimmed side
+    let second = s2.shapes.first { $0.id != l.id && $0.circle(0) == nil }!
+    #expect(s2.constraints.contains { $0.kind == .length(.segment(second.id, 1), 10) })
+    #expect(s2.constraints.contains { $0.kind == .vertical(.segment(second.id, 1)) })
+    let ok2 = s2.solve()
+    #expect(ok2)
+}

@@ -10,7 +10,7 @@ import simd
 final class SketchSession {
     enum Tool: String, CaseIterable, Identifiable {
         case select = "Seleziona", line = "Linea", rectangle = "Rettangolo", circle = "Cerchio",
-             polygon = "Poligono", slot = "Asola", dimension = "Quota"
+             polygon = "Poligono", slot = "Asola", arc = "Arco", fillet = "Raccordo", dimension = "Quota"
         var id: String { rawValue }
         /// The drawing tools (Quota lives with the constraints).
         static var drawing: [Tool] { allCases.filter { $0 != .dimension } }
@@ -22,6 +22,8 @@ final class SketchSession {
             case .circle: "circle"
             case .polygon: "hexagon"
             case .slot: "capsule"
+            case .arc: "circle.bottomhalf.filled"
+            case .fillet: "arrow.turn.up.right"
             case .dimension: "ruler"
             }
         }
@@ -33,12 +35,15 @@ final class SketchSession {
             case .circle: "Clicca il centro, poi un punto sulla circonferenza."
             case .polygon: "Clicca il centro, poi un vertice (o il punto medio di un lato se circoscritto)."
             case .slot: "Clicca il primo centro, il secondo centro, poi la larghezza."
+            case .arc: "Clicca l'inizio, la fine, poi un punto dell'arco."
+            case .fillet: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato."
             case .dimension: "Clicca una linea (lunghezza), un cerchio (diametro), due punti (distanza) o due linee (angolo), poi scrivi il valore."
             }
         }
         var key: String? {
             switch self {
-            case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .select: nil
+            case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .arc: "a"
+            case .select, .fillet: nil
             }
         }
     }
@@ -99,6 +104,8 @@ final class SketchSession {
     var snapToGrid = true
     var gridStep = 1.0
     var polygonSides = 6
+    /// Radius of the next 2D fillet (Raccordo tool).
+    var filletRadius = 3.0
     var polygonCircumscribed = false
     /// Height shown as wireframe while the Extrude panel is open.
     var previewHeight: Double?
@@ -246,6 +253,13 @@ final class SketchSession {
         let p = snap(raw)
         switch tool {
         case .dimension: break
+        case .fillet: filletCorner(raw)
+        case .arc:
+            switch pending.count {
+            case 0: pending = [p]
+            case 1: if dist(pending[0], p) > 1e-6 { pending.append(p) }
+            default: if let kind = arcKind(pending[0], pending[1], through: p) { commit(kind) }
+            }
         case .select:
             selectedConstraint = nil
             selection = pick(raw)
@@ -352,7 +366,7 @@ final class SketchSession {
         var out: [(Vec2, Vec2)] = []
         for s in shapes {
             switch s.kind {
-            case .circle, .slot: continue
+            case .circle, .slot, .arc: continue
             default:
                 let o = s.outline
                 guard o.count >= 2 else { continue }
@@ -385,6 +399,10 @@ final class SketchSession {
                 out.append(.init(point: mid(o[0], o[2]), kind: .center))
             case .polyline:
                 out += s.outline.map { .init(point: $0, kind: .vertex) }
+            case .arc:
+                out += [.init(point: s.point(0)!, kind: .center), .init(point: s.point(1)!, kind: .vertex), .init(point: s.point(2)!, kind: .vertex)]
+                let o = s.outline
+                if !o.isEmpty { out.append(.init(point: o[o.count / 2], kind: .midpoint)) }
             }
         }
         out += segments.map { .init(point: mid($0.0, $0.1), kind: .midpoint) }
@@ -469,6 +487,15 @@ final class SketchSession {
             case 1: return "Interasse \(fmt(dist(pending[0], c))) mm"
             default: return "Larghezza \(fmt(2 * distanceToLine(c, pending[0], pending[1]))) mm"
             }
+        case .arc:
+            switch pending.count {
+            case 0: return "Inizio " + xy
+            case 1: return "Corda \(fmt(dist(pending[0], c))) mm"
+            default:
+                if case let .arc(_, r, a0, a1)? = arcKind(pending[0], pending[1], through: c) { return "R \(fmt(r)) mm · \(fmt(SketchShape.sweep(a0, a1) * 180 / .pi))°" }
+                return nil
+            }
+        case .fillet: return "R \(fmt(filletRadius)) mm"
         case .select, .dimension: return nil
         }
     }
@@ -524,6 +551,8 @@ final class SketchSession {
             case let .circle(c, _): out += cross(c, size: vertexSnap * 0.35, color: color)
             case let .slot(a, b, _): out += cross(a, size: vertexSnap * 0.35, color: color) + cross(b, size: vertexSnap * 0.35, color: color)
             case .polyline, .rectangle, .polygon: for p in s.outline { out += cross(p, size: vertexSnap * 0.3, color: color) }
+            case .arc: out += cross(s.point(0)!, size: vertexSnap * 0.35, color: color * SIMD4(1, 1, 1, 0.6))
+                for i in [1, 2] { out += cross(s.point(i)!, size: vertexSnap * 0.3, color: color) }
             }
         }
         // Extrusion preview of the picked areas: outlines and holes at the top, side lines at corners.
@@ -559,7 +588,10 @@ final class SketchSession {
                     : .slot(start: pending[0], end: pending[1], width: max(2 * distanceToLine(c, pending[0], pending[1]), 1e-3))
             default: nil
             }
-            if tool == .line { ring(pending + [c], closed: false, rubber) }
+            if tool == .line || (tool == .arc && pending.count == 1) { ring(pending + [c], closed: false, rubber) }
+            if tool == .arc, pending.count == 2, let kind = arcKind(pending[0], pending[1], through: c) {
+                ring(SketchShape(kind: kind).outline, closed: false, rubber)
+            }
             if let preview { let s = SketchShape(kind: preview); ring(s.outline, closed: true, rubber) }
         }
         // Midpoints of the segments near the cursor light up (then snap when closer).

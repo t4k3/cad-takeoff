@@ -65,6 +65,31 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
         }
     }
 
+    /// The same constraint on other references; nil when `f` drops one of them.
+    public func mapRefs(_ f: (SketchRef) -> SketchRef?) -> SketchConstraintKind? {
+        switch self {
+        case let .coincident(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .coincident(a, b)
+        case let .parallel(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .parallel(a, b)
+        case let .perpendicular(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .perpendicular(a, b)
+        case let .equal(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .equal(a, b)
+        case let .tangent(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .tangent(a, b)
+        case let .concentric(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .concentric(a, b)
+        case let .pointOnLine(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnLine(a, b)
+        case let .pointOnCircle(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnCircle(a, b)
+        case let .midpoint(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .midpoint(a, b)
+        case let .distance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .distance(a, b, v)
+        case let .horizontalDistance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .horizontalDistance(a, b, v)
+        case let .verticalDistance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .verticalDistance(a, b, v)
+        case let .angle(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .angle(a, b, v)
+        case let .horizontal(a): return f(a).map { .horizontal($0) }
+        case let .vertical(a): return f(a).map { .vertical($0) }
+        case let .fix(a, v): return f(a).map { .fix($0, v) }
+        case let .length(a, v): return f(a).map { .length($0, v) }
+        case let .radius(a, v): return f(a).map { .radius($0, v) }
+        case let .diameter(a, v): return f(a).map { .diameter($0, v) }
+        }
+    }
+
     /// The driving value of a dimension (nil for a geometric constraint).
     public var value: Double? {
         switch self {
@@ -135,6 +160,7 @@ extension SketchShape {
         case let .circle(c, r): [c.x, c.y, r]
         case let .polygon(c, r, _, rot, _): [c.x, c.y, r, rot]
         case let .slot(a, b, w): [a.x, a.y, b.x, b.y, w]
+        case let .arc(c, r, a0, a1): [c.x, c.y, r, a0, a1]
         }
     }
 
@@ -148,6 +174,7 @@ extension SketchShape {
         case .circle: s.kind = .circle(center: Vec2(v[0], v[1]), radius: v[2])
         case let .polygon(_, _, n, _, circ): s.kind = .polygon(center: Vec2(v[0], v[1]), radius: v[2], sides: n, rotation: v[3], circumscribed: circ)
         case .slot: s.kind = .slot(start: Vec2(v[0], v[1]), end: Vec2(v[2], v[3]), width: v[4])
+        case .arc: s.kind = .arc(center: Vec2(v[0], v[1]), radius: v[2], start: v[3], end: v[4])
         }
         return s
     }
@@ -166,6 +193,13 @@ extension SketchShape {
             let t = rot + Double(i - 1) / Double(max(3, n)) * 2 * .pi
             return Vec2(c.x + vr * cos(t), c.y + vr * sin(t))
         case let .slot(a, b, _): return i == 0 ? a : (i == 1 ? b : nil)
+        case let .arc(c, r, a0, a1):
+            switch i {
+            case 0: return c
+            case 1: return Vec2(c.x + r * cos(a0), c.y + r * sin(a0))
+            case 2: return Vec2(c.x + r * cos(a1), c.y + r * sin(a1))
+            default: return nil
+            }
         }
     }
 
@@ -176,6 +210,7 @@ extension SketchShape {
         case .circle: 1
         case let .polygon(_, _, n, _, _): max(3, n) + 1
         case .slot: 2
+        case .arc: 3
         }
     }
 
@@ -197,7 +232,7 @@ extension SketchShape {
             let d = Vec2(b.x - a.x, b.y - a.y), l = max((d.x * d.x + d.y * d.y).squareRoot(), 1e-12)
             let n = Vec2(-d.y / l * w / 2, d.x / l * w / 2)
             return i == 0 ? (Vec2(a.x - n.x, a.y - n.y), Vec2(b.x - n.x, b.y - n.y)) : (Vec2(b.x + n.x, b.y + n.y), Vec2(a.x + n.x, a.y + n.y))
-        case .circle: return nil
+        case .circle, .arc: return nil
         }
     }
 
@@ -207,7 +242,7 @@ extension SketchShape {
         case .rectangle: 4
         case let .polygon(_, _, n, _, _): max(3, n)
         case .slot: 2
-        case .circle: 0
+        case .circle, .arc: 0
         }
     }
 
@@ -215,6 +250,7 @@ extension SketchShape {
         switch kind {
         case let .circle(c, r): i == 0 ? (c, r) : nil
         case let .slot(a, b, w): i == 0 ? (a, w / 2) : (i == 1 ? (b, w / 2) : nil)
+        case let .arc(c, r, _, _): i == 0 ? (c, r) : nil
         default: nil
         }
     }
@@ -503,5 +539,104 @@ public enum SketchSolver {
             for (r, c) in pivots.enumerated() { v[c] = -A[r][f] }
             return v
         }
+    }
+}
+
+// MARK: - 2D fillet
+
+public enum SketchEditError: Error, LocalizedError, Equatable {
+    case invalid(String)
+    public var errorDescription: String? { if case let .invalid(m) = self { m } else { nil } }
+}
+
+extension Sketch {
+    /// Rounds the corner at vertex `i` of a polyline or rectangle with an arc of radius `r`
+    /// (Fusion's sketch fillet): the corner becomes two tangent points joined by an arc, with
+    /// coincident and tangent constraints and a radius dimension. Returns the arc's ID.
+    @discardableResult
+    public mutating func fillet(_ shapeID: UUID, vertex i: Int, radius r: Double) throws -> UUID {
+        guard let k = shapes.firstIndex(where: { $0.id == shapeID }) else { throw SketchEditError.invalid("forma non trovata") }
+        guard r.isFinite, r > 0 else { throw SketchEditError.invalid("raggio non valido") }
+        var shape = shapes[k]
+        if case .rectangle = shape.kind, (0..<4).contains(i) {
+            // Same vertex and side numbering as the rectangle: its constraints stay valid, and its
+            // sides keep being horizontal and vertical as the rectangle implied.
+            shape.kind = .polyline((0..<4).compactMap { shape.point($0) }, closed: true)
+            constraints += [.init(.horizontal(.segment(shapeID, 0))), .init(.vertical(.segment(shapeID, 1))),
+                            .init(.horizontal(.segment(shapeID, 2))), .init(.vertical(.segment(shapeID, 3)))]
+        }
+        guard case let .polyline(p, closed) = shape.kind, p.indices.contains(i) else { throw SketchEditError.invalid("raccordo: scegli l'angolo di una linea o di un rettangolo") }
+        let n = p.count
+        guard closed || (i > 0 && i < n - 1) else { throw SketchEditError.invalid("raccordo: un estremo libero non è un angolo") }
+        let prev = (i - 1 + n) % n, next = (i + 1) % n
+        func len(_ v: Vec2) -> Double { (v.x * v.x + v.y * v.y).squareRoot() }
+        let a = p[prev] - p[i], b = p[next] - p[i]
+        let la = len(a), lb = len(b)
+        guard la > 1e-9, lb > 1e-9 else { throw SketchEditError.invalid("raccordo: lati nulli") }
+        let u1 = a * (1 / la), u2 = b * (1 / lb)
+        let cosT = max(-1, min(1, u1.x * u2.x + u1.y * u2.y))
+        let theta = acos(cosT)
+        guard theta > 1e-3, theta < .pi - 1e-3 else { throw SketchEditError.invalid("raccordo: i due lati sono allineati") }
+        let d = r / tan(theta / 2)
+        guard d < la - 1e-6, d < lb - 1e-6 else {
+            throw SketchEditError.invalid(String(format: "raggio troppo grande per questo angolo (massimo %.2f mm)", min(la, lb) * tan(theta / 2)))
+        }
+        let t1 = p[i] + u1 * d, t2 = p[i] + u2 * d
+        let bis = u1 + u2, lbis = len(bis)
+        let c = p[i] + bis * (1 / lbis) * (r / sin(theta / 2))
+        let a1 = atan2(t1.y - c.y, t1.x - c.x), a2 = atan2(t2.y - c.y, t2.x - c.x)
+        // The short way round: start/end so that the counter-clockwise sweep is under half a turn.
+        let (start, end, t1IsStart) = SketchShape.sweep(a1, a2) <= .pi ? (a1, a2, true) : (a2, a1, false)
+        let arc = SketchShape(kind: .arc(center: c, radius: r, start: start, end: end))
+        let t1Point = t1IsStart ? 1 : 2, t2Point = t1IsStart ? 2 : 1
+
+        // The polyline (or its two halves) now ends at the tangent points. Constraints move to the
+        // new numbering; those on the corner itself go, and so do lengths of the two trimmed sides.
+        let secondID = UUID()
+        func remap(_ ref: SketchRef) -> SketchRef? {
+            guard ref.shapeID == shapeID else { return ref }
+            switch ref {
+            case let .point(_, j):
+                if j == i { return nil }
+                if closed { return .point(shapeID, 1 + (j - next + n) % n) }
+                return j < i ? ref : .point(secondID, j - i)
+            case let .segment(_, j):
+                if closed { return .segment(shapeID, j == i ? 0 : 1 + (j - next + n) % n) }
+                return j < i ? ref : .segment(secondID, j - i)
+            case .circle: return nil
+            }
+        }
+        let trimmed: Set<Int> = [prev, i]
+        constraints = constraints.compactMap { c in
+            guard c.kind.refs.contains(where: { $0.shapeID == shapeID }) else { return c }
+            switch c.kind {
+            case let .length(.segment(_, j), _) where trimmed.contains(j): return nil
+            case let .equal(a, b) where [a, b].contains(where: { if case let .segment(id, j) = $0 { id == shapeID && trimmed.contains(j) } else { false } }): return nil
+            default: break
+            }
+            guard let kind = c.kind.mapRefs(remap) else { return nil }
+            var moved = c
+            moved.kind = kind
+            return moved
+        }
+        var added: [SketchConstraint] = []
+        if closed {
+            let order = (0..<(n - 1)).map { p[(next + $0) % n] }   // p[i+1] … p[i-1]
+            shape.kind = .polyline([t2] + order + [t1], closed: false)
+            shapes[k] = shape
+            let m = n + 1
+            added += [.init(.coincident(.point(shapeID, m - 1), .point(arc.id, t1Point))), .init(.coincident(.point(shapeID, 0), .point(arc.id, t2Point))),
+                      .init(.tangent(.segment(shapeID, m - 2), .circle(arc.id, 0))), .init(.tangent(.segment(shapeID, 0), .circle(arc.id, 0)))]
+        } else {
+            shape.kind = .polyline(Array(p[0..<i]) + [t1], closed: false)
+            shapes[k] = shape
+            let second = SketchShape(id: secondID, kind: .polyline([t2] + Array(p[(i + 1)...]), closed: false), isConstruction: shape.isConstruction)
+            shapes.insert(second, at: k + 1)
+            added += [.init(.coincident(.point(shapeID, i), .point(arc.id, t1Point))), .init(.coincident(.point(second.id, 0), .point(arc.id, t2Point))),
+                      .init(.tangent(.segment(shapeID, i - 1), .circle(arc.id, 0))), .init(.tangent(.segment(second.id, 0), .circle(arc.id, 0)))]
+        }
+        shapes.insert(arc, at: k + 1)
+        constraints += added + [.init(.radius(.circle(arc.id, 0), r))]
+        return arc.id
     }
 }

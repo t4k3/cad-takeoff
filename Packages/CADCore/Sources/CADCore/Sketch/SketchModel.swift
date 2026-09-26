@@ -58,6 +58,9 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
         case polygon(center: Vec2, radius: Double, sides: Int, rotation: Double, circumscribed: Bool)
         /// Centre-to-centre slot: the two arc centres and the overall width.
         case slot(start: Vec2, end: Vec2, width: Double)
+        /// Circular arc, counter-clockwise from `start` to `end` (radians). Open: it bounds profiles
+        /// together with the lines it meets (fillets, rounded outlines).
+        case arc(center: Vec2, radius: Double, start: Double, end: Double)
     }
 
     public var id: UUID
@@ -74,7 +77,15 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
 
     public var isClosed: Bool {
         if case let .polyline(_, closed) = kind { return closed }
+        if case .arc = kind { return false }
         return true
+    }
+
+    /// Counter-clockwise sweep of an arc, in (0, 2π].
+    public static func sweep(_ start: Double, _ end: Double) -> Double {
+        var s = (end - start).truncatingRemainder(dividingBy: 2 * .pi)
+        if s <= 1e-12 { s += 2 * .pi }
+        return s
     }
 
     /// Outline vertices (closed shapes without the repeated first point).
@@ -114,6 +125,13 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
                 return Vec2(a.x + r * cos(t), a.y + r * sin(t))
             }
             return arcB + arcA
+        case let .arc(c, r, a0, a1):
+            let sweep = Self.sweep(a0, a1)
+            let n = max(4, Int((sweep / (2 * .pi) * Double(Self.arcSegments)).rounded(.up)))
+            return (0...n).map { i in
+                let t = a0 + sweep * Double(i) / Double(n)
+                return Vec2(c.x + r * cos(t), c.y + r * sin(t))
+            }
         }
     }
 
@@ -127,6 +145,7 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
     public var length: Double {
         switch kind {
         case let .circle(_, r): return 2 * .pi * r
+        case let .arc(_, r, a0, a1): return r * Self.sweep(a0, a1)
         case let .slot(a, b, w):
             return 2 * ((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)).squareRoot() + .pi * w
         default:
@@ -161,6 +180,7 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
         case .circle: "Cerchio"
         case let .polygon(_, _, n, _, _): "Poligono (\(n) lati)"
         case .slot: "Asola"
+        case .arc: "Arco"
         }
     }
 }
@@ -211,6 +231,38 @@ public struct Sketch: Identifiable, Codable, Sendable, Equatable {
         guard result.converged else { return false }
         shapes = result.shapes
         return true
+    }
+
+    /// Re-solves after the dimension `id` changed, moving as little of the rest as it can (as Fusion
+    /// does): first with every point pinned except those of the shapes the dimension touches and the
+    /// points joined to them, then, if that cannot hold, freely.
+    @discardableResult
+    public mutating func solve(after id: SketchConstraint.ID) -> Bool {
+        guard let changed = constraints.first(where: { $0.id == id }) else { return solve() }
+        let freeShapes = Set(changed.kind.refs.map(\.shapeID))
+        struct Key: Hashable { let shape: UUID, index: Int }
+        var free = Set<Key>()
+        for s in shapes where freeShapes.contains(s.id) { for j in 0..<s.pointCount { free.insert(Key(shape: s.id, index: j)) } }
+        var grew = true
+        while grew {
+            grew = false
+            for c in constraints {
+                guard case let .coincident(.point(a, i), .point(b, j)) = c.kind else { continue }
+                let ka = Key(shape: a, index: i), kb = Key(shape: b, index: j)
+                if free.contains(ka) != free.contains(kb) { free.insert(ka); free.insert(kb); grew = true }
+            }
+        }
+        var pinned = self
+        for s in shapes {
+            for j in 0..<s.pointCount where !free.contains(Key(shape: s.id, index: j)) {
+                if let p = s.point(j) { pinned.constraints.append(SketchConstraint(.fix(.point(s.id, j), p))) }
+            }
+        }
+        if pinned.solve() {
+            shapes = pinned.shapes
+            return true
+        }
+        return solve()
     }
 
     public var profiles: [SketchShape] { shapes.filter { $0.profile != nil } }

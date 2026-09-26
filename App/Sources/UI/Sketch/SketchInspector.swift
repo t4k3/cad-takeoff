@@ -63,6 +63,7 @@ struct SketchInspector: View {
         case .circle: "circle"
         case .polygon: "hexagon"
         case .slot: "capsule"
+        case .arc: "circle.bottomhalf.filled"
         }
     }
 
@@ -73,6 +74,7 @@ struct SketchInspector: View {
         case let .circle(_, r): "Ø\(fmt(2 * r))"
         case let .polygon(_, r, _, _, _): "R\(fmt(r))"
         case let .slot(a, b, w): "\(fmt(hypot(b.x - a.x, b.y - a.y)))×\(fmt(w))"
+        case let .arc(_, r, _, _): "R\(fmt(r))"
         }
     }
 
@@ -130,6 +132,12 @@ private struct ShapeParameters: View {
                 field("Angolo", ang * 180 / .pi, unit: "°") { set(.slot(start: a, end: endFrom(a, len, $0 * .pi / 180), width: wdt)) }
                 field("Larghezza", wdt, positive: true) { set(.slot(start: a, end: b, width: $0)) }
                 info("Lunghezza totale", "\(fmt(len + wdt)) mm")
+            case let .arc(c, r, a0, a1):
+                field("Centro X", c.x) { set(.arc(center: Vec2($0, c.y), radius: r, start: a0, end: a1)) }
+                field("Centro Y", c.y) { set(.arc(center: Vec2(c.x, $0), radius: r, start: a0, end: a1)) }
+                field("Raggio", r, positive: true) { set(.arc(center: c, radius: $0, start: a0, end: a1)) }
+                field("Angolo iniziale", a0 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: $0 * .pi / 180, end: a1)) }
+                field("Angolo finale", a1 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: a0, end: $0 * .pi / 180)) }
             }
             if shape.isClosed { info("Area", "\(fmt(shape.area)) mm²") }
             info(shape.isClosed ? "Perimetro" : "Lunghezza", "\(fmt(shape.length)) mm")

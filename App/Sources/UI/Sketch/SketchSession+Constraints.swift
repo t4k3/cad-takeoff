@@ -124,7 +124,7 @@ extension SketchSession {
     func apply(_ c: SketchConstraint) -> Bool {
         var next = sketch
         next.constraints.append(c)
-        guard next.solve() else {
+        guard next.solve(after: c.id) else {
             notice = "«\(c.kind.label)» è in conflitto con i vincoli esistenti: non aggiunto."
             return false
         }
@@ -153,6 +153,7 @@ extension SketchSession {
         case .rectangle: [0, 1, 2, 3]
         case .circle, .polygon: [0]
         case .slot: [0, 1]
+        case .arc: [1, 2]
         }
         for i in ownPoints {
             guard let p = new.point(i) else { continue }
@@ -231,7 +232,7 @@ extension SketchSession {
         if case .angle = sketch.constraints[i].kind {} else { guard value > 0 else { notice = "Il valore deve essere positivo."; return false } }
         var next = sketch
         next.constraints[i].kind = next.constraints[i].kind.with(value: value)
-        guard next.solve() else { notice = "Con \(fmt(value)) i vincoli non si possono rispettare: valore non applicato."; return false }
+        guard next.solve(after: next.constraints[i].id) else { notice = "Con \(fmt(value)) i vincoli non si possono rispettare: valore non applicato."; return false }
         notice = nil
         sketch = next
         return true
@@ -377,4 +378,45 @@ extension SketchSession {
 extension SketchRef {
     var isPoint: Bool { if case .point = self { true } else { false } }
     var isCircle: Bool { if case .circle = self { true } else { false } }
+}
+
+// MARK: - Arcs and 2D fillets
+
+extension SketchSession {
+    /// Arc from `a` to `b` through `p` (three-point arc), nil when the points are aligned.
+    func arcKind(_ a: Vec2, _ b: Vec2, through p: Vec2) -> SketchShape.Kind? {
+        let d = 2 * (a.x * (b.y - p.y) + b.x * (p.y - a.y) + p.x * (a.y - b.y))
+        guard abs(d) > 1e-9 else { return nil }
+        let a2 = a.x * a.x + a.y * a.y, b2 = b.x * b.x + b.y * b.y, p2 = p.x * p.x + p.y * p.y
+        let c = Vec2((a2 * (b.y - p.y) + b2 * (p.y - a.y) + p2 * (a.y - b.y)) / d,
+                     (a2 * (p.x - b.x) + b2 * (a.x - p.x) + p2 * (b.x - a.x)) / d)
+        let r = dist(c, a)
+        guard r.isFinite, r < 1e6 else { return nil }
+        let ta = atan2(a.y - c.y, a.x - c.x), tb = atan2(b.y - c.y, b.x - c.x), tp = atan2(p.y - c.y, p.x - c.x)
+        // Counter-clockwise from a to b if that way passes through p, otherwise from b to a.
+        let passes = SketchShape.sweep(ta, tp) < SketchShape.sweep(ta, tb)
+        return passes ? .arc(center: c, radius: r, start: ta, end: tb) : .arc(center: c, radius: r, start: tb, end: ta)
+    }
+
+    /// Raccordo: the corner under `p` becomes a tangent arc of `filletRadius`.
+    func filletCorner(_ p: Vec2) {
+        guard case let .point(id, i)? = pickRef(p, kinds: [.point]), let shape = shape(id) else {
+            notice = "Clicca l'angolo tra due linee."; return
+        }
+        switch shape.kind {
+        case .polyline: break
+        case .rectangle where i < 4: break
+        default: notice = "Il raccordo si fa sull'angolo tra due linee (polilinea o rettangolo)."; return
+        }
+        var next = sketch
+        do {
+            let arc = try next.fillet(id, vertex: i, radius: filletRadius)
+            guard next.solve() else { notice = "Raccordo in conflitto con i vincoli dello schizzo."; return }
+            notice = nil
+            sketch = next
+            selection = arc
+        } catch {
+            notice = "Raccordo: " + error.localizedDescription
+        }
+    }
 }

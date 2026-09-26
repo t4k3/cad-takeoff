@@ -171,6 +171,15 @@ struct Ribbon: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Griglia 1 mm", isOn: Binding(get: { sketch.snapToGrid }, set: { sketch.snapToGrid = $0 }))
                         .toggleStyle(.checkbox)
+                    if sketch.tool == .fillet {
+                        HStack(spacing: 4) {
+                            Text("Raggio")
+                            TextField("", value: Binding(get: { sketch.filletRadius }, set: { sketch.filletRadius = max(0.01, $0) }),
+                                      format: .number.precision(.fractionLength(0...2)))
+                                .frame(width: 44).textFieldStyle(.roundedBorder)
+                            Text("mm")
+                        }
+                    }
                     HStack(spacing: 4) {
                         Stepper("Lati: \(sketch.polygonSides)", value: Binding(get: { sketch.polygonSides }, set: { sketch.polygonSides = $0 }), in: 3...64)
                         Toggle("Circoscr.", isOn: Binding(get: { sketch.polygonCircumscribed }, set: { sketch.polygonCircumscribed = $0 }))
@@ -185,8 +194,8 @@ struct Ribbon: View {
             }
             ToolGroup("CREA") {
                 Button { workspace.extrudeSketch(model: model) } label: { Label("Estrudi", systemImage: "square.stack.3d.up") }
-                    .disabled(sketch.sketch.profiles.isEmpty || workspace.command != nil)
-                    .help(sketch.sketch.profiles.isEmpty ? "Disegna un profilo chiuso" : "Estrudi: clicca le aree da estrudere (E)")
+                    .disabled(sketch.faces.isEmpty || workspace.command != nil)
+                    .help(sketch.faces.isEmpty ? "Disegna un profilo chiuso" : "Estrudi: clicca le aree da estrudere (E)")
                 Button { sketch.deleteSelection() } label: { Label("Elimina", systemImage: "trash") }
                     .disabled(sketch.selection == nil)
             }
