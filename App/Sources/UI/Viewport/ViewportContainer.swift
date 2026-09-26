@@ -479,24 +479,15 @@ struct ViewportContainer: View {
             .padding(.top, 10)
         }
         if workspace.pickingSketchPlane {
-            HStack(spacing: 8) {
-                Label("SCHIZZO", systemImage: "pencil.and.outline").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Theme.Palette.sketch)
-                Text("Clicca una faccia piana, oppure").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
-                Button("XY") { workspace.enterSketch(plane: .xy) }.controlSize(.small).help("Piano di base (vista dall'alto)")
-                Button("XZ") { workspace.enterSketch(plane: .xz) }.controlSize(.small).help("Piano frontale (vista di fronte)")
-                Button("YZ") { workspace.enterSketch(plane: .yz) }.controlSize(.small).help("Piano laterale (vista da destra)")
-                Text("Sfalsa").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
-                TextField("0", value: Binding(get: { workspace.sketchPlaneOffset }, set: { workspace.sketchPlaneOffset = $0 }),
-                          format: .number.precision(.fractionLength(0...2)))
-                    .frame(width: 54).multilineTextAlignment(.trailing).font(.system(size: 11).monospacedDigit())
-                    .help("Piano di costruzione: sposta il piano scelto lungo la sua normale (mm)")
-                Text("mm").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
-                Button("Annulla") { workspace.pickingSketchPlane = false }.controlSize(.small)
+            // One line when there is room, two in a narrow window.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { planePickerTitle; planePickerControls }
+                VStack(alignment: .leading, spacing: 6) { planePickerTitle; HStack(spacing: 8) { planePickerControls } }
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
             .overlayChip()
             .padding(.top, 10)
+            .padding(.horizontal, 120)   // clear of the ViewCube
         }
         if let sketch = workspace.sketch, workspace.command == nil {
             HStack(spacing: 8) {
@@ -510,6 +501,27 @@ struct ViewportContainer: View {
             .overlayChip()
             .padding(.top, 10)
         }
+    }
+
+    @ViewBuilder private var planePickerTitle: some View {
+        HStack(spacing: 8) {
+            Label("SCHIZZO", systemImage: "pencil.and.outline").font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Theme.Palette.sketch)
+            Text("Clicca una faccia piana, oppure").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+        }
+    }
+
+    @ViewBuilder private var planePickerControls: some View {
+        Button("XY") { workspace.enterSketch(plane: .xy) }.controlSize(.small).help("Piano di base (vista dall'alto)")
+        Button("XZ") { workspace.enterSketch(plane: .xz) }.controlSize(.small).help("Piano frontale (vista di fronte)")
+        Button("YZ") { workspace.enterSketch(plane: .yz) }.controlSize(.small).help("Piano laterale (vista da destra)")
+        Text("Sfalsa").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+        TextField("0", value: Binding(get: { workspace.sketchPlaneOffset }, set: { workspace.sketchPlaneOffset = $0 }),
+                  format: .number.precision(.fractionLength(0...2)))
+            .frame(width: 54).multilineTextAlignment(.trailing).font(.system(size: 11).monospacedDigit())
+            .help("Piano di costruzione: sposta il piano scelto lungo la sua normale (mm)")
+        Text("mm").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+        Button("Annulla") { workspace.pickingSketchPlane = false }.controlSize(.small)
     }
 
     /// Keyboard shortcuts active only while sketching and no command panel is open.

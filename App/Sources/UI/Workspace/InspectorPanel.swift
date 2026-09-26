@@ -45,7 +45,8 @@ struct InspectorPanel: View {
                             DimensionField(title: "Z", value: $model.document.features[i].position.z)
                         }
                         section("Proprietà") {
-                            let mesh = feature.buildMesh()
+                            // The evaluated body (booleans, copies, components), else the feature's own mesh.
+                            let mesh = model.evaluation().bodies.first { $0.id == feature.id }?.mesh ?? feature.buildMesh()
                             info("Volume", String(format: "%.2f cm³", mesh.volume / 1000))
                             if let b = mesh.bounds {
                                 info("Ingombro", String(format: "%.1f × %.1f × %.1f mm", b.size.x, b.size.y, b.size.z))
