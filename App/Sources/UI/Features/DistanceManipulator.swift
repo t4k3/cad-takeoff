@@ -29,22 +29,56 @@ final class DistanceManipulator {
 
     var handle: Vec3 { origin + inward * (value * factor) }
 
-    /// Arrow from the handle outward, `length` mm long (constant size on screen).
-    func overlay(length: Double) -> [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
-        let colour: SIMD4<Float> = isHot || isDragging ? SIMD4(1, 0.78, 0.2, 1) : SIMD4(0.2, 0.62, 1, 1)
-        let base = handle, tip = handle - inward * length
-        let helper = abs(inward.z) < 0.9 ? Vec3(0, 0, 1) : Vec3(1, 0, 0)
-        let u = helper.cross(inward).normalized, v = inward.cross(u)
-        let head = length * 0.28
-        var out = [(f(base), f(tip), colour)]
-        for k in 0..<8 {
-            let t = Double(k) / 8 * 2 * .pi
-            let rim = tip + inward * head + (u * cos(t) + v * sin(t)) * (head * 0.4)
-            out.append((f(tip), f(rim), colour))
+    private var accent: SIMD3<Float> { isHot || isDragging ? SIMD3(1.0, 0.6, 0.12) : SIMD3(0.16, 0.52, 1.0) }
+
+    /// Thin guide from the edge to the handle: shows what the value measures.
+    func overlay() -> [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
+        [(f(origin), f(handle), SIMD4(accent, 0.8))]
+    }
+
+    /// Solid arrow, Fusion style: a ball on the handle, a shaft and a cone pointing outward,
+    /// `length` mm long (the caller keeps it a constant size on screen).
+    func mesh(length: Double) -> GizmoMesh {
+        let dir = -inward.normalized
+        let helper = abs(dir.z) < 0.9 ? Vec3(0, 0, 1) : Vec3(1, 0, 0)
+        let u = helper.cross(dir).normalized, v = dir.cross(u)
+        let n = 24
+        func ring(_ k: Int) -> Vec3 { let t = Double(k) / Double(n) * 2 * .pi; return u * cos(t) + v * sin(t) }
+        var out: [(SIMD3<Float>, SIMD3<Float>)] = []
+        func tri(_ a: (Vec3, Vec3), _ b: (Vec3, Vec3), _ c: (Vec3, Vec3)) {
+            for p in [a, b, c] { out.append((f(p.0), f(p.1))) }
         }
-        // Small bar at the base: the point that measures the value.
-        out.append((f(base - u * head * 0.4), f(base + u * head * 0.4), colour))
-        return out
+        let base = handle
+        let ball = length * 0.08, shaft = length * 0.032, coneRadius = length * 0.11, coneLength = length * 0.3
+        let coneStart = base + dir * (length - coneLength), tip = base + dir * length
+        // Shaft.
+        for k in 0..<n {
+            let r0 = ring(k), r1 = ring(k + 1)
+            let a = base + r0 * shaft, b = base + r1 * shaft, c = coneStart + r1 * shaft, d = coneStart + r0 * shaft
+            tri((a, r0), (b, r1), (c, r1)); tri((a, r0), (c, r1), (d, r0))
+        }
+        // Cone and its base.
+        for k in 0..<n {
+            let r0 = ring(k), r1 = ring(k + 1)
+            let n0 = (r0 * coneLength + dir * coneRadius).normalized, n1 = (r1 * coneLength + dir * coneRadius).normalized
+            let nt = (r0 + r1).normalized * coneLength + dir * coneRadius
+            tri((coneStart + r0 * coneRadius, n0), (coneStart + r1 * coneRadius, n1), (tip, nt.normalized))
+            tri((coneStart, -dir), (coneStart + r1 * coneRadius, -dir), (coneStart + r0 * coneRadius, -dir))
+        }
+        // Ball on the handle.
+        let rows = 10
+        func sphere(_ i: Int, _ k: Int) -> Vec3 {
+            let phi = Double(i) / Double(rows) * .pi
+            return dir * cos(phi) + ring(k) * sin(phi)
+        }
+        for i in 0..<rows {
+            for k in 0..<n {
+                let a = sphere(i, k), b = sphere(i + 1, k), c = sphere(i + 1, k + 1), d = sphere(i, k + 1)
+                tri((base + a * ball, a), (base + b * ball, b), (base + c * ball, c))
+                tri((base + a * ball, a), (base + c * ball, c), (base + d * ball, d))
+            }
+        }
+        return GizmoMesh(vertices: out, color: SIMD4(accent, isHot || isDragging ? 0.45 : 0.3))
     }
 
     /// Screen-space hit test against the arrow; `tolerance(d)` = mm per few points at distance d.

@@ -59,6 +59,7 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     private let meshPipeline: MTLRenderPipelineState
     private let linePipeline: MTLRenderPipelineState
     private let edgePipeline: MTLRenderPipelineState
+    private let gizmoPipeline: MTLRenderPipelineState
     private let depthWrite: MTLDepthStencilState
     private let depthReadOnly: MTLDepthStencilState
     /// Overlays (sketch) are always visible, even behind bodies.
@@ -75,6 +76,8 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     /// Face/edge highlights (depth-tested, pulled slightly towards the camera).
     var highlightTriangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+    /// Solid on-canvas handles (drag arrows): triangles as (position, normal), one colour each.
+    var gizmos: [GizmoMesh] = []
 
     private weak var view: MTKView?
 
@@ -109,8 +112,9 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         }
         guard let mesh = pipeline("meshVertex", "meshFragment", blend: false),
               let line = pipeline("lineVertex", "lineFragment", blend: true),
-              let edge = pipeline("lineVertex", "edgeFragment", blend: true) else { return nil }
-        meshPipeline = mesh; linePipeline = line; edgePipeline = edge
+              let edge = pipeline("lineVertex", "edgeFragment", blend: true),
+              let gizmo = pipeline("gizmoVertex", "meshFragment", blend: false) else { return nil }
+        meshPipeline = mesh; linePipeline = line; edgePipeline = edge; gizmoPipeline = gizmo
 
         let dw = MTLDepthStencilDescriptor()
         dw.depthCompareFunction = .less
@@ -303,6 +307,18 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
                 enc.drawPrimitives(type: .line, vertexStart: 0, vertexCount: v.count)
             }
         }
+        if !gizmos.isEmpty {
+            enc.setRenderPipelineState(gizmoPipeline)
+            enc.setDepthStencilState(depthWrite)
+            for g in gizmos {
+                let v = g.vertices.map { MeshVertex(position: SIMD4($0.0, 1), normal: SIMD4($0.1, 0)) }
+                guard let buf = buffer(v) else { continue }
+                var draw = DrawUniforms(color: g.color)
+                enc.setVertexBuffer(buf, offset: 0, index: 0)
+                enc.setFragmentBytes(&draw, length: MemoryLayout<DrawUniforms>.stride, index: 2)
+                enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: v.count)
+            }
+        }
         enc.endEncoding()
         command.present(drawable)
         command.commit()
@@ -322,4 +338,11 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         if f.id == hovered { return SIMD4(simd_mix(base, SIMD3(repeating: 1), SIMD3(repeating: 0.2)), 0.3) }
         return SIMD4(base, 0)
     }
+}
+
+/// A solid handle drawn over the scene (see `gizmoVertex`).
+struct GizmoMesh {
+    var vertices: [(SIMD3<Float>, SIMD3<Float>)]
+    /// rgb + rim strength.
+    var color: SIMD4<Float>
 }

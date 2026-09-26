@@ -15,6 +15,7 @@ struct MetalViewport: NSViewRepresentable {
     var overlayLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var highlightTriangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
+    var gizmos: [GizmoMesh] = []
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
     var onHover: (CGPoint?, Ray?) -> Void = { _, _ in }
     /// Mouse down on a draggable handle: return true to take the drag (no orbit, no click).
@@ -59,6 +60,7 @@ struct MetalViewport: NSViewRepresentable {
         r.overlayLines = overlayLines
         r.highlightTriangles = highlightTriangles
         r.highlightLines = highlightLines
+        r.gizmos = gizmos
         view.redraw()
     }
 }

@@ -34,6 +34,19 @@ vertex MeshOut meshVertex(uint id [[vertex_id]],
     return o;
 }
 
+// On-canvas handles (drag arrows): shaded like bodies but squeezed into the front 2% of the
+// depth range, so they stay visible over the part while still hiding their own back faces.
+vertex MeshOut gizmoVertex(uint id [[vertex_id]],
+                           const device MeshVertex *v [[buffer(0)]],
+                           constant FrameUniforms &frame [[buffer(1)]]) {
+    MeshOut o;
+    o.position = frame.viewProjection * v[id].position;
+    o.position.z *= 0.02;
+    o.normal = v[id].normal.xyz;
+    o.world = v[id].position.xyz;
+    return o;
+}
+
 fragment float4 meshFragment(MeshOut in [[stage_in]],
                              constant FrameUniforms &frame [[buffer(1)]],
                              constant DrawUniforms &draw [[buffer(2)]]) {

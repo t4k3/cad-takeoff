@@ -178,6 +178,7 @@ struct ViewportContainer: View {
                   overlayLines: sketchLines,
                   highlightTriangles: geoHighlight.triangles,
                   highlightLines: geoHighlight.lines,
+                  gizmos: workspace.manipulator.map { [$0.mesh(length: arrowLength)] } ?? [],
                   onClick: handleClick,
                   onHover: handleHover,
                   onDragBegin: dragBegin,
@@ -226,14 +227,14 @@ struct ViewportContainer: View {
 
     private func dragBegin(_ ray: Ray) -> Bool {
         guard let m = workspace.manipulator,
-              m.hits(ray, length: arrowLength, tolerance: viewport.screenTolerance(8)) else { return false }
+              m.hits(ray, length: arrowLength, tolerance: viewport.screenTolerance(10)) else { return false }
         m.beginDrag(ray, viewDirection: viewport.camera.forward)
         return true
     }
 
     private func handleHover(_ point: CGPoint?, _ ray: Ray?) {
         if let m = workspace.manipulator {
-            let hot = ray.map { m.hits($0, length: arrowLength, tolerance: viewport.screenTolerance(8)) } ?? false
+            let hot = ray.map { m.hits($0, length: arrowLength, tolerance: viewport.screenTolerance(10)) } ?? false
             if m.isHot != hot { m.isHot = hot }
         }
         if let sketch = workspace.sketch {
@@ -268,19 +269,27 @@ struct ViewportContainer: View {
 
     // MARK: Drag arrow
 
-    /// Arrow length: about 60 points on screen.
-    private var arrowLength: Double { 60 * viewport.mmPerPoint }
+    /// Arrow length: about 70 points on screen.
+    private var arrowLength: Double { 70 * viewport.mmPerPoint }
 
     /// Value next to the arrow tip, like Fusion's on-canvas input.
     @ViewBuilder private var manipulatorLabel: some View {
         if let m = workspace.manipulator, let p = viewport.screenPoint(m.handle - m.inward * arrowLength) {
-            Text(m.label + " " + String(format: "%.1f mm", m.value))
-                .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6).padding(.vertical, 3)
-                .background(RoundedRectangle(cornerRadius: 4).fill(m.isDragging || m.isHot ? Color.orange : Theme.Palette.sketch))
-                .offset(x: p.x + 8, y: p.y - 22)
-                .allowsHitTesting(false)
+            let active = m.isDragging || m.isHot
+            HStack(spacing: 4) {
+                Text(m.label).font(.system(size: 10, weight: .bold)).opacity(0.8)
+                Text(String(format: "%.1f", m.value)).font(.system(size: 12, weight: .semibold).monospacedDigit())
+                Text("mm").font(.system(size: 10, weight: .medium)).opacity(0.8)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 9).padding(.vertical, 4)
+            .background(Capsule().fill(active ? Color(red: 1, green: 0.6, blue: 0.12) : Color(red: 0.16, green: 0.52, blue: 1)))
+            .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+            .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
+            .fixedSize()
+            .offset(x: p.x + 12, y: p.y - 14)
+            .allowsHitTesting(false)
+            .animation(.easeOut(duration: 0.12), value: active)
         }
     }
 
@@ -371,7 +380,7 @@ struct ViewportContainer: View {
     // MARK: Sketch overlays
 
     private var sketchLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
-        savedSketchLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay(length: arrowLength) ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
+        savedSketchLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
                                   previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
     }
