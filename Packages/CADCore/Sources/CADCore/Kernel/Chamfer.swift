@@ -176,7 +176,10 @@ public enum ChamferGeometry {
         case let (.cylinder(ax, dir, r), .plane(o, n)):
             return try circular(edge, plane: (o, n), cylinder: (fa, ax, dir, r), planeFirst: false, spec: spec, snapshot: snapshot, prefix: prefix)
         default:
-            throw KernelError.invalidParameter("smusso: supportati spigoli tra facce piane e bordi circolari di cilindri e fori")
+            // Circular edges where a bevel's cone meets a plane, a wall or another cone (rounds on
+            // rounds): the same corner profile turned around their common axis.
+            if let tool = try revolved(edge, a: fa, b: fb, spec: spec, snapshot: snapshot, prefix: prefix) { return tool }
+            throw KernelError.invalidParameter("smusso: supportati spigoli tra facce piane, cilindri e coni con lo stesso asse")
         }
     }
 
@@ -213,9 +216,14 @@ public enum ChamferGeometry {
 
     /// How far a face reaches from an edge (farthest vertex): no bevel can be wider.
     static func extent(ofFace f: Int, from polyline: [Vec3], _ s: BodySnapshot) -> Double {
+        // Vertices alone are not enough: a disc merged into a fan has all of them on its rim.
+        // Edge midpoints and centres reach inside (the chord across a disc passes its centre).
         var best = 0.0
         for t in 0..<s.triangleFace.count where Int(s.triangleFace[t]) == f {
-            for k in 0..<3 { best = max(best, distance(s.positions[Int(s.triangles[t * 3 + k])], polyline)) }
+            let v = (0..<3).map { s.positions[Int(s.triangles[t * 3 + $0])] }
+            for p in v + [(v[0] + v[1]) * 0.5, (v[1] + v[2]) * 0.5, (v[2] + v[0]) * 0.5, (v[0] + v[1] + v[2]) * (1.0 / 3)] {
+                best = max(best, distance(p, polyline))
+            }
         }
         return best
     }
@@ -561,6 +569,206 @@ public enum ChamferGeometry {
             }
         }
         return (oriented(polys, faces), concave)
+    }
+
+    // MARK: Circular edge between surfaces of revolution (plane ⟂ axis, cylinder, cone)
+
+    /// Nil when the two faces are not coaxial surfaces of this kind.
+    private static func revolved(_ edge: EdgeInfo, a fa: Int, b fb: Int, spec: ChamferSpec, snapshot: BodySnapshot,
+                                 prefix: String) throws -> (solid: CSGSolid, adds: Bool)? {
+        let sa = snapshot.faces[fa].surface, sb = snapshot.faces[fb].surface
+        // The axis: from the cylinder or cone.
+        var axisInfo: (Vec3, Vec3)?
+        for s in [sa, sb] {
+            switch s {
+            case let .cylinder(o, d, _): axisInfo = (o, d.normalized)
+            case let .cone(apex, d, _): axisInfo = (apex, d.normalized)
+            default: break
+            }
+        }
+        guard let (o, axis) = axisInfo, let p0 = edge.polyline.first, let last = edge.polyline.last, edge.polyline.count >= 3 else { return nil }
+        func coaxial(_ s: SurfaceDescriptor) -> Bool {
+            switch s {
+            case let .plane(_, n): return abs(n.normalized.dot(axis)) > 0.9999
+            case let .cylinder(oo, d, _), let .cone(oo, d, _):
+                let off = oo - o
+                return abs(d.normalized.dot(axis)) > 0.9999 && (off - axis * off.dot(axis)).length < 1e-5
+            default: return false
+            }
+        }
+        guard coaxial(sa), coaxial(sb) else { return nil }
+        // Frame at the first edge point: radius r0 and height h0 along the axis.
+        let d0 = p0 - o, h0 = d0.dot(axis), radial = d0 - axis * h0, r0 = radial.length
+        guard r0 > 1e-6 else { return nil }
+        let er = radial * (1 / r0)
+        func flat(_ v: Vec3) -> (Double, Double) { (v.dot(er), v.dot(axis)) }
+        func unit(_ v: (Double, Double)) -> (Double, Double) { let l = (v.0 * v.0 + v.1 * v.1).squareRoot(); return (v.0 / l, v.1 / l) }
+        // Each face in the (radius, height) half-plane: direction away from the corner, outward normal.
+        func profile(_ f: Int, _ s: SurfaceDescriptor) -> (t: (Double, Double), n: (Double, Double))? {
+            var line: (Double, Double)
+            switch s {
+            case .plane: line = (1, 0)
+            case .cylinder: line = (0, 1)
+            case let .cone(apex, _, _): line = unit(flat(p0 - apex))
+            default: return nil
+            }
+            // The side the face lies on, and its outward normal, from a triangle at the point.
+            for t in 0..<snapshot.triangleFace.count where Int(snapshot.triangleFace[t]) == f {
+                let v = (0..<3).map { snapshot.positions[Int(snapshot.triangles[t * 3 + $0])] }
+                guard v.contains(where: { ($0 - p0).length < 1e-5 }) else { continue }
+                let c = flat((v[0] + v[1] + v[2]) * (1.0 / 3) - p0)
+                if line.0 * c.0 + line.1 * c.1 < 0 { line = (-line.0, -line.1) }
+                let n = unit(flat((v[1] - v[0]).cross(v[2] - v[0])))
+                return (line, n)
+            }
+            return nil
+        }
+        guard let A = profile(fa, sa), let B = profile(fb, sb) else { return nil }
+        func dot(_ p: (Double, Double), _ q: (Double, Double)) -> Double { p.0 * q.0 + p.1 * q.1 }
+        func add(_ p: (Double, Double), _ q: (Double, Double)) -> (Double, Double) { (p.0 + q.0, p.1 + q.1) }
+        func mul(_ p: (Double, Double), _ k: Double) -> (Double, Double) { (p.0 * k, p.1 * k) }
+        let (ta, na) = A, (tb, nb) = B
+        let convex = dot(ta, nb) < -1e-6 && dot(tb, na) < -1e-6
+        let concave = dot(ta, nb) > 1e-6 && dot(tb, na) > 1e-6
+        guard convex || concave else { throw KernelError.invalidParameter("smusso: spigolo tangente o degenere") }
+        let dihedral = acos(max(-1, min(1, dot(ta, tb))))
+        let widthA = extent(ofFace: fa, from: edge.polyline, snapshot), widthB = extent(ofFace: fb, from: edge.polyline, snapshot)
+        let out = unit(add(na, nb)), sign = concave ? -1.0 : 1.0
+        let ov = min(0.2, 0.25 * spec.distance)
+        // Section relative to the corner; `special` = its sides that become the bevel/round.
+        var section: [(Double, Double)], special: Set<Int>
+        if spec.profile == .round {
+            let r = spec.distance, half = dihedral / 2
+            let x = r / tan(half), cd = r / sin(half)
+            guard x <= min(widthA, widthB) + 1e-6 else { throw tooBig(spec, max: min(widthA, widthB) * tan(half)) }
+            let c = mul(unit(add(ta, tb)), cd)
+            let from = add(mul(ta, x), mul(c, -1)), to = add(mul(tb, x), mul(c, -1))
+            let theta = acos(max(-1, min(1, dot(from, to) / (r * r))))
+            let n = max(3, Int((theta / (2 * .pi) * Double(segments) - 1e-9).rounded(.up)))
+            section = (0...n).map { i in
+                let t = Double(i) / Double(n)
+                return add(c, mul(add(mul(from, sin((1 - t) * theta)), mul(to, sin(t * theta))), 1 / sin(theta)))
+            }
+            if concave {
+                section += [add(mul(tb, x), mul(nb, -ov)), mul(add(na, nb), -ov), add(mul(ta, x), mul(na, -ov))]
+            } else {
+                let m = r + lead
+                section += [add(mul(tb, x), mul(nb, sign * m)), mul(out, 2 * m + cd), add(mul(ta, x), mul(na, sign * m))]
+            }
+            special = Set(0..<n)
+        } else {
+            let (d1, d2) = try spec.distances(dihedral: dihedral)
+            guard d1 <= widthA + 1e-6, d2 <= widthB + 1e-6 else { throw tooBig(spec, max: min(widthA, widthB)) }
+            let qa = mul(ta, d1), qb = mul(tb, d2)
+            if concave {
+                section = [qa, qb, add(qb, mul(nb, -ov)), mul(add(na, nb), -ov), add(qa, mul(na, -ov))]
+            } else {
+                let u = unit(add(qb, mul(qa, -1)))
+                let e = max(d1, d2) + lead
+                let h = 2 * max(d1, d2) + lead
+                section = [add(qa, mul(u, -e)), add(qb, mul(u, e)), add(add(qb, mul(u, e)), mul(out, h)), add(add(qa, mul(u, -e)), mul(out, h))]
+            }
+            special = [0]
+        }
+        // Absolute (radius, height); nothing past the axis.
+        let prof = section.map { (max(0, r0 + $0.0), h0 + $0.1) }
+
+        // Sweep: the whole turn for a rim, the arc's own span otherwise.
+        let helper = abs(axis.z) < 0.9 ? Vec3(0, 0, 1) : Vec3(1, 0, 0)
+        let u = helper.cross(axis).normalized, v = axis.cross(u)
+        let closed = (p0 - last).length < 1e-4
+        var t0 = 0.0, span = 2 * Double.pi
+        if !closed {
+            func angle(_ p: Vec3) -> Double { let d = p - o; return atan2(d.dot(v), d.dot(u)) }
+            func wrapped(_ x: Double) -> Double { let m = x.truncatingRemainder(dividingBy: 2 * .pi); return m < 0 ? m + 2 * .pi : m }
+            let a0 = angle(p0), a1 = angle(last), am = angle(edge.polyline[edge.polyline.count / 2])
+            let ccw = wrapped(a1 - a0)
+            if wrapped(am - a0) < ccw { t0 = a0; span = ccw } else { t0 = a1; span = 2 * .pi - ccw }
+        }
+        let steps = closed ? segments : max(1, Int((span / (2 * .pi / Double(segments))).rounded(.up)))
+        func point(_ p: (Double, Double), _ step: Int) -> Vec3 {
+            let t = t0 + Double(step) / Double(steps) * span
+            return o + axis * p.1 + (u * cos(t) + v * sin(t)) * p.0
+        }
+        // Exact surface of the bevel/round.
+        let surface: SurfaceDescriptor
+        if spec.profile == .round {
+            let r = spec.distance, half = dihedral / 2
+            let c = mul(unit(add(ta, tb)), r / sin(half))
+            surface = .torus(center: o + axis * (h0 + c.1), axisDirection: axis, majorRadius: r0 + c.0, minorRadius: r)
+        } else {
+            let a = prof[0], b = prof[1]
+            let dr = b.0 - a.0, dh = b.1 - a.1
+            if abs(dh) < 1e-9 {
+                surface = .plane(origin: o + axis * a.1, normal: axis)
+            } else if abs(dr) < 1e-9 {
+                surface = .cylinder(axisOrigin: o, axisDirection: axis, radius: a.0)
+            } else {
+                // Apex where the bevel line meets the axis; the cone opens away from it.
+                let hApex = a.1 - a.0 * dh / dr
+                let up = (a.1 - hApex) > 0 ? axis : -axis
+                surface = .cone(apex: o + axis * hApex, axisDirection: up, halfAngle: atan(abs(dr / dh)))
+            }
+        }
+        var faces = [CSGFace(id: FaceID(rawValue: prefix), surface: surface, flipped: false)]
+        var polys: [CSGSolid.Polygon] = []
+        for i in prof.indices {
+            let p = prof[i], q = prof[(i + 1) % prof.count]
+            if p.0 == 0, q.0 == 0 { continue }
+            let face: Int
+            if special.contains(i) { face = 0 } else {
+                faces.append(CSGFace(id: FaceID(rawValue: prefix + "/aux\(i)"), surface: .plane(origin: point(p, 0), normal: axis), flipped: false))
+                face = faces.count - 1
+            }
+            for st in 0..<steps {
+                var quad = [point(p, st), point(p, st + 1), point(q, st + 1), point(q, st)]
+                if p.0 == 0 { quad.remove(at: 1) } else if q.0 == 0 { quad.remove(at: 2) }
+                guard (quad[1] - quad[0]).cross(quad[2] - quad[0]).length > 1e-12 else { continue }
+                polys.append(CSGSolid.Polygon(vertices: quad, face: face))
+            }
+        }
+        if !closed {
+            let flatProfile = Profile2D(points: prof.map { Vec2($0.0, $0.1) })
+            let loop = flatProfile.points.map { ($0.x, $0.y) }
+            let signed = prof.indices.reduce(0.0) { acc, i in
+                let p = prof[i], q = prof[(i + 1) % prof.count]
+                return acc + p.0 * q.1 - q.0 * p.1
+            }
+            for (step, name) in [(0, "start"), (steps, "end")] {
+                faces.append(CSGFace(id: FaceID(rawValue: prefix + "/" + name), surface: .plane(origin: point(loop[0], step), normal: axis), flipped: false))
+                let face = faces.count - 1
+                for (i, j, k) in flatProfile.triangulate() {
+                    var tri = [loop[i], loop[j], loop[k]]
+                    let area = (tri[1].0 - tri[0].0) * (tri[2].1 - tri[0].1) - (tri[2].0 - tri[0].0) * (tri[1].1 - tri[0].1)
+                    if area < 0 { tri.swapAt(1, 2) }
+                    if (step != 0) == (signed > 0) { tri.swapAt(1, 2) }
+                    let verts = tri.map { point($0, step) }
+                    guard (verts[1] - verts[0]).cross(verts[2] - verts[0]).length > 1e-12 else { continue }
+                    polys.append(CSGSolid.Polygon(vertices: verts, face: face))
+                }
+            }
+        }
+        let tool = oriented(polys, faces)
+        // The bevel's normal must match its polygons in the result (subtracted tools are inverted
+        // together with their "flipped" flag, so one rule covers both): compare at one polygon.
+        var fixed = tool.faces
+        if let sample = tool.polygons.first(where: { $0.face == 0 }) {
+            let c = sample.vertices.reduce(Vec3.zero, +) * (1 / Double(sample.vertices.count))
+            let natural: Vec3
+            switch surface {
+            case let .plane(_, n): natural = n
+            case let .cylinder(oo, ax, _): let dd = c - oo; natural = (dd - ax * dd.dot(ax)).normalized
+            case let .cone(apex, ax, half):
+                let dd = c - apex
+                natural = ((dd - ax * dd.dot(ax)).normalized * cos(half) - ax * sin(half)).normalized
+            case let .torus(centre, ax, major, _):
+                let dd = c - centre
+                natural = (c - (centre + (dd - ax * dd.dot(ax)).normalized * major)).normalized
+            case .freeform: natural = sample.normal
+            }
+            fixed[0].flipped = natural.dot(sample.normal) < 0
+        }
+        return (CSGSolid(polygons: tool.polygons, faces: fixed), concave)
     }
 
     // MARK: Helpers

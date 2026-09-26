@@ -257,3 +257,26 @@ private func roundArea(_ r: Double, _ n: Int = 16) -> Double { r * r - Double(n)
     let expected = 60 * roundArea(1) + 2 * .pi * (5 - centroid) * (1 - .pi / 4)
     #expect(abs((before - mesh.volume) - expected) < expected * 0.03, "\(before - mesh.volume) vs \(expected)")
 }
+
+@Test func roundsAndBevelsOnABevelsCone() {
+    // A 45° bevel on a cylinder's rim leaves a cone: its edges with the top and with the wall can
+    // be rounded or bevelled in turn (rounds on rounds).
+    let boss = Feature(name: "Perno", kind: .cylinder(radius: 20, height: 20))
+    let bevel = Feature(name: "S", kind: .chamfer(ChamferSpec(edges: refs([boss], allAt(z: 20)), distance: 6)), operation: .cut)
+    let (bevelled, i0, snap) = chamfered([boss], ChamferSpec(edges: refs([boss], allAt(z: 20)), distance: 6))
+    #expect(i0.isEmpty && MeshValidator.validate(bevelled).isWatertight)
+    let edges = DesignEvaluator.evaluate(CADDocument(features: [boss, bevel]), revision: "r").bodies[0].snapshot.edges
+    let topRim = edges.filter { $0.polyline.allSatisfy { abs($0.z - 20) < 1e-6 } }.compactMap(EdgeRef.init)
+    let wallRim = edges.filter { $0.polyline.allSatisfy { abs($0.z - 14) < 1e-6 } }.compactMap(EdgeRef.init)
+    #expect(topRim.count == 1 && wallRim.count == 1)
+    for (edge, profile) in [(topRim, ChamferSpec.Profile.round), (wallRim, .round), (wallRim, .flat)] {
+        let (mesh, issues, after) = chamfered([boss, bevel], ChamferSpec(edges: edge, profile: profile, distance: 2))
+        #expect(issues.isEmpty, "\(issues.map(\.message))")
+        #expect(MeshValidator.validate(mesh).isWatertight)
+        // Something small comes off the 135° edge: less than the whole corner ring.
+        let removed = bevelled.volume - mesh.volume
+        #expect(removed > 0.5 && removed < 2 * .pi * 20 * 2 * 2)
+        if profile == .round { #expect(after?.faces.contains { if case .torus = $0.surface { true } else { false } } == true) }
+    }
+    _ = snap
+}
