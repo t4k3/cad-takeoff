@@ -141,11 +141,31 @@ struct Ribbon: View {
     @ViewBuilder private var sketchTools: some View {
         if let sketch = workspace.sketch {
             ToolGroup("DISEGNA") {
-                ForEach(SketchSession.Tool.allCases) { tool in
-                    Button { sketch.tool = tool } label: { Label(tool.rawValue, systemImage: tool.symbol) }
-                        .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool, tint: Theme.Palette.sketch))
+                ForEach(SketchSession.Tool.drawing) { tool in
+                    Button { sketch.constraintTool = nil; sketch.tool = tool } label: { Label(tool.rawValue, systemImage: tool.symbol) }
+                        .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool && sketch.constraintTool == nil, tint: Theme.Palette.sketch))
                         .help(tool.hint)
                 }
+            }
+            ToolGroup("VINCOLI") {
+                Button { sketch.constraintTool = nil; sketch.tool = .dimension } label: { Label("Quota", systemImage: "ruler") }
+                    .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == .dimension, tint: Theme.Palette.sketch))
+                    .help(SketchSession.Tool.dimension.hint + " (D)")
+                Grid(horizontalSpacing: 2, verticalSpacing: 2) {
+                    ForEach(0..<2, id: \.self) { row in
+                        GridRow {
+                            ForEach(Array(ConstraintTool.allCases.enumerated()).filter { $0.offset / 5 == row }, id: \.element) { _, c in
+                                Button { sketch.constraintTool = sketch.constraintTool == c ? nil : c } label: {
+                                    Image(systemName: c.symbol).font(.system(size: 12)).frame(width: 24, height: 22)
+                                }
+                                .buttonStyle(.plain)
+                                .background(RoundedRectangle(cornerRadius: 5).fill(sketch.constraintTool == c ? Theme.Palette.sketch.opacity(0.35) : Color.white.opacity(0.06)))
+                                .help("\(c.rawValue): \(c.hint)")
+                            }
+                        }
+                    }
+                }
+                .frame(height: 50)
             }
             ToolGroup("OPZIONI") {
                 VStack(alignment: .leading, spacing: 4) {

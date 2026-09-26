@@ -20,6 +20,7 @@
 		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
 		276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D04A4DB715945B73E88E2B /* PartColorPicker.swift */; };
 		2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */; };
+		2E9E1A85449505E8EE29A665 /* SketchSession+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */; };
 		2F1583AA3117428454D4F36B /* UndoRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E853D121D28F163F7809FD /* UndoRouter.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
@@ -156,6 +157,7 @@
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		ADF9849BD6F001008766D793 /* PressPullCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressPullCommand.swift; sourceTree = "<group>"; };
 		B072E2898F0A20B8861C13F8 /* GeoSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoSelection.swift; sourceTree = "<group>"; };
+		B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SketchSession+Constraints.swift"; sourceTree = "<group>"; };
 		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */ = {isa = PBXFileReference; path = CADTakeoffImportProject.manifest; sourceTree = "<group>"; };
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 				E739A2954E6A9A303F24F96F /* SketchCommands.swift */,
 				8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */,
 				55A384B92C6A6894EA9A5831 /* SketchSession.swift */,
+				B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */,
 			);
 			path = Sketch;
 			sourceTree = "<group>";
@@ -707,6 +710,7 @@
 				94D9C9F09E67E17A68189E85 /* SheetMetalCommand.swift in Sources */,
 				1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */,
 				2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */,
+				2E9E1A85449505E8EE29A665 /* SketchSession+Constraints.swift in Sources */,
 				CEBEC776C6B0ACDAEC98DA4D /* SketchSession.swift in Sources */,
 				EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */,
 				36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */,
@@ -817,7 +821,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.101;
+				MARKETING_VERSION = 0.1.102;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -880,7 +884,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.101;
+				MARKETING_VERSION = 0.1.102;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

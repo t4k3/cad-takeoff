@@ -10,8 +10,10 @@ import simd
 final class SketchSession {
     enum Tool: String, CaseIterable, Identifiable {
         case select = "Seleziona", line = "Linea", rectangle = "Rettangolo", circle = "Cerchio",
-             polygon = "Poligono", slot = "Asola"
+             polygon = "Poligono", slot = "Asola", dimension = "Quota"
         var id: String { rawValue }
+        /// The drawing tools (Quota lives with the constraints).
+        static var drawing: [Tool] { allCases.filter { $0 != .dimension } }
         var symbol: String {
             switch self {
             case .select: "cursorarrow"
@@ -20,6 +22,7 @@ final class SketchSession {
             case .circle: "circle"
             case .polygon: "hexagon"
             case .slot: "capsule"
+            case .dimension: "ruler"
             }
         }
         var hint: String {
@@ -30,23 +33,65 @@ final class SketchSession {
             case .circle: "Clicca il centro, poi un punto sulla circonferenza."
             case .polygon: "Clicca il centro, poi un vertice (o il punto medio di un lato se circoscritto)."
             case .slot: "Clicca il primo centro, il secondo centro, poi la larghezza."
+            case .dimension: "Clicca una linea (lunghezza), un cerchio (diametro), due punti (distanza) o due linee (angolo), poi scrivi il valore."
             }
         }
         var key: String? {
             switch self {
-            case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .select: nil
+            case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .select: nil
             }
         }
     }
 
     var sketch: Sketch {
-        didSet { if !applyingUndo, sketch != oldValue { record(oldValue) } }
+        didSet {
+            if !applyingUndo, !dragging, sketch != oldValue { record(oldValue) }
+            if sketch.shapes != oldValue.shapes || sketch.constraints != oldValue.constraints { analyze() }
+        }
     }
+
+    // MARK: Constraints state (logic in SketchSession+Constraints)
+    /// A constraint being applied: the entities picked so far.
+    var constraintTool: ConstraintTool? {
+        didSet {
+            picked = []
+            notice = nil
+            if constraintTool != nil { tool = .select; selection = nil }
+        }
+    }
+    var picked: [SketchRef] = []
+    var selectedConstraint: SketchConstraint.ID?
+    /// Dimension whose value is being typed (its label shows a field).
+    var editingDimension: SketchConstraint.ID?
+    /// Last constraint problem ("Vincolo in conflitto…"), shown in the hint banner.
+    var notice: String?
+    /// Shapes that cannot move any more (drawn white), and the sketch's free degrees of freedom.
+    private(set) var constrainedShapes: Set<UUID> = []
+    private(set) var freedom = 0
+    /// A point being dragged in Seleziona mode.
+    @ObservationIgnored var dragRef: SketchRef?
+    @ObservationIgnored var dragFixes: [SketchConstraint] = []
+    @ObservationIgnored var dragging = false
+
+    func analyze() {
+        guard !sketch.constraints.isEmpty else { constrainedShapes = []; freedom = 0; return }
+        let r = SketchSolver.solve(sketch.shapes, sketch.constraints)
+        constrainedShapes = r.fullyConstrained
+        freedom = r.freedom
+    }
+
+    /// Records the current state as one undo step (a whole drag is one step).
+    func recordStep() { record(sketch) }
     // Local undo while the sketch is open (the whole sketch becomes one design step on "Termina").
     private var undoStack: [(sketch: Sketch, title: String, date: Date)] = []
     private var redoStack: [(sketch: Sketch, title: String)] = []
     @ObservationIgnored private var applyingUndo = false
-    var tool: Tool = .line { didSet { if tool != oldValue { pending = [] } } }
+    var tool: Tool = .line {
+        didSet {
+            if tool != oldValue { pending = []; picked = [] }
+            if tool != .select, constraintTool != nil { constraintTool = nil }
+        }
+    }
     var selection: SketchShape.ID?
     private(set) var pending: [Vec2] = []
     private(set) var cursor: Vec2?
@@ -95,7 +140,7 @@ final class SketchSession {
     /// drawn dashed, snap targets; not part of the sketch).
     var references: [[Vec2]] = []
 
-    init(sketch: Sketch) { self.sketch = sketch }
+    init(sketch: Sketch) { self.sketch = sketch; analyze() }
 
     /// Projects the bodies' edges that lie on the sketch plane (the face outline and holes).
     func projectReferences(from bodies: [BodySnapshot]) {
@@ -146,7 +191,13 @@ final class SketchSession {
     }
 
     func deleteSelection() {
+        if let c = selectedConstraint {
+            sketch.constraints.removeAll { $0.id == c }
+            selectedConstraint = nil
+            return
+        }
         sketch.shapes.removeAll { $0.id == selection }
+        sketch.constraints.removeAll { $0.kind.refs.contains { $0.shapeID == selection } }
         selection = nil
     }
 
@@ -160,7 +211,7 @@ final class SketchSession {
     }
 
     /// Sketch coordinates of a world point on the plane.
-    private func local(_ world: SIMD3<Float>) -> Vec2 {
+    func local(_ world: SIMD3<Float>) -> Vec2 {
         sketch.plane.local(Vec3(Double(world.x), Double(world.y), Double(world.z)))
     }
 
@@ -171,9 +222,13 @@ final class SketchSession {
 
     func click(_ world: SIMD3<Float>) {
         let raw = local(world)
+        if constraintTool != nil { pickForConstraint(raw); return }
+        if tool == .dimension { pickForDimension(raw); return }
         let p = snap(raw)
         switch tool {
+        case .dimension: break
         case .select:
+            selectedConstraint = nil
             selection = pick(raw)
         case .line:
             if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
@@ -210,6 +265,10 @@ final class SketchSession {
     }
 
     func cancel() -> Bool {
+        if editingDimension != nil { editingDimension = nil; return true }
+        if !picked.isEmpty { picked = []; return true }
+        if constraintTool != nil { constraintTool = nil; return true }
+        if selectedConstraint != nil { selectedConstraint = nil; return true }
         if !pending.isEmpty { pending = []; return true }
         if tool != .select { tool = .select; return true }
         if selection != nil { selection = nil; return true }
@@ -327,9 +386,9 @@ final class SketchSession {
 
     // MARK: Geometry helpers
 
-    private func dist(_ a: Vec2, _ b: Vec2) -> Double { ((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)).squareRoot() }
+    func dist(_ a: Vec2, _ b: Vec2) -> Double { ((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)).squareRoot() }
 
-    private func distanceToSegment(_ p: Vec2, _ a: Vec2, _ b: Vec2) -> Double {
+    func distanceToSegment(_ p: Vec2, _ a: Vec2, _ b: Vec2) -> Double {
         let dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy
         guard l2 > 1e-18 else { return dist(p, a) }
         let t = max(0, min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2))
@@ -376,7 +435,7 @@ final class SketchSession {
             case 1: return "Interasse \(fmt(dist(pending[0], c))) mm"
             default: return "Larghezza \(fmt(2 * distanceToLine(c, pending[0], pending[1]))) mm"
             }
-        case .select: return nil
+        case .select, .dimension: return nil
         }
     }
 
@@ -409,7 +468,9 @@ final class SketchSession {
         }
         for s in shapes {
             let selected = s.id == selection
-            var color = selected ? selectedColor : sketchColor
+            // Fully constrained shapes turn white (Fusion: blue = free, black = defined).
+            let defined = constrainedShapes.contains(s.id) ? SIMD4<Float>(0.93, 0.95, 0.98, 1) : sketchColor
+            var color = selected ? selectedColor : defined
             if s.isConstruction { color *= SIMD4(1, 1, 1, 0.45) }
             ring(s.outline, closed: s.isClosed, color)
             if selected, !pickingRegions, let h0 = previewHeight, h0 > 0, s.profile != nil {
@@ -495,7 +556,7 @@ final class SketchSession {
     }
 
     /// World position of sketch coordinates, `height` off the plane (overlays sit just above it).
-    private func world(_ p: Vec2, _ height: Double) -> SIMD3<Float> {
+    func world(_ p: Vec2, _ height: Double) -> SIMD3<Float> {
         let v = sketch.plane.world(p, height: height)
         return SIMD3(Float(v.x), Float(v.y), Float(v.z))
     }

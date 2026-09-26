@@ -132,6 +132,7 @@ struct ViewportContainer: View {
         .overlay(alignment: .topLeading) { sketchHUD }
         .overlay(alignment: .bottomLeading) { measureChip.padding(12) }
         .overlay(alignment: .topLeading) { manipulatorLabel }
+        .overlay(alignment: .topLeading) { constraintLabels }
         .onChange(of: workspace.previewSnapshot?.revision) { _, revision in
             viewport.setReference(revision == nil ? nil : model.snapshot(), features: model.document.activeFeatures)
         }
@@ -191,8 +192,14 @@ struct ViewportContainer: View {
                   onClick: handleClick,
                   onHover: handleHover,
                   onDragBegin: dragBegin,
-                  onDragMove: { ray in workspace.manipulator?.drag(ray) },
-                  onDragEnd: { workspace.manipulator?.endDrag() },
+                  onDragMove: { ray in
+                      if let sketch = workspace.sketch, sketch.dragRef != nil {
+                          if let p = sketch.intersect(ray) { sketch.drag(p) }
+                      } else { workspace.manipulator?.drag(ray) }
+                  },
+                  onDragEnd: {
+                      if let sketch = workspace.sketch, sketch.dragRef != nil { sketch.endDrag() } else { workspace.manipulator?.endDrag() }
+                  },
                   onKey: handleKey,
                   onContextMenu: contextMenu,
                   onReady: { renderer in
@@ -273,10 +280,27 @@ struct ViewportContainer: View {
     }
 
     private func dragBegin(_ ray: Ray) -> Bool {
+        // Sketch points drag along whatever the constraints leave free.
+        if let sketch = workspace.sketch, workspace.command == nil, let p = sketch.intersect(ray) {
+            sketch.vertexSnap = 8 * viewport.mmPerPoint
+            if sketch.beginDrag(p) { return true }
+        }
         guard let m = workspace.manipulator,
               m.hits(ray, length: arrowLength, tolerance: viewport.screenTolerance(10)) else { return false }
         m.beginDrag(ray, viewDirection: viewport.camera.forward)
         return true
+    }
+
+    /// Constraint symbols and dimension values on the sketch; a dimension opens for typing on
+    /// click (and right after it is created), a symbol selects its constraint (⌫ deletes it).
+    @ViewBuilder private var constraintLabels: some View {
+        if let sketch = workspace.sketch {
+            ForEach(sketch.annotations()) { a in
+                if let p = viewport.screenPoint(Vec3(Double(a.anchor.x), Double(a.anchor.y), Double(a.anchor.z))) {
+                    ConstraintLabel(annotation: a, sketch: sketch).position(x: p.x, y: p.y)
+                }
+            }
+        }
     }
 
     private func handleHover(_ point: CGPoint?, _ ray: Ray?) {
@@ -454,6 +478,7 @@ struct ViewportContainer: View {
         savedSketchLines + flatLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
                                   previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
+            + (workspace.sketch?.dimensionLines(color: SIMD4(0.85, 0.88, 0.92, 0.7)) ?? [])
     }
 
     /// Visible saved sketches, faint, on their plane.
@@ -525,7 +550,18 @@ struct ViewportContainer: View {
                 Label("SCHIZZO · " + (sketch.sketch.plane.isXY ? "piano XY" : "su faccia"), systemImage: "pencil.and.outline")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.Palette.sketch)
-                Text(sketch.tool.hint).font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                if let notice = sketch.notice {
+                    Label(notice, systemImage: "exclamationmark.triangle.fill").font(.system(size: 11)).foregroundStyle(.orange)
+                } else {
+                    Text(sketch.constraintTool?.hint ?? sketch.tool.hint).font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                }
+                if !sketch.sketch.constraints.isEmpty {
+                    Text(sketch.freedom == 0 ? "Vincolato" : (sketch.freedom == 1 ? "1 grado libero" : "\(sketch.freedom) gradi liberi"))
+                        .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(sketch.freedom == 0 ? Color.white.opacity(0.2) : Theme.Palette.sketch.opacity(0.25)))
+                        .help("Gradi di libertà rimasti: 0 = lo schizzo è completamente definito da vincoli e quote")
+                }
                 Button("Termina") { workspace.exitSketch() }.controlSize(.small)
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
@@ -675,5 +711,61 @@ private struct ManipulatorLabel: View {
 
     static func format(_ v: Double) -> String {
         String(format: v == v.rounded() ? "%.0f" : (v * 10 == (v * 10).rounded() ? "%.1f" : "%.2f"), v).replacingOccurrences(of: ".", with: ",")
+    }
+}
+
+/// One constraint symbol or dimension value on the sketch canvas.
+private struct ConstraintLabel: View {
+    let annotation: SketchSession.Annotation
+    let sketch: SketchSession
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    private var editing: Bool { sketch.editingDimension == annotation.id }
+    private var selected: Bool { sketch.selectedConstraint == annotation.id }
+
+    var body: some View {
+        Group {
+            if annotation.isDimension {
+                if editing {
+                    TextField("", text: $text)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 11.5, weight: .semibold).monospacedDigit())
+                        .multilineTextAlignment(.center)
+                        .frame(width: 56)
+                        .focused($focused)
+                        .onAppear {
+                            text = annotation.value.map { String(format: "%g", $0).replacingOccurrences(of: ".", with: ",") } ?? ""
+                            DispatchQueue.main.async { focused = true }
+                        }
+                        .onSubmit { commit() }
+                        .onExitCommand { sketch.editingDimension = nil }
+                        .onChange(of: focused) { _, f in if !f, editing { commit() } }
+                } else {
+                    Text(annotation.text).font(.system(size: 11, weight: .semibold).monospacedDigit())
+                }
+            } else {
+                Text(annotation.text).font(.system(size: 10.5, weight: .bold))
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, annotation.isDimension ? 6 : 4).padding(.vertical, 2)
+        .background(RoundedRectangle(cornerRadius: 4).fill(
+            selected || editing ? Color(red: 1, green: 0.55, blue: 0.22) :
+                (annotation.isDimension ? Color(white: 0.18).opacity(0.92) : Theme.Palette.sketch.opacity(0.85))))
+        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.white.opacity(0.25)))
+        .fixedSize()
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if annotation.isDimension { sketch.editingDimension = annotation.id } else { sketch.selectedConstraint = annotation.id; sketch.selection = nil }
+        }
+        .help(annotation.isDimension ? "Clicca per cambiare il valore" : "Clicca per selezionare il vincolo (⌫ lo elimina)")
+    }
+
+    private func commit() {
+        let clean = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
+            .replacingOccurrences(of: "mm", with: "").replacingOccurrences(of: "°", with: "").replacingOccurrences(of: "⌀", with: "")
+        sketch.editingDimension = nil
+        if let v = Double(clean.trimmingCharacters(in: .whitespaces)) { sketch.setDimension(annotation.id, value: v) }
     }
 }
