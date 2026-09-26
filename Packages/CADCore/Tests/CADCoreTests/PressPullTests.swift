@@ -54,3 +54,30 @@ private func face(_ b: DesignEvaluator.Body, normal n: Vec3) -> FaceID {
     let wall = cb.snapshot.faces.first { if case .cylinder = $0.surface { true } else { false } }!.id
     #expect(PressPull.plan(face: wall, in: cb.snapshot, document: cdoc) == nil)
 }
+
+@Test func severalFacesMoveTogether() throws {
+    // Top and bottom of one box: 2 mm each way → 4 mm taller; plus a side face extruded.
+    let box = Feature(name: "Base", kind: .box(width: 40, depth: 30, height: 10))
+    let doc = CADDocument(features: [box])
+    let b = body(doc)
+    let plans = [Vec3(0, 0, 1), Vec3(0, 0, -1), Vec3(1, 0, 0)].compactMap { PressPull.plan(face: face(b, normal: $0), in: b.snapshot, document: doc) }
+    #expect(plans.count == 3)
+    let (moved, ids) = try PressPull.apply(plans, distance: 2, to: doc)
+    #expect(ids.count == 2 && ids[0] == box.id)
+    let r = DesignEvaluator.evaluate(moved, revision: "r")
+    #expect(r.issues.isEmpty && r.bodies.count == 1)
+    let bb = r.bodies[0].mesh.bounds!
+    #expect(abs(bb.min.z + 2) < 1e-9 && abs(bb.max.z - 12) < 1e-9 && abs(bb.max.x - 22) < 1e-9)
+    #expect(abs(r.bodies[0].mesh.volume - (40 * 30 * 14 + 2 * 30 * 10)) < 1e-6)
+}
+
+@Test func sideFacePulledWithTheTopTakesTheNewHeight() throws {
+    let box = Feature(name: "Base", kind: .box(width: 40, depth: 30, height: 5))
+    let doc = CADDocument(features: [box])
+    let b = body(doc)
+    let (moved, _) = try PressPull.move(faces: [face(b, normal: Vec3(0, 0, 1)), face(b, normal: Vec3(1, 0, 0))], distance: 3, in: doc)
+    let r = DesignEvaluator.evaluate(moved, revision: "r")
+    #expect(r.issues.isEmpty && r.bodies.count == 1)
+    // One block 43 × 30 × 8: the extension is as tall as the raised part.
+    #expect(abs(r.bodies[0].mesh.volume - 43 * 30 * 8) < 1e-6)
+}

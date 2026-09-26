@@ -9,53 +9,66 @@ enum PressPullCommand {
     static func start(workspace: WorkspaceState, model: DesignModel) -> CommandSession {
         workspace.selectionFilter = .face
         workspace.geoSelection.removeAll { if case .face = $0.kind { false } else { true } }
-        var plan: PressPull.Plan?
+        // Every click adds or removes a face (no ⇧ needed), as for the areas in Estrudi.
+        workspace.edgePicking = true
+        var plans: [PressPull.Plan] = []
+        var faceIDs: [FaceID] = []
         weak var session: CommandSession?
 
-        func pickedFace() -> (GeoRef, BodySnapshot)? {
+        func faces() -> [(FaceID, BodySnapshot)] {
             let bodies = model.evaluation().bodies
-            for ref in workspace.geoSelection.reversed() {
-                guard case .face = ref.kind, let b = bodies.first(where: { $0.id == ref.feature }) else { continue }
-                return (ref, b.snapshot)
+            return workspace.geoSelection.compactMap { ref in
+                guard case let .face(id) = ref.kind, let b = bodies.first(where: { $0.id == ref.feature }) else { return nil }
+                return (id, b.snapshot)
             }
-            return nil
         }
         func distance(_ f: [CommandField]) -> Double { f.first { $0.id == "d" }?.number ?? 0 }
 
-        /// Face → plan and arrow (called when the picked face changes).
+        /// Picked faces → plans and the arrow (on the first movable face).
         func choose() {
-            // One face at a time: the last one clicked.
-            if workspace.geoSelection.count > 1, let last = workspace.geoSelection.last { workspace.geoSelection = [last]; return }
-            guard let (ref, snapshot) = pickedFace(), case let .face(id) = ref.kind,
-                  let frame = PressPull.frame(of: id, in: snapshot) else {
-                plan = nil; workspace.manipulator = nil
-                session?.update("face") { $0.value = .references([]) }
-                session?.update("what") { $0.label = "Clicca una faccia piana del pezzo." }
-                return
+            let picked = faces()
+            var movable: [(FaceID, BodySnapshot, PressPull.Plan)] = []
+            var fixed = 0
+            for (id, snap) in picked {
+                if let plan = PressPull.plan(face: id, in: snap, document: model.document) { movable.append((id, snap, plan)) } else { fixed += 1 }
             }
-            plan = PressPull.plan(face: id, in: snapshot, document: model.document)
-            session?.update("face") { $0.value = .references(["\(id)"]) }
-            let what: String
-            switch plan {
-            case let .height(fid, _, _)?:
-                let name = model.document.features.first { $0.id == fid }?.name ?? "feature"
-                what = "Cambia l'altezza di «\(name)»."
-            case .offset?: what = "Estrude la faccia: tirando si unisce al pezzo, spingendo taglia."
-            case nil: what = "Questa faccia non si può spostare (curva o contorno troppo complesso)."
+            plans = movable.map(\.2)
+            faceIDs = movable.map(\.0)
+            session?.update("face") { $0.value = .references(picked.map { "\($0.0)" }) }
+            var notes: [String] = []
+            let heights = Set(plans.compactMap { if case let .height(id, _, _) = $0 { id } else { nil } })
+            let names = heights.compactMap { id in model.document.features.first { $0.id == id }?.name }.sorted()
+            if !names.isEmpty { notes.append("Cambia l'altezza di " + names.map { "«\($0)»" }.joined(separator: ", ") + ".") }
+            let offsets = plans.filter { if case .offset = $0 { true } else { false } }.count
+            if offsets > 0 { notes.append(offsets == 1 ? "1 faccia estrusa (tirando si unisce, spingendo taglia)." : "\(offsets) facce estruse (tirando si uniscono, spingendo tagliano).") }
+            if fixed > 0 { notes.append("\(fixed) facc\(fixed == 1 ? "ia curva o complessa ignorata" : "e curve o complesse ignorate").") }
+            if picked.isEmpty { notes = ["Clicca le facce piane da spostare: ogni clic aggiunge o toglie."] }
+            session?.update("what") { $0.label = notes.joined(separator: " ") }
+            guard let (id, snap, _) = movable.first, let frame = PressPull.frame(of: id, in: snap) else { workspace.manipulator = nil; return }
+            if let m = workspace.manipulator {
+                m.origin = frame.centre; m.inward = frame.normal
+            } else {
+                let arrow = DistanceManipulator(origin: frame.centre, inward: frame.normal, factor: 1,
+                                                value: session.map { distance($0.fields) } ?? 0, range: -10_000...10_000, label: "D")
+                arrow.pointsAlong = true
+                arrow.onChange = { v in session?.update("d") { $0.value = .number(v) } }
+                workspace.manipulator = arrow
             }
-            session?.update("what") { $0.label = what }
-            guard plan != nil else { workspace.manipulator = nil; return }
-            let arrow = DistanceManipulator(origin: frame.centre, inward: frame.normal, factor: 1,
-                                            value: session.map { distance($0.fields) } ?? 0, range: -10_000...10_000, label: "D")
-            arrow.pointsAlong = true
-            arrow.onChange = { v in session?.update("d") { $0.value = .number(v) } }
-            workspace.manipulator = arrow
+            if let session { preview(session.fields) }
+        }
+
+        /// Heights together with extruded faces: the extruded ones are re-read on the raised part
+        /// (no step); otherwise the plans apply as they are (fast while dragging).
+        func moved(_ d: Double, name: String = "Premi/Tira") throws -> (CADDocument, [UUID]) {
+            let mixed = plans.contains { if case .height = $0 { true } else { false } } && plans.contains { if case .offset = $0 { true } else { false } }
+            return mixed ? try PressPull.move(faces: faceIDs, distance: d, in: model.document, components: model.componentResolver, name: name)
+                         : try PressPull.apply(plans, distance: d, to: model.document, name: name)
         }
 
         func preview(_ f: [CommandField]) {
             let d = distance(f)
             if let m = workspace.manipulator, !m.isDragging { m.value = d }
-            guard let plan, abs(d) > 1e-9, let (doc, _) = try? PressPull.apply(plan, distance: d, to: model.document) else {
+            guard !plans.isEmpty, abs(d) > 1e-9, let (doc, _) = try? moved(d) else {
                 workspace.requestPreview(nil); return
             }
             workspace.requestPreview(doc)
@@ -63,6 +76,7 @@ enum PressPullCommand {
 
         func finish() {
             workspace.onGeoSelectionChange = nil
+            workspace.edgePicking = false
             workspace.manipulator = nil
             workspace.requestPreview(nil)
         }
@@ -70,22 +84,22 @@ enum PressPullCommand {
         let created = CommandSession(
             title: "Premi/Tira", symbol: "arrow.up.and.down.square",
             fields: [
-                .init(id: "face", label: "Faccia", kind: .reference(prompt: "Clicca una faccia", maxCount: 1), value: .references([]),
-                      help: "La faccia sopra o sotto di un'estrusione cambia la sua altezza; le altre facce si estrudono"),
+                .init(id: "face", label: "Facce", kind: .reference(prompt: "Clicca le facce", maxCount: 100), value: .references([]),
+                      help: "Ogni clic aggiunge o toglie una faccia. Sopra/sotto di un'estrusione cambia la sua altezza; le altre facce si estrudono"),
                 .init(id: "d", label: "Distanza", kind: .length(-10_000...10_000), value: .number(0),
-                      help: "Positiva = tira fuori, negativa = spingi dentro. Puoi anche trascinare la freccia o cliccare l'etichetta"),
-                .init(id: "what", label: "Clicca una faccia piana del pezzo.", kind: .note(warning: false), value: .flag(false)),
+                      help: "Positiva = tira fuori, negativa = spingi dentro; ogni faccia lungo la sua normale. Puoi anche trascinare la freccia o cliccare l'etichetta"),
+                .init(id: "what", label: "Clicca le facce piane da spostare: ogni clic aggiunge o toglie.", kind: .note(warning: false), value: .flag(false)),
             ],
             onPreview: preview,
             onCommit: { f in
                 defer { finish() }
                 let d = distance(f)
-                guard let plan else { model.statusMessage = "Scegli una faccia piana."; return }
+                guard !plans.isEmpty else { model.statusMessage = "Scegli almeno una faccia piana."; return }
                 guard abs(d) > 1e-9 else { model.statusMessage = "Distanza nulla: trascina la freccia o scrivi la distanza."; return }
                 do {
-                    let name = d > 0 ? "Tira \(fmt(d)) mm" : "Spingi \(fmt(-d)) mm"
-                    let (doc, id) = try PressPull.apply(plan, distance: d, to: model.document, name: name)
-                    model.edit(name, selected: .some(id), changed: [id]) { $0 = doc }
+                    let name = (d > 0 ? "Tira \(fmt(d)) mm" : "Spingi \(fmt(-d)) mm") + (plans.count > 1 ? " (\(plans.count) facce)" : "")
+                    let (doc, ids) = try moved(d, name: name)
+                    model.edit(name, selected: .some(ids.first), changed: ids) { $0 = doc }
                     workspace.geoSelection = []
                 } catch {
                     model.statusMessage = "Premi/Tira: \(error.localizedDescription)"

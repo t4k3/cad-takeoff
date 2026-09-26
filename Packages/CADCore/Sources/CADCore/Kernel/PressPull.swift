@@ -74,6 +74,49 @@ public enum PressPull {
         }
     }
 
+    /// Several faces moved by the same distance, each along its own normal (applied in order: two
+    /// caps of one feature both change its height).
+    public static func apply(_ plans: [Plan], distance: Double, to document: CADDocument, name: String = "Premi/Tira") throws -> (CADDocument, [UUID]) {
+        var doc = document, ids: [UUID] = []
+        for plan in plans {
+            let (next, id) = try apply(plan, distance: distance, to: doc, name: name)
+            doc = next
+            if !ids.contains(id) { ids.append(id) }
+        }
+        return (doc, ids)
+    }
+
+    /// Faces of the evaluated design moved together by `distance`: heights first, then the other
+    /// faces are re-read on the updated part and extruded, so a side face pulled with the top
+    /// takes the new height (no step), as when Fusion offsets several faces at once.
+    public static func move(faces: [FaceID], distance: Double, in document: CADDocument,
+                            components: DesignEvaluator.ComponentResolver? = nil, name: String = "Premi/Tira") throws -> (CADDocument, [UUID]) {
+        func planned(_ doc: CADDocument) -> [FaceID: Plan] {
+            let bodies = DesignEvaluator.evaluate(doc, revision: "presspull", components: components).bodies
+            var out: [FaceID: Plan] = [:]
+            for id in faces {
+                for b in bodies where b.snapshot.faces.contains(where: { $0.id == id }) {
+                    if let p = plan(face: id, in: b.snapshot, document: doc) { out[id] = p }
+                    break
+                }
+            }
+            return out
+        }
+        let first = planned(document)
+        let heights = faces.compactMap { first[$0] }.filter { if case .height = $0 { true } else { false } }
+        guard !first.isEmpty else { throw KernelError.invalidParameter("nessuna faccia piana da spostare") }
+        var (doc, ids) = try apply(heights, distance: distance, to: document, name: name)
+        let offsetFaces = faces.filter { if case .offset? = first[$0] { true } else { false } }
+        if !offsetFaces.isEmpty {
+            let again = heights.isEmpty ? first : planned(doc)
+            let offsets = offsetFaces.compactMap { again[$0] }.filter { if case .offset = $0 { true } else { false } }
+            let (next, more) = try apply(offsets, distance: distance, to: doc, name: name)
+            doc = next
+            ids += more.filter { !ids.contains($0) }
+        }
+        return (doc, ids)
+    }
+
     // MARK: Helpers
 
     static func height(of f: Feature) -> Double? {
