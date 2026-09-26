@@ -12,6 +12,7 @@
 		0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */; };
 		0E767B03A5E12FC1C9C65E1E /* AssistantSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA831E610F555E8A4BC81923 /* AssistantSession.swift */; };
 		13A90DD582DD0DFADFC02690 /* GeoSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B072E2898F0A20B8861C13F8 /* GeoSelection.swift */; };
+		143812546439D97F9A094225 /* CADTakeoffImportProject.py in Resources */ = {isa = PBXBuildFile; fileRef = 3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */; };
 		15B9E5F66063E99E492FD242 /* Picking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1E9EAC4951BAF080CE4885 /* Picking.swift */; };
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
@@ -39,8 +40,10 @@
 		777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */; };
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
 		7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */; };
+		7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F28DA722F5CEA29D56B8C6 /* DesignTabs.swift */; };
 		829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */ = {isa = PBXBuildFile; fileRef = 2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */; };
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
+		871A00C58DD6D28ADF201C37 /* CADTakeoffImportProject.manifest in Resources */ = {isa = PBXBuildFile; fileRef = BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */; };
 		89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */; };
 		8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */; };
 		9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891E4E944492E6539912AE18 /* MCPHost.swift */; };
@@ -112,12 +115,14 @@
 		0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIConversation.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
 		14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceManipulator.swift; sourceTree = "<group>"; };
+		14F28DA722F5CEA29D56B8C6 /* DesignTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTabs.swift; sourceTree = "<group>"; };
 		15AE2553C670B5E2BE5C6306 /* FusionAddInInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionAddInInstaller.swift; sourceTree = "<group>"; };
 		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
 		29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitCommand.swift; sourceTree = "<group>"; };
 		2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */ = {isa = PBXFileReference; path = FusionTakeoffExport.manifest; sourceTree = "<group>"; };
+		3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = CADTakeoffImportProject.py; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblySheets.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
@@ -152,6 +157,7 @@
 		ADF9849BD6F001008766D793 /* PressPullCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressPullCommand.swift; sourceTree = "<group>"; };
 		B072E2898F0A20B8861C13F8 /* GeoSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoSelection.swift; sourceTree = "<group>"; };
 		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */ = {isa = PBXFileReference; path = CADTakeoffImportProject.manifest; sourceTree = "<group>"; };
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
 		BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaderSource.swift; sourceTree = "<group>"; };
 		BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FusionTakeoff.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -252,6 +258,15 @@
 				8A79D033E48D1FC6B0898162 /* CADCore */,
 			);
 			path = Packages;
+			sourceTree = "<group>";
+		};
+		4E69D514B4A72A1E1F8C7F04 /* CADTakeoffImportProject */ = {
+			isa = PBXGroup;
+			children = (
+				BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */,
+				3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */,
+			);
+			path = CADTakeoffImportProject;
 			sourceTree = "<group>";
 		};
 		5DB1C90B5FC83D575038CE3E /* DesignSystem */ = {
@@ -444,6 +459,7 @@
 			children = (
 				2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */,
 				3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */,
+				4E69D514B4A72A1E1F8C7F04 /* CADTakeoffImportProject */,
 			);
 			path = FusionAddIn;
 			sourceTree = "<group>";
@@ -474,6 +490,7 @@
 			isa = PBXGroup;
 			children = (
 				F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */,
+				14F28DA722F5CEA29D56B8C6 /* DesignTabs.swift */,
 				674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */,
 				56D04A4DB715945B73E88E2B /* PartColorPicker.swift */,
 				E8DCACC31C8A1D1083704390 /* Ribbon.swift */,
@@ -602,6 +619,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				CE170F2CBCC50AEF128AC113 /* Assets.xcassets in Resources */,
+				871A00C58DD6D28ADF201C37 /* CADTakeoffImportProject.manifest in Resources */,
+				143812546439D97F9A094225 /* CADTakeoffImportProject.py in Resources */,
 				829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */,
 				FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */,
 				00F4B54DB5EC90153C2FA6BE /* PrivacyInfo.xcprivacy in Resources */,
@@ -660,6 +679,7 @@
 				B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */,
 				777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
+				7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */,
 				F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */,
