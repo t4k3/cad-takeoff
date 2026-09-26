@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct FusionTakeoffApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var model = DesignModel()
     @State private var mcp = MCPHost()
     @State private var library = ProjectLibrary()
@@ -24,12 +25,14 @@ struct FusionTakeoffApp: App {
                     mcp.attach(tools)
                     assistant.tools = tools
                     mcp.start()
-                    library.sketches = sketches
+                    sketches.model = model
                     library.adoptInitialDesign(model)
+                    AppDelegate.confirmQuit = { [library, model] in library.confirmDiscard(model) }
                 }
                 .frame(minWidth: 1100, minHeight: 700)
         }
         .commands {
+            CommandGroup(replacing: .undoRedo) { UndoMenuItems(model: model) }
             CommandGroup(replacing: .newItem) {
                 Button("Home") { library.showHome.toggle() }.keyboardShortcut("h", modifiers: [.command, .shift])
                 Button("Nuovo disegno") { library.newUntitled(model: model) }.keyboardShortcut("n")

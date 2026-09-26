@@ -35,3 +35,16 @@ import Testing
     let back = try JSONDecoder().decode(Sketch.self, from: JSONEncoder().encode(s))
     #expect(back == s)
 }
+
+@Test func documentKeepsSketchesAndReadsOldFiles() throws {
+    let sk = Sketch(name: "S", shapes: [SketchShape(kind: .circle(center: .init(0, 0), radius: 2))])
+    let f = Feature(name: "E", kind: .extrude(profile: sk.shapes[0].profile!, height: 3))
+    let doc = CADDocument(features: [f], sketches: [sk], sketchLinks: [SketchLink(featureID: f.id, sketchID: sk.id, shapeID: sk.shapes[0].id)])
+    #expect(try CADDocument.decode(doc.encoded()) == doc)
+    // A v1 file without the sketch keys still opens.
+    let old = try CADDocument.decode(Data(#"{"version":1,"features":[]}"#.utf8))
+    #expect(old.sketches.isEmpty && old.sketchLinks.isEmpty)
+    // No sketch keys are written for documents without sketches (unchanged v1 files).
+    let plain = String(decoding: try CADDocument(features: [f]).encoded(), as: UTF8.self)
+    #expect(!plain.contains("sketches"))
+}

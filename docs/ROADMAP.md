@@ -12,6 +12,15 @@ Aggiornamento diretto Ross a Codex, 25/09: «comincia lamiere, vedi cosa fa Fusi
 e poi fai la base». Autorizzata l’anticipazione della sola base motore lamiera
 T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude.
 
+## Fondamenta (dall'analisi del 26/09, prima di proseguire con i passi)
+
+| Fase | Cosa | Stato |
+|---|---|---|
+| 0 | Annulla/Ripeti veri per ogni modifica + avviso alla chiusura | **Fatta** — in attesa di prova di Ross |
+| 1 | Documento v2 unico con storico (solidi, schizzi, lamiera) + migrazione file | — |
+| 2 | Vista 3D e selezione sul motore B-rep | — |
+| 3 | Booleane: Unisci / Taglia / Interseca | — |
+
 | # | Passo | Cosa vede Ross alla fine | Chi | Stato |
 |---|---|---|---|---|
 | 1 | **Consolidare quello che c'è** — chat provata dal vivo con le chiavi di Ross, Claude Desktop collegato, colori delle parti + export 3MF nell'interfaccia, test automatici che girano con un comando | Chiede all'assistente "fai una staffa", la vede comparire, la colora, la esporta in 3MF e la apre nello slicer | Claude (UX) + Codex (test/CI) | **In attesa delle prove di Ross; CI T13 completata** |

@@ -18,6 +18,7 @@
 		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
 		276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D04A4DB715945B73E88E2B /* PartColorPicker.swift */; };
 		2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */; };
+		2F1583AA3117428454D4F36B /* UndoRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E853D121D28F163F7809FD /* UndoRouter.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */; };
@@ -98,6 +99,7 @@
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
 		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
 		445542A3EE5F7AD6E9698285 /* DerivedTopology.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DerivedTopology.swift; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 				00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */,
 				785E63BA1C7AEB7EF9F2E4AD /* Assistant */,
 				F4C74464F3687349A61C6F69 /* Command */,
+				F1472CEAADDAA3A83F7D7939 /* Commands */,
 				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
 				7C49791EA814007E5DEA23D0 /* Home */,
@@ -419,6 +422,14 @@
 			path = Workspace;
 			sourceTree = "<group>";
 		};
+		F1472CEAADDAA3A83F7D7939 /* Commands */ = {
+			isa = PBXGroup;
+			children = (
+				28E853D121D28F163F7809FD /* UndoRouter.swift */,
+			);
+			path = Commands;
+			sourceTree = "<group>";
+		};
 		F4C74464F3687349A61C6F69 /* Command */ = {
 			isa = PBXGroup;
 			children = (
@@ -574,6 +585,7 @@
 				363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */,
 				383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */,
 				EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */,
+				2F1583AA3117428454D4F36B /* UndoRouter.swift in Sources */,
 				CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */,
 				CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */,
 				4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */,

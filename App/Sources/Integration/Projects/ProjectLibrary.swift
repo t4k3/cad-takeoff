@@ -31,9 +31,6 @@ final class ProjectLibrary {
     var showHome = true
     private(set) var currentURL: URL?
     private(set) var savedRevision: String?
-    /// Sketches of the open design, saved in the same file.
-    @ObservationIgnored var sketches: SketchStore?
-    private var savedSketchRevision = 0
     var lastError: String?
 
     init() { restoreRoot() }
@@ -171,12 +168,11 @@ final class ProjectLibrary {
 
     /// The design present at launch (not from a file) counts as clean until edited.
     func adoptInitialDesign(_ model: DesignModel) {
-        if currentURL == nil, savedRevision == nil { savedRevision = model.designRevision; savedSketchRevision = sketches?.revision ?? 0 }
+        if currentURL == nil, savedRevision == nil { savedRevision = model.designRevision }
     }
 
     func isDirty(_ model: DesignModel) -> Bool {
-        (savedRevision == nil ? !model.document.features.isEmpty : model.designRevision != savedRevision)
-            || (sketches.map { $0.revision != savedSketchRevision } ?? false)
+        savedRevision == nil ? !model.document.features.isEmpty : model.designRevision != savedRevision
     }
 
     var currentName: String { currentURL?.deletingPathExtension().lastPathComponent ?? "Senza titolo" }
@@ -187,8 +183,7 @@ final class ProjectLibrary {
         run {
             let url = uniqueURL(folder.appendingPathComponent("Nuovo disegno.\(Self.designExtension)"))
             model.newDesign()
-            sketches?.reset()
-            try model.write(to: url, sketches: sketches)
+            try model.write(to: url)
             markSaved(url, model: model)
             showHome = false
         }
@@ -198,7 +193,7 @@ final class ProjectLibrary {
         guard url != currentURL || !isDirty(model) else { showHome = false; return }
         guard confirmDiscard(model) else { return }
         run {
-            try model.load(from: url, sketches: sketches)
+            try model.load(from: url)
             markSaved(url, model: model)
             showHome = false
         }
@@ -215,22 +210,22 @@ final class ProjectLibrary {
     func newUntitled(model: DesignModel) {
         guard confirmDiscard(model) else { return }
         model.newDesign()
-        sketches?.reset()
         currentURL = nil
         savedRevision = model.designRevision
-        savedSketchRevision = sketches?.revision ?? 0
         showHome = false
     }
 
     /// ⌘S: saves in place, or asks where (inside the library) the first time.
     @discardableResult
     func save(model: DesignModel) -> Bool {
+        model.finishPendingEdits()
         guard let url = currentURL else { return saveAs(model: model) }
         return run { try write(model, to: url) } != nil
     }
 
     @discardableResult
     func saveAs(model: DesignModel) -> Bool {
+        model.finishPendingEdits()
         let panel = NSSavePanel()
         panel.allowedContentTypes = [DesignModel.ftkType]
         panel.nameFieldStringValue = currentName + ".\(Self.designExtension)"
@@ -240,7 +235,7 @@ final class ProjectLibrary {
     }
 
     private func write(_ model: DesignModel, to url: URL) throws {
-        try model.write(to: url, sketches: sketches)
+        try model.write(to: url)
         markSaved(url, model: model)
         model.statusMessage = "Salvato \(url.deletingPathExtension().lastPathComponent)"
     }
@@ -248,7 +243,6 @@ final class ProjectLibrary {
     private func markSaved(_ url: URL, model: DesignModel) {
         currentURL = url
         savedRevision = model.designRevision
-        savedSketchRevision = sketches?.revision ?? 0
         writeThumbnail(for: model.document, design: url)
         var r = UserDefaults.standard.stringArray(forKey: Self.recentsKey) ?? []
         r.removeAll { $0 == url.path }
@@ -264,8 +258,9 @@ final class ProjectLibrary {
         else { try? FileManager.default.removeItem(at: thumb) }
     }
 
-    /// Unsaved changes: Save / Don't save / Cancel.
-    private func confirmDiscard(_ model: DesignModel) -> Bool {
+    /// Unsaved changes: Save / Don't save / Cancel. Also used when quitting.
+    func confirmDiscard(_ model: DesignModel) -> Bool {
+        model.finishPendingEdits()
         guard isDirty(model) else { return true }
         let alert = NSAlert()
         alert.messageText = "Salvare le modifiche a «\(currentName)»?"

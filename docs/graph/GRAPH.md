@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 09:07. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 10:09. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -126,6 +126,9 @@ flowchart LR
   subgraph P19["Altro"]
     T79["T79 · Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo<br/><i>claude</i>"]:::todo
     T80["T80 · UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export<br/><i>claude</i>"]:::todo
+  end
+  subgraph P20["Fase 0"]
+    T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
   end
   T00 --> T02
   T00 --> T03
@@ -394,3 +397,4 @@ flowchart LR
 | T78 | Base lamiera propria: regola versionata, piastra e flangia singola, sviluppo e DXF | done | codex | T75 | Packages/CADCore/Sources/CADCore/SheetMetal<br>Packages/CADCore/Tests/CADCoreTests/SheetMetalTests.swift<br>Tests/SheetMetal<br>scripts/test-sheet-metal.sh<br>scripts/ci.sh<br>docs/requirements/SHEET_METAL.md<br>docs/requirements/SHEET_METAL_V1.md<br>docs/ROADMAP.md<br>docs/architecture |
 | T79 | Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo | todo | claude | T78, T77 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>Tests/SheetMetalIntegration<br>scripts/test-sheet-metal-integration.sh<br>docs/requirements/SHEET_METAL_V1.md |
 | T80 | UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export | todo | claude | T79, T25 | App/Sources/UI/SheetMetal<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport<br>App/Sources/Integration/Projects |
+| T81 | Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura | done | claude | — | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>App/Sources/UI<br>App/Sources/Integration/Projects |

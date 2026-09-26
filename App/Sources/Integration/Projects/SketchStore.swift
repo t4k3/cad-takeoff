@@ -2,87 +2,60 @@ import CADCore
 import Foundation
 import Observation
 
-/// Saved sketches of the open design and their links to extruded features (T77).
-/// Stored in the same .ftk file under separate keys ("sketches", "sketchLinks"): old files
-/// load unchanged and the core decoder ignores the extra keys. To be merged into the
-/// document v2 when Codex introduces it (T27).
+/// Sketches of the open design, read from and written to `model.document` (T77, T81):
+/// every change is one step of the design's undo history.
 @MainActor
 @Observable
 final class SketchStore {
-    private(set) var sketches: [Sketch] = []
-    private(set) var links: [SketchLink] = []
-    /// Bumped on every change (dirty tracking).
-    private(set) var revision = 0
+    @ObservationIgnored weak var model: DesignModel?
+
+    var sketches: [Sketch] { model?.document.sketches ?? [] }
+    var links: [SketchLink] { model?.document.sketchLinks ?? [] }
 
     func sketch(_ id: Sketch.ID) -> Sketch? { sketches.first { $0.id == id } }
-
-    func upsert(_ s: Sketch) {
-        if let i = sketches.firstIndex(where: { $0.id == s.id }) { sketches[i] = s } else { sketches.append(s) }
-        revision += 1
-    }
-
-    func delete(_ id: Sketch.ID) {
-        sketches.removeAll { $0.id == id }
-        links.removeAll { $0.sketchID == id }
-        revision += 1
-    }
-
-    func setVisible(_ id: Sketch.ID, _ visible: Bool) {
-        guard let i = sketches.firstIndex(where: { $0.id == id }) else { return }
-        sketches[i].isVisible = visible
-        revision += 1
-    }
-
-    func rename(_ id: Sketch.ID, to name: String) {
-        guard let i = sketches.firstIndex(where: { $0.id == id }), !name.isEmpty else { return }
-        sketches[i].name = name
-        revision += 1
-    }
-
-    func link(feature: UUID, sketch: Sketch.ID, shape: SketchShape.ID) {
-        links.removeAll { $0.featureID == feature }
-        links.append(SketchLink(featureID: feature, sketchID: sketch, shapeID: shape))
-        revision += 1
-    }
-
     func links(of sketch: Sketch.ID) -> [SketchLink] { links.filter { $0.sketchID == sketch } }
     func sketchID(forFeature f: UUID) -> Sketch.ID? { links.first { $0.featureID == f }?.sketchID }
 
-    /// Drops links to features that no longer exist (deleted or undone).
-    func prune(existing features: Set<UUID>) {
-        let before = links.count
-        links.removeAll { !features.contains($0.featureID) }
-        if links.count != before { revision += 1 }
+    func delete(_ id: Sketch.ID) {
+        guard let name = sketch(id)?.name else { return }
+        model?.edit("Elimina \(name)") { doc in
+            doc.sketches.removeAll { $0.id == id }
+            doc.sketchLinks.removeAll { $0.sketchID == id }
+        }
     }
 
-    func reset() { sketches = []; links = []; revision += 1 }
+    func setVisible(_ id: Sketch.ID, _ visible: Bool) {
+        guard let s = sketch(id) else { return }
+        model?.edit(visible ? "Mostra \(s.name)" : "Nascondi \(s.name)") { doc in
+            if let i = doc.sketches.firstIndex(where: { $0.id == id }) { doc.sketches[i].isVisible = visible }
+        }
+    }
 
     /// Next default name ("Schizzo N").
     var nextName: String {
         let n = (sketches.compactMap { Int($0.name.replacingOccurrences(of: "Schizzo ", with: "")) }.max() ?? 0) + 1
         return "Schizzo \(n)"
     }
+}
 
-    // MARK: File section
-
-    private struct Section: Codable {
-        var sketches: [Sketch]?
-        var sketchLinks: [SketchLink]?
+extension CADDocument {
+    /// Rewrites the profile of every extrusion linked to a (still closed) shape of `sketch`;
+    /// links to deleted features or shapes are dropped, those features keep their last profile.
+    mutating func regenerate(from sketch: Sketch) {
+        sketchLinks.removeAll { link in
+            link.sketchID == sketch.id && (!features.contains { $0.id == link.featureID }
+                                          || !sketch.shapes.contains { $0.id == link.shapeID && $0.profile != nil })
+        }
+        for link in sketchLinks where link.sketchID == sketch.id {
+            guard let shape = sketch.shapes.first(where: { $0.id == link.shapeID }), let profile = shape.profile,
+                  let i = features.firstIndex(where: { $0.id == link.featureID }),
+                  case let .extrude(_, height) = features[i].kind else { continue }
+            features[i].kind = .extrude(profile: profile, height: height)
+        }
     }
 
-    func load(fromFile data: Data) {
-        let s = (try? JSONDecoder().decode(Section.self, from: data)) ?? Section()
-        sketches = s.sketches ?? []
-        links = s.sketchLinks ?? []
-        revision += 1
-    }
-
-    /// Adds the sketch keys to an encoded document (keeps the document's own formatting keys).
-    func merged(into documentJSON: Data) throws -> Data {
-        guard !sketches.isEmpty || !links.isEmpty else { return documentJSON }
-        guard var object = try JSONSerialization.jsonObject(with: documentJSON) as? [String: Any] else { return documentJSON }
-        let extra = try JSONSerialization.jsonObject(with: JSONEncoder().encode(Section(sketches: sketches, sketchLinks: links))) as? [String: Any] ?? [:]
-        for (k, v) in extra { object[k] = v }
-        return try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+    /// Inserts or replaces a sketch.
+    mutating func upsert(_ s: Sketch) {
+        if let i = sketches.firstIndex(where: { $0.id == s.id }) { sketches[i] = s } else { sketches.append(s) }
     }
 }

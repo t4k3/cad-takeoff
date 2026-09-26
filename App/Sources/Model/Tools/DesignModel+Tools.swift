@@ -1,19 +1,6 @@
 import Foundation
 import CADCore
 
-struct AssistantHistory {
-    struct Entry {
-        let before: CADDocument
-        let after: CADDocument
-        let selectionBefore: UUID?
-        let selectionAfter: UUID?
-        let title: String
-        let changed: [UUID]
-    }
-    var undo: [Entry] = []
-    var redo: [Entry] = []
-}
-
 extension DesignModel: CADToolProvider {
     var tools: [ToolSpec] { CADToolCatalog.tools }
 
@@ -108,18 +95,17 @@ extension DesignModel: CADToolProvider {
         return result(statusMessage, ["changed": true, "feature_id": .string(changed.uuidString)], changed: [changed])
     }
 
+    /// The assistant may only undo/redo its own steps: a change made by the user is never undone by it.
     private func restore(redo: Bool) throws -> ToolResult {
-        guard let entry = redo ? assistantHistory.redo.last : assistantHistory.undo.last else {
-            throw CADToolFailure(redo ? "Nessuna operazione da ripetere." : "Nessuna operazione assistente da annullare; una modifica manuale azzera questa cronologia.")
+        let author = redo ? nextRedoAuthor : lastEditAuthor
+        guard let author else {
+            throw CADToolFailure(redo ? "Nessuna operazione da ripetere." : "Nessuna operazione da annullare.")
         }
-        guard document == (redo ? entry.before : entry.after) else { throw CADToolFailure("Documento cambiato: annullamento non applicabile.") }
-        applyingAssistantChange = true
-        document = redo ? entry.after : entry.before
-        selection = redo ? entry.selectionAfter : entry.selectionBefore
-        applyingAssistantChange = false
-        if redo { assistantHistory.redo.removeLast(); assistantHistory.undo.append(entry) }
-        else { assistantHistory.undo.removeLast(); assistantHistory.redo.append(entry) }
-        statusMessage = (redo ? "Ripetuto: " : "Annullato: ") + entry.title
+        guard author == .assistant else {
+            throw CADToolFailure(redo ? "L'operazione da ripetere è dell'utente: usa ⌘⇧Z nell'app."
+                                      : "L'ultima modifica è stata fatta dall'utente: l'assistente non la annulla.")
+        }
+        guard let entry = redo ? self.redo() : self.undo() else { throw CADToolFailure("Nessuna operazione.") }
         return result(statusMessage, ["changed": true], changed: entry.changed)
     }
 
@@ -161,9 +147,9 @@ extension DesignModel: CADToolProvider {
     private func result(_ text: String, _ fields: [String: JSONValue], error: Bool = false, changed: [UUID] = []) -> ToolResult {
         var data = fields
         data["revision"] = .string(designRevision)
-        data["can_undo"] = .bool(!assistantHistory.undo.isEmpty)
-        data["can_redo"] = .bool(!assistantHistory.redo.isEmpty)
-        data["undo_title"] = assistantHistory.undo.last.map { .string($0.title) } ?? .null
+        data["can_undo"] = .bool(lastEditAuthor == .assistant)
+        data["can_redo"] = .bool(nextRedoAuthor == .assistant)
+        data["undo_title"] = lastEditAuthor == .assistant ? (undoTitle.map { .string($0) } ?? .null) : .null
         return ToolResult(text: text, structured: .object(data), isError: error, changedFeatures: changed)
     }
 

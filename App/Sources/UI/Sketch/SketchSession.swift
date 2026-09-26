@@ -39,7 +39,13 @@ final class SketchSession {
         }
     }
 
-    var sketch: Sketch
+    var sketch: Sketch {
+        didSet { if !applyingUndo, sketch != oldValue { record(oldValue) } }
+    }
+    // Local undo while the sketch is open (the whole sketch becomes one design step on "Termina").
+    private var undoStack: [(sketch: Sketch, title: String, date: Date)] = []
+    private var redoStack: [(sketch: Sketch, title: String)] = []
+    @ObservationIgnored private var applyingUndo = false
     var tool: Tool = .line { didSet { if tool != oldValue { pending = [] } } }
     var selection: SketchShape.ID?
     private(set) var pending: [Vec2] = []
@@ -55,6 +61,25 @@ final class SketchSession {
     var vertexSnap = 1.0
 
     init(sketch: Sketch) { self.sketch = sketch }
+
+    private func record(_ old: Sketch) {
+        let title = Self.describe(old, sketch)
+        if let last = undoStack.last, last.title == title, title.hasPrefix("Modifica"), Date().timeIntervalSince(last.date) < 1.5 {
+            undoStack[undoStack.count - 1].date = Date()   // typing in a field: one step
+        } else {
+            undoStack.append((old, title, Date()))
+            if undoStack.count > 200 { undoStack.removeFirst() }
+        }
+        redoStack.removeAll()
+    }
+
+    private static func describe(_ old: Sketch, _ new: Sketch) -> String {
+        if new.shapes.count > old.shapes.count, let s = new.shapes.last { return "Aggiungi \(s.typeName.lowercased())" }
+        if new.shapes.count < old.shapes.count { return "Elimina entità" }
+        if old.name != new.name { return "Rinomina schizzo" }
+        if let s = zip(old.shapes, new.shapes).first(where: { $0 != $1 })?.1 { return "Modifica \(s.typeName.lowercased())" }
+        return "Modifica schizzo"
+    }
 
     var shapes: [SketchShape] { sketch.shapes }
     var selectedShape: SketchShape? { shapes.first { $0.id == selection } }
@@ -285,3 +310,26 @@ final class SketchSession {
 }
 
 func fmt(_ v: Double) -> String { v.formatted(.number.precision(.fractionLength(0...2))) }
+
+extension SketchSession: LocalUndoTarget {
+    var canUndoLocally: Bool { !undoStack.isEmpty }
+    var canRedoLocally: Bool { !redoStack.isEmpty }
+    var localUndoTitle: String? { undoStack.last?.title }
+    var localRedoTitle: String? { redoStack.last?.title }
+
+    func undoLocally() {
+        guard let last = undoStack.popLast() else { return }
+        redoStack.append((sketch, last.title))
+        applyingUndo = true; sketch = last.sketch; applyingUndo = false
+        if let sel = selection, !sketch.shapes.contains(where: { $0.id == sel }) { selection = nil }
+        pending = []
+    }
+
+    func redoLocally() {
+        guard let next = redoStack.popLast() else { return }
+        undoStack.append((sketch, next.title, .distantPast))
+        applyingUndo = true; sketch = next.sketch; applyingUndo = false
+        pending = []
+    }
+}
+

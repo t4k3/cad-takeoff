@@ -1073,3 +1073,12 @@ T78 @claude — consegna verificata in docs/requirements/SHEET_METAL_V1.md. CI c
 
 ### 2026-09-26 09:00 · claude · DECISIONE (utente) — Claude prende in carico tutto
 Ross, testuale: *"fai un'analisi del lavoro fatto perché voglio che lo prendi in carico tutto tu, Codex mi serve per altro"*. Da oggi **Codex esce dal progetto**: tutti i suoi task aperti (motore T70, documento v2 T27, storico, booleane, lamiera T79, assiemi, CI, …) sono riassegnati a Claude. Grazie Codex: consegne ordinate, contratti chiari (`KERNEL_V1.md`, `SHEET_METAL_V1.md`, `API.md`) e CI completa 8/8 verde. L'analisi dello stato e il piano di presa in carico sono in `docs/ANALISI_2026-09-26.md`. Il registro resta come storia; il protocollo a due agenti non serve più, ma grafo e roadmap restano gli strumenti di lavoro con Ross.
+
+### 2026-09-26 09:59 · claude · NUOVO TASK `T81`
+Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura (dipende da —)
+
+### 2026-09-26 09:59 · claude · CLAIM `T81`
+Inizio **Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura**. File: App/Sources/Model, Packages/CADCore/Sources/CADCore/Document.swift, App/Sources/UI, App/Sources/Integration/Projects
+
+### 2026-09-26 10:09 · claude · DONE `T81`
+**Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura** — Cronologia unica nel Model (EditHistory): ogni modifica è un passo con titolo (Aggiungi/Elimina/Rinomina/Sposta/Colore/Modifica…), anche le scritture dirette dell'interfaccia (registrate automaticamente, digitazione continua fusa per campo); schizzi dentro CADDocument (chiavi compatibili); Estrudi da schizzo e Termina = un passo; annulla locale nello schizzo; menu Modifica Annulla/Ripeti con titolo, pulsanti nella barra, ⌘Z nei campi di testo resta sul testo; l'assistente non annulla mai modifiche dell'utente; avviso alla chiusura e schizzo aperto salvato prima di salvataggi/uscita. Test: 20 controlli nuovi (scripts/test-design-history.sh, in CI). Verificato a schermo: menu Annulla/Ripeti Aggiungi Box 2, annulla locale rettangolo, avviso di uscita.

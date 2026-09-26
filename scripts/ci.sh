@@ -30,10 +30,11 @@ run_step() {
 
 run_step 01-core swift test --package-path Packages/CADCore
 run_step 02-assistant bash scripts/test-assistant-tools.sh
+run_step 02b-history bash scripts/test-design-history.sh
 run_step 03-mcp bash scripts/test-mcp-integration.sh
 run_step 04-openai bash scripts/test-openai-provider.sh
 run_step 05-connector python3 -m unittest discover -s Tests/ChatGPTConnector -v
 run_step 06-3mf bash scripts/test-3mf.sh
 run_step 07-sheet-metal bash scripts/test-sheet-metal.sh
 run_step 08-app bash scripts/build.sh
-printf '\nVerifica completa: 8 passaggi riusciti. Log: %s\n' "$ci_run_dir"
+printf '\nVerifica completa: %s passaggi riusciti. Log: %s\n' "$(grep -c '^run_step ' "$0")" "$ci_run_dir"

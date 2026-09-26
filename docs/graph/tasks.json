@@ -1514,6 +1514,26 @@
       ],
       "suggested": "claude",
       "owner": null
+    },
+    {
+      "id": "T81",
+      "title": "Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura",
+      "phase": "Fase 0",
+      "status": "done",
+      "deps": [],
+      "paths": [
+        "App/Sources/Model",
+        "Packages/CADCore/Sources/CADCore/Document.swift",
+        "App/Sources/UI",
+        "App/Sources/Integration/Projects"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-26 09:59",
+      "finished": "2026-09-26 10:09",
+      "notes": [
+        "2026-09-26 10:09 claude: Cronologia unica nel Model (EditHistory): ogni modifica è un passo con titolo (Aggiungi/Elimina/Rinomina/Sposta/Colore/Modifica…), anche le scritture dirette dell'interfaccia (registrate automaticamente, digitazione continua fusa per campo); schizzi dentro CADDocument (chiavi compatibili); Estrudi da schizzo e Termina = un passo; annulla locale nello schizzo; menu Modifica Annulla/Ripeti con titolo, pulsanti nella barra, ⌘Z nei campi di testo resta sul testo; l'assistente non annulla mai modifiche dell'utente; avviso alla chiusura e schizzo aperto salvato prima di salvataggi/uscita. Test: 20 controlli nuovi (scripts/test-design-history.sh, in CI). Verificato a schermo: menu Annulla/Ripeti Aggiungi Box 2, annulla locale rettangolo, avviso di uscita."
+      ]
     }
   ]
 }

@@ -18,6 +18,14 @@ struct Ribbon: View {
                     .foregroundStyle(Theme.Palette.textSecondary)
                     .padding(.horizontal, 6)
                     .help(library.currentURL?.path ?? "Disegno non ancora salvato")
+                Button { UndoRouter.undo(model) } label: { Label("Annulla", systemImage: "arrow.uturn.backward") }
+                    .buttonStyle(IconButtonStyle())
+                    .disabled(!UndoRouter.canUndo(model))
+                    .help(UndoRouter.undoTitle(model) + " (⌘Z)")
+                Button { UndoRouter.redo(model) } label: { Label("Ripeti", systemImage: "arrow.uturn.forward") }
+                    .buttonStyle(IconButtonStyle())
+                    .disabled(!UndoRouter.canRedo(model))
+                    .help(UndoRouter.redoTitle(model) + " (⇧⌘Z)")
                 Divider().frame(height: 14)
                 ForEach(WorkspaceState.Tab.allCases) { tab in
                     TabButton(title: tab.rawValue, isSelected: workspace.tab == tab) { workspace.tab = tab }

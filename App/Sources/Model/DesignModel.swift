@@ -14,6 +14,38 @@ struct DesignSnapshot: Equatable, Sendable {
     let issues: [Issue]
 }
 
+/// One undo history for every change to the design: manual edits, sketches, assistant tools.
+struct EditHistory {
+    enum Author { case user, assistant }
+    struct Entry {
+        var before: CADDocument
+        var after: CADDocument
+        let selectionBefore: UUID?
+        var selectionAfter: UUID?
+        var title: String
+        var changed: [UUID]
+        let author: Author
+        var date = Date()
+        /// Consecutive direct edits with the same key (same field of the same part) merge.
+        var mergeKey: String? = nil
+    }
+    var undo: [Entry] = []
+    var redo: [Entry] = []
+    static let limit = 100
+}
+
+/// Something with its own short-lived undo (e.g. the sketch being edited) that ⌘Z should
+/// address before the design history.
+@MainActor
+protocol LocalUndoTarget: AnyObject {
+    var canUndoLocally: Bool { get }
+    var canRedoLocally: Bool { get }
+    var localUndoTitle: String? { get }
+    var localRedoTitle: String? { get }
+    func undoLocally()
+    func redoLocally()
+}
+
 /// App-level state: the current CAD document plus UI selection. All mutations go through here.
 @MainActor
 @Observable
@@ -24,12 +56,18 @@ final class DesignModel {
         didSet {
             guard document != oldValue else { return }
             designRevision = UUID().uuidString
-            if !applyingAssistantChange { assistantHistory = AssistantHistory() }
+            // Direct writes (inspector bindings, visibility…) are recorded too, so ⌘Z always works.
+            if !applyingHistoryChange { recordDirectEdit(from: oldValue) }
         }
     }
     private(set) var designRevision = UUID().uuidString
-    @ObservationIgnored var assistantHistory = AssistantHistory()
-    @ObservationIgnored var applyingAssistantChange = false
+    private(set) var history = EditHistory()
+    @ObservationIgnored var applyingHistoryChange = false
+    /// Registered while the sketch editor is open: ⌘Z goes there first.
+    weak var localUndoTarget: LocalUndoTarget?
+    /// Commits work still open in an editor (e.g. the sketch) into the document, so saving,
+    /// opening another file or quitting never silently drops it.
+    @ObservationIgnored var finishPendingEdits: () -> Void = {}
     @ObservationIgnored private var cachedSnapshot: DesignSnapshot?
     var selection: Feature.ID?
     var statusMessage = "Pronto"
@@ -71,14 +109,25 @@ final class DesignModel {
     }
 
     private func add(_ f: Feature) {
-        document.features.append(f)
-        selection = f.id
+        var next = document
+        next.features.append(f)
+        commitEdit(next, selected: f.id, title: "Aggiungi \(f.name)", changed: [f.id])
     }
 
     func deleteSelected() {
         guard let i = selectedIndex else { return }
-        document.features.remove(at: i)
-        selection = nil
+        let f = document.features[i]
+        var next = document
+        next.features.remove(at: i)
+        next.sketchLinks.removeAll { $0.featureID == f.id }
+        commitEdit(next, selected: nil, title: "Elimina \(f.name)", changed: [f.id])
+    }
+
+    /// Applies `change` to a copy of the document as one undoable step.
+    func edit(_ title: String, selected: UUID?? = nil, changed: [UUID] = [], _ change: (inout CADDocument) throws -> Void) rethrows {
+        var next = document
+        try change(&next)
+        commitEdit(next, selected: selected ?? selection, title: title, changed: changed)
     }
 
     /// The inspector and the assistant use the same transaction history for colour edits.
@@ -93,22 +142,101 @@ final class DesignModel {
 
     func commitEdit(_ next: CADDocument, selected: UUID?, title: String, changed: [UUID]) {
         guard next != document else { return }
-        let entry = AssistantHistory.Entry(before: document, after: next, selectionBefore: selection,
-                                           selectionAfter: selected, title: title, changed: changed)
-        applyingAssistantChange = true
+        let author: EditHistory.Author = title.hasPrefix("Assistente") ? .assistant : .user
+        push(EditHistory.Entry(before: document, after: next, selectionBefore: selection,
+                               selectionAfter: selected, title: title, changed: changed, author: author))
+        applyingHistoryChange = true
         document = next; selection = selected
-        applyingAssistantChange = false
-        assistantHistory.undo.append(entry)
-        if assistantHistory.undo.count > 50 { assistantHistory.undo.removeFirst() }
-        assistantHistory.redo.removeAll()
+        applyingHistoryChange = false
         statusMessage = title
     }
 
-    func newDesign() {
-        assistantHistory = AssistantHistory()
-        document = CADDocument()
+    /// Replaces the whole document (open, new): starts a fresh history.
+    func replaceDocument(_ doc: CADDocument, status: String) {
+        applyingHistoryChange = true
+        document = doc
+        applyingHistoryChange = false
+        history = EditHistory()
         selection = nil
-        statusMessage = "Nuovo design"
+        statusMessage = status
+    }
+
+    func newDesign() { replaceDocument(CADDocument(), status: "Nuovo design") }
+
+    // MARK: Undo / Redo
+
+    var canUndo: Bool { !history.undo.isEmpty }
+    var canRedo: Bool { !history.redo.isEmpty }
+    var undoTitle: String? { history.undo.last?.title }
+    var redoTitle: String? { history.redo.last?.title }
+    var lastEditAuthor: EditHistory.Author? { history.undo.last?.author }
+    var nextRedoAuthor: EditHistory.Author? { history.redo.last?.author }
+
+    @discardableResult
+    func undo() -> EditHistory.Entry? {
+        guard let entry = history.undo.popLast() else { return nil }
+        apply(entry.before, selection: entry.selectionBefore)
+        history.redo.append(entry)
+        statusMessage = "Annullato: \(entry.title)"
+        return entry
+    }
+
+    @discardableResult
+    func redo() -> EditHistory.Entry? {
+        guard let entry = history.redo.popLast() else { return nil }
+        apply(entry.after, selection: entry.selectionAfter)
+        history.undo.append(entry)
+        statusMessage = "Ripetuto: \(entry.title)"
+        return entry
+    }
+
+    private func apply(_ doc: CADDocument, selection sel: UUID?) {
+        applyingHistoryChange = true
+        document = doc
+        applyingHistoryChange = false
+        selection = sel.flatMap { id in doc.features.contains { $0.id == id } ? id : nil }
+    }
+
+    private func push(_ entry: EditHistory.Entry) {
+        history.undo.append(entry)
+        if history.undo.count > EditHistory.limit { history.undo.removeFirst() }
+        history.redo.removeAll()
+    }
+
+    /// Records a write that bypassed `commitEdit`. Consecutive writes to the same thing
+    /// within 1.5 s (typing in a field, dragging a slider) merge into one undo step.
+    private func recordDirectEdit(from old: CADDocument) {
+        let (title, key) = Self.describe(old, document)
+        if var last = history.undo.last, last.author == .user, last.mergeKey == key, last.after == old,
+           Date().timeIntervalSince(last.date) < 1.5 {
+            last.after = document
+            last.title = title
+            last.date = Date()
+            history.undo[history.undo.count - 1] = last
+            history.redo.removeAll()
+            return
+        }
+        push(EditHistory.Entry(before: old, after: document, selectionBefore: selection,
+                               selectionAfter: selection, title: title, changed: [], author: .user, mergeKey: key))
+    }
+
+    /// Human title for a change ("Annulla <titolo>") and a merge key for consecutive edits.
+    static func describe(_ old: CADDocument, _ new: CADDocument) -> (title: String, key: String?) {
+        if new.features.count > old.features.count, let f = new.features.last { return ("Aggiungi \(f.name)", nil) }
+        if new.features.count < old.features.count,
+           let f = old.features.first(where: { o in !new.features.contains { $0.id == o.id } }) { return ("Elimina \(f.name)", nil) }
+        for (o, n) in zip(old.features, new.features) where o != n {
+            let id = n.id.uuidString
+            if o.isVisible != n.isVisible, o.kind == n.kind, o.position == n.position {
+                return (n.isVisible ? "Mostra \(n.name)" : "Nascondi \(n.name)", nil)
+            }
+            if o.color != n.color, o.kind == n.kind { return ("Colore: \(n.name)", "color:\(id)") }
+            if o.name != n.name, o.kind == n.kind { return ("Rinomina \(n.name)", "name:\(id)") }
+            if o.position != n.position, o.kind == n.kind { return ("Sposta \(n.name)", "position:\(id)") }
+            return ("Modifica \(n.name)", "kind:\(id)")
+        }
+        if old.sketches != new.sketches || old.sketchLinks != new.sketchLinks { return ("Modifica schizzo", "sketch") }
+        return ("Modifica", nil)
     }
 
     // MARK: Files
@@ -131,10 +259,7 @@ final class DesignModel {
         panel.allowedContentTypes = [Self.ftkType, .json]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            document = try CADDocument.decode(Data(contentsOf: url))
-            assistantHistory = AssistantHistory()
-            selection = nil
-            statusMessage = "Aperto \(url.lastPathComponent)"
+            replaceDocument(try CADDocument.decode(Data(contentsOf: url)), status: "Aperto \(url.lastPathComponent)")
         } catch { statusMessage = "Errore apertura: \(error.localizedDescription)" }
     }
 

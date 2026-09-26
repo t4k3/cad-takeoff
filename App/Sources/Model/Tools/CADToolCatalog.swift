@@ -37,8 +37,8 @@ enum CADToolCatalog {
             tool("set_color", "Colore parte", "Set a whole part's opaque sRGB colour without changing geometry. Persisted in the design and 3MF. Filament assignment must be checked in the slicer.", ["feature_id": id, "color": color], required: ["feature_id", "color"], write: true),
             tool("export_stl", "Esporta STL", "Return binary STL as base64, never write arbitrary files. Optional feature_id exports that feature even if hidden; otherwise visible scene. Independent solids are concatenated, not boolean-unioned; closure does not certify manufacturability. Coordinates in mm; STL has no unit metadata.", ["feature_id": id]),
             tool("export_3mf", "Esporta 3MF a colori", "Return 3MF as base64 with named separate parts, relative placement, mm and sRGB part colours. Optional feature_id includes that feature even if hidden; otherwise visible parts. No printer profile, AMS mapping, G-code or boolean union. Check filament assignment in Bambu Studio/OrcaSlicer.", ["feature_id": id]),
-            tool("undo", "Annulla assistente", "Undo the latest assistant mutation if there have been no intervening manual edits. This is session undo, not persistent parametric history.", write: true),
-            tool("redo", "Ripeti assistente", "Redo the latest undone assistant mutation. A new edit clears redo.", write: true)
+            tool("undo", "Annulla assistente", "Undo the latest change if it was made by the assistant; a change made by the user is never undone. Session undo, not persistent parametric history.", write: true),
+            tool("redo", "Ripeti assistente", "Redo the latest undone assistant change. A new edit clears redo.", write: true)
         ]
     }()
 

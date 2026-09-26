@@ -1,9 +1,9 @@
 import CADCore
 import SwiftUI
 
-/// "Estrudi" from a sketch profile: distance with wireframe preview; OK creates the solid
-/// through the Model's validated, undoable `add_extrude` command. Profile dimensions are
-/// edited in the Parametri panel before extruding.
+/// "Estrudi" from a sketch profile: distance with wireframe preview; OK adds the validated solid,
+/// saves the sketch and links them in one undoable step. Profile dimensions are edited in
+/// the Parametri panel before extruding.
 @MainActor
 enum SketchCommands {
     static func extrude(sketch: SketchSession, model: DesignModel, workspace: WorkspaceState) -> CommandSession? {
@@ -18,27 +18,24 @@ enum SketchCommands {
             onCommit: { f in
                 let height = f.first?.number ?? 10
                 sketch.previewHeight = nil
-                let outline = sketch.shape(shape.id)?.outline ?? shape.outline
-                let args: JSONValue = [
-                    "points": .array(outline.map { ["x": .number($0.x), "y": .number($0.y)] }),
-                    "height": .number(height),
-                    "name": .string("Estrusione \(model.document.features.count + 1)"),
-                    "expected_revision": .string(model.designRevision),
-                ]
-                Task {
-                    // TODO(R2): model.addExtrude(profile:height:name:) when Codex adds the direct command.
-                    let r = await model.call("add_extrude", arguments: args)
-                    if r.isError {
-                        model.statusMessage = "Estrusione non riuscita: \(r.text)"
-                    } else {
-                        model.statusMessage = "Estrusione creata (\(fmt(height)) mm) — ⌘Z per annullare"
-                        if let id = r.changedFeatures.first {
-                            model.selection = id
-                            workspace.sketchStore?.link(feature: id, sketch: sketch.sketch.id, shape: shape.id)
-                        }
-                        workspace.exitSketch()
-                    }
+                guard let current = sketch.shape(shape.id), let profile = current.profile else { return }
+                let feature = Feature(name: "Estrusione \(model.document.features.count + 1)",
+                                      kind: .extrude(profile: profile, height: height))
+                do {
+                    try CADToolValidation.feature(feature)
+                } catch {
+                    model.statusMessage = "Estrusione non riuscita: \(error.localizedDescription)"
+                    return
                 }
+                // One undo step: saves the sketch, adds the solid and links it to the shape.
+                let saved = sketch.sketch
+                model.edit("Estrudi \(current.typeName.lowercased())", selected: .some(feature.id), changed: [feature.id]) { doc in
+                    doc.upsert(saved)
+                    doc.features.append(feature)
+                    doc.sketchLinks.append(SketchLink(featureID: feature.id, sketchID: saved.id, shapeID: current.id))
+                }
+                model.statusMessage = "Estrusione creata (\(fmt(height)) mm) — ⌘Z per annullare"
+                workspace.exitSketch()
             },
             onCancel: { sketch.previewHeight = nil })
     }

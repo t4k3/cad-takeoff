@@ -50,8 +50,32 @@ public struct CADDocument: Codable, Sendable, Equatable {
 
     public var version: Int = CADDocument.formatVersion
     public var features: [Feature] = []
+    /// Sketches and which feature each sketch shape produced (T77). Optional keys:
+    /// documents written before sketches existed decode with empty arrays.
+    public var sketches: [Sketch] = []
+    public var sketchLinks: [SketchLink] = []
 
-    public init(features: [Feature] = []) { self.features = features }
+    public init(features: [Feature] = [], sketches: [Sketch] = [], sketchLinks: [SketchLink] = []) {
+        self.features = features; self.sketches = sketches; self.sketchLinks = sketchLinks
+    }
+
+    private enum CodingKeys: String, CodingKey { case version, features, sketches, sketchLinks }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decodeIfPresent(Int.self, forKey: .version) ?? CADDocument.formatVersion
+        features = try c.decode([Feature].self, forKey: .features)
+        sketches = try c.decodeIfPresent([Sketch].self, forKey: .sketches) ?? []
+        sketchLinks = try c.decodeIfPresent([SketchLink].self, forKey: .sketchLinks) ?? []
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(version, forKey: .version)
+        try c.encode(features, forKey: .features)
+        if !sketches.isEmpty { try c.encode(sketches, forKey: .sketches) }
+        if !sketchLinks.isEmpty { try c.encode(sketchLinks, forKey: .sketchLinks) }
+    }
 
     /// Combined printable mesh of visible features (concatenation; boolean union is task T11).
     public func buildMesh() -> Mesh {
