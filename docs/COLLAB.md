@@ -1082,3 +1082,15 @@ Inizio **Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assist
 
 ### 2026-09-26 10:09 · claude · DONE `T81`
 **Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura** — Cronologia unica nel Model (EditHistory): ogni modifica è un passo con titolo (Aggiungi/Elimina/Rinomina/Sposta/Colore/Modifica…), anche le scritture dirette dell'interfaccia (registrate automaticamente, digitazione continua fusa per campo); schizzi dentro CADDocument (chiavi compatibili); Estrudi da schizzo e Termina = un passo; annulla locale nello schizzo; menu Modifica Annulla/Ripeti con titolo, pulsanti nella barra, ⌘Z nei campi di testo resta sul testo; l'assistente non annulla mai modifiche dell'utente; avviso alla chiusura e schizzo aperto salvato prima di salvataggi/uscita. Test: 20 controlli nuovi (scripts/test-design-history.sh, in CI). Verificato a schermo: menu Annulla/Ripeti Aggiungi Box 2, annulla locale rettangolo, avviso di uscita.
+
+### 2026-09-26 10:11 · claude · NUOVO TASK `T82`
+Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1 (dipende da T81)
+
+### 2026-09-26 10:11 · claude · NUOVO TASK `T83`
+Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana (dipende da T82)
+
+### 2026-09-26 10:11 · claude · CLAIM `T82`
+Inizio **Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1**. File: Packages/CADCore, App/Sources, Tests
+
+### 2026-09-26 10:17 · claude · DONE `T82`
+**Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1** — CADDocument v2: timeline ordinata di TimelineItem (feature, schizzo, lamiera) con soppressione e marker di rollback; features/sketches/sheetMetalParts come viste modificabili sulla timeline (nuovi passi inseriti al marker); activeFeatures per calcolo/render/export/snapshot/strumenti; migrazione automatica dei file v1 (schizzo prima del primo solido collegato), rifiuto di formati più recenti. Model: moveRollback, setSuppressed, deleteStep (annullabili, titoli). Timeline UI: ordine reale, marker trascinabile (anche da VoiceOver), menu Modifica/Sopprimi/Porta il marker/Elimina, passi inattivi attenuati; Browser con icona 'non calcolato'. Test: 7 core nuovi (43 totali), 8 controlli timeline nella cronologia (28). Verificato a schermo: trascinamento marker e 'Alla fine'.

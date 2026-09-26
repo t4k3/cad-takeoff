@@ -1534,6 +1534,42 @@
       "notes": [
         "2026-09-26 10:09 claude: Cronologia unica nel Model (EditHistory): ogni modifica è un passo con titolo (Aggiungi/Elimina/Rinomina/Sposta/Colore/Modifica…), anche le scritture dirette dell'interfaccia (registrate automaticamente, digitazione continua fusa per campo); schizzi dentro CADDocument (chiavi compatibili); Estrudi da schizzo e Termina = un passo; annulla locale nello schizzo; menu Modifica Annulla/Ripeti con titolo, pulsanti nella barra, ⌘Z nei campi di testo resta sul testo; l'assistente non annulla mai modifiche dell'utente; avviso alla chiusura e schizzo aperto salvato prima di salvataggi/uscita. Test: 20 controlli nuovi (scripts/test-design-history.sh, in CI). Verificato a schermo: menu Annulla/Ripeti Aggiungi Box 2, annulla locale rettangolo, avviso di uscita."
       ]
+    },
+    {
+      "id": "T82",
+      "title": "Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1",
+      "phase": "Fase 1",
+      "status": "done",
+      "deps": [
+        "T81"
+      ],
+      "paths": [
+        "Packages/CADCore",
+        "App/Sources",
+        "Tests"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-09-26 10:11",
+      "finished": "2026-09-26 10:17",
+      "notes": [
+        "2026-09-26 10:17 claude: CADDocument v2: timeline ordinata di TimelineItem (feature, schizzo, lamiera) con soppressione e marker di rollback; features/sketches/sheetMetalParts come viste modificabili sulla timeline (nuovi passi inseriti al marker); activeFeatures per calcolo/render/export/snapshot/strumenti; migrazione automatica dei file v1 (schizzo prima del primo solido collegato), rifiuto di formati più recenti. Model: moveRollback, setSuppressed, deleteStep (annullabili, titoli). Timeline UI: ordine reale, marker trascinabile (anche da VoiceOver), menu Modifica/Sopprimi/Porta il marker/Elimina, passi inattivi attenuati; Browser con icona 'non calcolato'. Test: 7 core nuovi (43 totali), 8 controlli timeline nella cronologia (28). Verificato a schermo: trascinamento marker e 'Alla fine'."
+      ]
+    },
+    {
+      "id": "T83",
+      "title": "Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana",
+      "phase": "Fase 3b",
+      "status": "todo",
+      "deps": [
+        "T82"
+      ],
+      "paths": [
+        "Packages/CADCore/Sources/CADCore/Features",
+        "App/Sources/UI"
+      ],
+      "suggested": "claude",
+      "owner": null
     }
   ]
 }

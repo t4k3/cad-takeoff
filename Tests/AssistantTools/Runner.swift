@@ -126,7 +126,7 @@ struct AssistantToolsTests {
         let diagnosed = m.snapshot()
         expect(diagnosed.issues.count == 1 && diagnosed.bodies.count == snapshot.bodies.count, "bad body reported, valid bodies retained")
         m.document = validDocument
-        m.document.features.append(m.document.features.last!)
+        m.document.timeline.append(m.document.timeline.last!)   // corrupted file: same ID twice
         expect(m.snapshot().issues.count == 1 && !m.snapshot().bodies.contains { $0.bodyID == visibleID }, "duplicate IDs cannot create ambiguous renderer references")
         m.newDesign()
         expect(m.snapshot().bodies.isEmpty && m.snapshot().issues.isEmpty, "new document clears cached bodies")

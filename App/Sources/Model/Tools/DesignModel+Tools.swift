@@ -110,7 +110,7 @@ extension DesignModel: CADToolProvider {
     }
 
     private func sceneInfo() throws -> ToolResult {
-        let visible = document.features.filter(\.isVisible)
+        let visible = document.activeFeatures.filter(\.isVisible)
         var meshes: [Mesh] = []
         for f in visible { try CADToolValidation.feature(f); let m = f.buildMesh(); try CADToolValidation.mesh(m); meshes.append(m) }
         let mesh = Mesh.merged(meshes)
@@ -127,7 +127,7 @@ extension DesignModel: CADToolProvider {
     }
 
     private func export(_ args: [String: JSONValue]) throws -> ToolResult {
-        let features = args["feature_id"] == nil ? document.features.filter(\.isVisible) : [document.features[try index(args)]]
+        let features = args["feature_id"] == nil ? document.activeFeatures.filter(\.isVisible) : [document.features[try index(args)]]
         guard !features.isEmpty else { throw CADToolFailure("Niente da esportare.") }
         var meshes: [Mesh] = []
         for f in features { try CADToolValidation.feature(f); let m = f.buildMesh(); try CADToolValidation.mesh(m); meshes.append(m) }

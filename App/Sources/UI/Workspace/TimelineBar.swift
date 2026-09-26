@@ -1,35 +1,48 @@
 import CADCore
 import SwiftUI
 
-/// Horizontal feature history, like Fusion's timeline. Click selects; arrows step through.
+/// The design history, like Fusion's timeline: steps in order (sketches, solids, sheet metal),
+/// a draggable rollback marker, suppression, edit and delete. Everything is undoable.
 struct TimelineBar: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
-    @Environment(SketchStore.self) private var sketches
+    @State private var dragOffset: CGFloat = 0
+    @State private var dragging = false
+
+    private static let chip: CGFloat = 30
+    private static let spacing: CGFloat = 3
+    private static let step = chip + spacing
 
     var body: some View {
+        let timeline = model.document.timeline
+        let marker = model.document.insertionIndex
         HStack(spacing: 6) {
             Button { step(-1) } label: { Label("Precedente", systemImage: "backward.frame") }
-                .buttonStyle(IconButtonStyle()).help("Seleziona la feature precedente")
+                .buttonStyle(IconButtonStyle()).help("Seleziona il corpo precedente")
                 .disabled(model.document.features.isEmpty)
             Button { step(1) } label: { Label("Successiva", systemImage: "forward.frame") }
-                .buttonStyle(IconButtonStyle()).help("Seleziona la feature successiva")
+                .buttonStyle(IconButtonStyle()).help("Seleziona il corpo successivo")
                 .disabled(model.document.features.isEmpty)
             Divider().frame(height: 22)
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 3) {
-                        ForEach(Array(model.document.features.enumerated()), id: \.element.id) { index, feature in
-                            ForEach(sketchesBefore(index)) { sk in sketchChip(sk) }
-                            chip(feature, index: index).id(feature.id)
+                    HStack(spacing: Self.spacing) {
+                        ForEach(Array(timeline.enumerated()), id: \.element.id) { index, item in
+                            if index == marker { markerView(count: timeline.count, at: marker) }
+                            chip(item, index: index, active: index < marker && !item.isSuppressed).id(item.id)
                         }
-                        ForEach(unusedSketches) { sk in sketchChip(sk) }
+                        if marker >= timeline.count { markerView(count: timeline.count, at: marker) }
                     }
                     .padding(.horizontal, 4)
                 }
                 .onChange(of: model.selection) { _, id in
                     if let id { withAnimation { proxy.scrollTo(id, anchor: .center) } }
                 }
+            }
+            if model.document.rollback != nil {
+                Button("Alla fine") { model.moveRollback(to: timeline.count) }
+                    .controlSize(.small)
+                    .help("Riporta il marker alla fine della timeline")
             }
             Spacer(minLength: 0)
         }
@@ -38,53 +51,98 @@ struct TimelineBar: View {
         .background(Theme.Palette.panel)
     }
 
-    private func chip(_ feature: Feature, index: Int) -> some View {
-        let selected = model.selection == feature.id
-        let hovered = workspace.hovered == feature.id
-        return Image(systemName: feature.kind.symbol)
-            .font(.system(size: 14))
-            .foregroundStyle(selected ? .white : Theme.Palette.textPrimary)
-            .frame(width: 30, height: 28)
-            .background(RoundedRectangle(cornerRadius: 5)
-                .fill(selected ? Theme.Palette.accent : hovered ? Theme.Palette.hover.opacity(2.5) : Theme.Palette.panelRaised))
-            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.Palette.separator))
-            .overlay(alignment: .bottom) {
-                Capsule().fill(feature.color.swiftUIColor).frame(width: 16, height: 3).offset(y: -2)
-            }
-            .opacity(feature.isVisible ? 1 : 0.45)
-            .help("\(index + 1). \(feature.name) — \(feature.kind.typeName)")
-            .onTapGesture(count: 2) { workspace.editFeature(feature.id, model: model) }
-            .onTapGesture { model.selection = feature.id }
-            .contextMenu { Button("Modifica…") { workspace.editFeature(feature.id, model: model) } }
-            .onHover { workspace.hovered = $0 ? feature.id : (workspace.hovered == feature.id ? nil : workspace.hovered) }
-    }
+    // MARK: Marker
 
-    /// Sketches whose first linked feature is at `index` (so they appear right before it).
-    private func sketchesBefore(_ index: Int) -> [Sketch] {
-        let features = model.document.features
-        return sketches.sketches.filter { sk in
-            let ids = Set(sketches.links(of: sk.id).map(\.featureID))
-            return features.firstIndex { ids.contains($0.id) } == index
+    /// Orange bar with a grip; drag it left/right to roll the design back or forward.
+    private func markerView(count: Int, at index: Int) -> some View {
+        VStack(spacing: 0) {
+            Image(systemName: "arrowtriangle.down.fill").font(.system(size: 8))
+            Rectangle().frame(width: 3)
+        }
+        .foregroundStyle(Theme.Palette.accent)
+        .frame(width: 12, height: 30)
+        .contentShape(Rectangle())
+        .offset(x: dragging ? dragOffset : 0)
+        .gesture(DragGesture(minimumDistance: 2)
+            .onChanged { v in dragging = true; dragOffset = v.translation.width }
+            .onEnded { v in
+                let target = index + Int((v.translation.width / Self.step).rounded())
+                dragging = false; dragOffset = 0
+                model.moveRollback(to: max(0, min(count, target)))
+            })
+        .help("Marker della timeline: trascinalo per tornare a un punto dello storico")
+        .accessibilityElement()
+        .accessibilityLabel("Marker della timeline, dopo \(index) passi")
+        .accessibilityAdjustableAction { dir in
+            model.moveRollback(to: dir == .increment ? index + 1 : index - 1)
         }
     }
 
-    private var unusedSketches: [Sketch] {
-        let used = Set(model.document.features.map(\.id))
-        return sketches.sketches.filter { sk in !sketches.links(of: sk.id).contains { used.contains($0.featureID) } }
+    // MARK: Steps
+
+    private func chip(_ item: TimelineItem, index: Int, active: Bool) -> some View {
+        let selected = model.selection == item.id || workspace.sketch?.sketch.id == item.id
+        let hovered = workspace.hovered == item.id
+        let tint = tintColor(item)
+        return ZStack {
+            Image(systemName: symbol(item))
+                .font(.system(size: 13))
+                .foregroundStyle(selected ? .white : tint)
+            if item.isSuppressed {
+                Rectangle().fill(Theme.Palette.danger).frame(width: 26, height: 1.5).rotationEffect(.degrees(-35))
+            }
+        }
+        .frame(width: Self.chip, height: 28)
+        .background(RoundedRectangle(cornerRadius: 5)
+            .fill(selected ? tint : hovered ? Theme.Palette.hover.opacity(2.5) : Theme.Palette.panelRaised))
+        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(item.sketch != nil ? Theme.Palette.sketch.opacity(0.6) : Theme.Palette.separator))
+        .overlay(alignment: .bottom) {
+            if let f = item.feature { Capsule().fill(f.color.swiftUIColor).frame(width: 16, height: 3).offset(y: -2) }
+        }
+        .opacity(active ? 1 : 0.35)
+        .help(help(item, index: index, active: active))
+        .onTapGesture(count: 2) { edit(item) }
+        .onTapGesture { if item.feature != nil { model.selection = item.id } }
+        .onHover { workspace.hovered = $0 ? item.id : (workspace.hovered == item.id ? nil : workspace.hovered) }
+        .contextMenu {
+            Button(item.sketch != nil ? "Modifica schizzo" : "Modifica…") { edit(item) }
+                .disabled(item.sheetMetal != nil)
+            Button(item.isSuppressed ? "Ripristina" : "Sopprimi") { model.setSuppressed(item.id, !item.isSuppressed) }
+            Button("Porta il marker dopo questo passo") { model.moveRollback(to: index + 1) }
+            Divider()
+            Button("Elimina", role: .destructive) { model.deleteStep(item.id) }
+        }
+        .accessibilityElement()
+        .accessibilityLabel(help(item, index: index, active: active))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { edit(item) }
     }
 
-    private func sketchChip(_ sk: Sketch) -> some View {
-        let editing = workspace.sketch?.sketch.id == sk.id
-        return Image(systemName: "pencil.and.outline")
-            .font(.system(size: 13))
-            .foregroundStyle(editing ? .white : Theme.Palette.sketch)
-            .frame(width: 30, height: 28)
-            .background(RoundedRectangle(cornerRadius: 5).fill(editing ? Theme.Palette.sketch : Theme.Palette.panelRaised))
-            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.Palette.sketch.opacity(0.6)))
-            .opacity(sk.isVisible ? 1 : 0.5)
-            .help("\(sk.name) — doppio clic per modificare")
-            .onTapGesture(count: 2) { workspace.enterSketch(editing: sk) }
-            .contextMenu { Button("Modifica schizzo") { workspace.enterSketch(editing: sk) } }
+    private func edit(_ item: TimelineItem) {
+        if let s = item.sketch { workspace.enterSketch(editing: s) }
+        else if item.feature != nil { workspace.editFeature(item.id, model: model) }
+    }
+
+    private func symbol(_ item: TimelineItem) -> String {
+        switch item.content {
+        case let .feature(f): f.kind.symbol
+        case .sketch: "pencil.and.outline"
+        case .sheetMetal: "rectangle.portrait.and.arrow.right"
+        }
+    }
+
+    private func tintColor(_ item: TimelineItem) -> Color {
+        item.sketch != nil ? Theme.Palette.sketch : Theme.Palette.accent
+    }
+
+    private func help(_ item: TimelineItem, index: Int, active: Bool) -> String {
+        let kind = switch item.content {
+        case let .feature(f): f.kind.typeName
+        case .sketch: "Schizzo"
+        case .sheetMetal: "Lamiera"
+        }
+        let state = item.isSuppressed ? " — soppresso" : (active ? "" : " — dopo il marker")
+        return "\(index + 1). \(item.name) — \(kind)\(state). Doppio clic per modificare."
     }
 
     private func step(_ delta: Int) {

@@ -44,7 +44,4 @@ import Testing
     // A v1 file without the sketch keys still opens.
     let old = try CADDocument.decode(Data(#"{"version":1,"features":[]}"#.utf8))
     #expect(old.sketches.isEmpty && old.sketchLinks.isEmpty)
-    // No sketch keys are written for documents without sketches (unchanged v1 files).
-    let plain = String(decoding: try CADDocument(features: [f]).encoded(), as: UTF8.self)
-    #expect(!plain.contains("sketches"))
 }

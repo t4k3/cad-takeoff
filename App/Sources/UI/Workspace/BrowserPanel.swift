@@ -78,9 +78,16 @@ struct BrowserPanel: View {
     }
 
     private func bodyRow(_ feature: Feature) -> some View {
-        TreeRow(indent: 1, symbol: feature.kind.symbol, title: feature.name,
+        let active = model.document.isActive(feature.id)
+        return TreeRow(indent: 1, symbol: feature.kind.symbol, title: feature.name,
                 isSelected: model.selection == feature.id, isHovered: workspace.hovered == feature.id,
-                isDimmed: !feature.isVisible) {
+                isDimmed: !feature.isVisible || !active) {
+            if !active {
+                Image(systemName: "clock.arrow.circlepath").font(.system(size: 10))
+                    .foregroundStyle(Theme.Palette.textSecondary)
+                    .help("Non calcolato: soppresso o dopo il marker della timeline")
+                    .accessibilityLabel("Non calcolato")
+            }
             Circle().fill(feature.color.swiftUIColor).frame(width: 9, height: 9)
                 .overlay(Circle().strokeBorder(.black.opacity(0.25)))
                 .help("Colore \(feature.color.hex)")

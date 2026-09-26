@@ -79,9 +79,9 @@ final class DesignModel {
     func snapshot() -> DesignSnapshot {
         if let cachedSnapshot, cachedSnapshot.revision == designRevision { return cachedSnapshot }
         var bodies: [BodySnapshot] = [], issues: [DesignSnapshot.Issue] = []
-        let groups = Dictionary(grouping: document.features, by: \.id)
+        let groups = Dictionary(grouping: document.activeFeatures, by: \.id)
         var duplicateIDs = Set<UUID>()
-        for feature in document.features where feature.isVisible {
+        for feature in document.activeFeatures where feature.isVisible {
             guard groups[feature.id]?.count == 1 else {
                 if duplicateIDs.insert(feature.id).inserted {
                     issues.append(.init(featureID: feature.id, message: "Identificatore di parte duplicato nel documento."))
@@ -115,12 +115,37 @@ final class DesignModel {
     }
 
     func deleteSelected() {
-        guard let i = selectedIndex else { return }
-        let f = document.features[i]
-        var next = document
-        next.features.remove(at: i)
-        next.sketchLinks.removeAll { $0.featureID == f.id }
-        commitEdit(next, selected: nil, title: "Elimina \(f.name)", changed: [f.id])
+        guard let id = selection else { return }
+        deleteStep(id)
+        selection = nil
+    }
+
+    // MARK: Timeline (history)
+
+    /// Moves the rollback marker: steps after `index` stay in the history but are not evaluated.
+    func moveRollback(to index: Int) {
+        let i = max(0, min(index, document.timeline.count))
+        let target: Int? = i >= document.timeline.count ? nil : i
+        guard target != document.rollback else { return }
+        edit(target == nil ? "Marker alla fine" : "Marker dopo il passo \(i)") { $0.rollback = target }
+    }
+
+    func setSuppressed(_ id: UUID, _ suppressed: Bool) {
+        guard let i = document.timeline.firstIndex(where: { $0.id == id }) else { return }
+        let name = document.timeline[i].name
+        edit(suppressed ? "Sopprimi \(name)" : "Ripristina \(name)") { $0.timeline[i].isSuppressed = suppressed }
+    }
+
+    /// Deletes one history step (solid, sketch or sheet-metal part). Links to it are dropped;
+    /// solids made from a deleted sketch keep their last shape.
+    func deleteStep(_ id: UUID) {
+        guard let i = document.timeline.firstIndex(where: { $0.id == id }) else { return }
+        let name = document.timeline[i].name
+        edit("Elimina \(name)", selected: .some(selection == id ? nil : selection)) { doc in
+            doc.timeline.remove(at: i)
+            if let r = doc.rollback, i < r { doc.rollback = r - 1 }
+            doc.sketchLinks.removeAll { $0.featureID == id || $0.sketchID == id }
+        }
     }
 
     /// Applies `change` to a copy of the document as one undoable step.
@@ -222,6 +247,10 @@ final class DesignModel {
 
     /// Human title for a change ("Annulla <titolo>") and a merge key for consecutive edits.
     static func describe(_ old: CADDocument, _ new: CADDocument) -> (title: String, key: String?) {
+        if old.rollback != new.rollback { return ("Sposta marker", nil) }
+        for (o, n) in zip(old.timeline, new.timeline) where o.id == n.id && o.isSuppressed != n.isSuppressed {
+            return (n.isSuppressed ? "Sopprimi \(n.name)" : "Ripristina \(n.name)", nil)
+        }
         if new.features.count > old.features.count, let f = new.features.last { return ("Aggiungi \(f.name)", nil) }
         if new.features.count < old.features.count,
            let f = old.features.first(where: { o in !new.features.contains { $0.id == o.id } }) { return ("Elimina \(f.name)", nil) }
@@ -286,7 +315,7 @@ final class DesignModel {
                 throw CADToolFailure("Geometria non trovata.")
             }
             features = [feature]
-        } else { features = document.features.filter(\.isVisible) }
+        } else { features = document.activeFeatures.filter(\.isVisible) }
         let parts = try features.map { feature -> ThreeMFPart in
             try CADToolValidation.feature(feature)
             return ThreeMFPart(id: feature.id, name: feature.name, mesh: feature.buildMesh(), color: feature.color)

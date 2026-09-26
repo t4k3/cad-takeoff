@@ -8,7 +8,7 @@ struct StatusBar: View {
         HStack(spacing: 14) {
             Text(model.statusMessage).lineLimit(1)
             Spacer()
-            let visible = model.document.features.filter(\.isVisible)
+            let visible = model.document.activeFeatures.filter(\.isVisible)
             let mesh = model.document.buildMesh()
             Label("\(visible.count) corpi", systemImage: "shippingbox")
             Label("\(mesh.triangleCount) triangoli", systemImage: "triangle")

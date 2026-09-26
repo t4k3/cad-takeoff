@@ -73,6 +73,27 @@ struct DesignHistoryTests {
         let undone = await m.call("undo", arguments: ["expected_revision": .string(m.designRevision)])
         expect(!undone.isError && m.document.features.count == 1, "assistant undoes its own step")
 
+        // Timeline (phase 1): marker, suppression, delete — all undoable.
+        m.newDesign()
+        m.addBox(); m.addCylinder(); m.addHexPrism()
+        let ids = m.document.timeline.map(\.id)
+        m.moveRollback(to: 1)
+        expect(m.document.activeFeatures.count == 1 && m.undoTitle == "Marker dopo il passo 1", "marker rolls back")
+        expect(m.snapshot().bodies.count == 1, "renderer snapshot follows the marker")
+        m.addBox()
+        expect(m.document.timeline[1].name.hasPrefix("Box") && m.document.rollback == 2, "new step inserted at the marker")
+        m.undo(); m.undo()
+        expect(m.document.rollback == nil && m.document.activeFeatures.count == 3, "undo marker move")
+        m.setSuppressed(ids[1], true)
+        expect(m.document.activeFeatures.count == 2 && m.undoTitle?.hasPrefix("Sopprimi") == true, "suppress")
+        m.undo()
+        expect(m.document.activeFeatures.count == 3, "undo suppress")
+        m.moveRollback(to: 2)
+        m.deleteStep(ids[0])
+        expect(m.document.rollback == 1 && m.document.activeFeatures.count == 1, "delete before marker moves it")
+        m.undo()
+        expect(m.document.timeline.map(\.id) == ids && m.document.rollback == 2, "undo delete restores order and marker")
+
         // Opening a file starts a fresh history.
         m.replaceDocument(CADDocument(), status: "Aperto")
         expect(!m.canUndo && !m.canRedo, "open/new clears history")

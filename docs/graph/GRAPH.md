@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 10:09. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 10:17. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -129,6 +129,12 @@ flowchart LR
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
+  end
+  subgraph P21["Fase 1"]
+    T82["T82 · Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1<br/><i>claude</i>"]:::done
+  end
+  subgraph P22["Fase 3b"]
+    T83["T83 · Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana<br/><i>claude</i>"]:::todo
   end
   T00 --> T02
   T00 --> T03
@@ -298,6 +304,8 @@ flowchart LR
   T77 --> T79
   T79 --> T80
   T25 --> T80
+  T81 --> T82
+  T82 --> T83
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -311,6 +319,7 @@ flowchart LR
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: claude
 - **T70** Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT — suggerito: claude
 - **T76** Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology — suggerito: claude
+- **T83** Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana — suggerito: claude
 
 ## Tabella
 
@@ -398,3 +407,5 @@ flowchart LR
 | T79 | Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo | todo | claude | T78, T77 | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>Tests/SheetMetalIntegration<br>scripts/test-sheet-metal-integration.sh<br>docs/requirements/SHEET_METAL_V1.md |
 | T80 | UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export | todo | claude | T79, T25 | App/Sources/UI/SheetMetal<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport<br>App/Sources/Integration/Projects |
 | T81 | Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura | done | claude | — | App/Sources/Model<br>Packages/CADCore/Sources/CADCore/Document.swift<br>App/Sources/UI<br>App/Sources/Integration/Projects |
+| T82 | Fase 1: documento v2 con timeline (solidi, schizzi, lamiera), rollback, soppressione, migrazione v1 | done | claude | T81 | Packages/CADCore<br>App/Sources<br>Tests |
+| T83 | Foro: semplice/svasato/lamato, filettatura cosmetica o modellata, su faccia piana | todo | claude | T82 | Packages/CADCore/Sources/CADCore/Features<br>App/Sources/UI |

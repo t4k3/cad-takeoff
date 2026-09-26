@@ -16,13 +16,7 @@ final class SketchStore {
     func links(of sketch: Sketch.ID) -> [SketchLink] { links.filter { $0.sketchID == sketch } }
     func sketchID(forFeature f: UUID) -> Sketch.ID? { links.first { $0.featureID == f }?.sketchID }
 
-    func delete(_ id: Sketch.ID) {
-        guard let name = sketch(id)?.name else { return }
-        model?.edit("Elimina \(name)") { doc in
-            doc.sketches.removeAll { $0.id == id }
-            doc.sketchLinks.removeAll { $0.sketchID == id }
-        }
-    }
+    func delete(_ id: Sketch.ID) { model?.deleteStep(id) }
 
     func setVisible(_ id: Sketch.ID, _ visible: Bool) {
         guard let s = sketch(id) else { return }
@@ -42,8 +36,9 @@ extension CADDocument {
     /// Rewrites the profile of every extrusion linked to a (still closed) shape of `sketch`;
     /// links to deleted features or shapes are dropped, those features keep their last profile.
     mutating func regenerate(from sketch: Sketch) {
+        let featureIDs = Set(features.map(\.id))
         sketchLinks.removeAll { link in
-            link.sketchID == sketch.id && (!features.contains { $0.id == link.featureID }
+            link.sketchID == sketch.id && (!featureIDs.contains(link.featureID)
                                           || !sketch.shapes.contains { $0.id == link.shapeID && $0.profile != nil })
         }
         for link in sketchLinks where link.sketchID == sketch.id {

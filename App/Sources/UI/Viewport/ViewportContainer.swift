@@ -89,7 +89,7 @@ struct ViewportContainer: View {
         ZStack {
             LinearGradient(colors: [Color(white: 0.30), Color(white: 0.17)], startPoint: .top, endPoint: .bottom)
                 .overlay(Theme.Palette.canvas.opacity(0.0))
-            MetalViewport(features: model.document.features,
+            MetalViewport(features: model.document.activeFeatures,
                           // In face/edge mode only the picked face/edge is highlighted, not the whole body.
                           selection: workspace.selectionFilter == .body ? model.selection : nil,
                           hovered: workspace.hovered, style: viewport.style, camera: viewport.camera,

@@ -17,9 +17,11 @@ struct ThreeMFTests {
 
     @Test func oldDocumentAndColourRoundTrip() throws {
         let original = CADDocument(features: [Feature(name: "Parte", kind: .box(width: 10, depth: 20, height: 5), color: PartColor(hex: "#123456")!)])
-        let encoded = try original.encoded()
-        #expect(try CADDocument.decode(encoded) == original)
-        var json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        #expect(try CADDocument.decode(original.encoded()) == original)
+        // Hand-built v1 file (flat `features` array) to check old documents without colours.
+        let featuresJSON = try JSONEncoder().encode(original.features)
+        let featuresObject = try JSONSerialization.jsonObject(with: featuresJSON)
+        var json: [String: Any] = ["version": 1, "features": featuresObject]
         var features = try #require(json["features"] as? [[String: Any]])
         features[0].removeValue(forKey: "color")
         json["features"] = features

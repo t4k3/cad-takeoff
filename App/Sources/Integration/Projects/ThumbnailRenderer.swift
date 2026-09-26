@@ -6,7 +6,7 @@ import simd
 /// saved next to the design for the Home dashboard. No GPU, works off-screen.
 enum ThumbnailRenderer {
     static func png(for document: CADDocument, size: CGSize = CGSize(width: 360, height: 270)) -> Data? {
-        let parts = document.features.filter(\.isVisible).map { ($0.buildMesh(), $0.color) }
+        let parts = document.activeFeatures.filter(\.isVisible).map { ($0.buildMesh(), $0.color) }
         guard parts.contains(where: { !$0.0.isEmpty }) else { return nil }
 
         // Home-like view direction (from front-right, above), Z up.

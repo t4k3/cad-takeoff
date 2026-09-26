@@ -44,42 +44,171 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     }
 }
 
-/// The design: an ordered feature timeline. Serialized as JSON (`.ftk`).
+/// One step of the design history.
+public struct TimelineItem: Identifiable, Codable, Sendable, Equatable {
+    public enum Content: Codable, Sendable, Equatable {
+        case feature(Feature)
+        case sketch(Sketch)
+        case sheetMetal(SheetMetalPart)
+    }
+
+    public var content: Content
+    /// A suppressed step stays in the history but is not evaluated.
+    public var isSuppressed: Bool
+
+    public init(_ content: Content, isSuppressed: Bool = false) {
+        self.content = content; self.isSuppressed = isSuppressed
+    }
+
+    public var id: UUID {
+        switch content {
+        case let .feature(f): f.id
+        case let .sketch(s): s.id
+        case let .sheetMetal(p): p.id
+        }
+    }
+
+    public var name: String {
+        switch content {
+        case let .feature(f): f.name
+        case let .sketch(s): s.name
+        case let .sheetMetal(p): p.name
+        }
+    }
+
+    public var feature: Feature? { if case let .feature(f) = content { f } else { nil } }
+    public var sketch: Sketch? { if case let .sketch(s) = content { s } else { nil } }
+    public var sheetMetal: SheetMetalPart? { if case let .sheetMetal(p) = content { p } else { nil } }
+}
+
+/// The design (format v2, T82): an ordered history (`timeline`) of sketches, solids and
+/// sheet-metal parts, with a rollback marker. Serialized as JSON (`.ftk`).
+/// v1 files (`features` + optional `sketches`) are migrated on decode.
 public struct CADDocument: Codable, Sendable, Equatable {
-    public static let formatVersion = 1
+    public static let formatVersion = 2
 
     public var version: Int = CADDocument.formatVersion
-    public var features: [Feature] = []
-    /// Sketches and which feature each sketch shape produced (T77). Optional keys:
-    /// documents written before sketches existed decode with empty arrays.
-    public var sketches: [Sketch] = []
+    public var timeline: [TimelineItem] = []
+    /// Number of history steps evaluated; nil = all ("end of timeline").
+    public var rollback: Int?
     public var sketchLinks: [SketchLink] = []
 
     public init(features: [Feature] = [], sketches: [Sketch] = [], sketchLinks: [SketchLink] = []) {
-        self.features = features; self.sketches = sketches; self.sketchLinks = sketchLinks
+        timeline = Self.orderedV1(features: features, sketches: sketches, links: sketchLinks)
+        self.sketchLinks = sketchLinks
     }
 
-    private enum CodingKeys: String, CodingKey { case version, features, sketches, sketchLinks }
+    public init(timeline: [TimelineItem], rollback: Int? = nil, sketchLinks: [SketchLink] = []) {
+        self.timeline = timeline; self.rollback = rollback; self.sketchLinks = sketchLinks
+    }
+
+    // MARK: Views over the timeline (read/write, in history order)
+
+    /// All solids in history order, including suppressed and rolled-back ones (for editing).
+    /// Setting keeps the other steps in place: existing solids are updated in their slot,
+    /// removed ones are dropped, new ones are inserted at the rollback marker.
+    public var features: [Feature] {
+        get { timeline.compactMap(\.feature) }
+        set { replace(newValue.map { .feature($0) }, matching: { $0.feature != nil }) }
+    }
+
+    /// All sketches in history order. Same setter rules as `features`.
+    public var sketches: [Sketch] {
+        get { timeline.compactMap(\.sketch) }
+        set { replace(newValue.map { .sketch($0) }, matching: { $0.sketch != nil }) }
+    }
+
+    public var sheetMetalParts: [SheetMetalPart] {
+        get { timeline.compactMap(\.sheetMetal) }
+        set { replace(newValue.map { .sheetMetal($0) }, matching: { $0.sheetMetal != nil }) }
+    }
+
+    /// Index where new steps go (the rollback marker, or the end).
+    public var insertionIndex: Int { min(rollback ?? timeline.count, timeline.count) }
+
+    /// Steps that are evaluated: before the marker and not suppressed.
+    public var activeItems: [TimelineItem] {
+        timeline.prefix(insertionIndex).filter { !$0.isSuppressed }
+    }
+
+    /// Solids that exist in the evaluated design (visibility is a separate, display-only flag).
+    public var activeFeatures: [Feature] { activeItems.compactMap(\.feature) }
+
+    public func isActive(_ id: UUID) -> Bool { activeItems.contains { $0.id == id } }
+
+    private mutating func replace(_ items: [TimelineItem.Content], matching belongs: (TimelineItem) -> Bool) {
+        let byID = Dictionary(items.map { (TimelineItem($0).id, $0) }, uniquingKeysWith: { a, _ in a })
+        var kept = Set<UUID>()
+        var next: [TimelineItem] = []
+        var marker = rollback
+        for (i, item) in timeline.enumerated() {
+            if belongs(item) {
+                if let content = byID[item.id] {
+                    next.append(TimelineItem(content, isSuppressed: item.isSuppressed)); kept.insert(item.id)
+                } else if let m = marker, i < m { marker = m - 1 }   // removed before the marker
+            } else {
+                next.append(item)
+            }
+        }
+        let added = items.filter { !kept.contains(TimelineItem($0).id) }
+        let at = min(marker ?? next.count, next.count)
+        next.insert(contentsOf: added.map { TimelineItem($0) }, at: at)
+        if let m = marker { marker = m + added.count }
+        timeline = next
+        rollback = marker.flatMap { $0 >= timeline.count ? nil : $0 }
+    }
+
+    // MARK: Evaluation
+
+    /// Combined printable mesh of active, visible solids (concatenation; booleans come in phase 3).
+    public func buildMesh() -> Mesh {
+        Mesh.merged(activeFeatures.filter(\.isVisible).map { $0.buildMesh() })
+    }
+
+    // MARK: Coding (v2, with v1 migration)
+
+    private enum CodingKeys: String, CodingKey { case version, timeline, rollback, sketchLinks, features, sketches }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        version = try c.decodeIfPresent(Int.self, forKey: .version) ?? CADDocument.formatVersion
-        features = try c.decode([Feature].self, forKey: .features)
-        sketches = try c.decodeIfPresent([Sketch].self, forKey: .sketches) ?? []
+        let fileVersion = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
         sketchLinks = try c.decodeIfPresent([SketchLink].self, forKey: .sketchLinks) ?? []
+        if let tl = try c.decodeIfPresent([TimelineItem].self, forKey: .timeline) {
+            timeline = tl
+            rollback = try c.decodeIfPresent(Int.self, forKey: .rollback)
+        } else {
+            // v1: flat `features` and (since T77) `sketches`.
+            let features = try c.decode([Feature].self, forKey: .features)
+            let sketches = try c.decodeIfPresent([Sketch].self, forKey: .sketches) ?? []
+            timeline = Self.orderedV1(features: features, sketches: sketches, links: sketchLinks)
+        }
+        guard fileVersion <= Self.formatVersion else {
+            throw DecodingError.dataCorruptedError(forKey: .version, in: c,
+                debugDescription: "Documento creato da una versione più recente (formato \(fileVersion)).")
+        }
+        version = Self.formatVersion
     }
 
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
-        try c.encode(version, forKey: .version)
-        try c.encode(features, forKey: .features)
-        if !sketches.isEmpty { try c.encode(sketches, forKey: .sketches) }
+        try c.encode(Self.formatVersion, forKey: .version)
+        try c.encode(timeline, forKey: .timeline)
+        try c.encodeIfPresent(rollback, forKey: .rollback)
         if !sketchLinks.isEmpty { try c.encode(sketchLinks, forKey: .sketchLinks) }
     }
 
-    /// Combined printable mesh of visible features (concatenation; boolean union is task T11).
-    public func buildMesh() -> Mesh {
-        Mesh.merged(features.filter(\.isVisible).map { $0.buildMesh() })
+    /// v1 had no global order: each sketch goes right before the first solid made from it.
+    static func orderedV1(features: [Feature], sketches: [Sketch], links: [SketchLink]) -> [TimelineItem] {
+        var placed = Set<UUID>()
+        var out: [TimelineItem] = []
+        for f in features {
+            for s in sketches where !placed.contains(s.id) && links.contains(where: { $0.sketchID == s.id && $0.featureID == f.id }) {
+                out.append(TimelineItem(.sketch(s))); placed.insert(s.id)
+            }
+            out.append(TimelineItem(.feature(f)))
+        }
+        out += sketches.filter { !placed.contains($0.id) }.map { TimelineItem(.sketch($0)) }
+        return out
     }
 
     public func encoded() throws -> Data {
