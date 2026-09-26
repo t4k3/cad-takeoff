@@ -189,18 +189,21 @@ extension DesignModel: CADToolProvider {
         let (bodies, issues) = evaluation()
         let visible = bodies.filter(\.isVisible)
         let mesh = Mesh.merged(visible.map(\.mesh))
-        let report = mesh.isEmpty ? nil : MeshValidator.validate(mesh)
+        // Each body on its own: overlapping separate bodies share edges in a merged mesh, which
+        // would read as "open" although every body is closed.
+        let open = visible.filter { !$0.mesh.isEmpty && !MeshValidator.validate($0.mesh).isWatertight }
         return result("Scena in millimetri, Z verso l'alto", [
             "units": "mm", "up_axis": "Z", "feature_count": .number(Double(document.features.count)),
             "visible_count": .number(Double(visible.count)), "triangles": .number(Double(mesh.triangleCount)),
             "mesh_volume_mm3": .number(mesh.volume), "bounds": bounds(mesh.bounds),
-            "edge_closed": report.map { .bool($0.isWatertight) } ?? .null,
+            "edge_closed": visible.isEmpty ? .null : .bool(open.isEmpty),
+            "open_bodies": .array(open.map { .string($0.source.name) }),
             "body_count": .number(Double(bodies.count)),
             "issues": .array(issues.map { ["feature_id": .string($0.featureID.uuidString), "message": .string($0.message)] }),
             "warning": "Corpi separati non si fondono tra loro: usa operation join per unirli. La chiusura dei bordi non certifica la stampabilità.",
             "capabilities": ["box", "cylinder", "simple_polygon_extrude", "boolean_join_cut_intersect", "hole", "chamfer", "fillet", "sheet_metal",
                              "parameter_update", "timeline_rollback_suppress", "session_undo", "stl", "part_color", "3mf"],
-            "unavailable": ["modeled_thread", "sheet_metal_closed_corners", "step"]
+            "unavailable": ["modeled_thread", "step"]
         ])
     }
 
