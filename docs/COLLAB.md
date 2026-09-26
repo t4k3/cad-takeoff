@@ -1148,3 +1148,9 @@ Inizio **Raccordo (fillet) a raggio costante su spigoli selezionati**. File: Pac
 
 ### 2026-09-26 14:47 · ? · DONE `T80`
 **UX lamiera base: regola, piastra, flangia, anteprima piegato-piatto ed export** — Scheda LAMIERA: comando con materiale/spessori commerciali/raggio da tabella o manuale, dati di piega e avvisi d'officina nel pannello, anteprima dal vivo, vista Sviluppo con linee di piega, export DXF, ispettore. Provato a schermo (U in DC01 1,5).
+
+### 2026-09-26 15:04 · ? · DONE `T64`
+**Schizzo persistente su piano o faccia piana + proiezione spigoli** — Schizzo su faccia: SketchPlane.onFace, FeaturePlacement (piano + verso) nel kernel (B-rep portato sul piano), camera frontale, spigoli proiettati come riferimenti con aggancio, Estrudi con direzione; add_extrude con face_point/face_normal/into_part. Test core e assistente; prova visiva in sospeso (schermo bloccato).
+
+### 2026-09-26 15:04 · ? · DONE `T66`
+**UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0** — Schizzo su faccia: SketchPlane.onFace, FeaturePlacement (piano + verso) nel kernel (B-rep portato sul piano), camera frontale, spigoli proiettati come riferimenti con aggancio, Estrudi con direzione; add_extrude con face_point/face_normal/into_part. Test core e assistente; prova visiva in sospeso (schermo bloccato).

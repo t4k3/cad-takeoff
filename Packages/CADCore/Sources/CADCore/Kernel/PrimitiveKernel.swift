@@ -4,6 +4,20 @@ import Foundation
 /// XY profile extrusions. Does not infer topology by comparing triangle normals.
 public enum PrimitiveKernel {
     public static func build(_ feature: Feature, cylinderSegments: Int = 64) throws -> BRepBody {
+        guard let placement = feature.placement else { return try buildLocal(feature, cylinderSegments: cylinderSegments) }
+        // Built at the origin in the plane's frame, then carried onto the plane (and position).
+        var local = feature
+        local.placement = nil
+        local.position = .zero
+        let body = try buildLocal(local, cylinderSegments: cylinderSegments)
+        let height: Double = switch feature.kind {
+        case let .box(_, _, h), let .cylinder(_, h), let .extrude(_, h): h
+        default: 0
+        }
+        return try body.placed(on: placement.plane, depthOffset: placement.reversed ? -height : 0, translation: feature.position)
+    }
+
+    private static func buildLocal(_ feature: Feature, cylinderSegments: Int) throws -> BRepBody {
         guard feature.position.isFinite,
               [feature.position.x, feature.position.y, feature.position.z].allSatisfy({ abs($0) <= 100_000 }) else {
             throw KernelError.invalidParameter("posizione oltre ±100000 mm o non finita")
@@ -168,5 +182,32 @@ public enum PrimitiveKernel {
                 && p.y >= min(a.y, b.y) - 1e-9 && p.y <= max(a.y, b.y) + 1e-9
         }
         return (x * y < 0 && z * w < 0) || on(a, b, c, x) || on(a, b, d, y) || on(c, d, a, z) || on(c, d, b, w)
+    }
+}
+
+extension BRepBody {
+    /// The body carried from its local frame (XY, +Z) onto a sketch plane: a proper rigid motion,
+    /// so orientation, IDs and validity are kept. `depthOffset` shifts along the normal first.
+    func placed(on plane: SketchPlane, depthOffset: Double, translation: Vec3) throws -> BRepBody {
+        let n = plane.normal
+        func point(_ v: Vec3) -> Vec3 { plane.origin + plane.xAxis * v.x + plane.yAxis * v.y + n * (v.z + depthOffset) + translation }
+        func direction(_ v: Vec3) -> Vec3 { plane.xAxis * v.x + plane.yAxis * v.y + n * v.z }
+        func surface(_ s: SurfaceDescriptor) -> SurfaceDescriptor {
+            switch s {
+            case let .plane(o, nn): .plane(origin: point(o), normal: direction(nn))
+            case let .cylinder(o, a, r): .cylinder(axisOrigin: point(o), axisDirection: direction(a), radius: r)
+            case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
+            case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
+            }
+        }
+        let body = BRepBody(id: id, vertices: vertices.map { BRepVertex(id: $0.id, position: point($0.position)) },
+                            edges: edges, halfEdges: halfEdges,
+                            faces: faces.map { f in
+                                BRepFace(id: f.id, halfEdges: f.halfEdges, origin: point(f.origin), normal: direction(f.normal),
+                                         selectionID: f.selectionID, sourceSurface: surface(f.sourceSurface))
+                            },
+                            maximumSurfaceDeviation: maximumSurfaceDeviation, faceTriangles: faceTriangles)
+        try body.validate()
+        return body
     }
 }

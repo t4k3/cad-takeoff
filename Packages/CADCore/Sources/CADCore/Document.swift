@@ -21,6 +21,14 @@ public enum BooleanOperation: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// Where a box, cylinder or extrusion is built: on a sketch plane (e.g. a face), outward along
+/// its normal or, reversed, into the part. Nil = the world XY plane (the original behaviour).
+public struct FeaturePlacement: Codable, Sendable, Equatable {
+    public var plane: SketchPlane
+    public var reversed: Bool
+    public init(plane: SketchPlane, reversed: Bool = false) { self.plane = plane; self.reversed = reversed }
+}
+
 /// A parametric feature in the timeline. The mesh is always regenerated from parameters.
 public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public enum Kind: Codable, Sendable, Equatable {
@@ -42,14 +50,16 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public var isVisible: Bool
     public var color: PartColor
     public var operation: BooleanOperation
+    /// Sketch plane the solid is built on (sketch on face); nil = world XY.
+    public var placement: FeaturePlacement?
 
     public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true,
-                color: PartColor = .defaultColor, operation: BooleanOperation = .newBody) {
+                color: PartColor = .defaultColor, operation: BooleanOperation = .newBody, placement: FeaturePlacement? = nil) {
         self.id = id; self.name = name; self.kind = kind; self.position = position; self.isVisible = isVisible
-        self.color = color; self.operation = operation
+        self.color = color; self.operation = operation; self.placement = placement
     }
 
-    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -61,9 +71,19 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         // Existing v1 documents have no colour field. Invalid supplied colours still fail decoding.
         color = try c.decodeIfPresent(PartColor.self, forKey: .color) ?? .defaultColor
         operation = try c.decodeIfPresent(BooleanOperation.self, forKey: .operation) ?? .newBody
+        placement = try c.decodeIfPresent(FeaturePlacement.self, forKey: .placement)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id); try c.encode(name, forKey: .name); try c.encode(kind, forKey: .kind)
+        try c.encode(position, forKey: .position); try c.encode(isVisible, forKey: .isVisible)
+        try c.encode(color, forKey: .color); try c.encode(operation, forKey: .operation)
+        try c.encodeIfPresent(placement, forKey: .placement)
     }
 
     public func buildMesh() -> Mesh {
+        if placement != nil, let brep = try? PrimitiveKernel.build(self) { return brep.mesh }
         let local: Mesh
         switch kind {
         case let .box(w, d, h): local = Primitives.box(width: w, depth: d, height: h)

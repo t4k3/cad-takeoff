@@ -131,6 +131,22 @@ final class CameraController {
         animate(to: to)
     }
 
+    /// Looks straight at a plane (sketch on a face): view along −normal, the plane's X to the right.
+    func look(at plane: SketchPlane, target: Vec3?) {
+        var to = pose
+        let n = plane.normal
+        if abs(n.z) > 0.999 {
+            (to.yaw, to.pitch) = (n.z > 0 ? StandardView.top : StandardView.bottom).angles
+        } else {
+            to.yaw = atan2(Float(n.y), Float(n.x))
+            to.pitch = asin(Float(max(-1, min(1, n.z))))
+        }
+        if let target { to.target = SIMD3(Float(target.x), Float(target.y), Float(target.z)) }
+        while to.yaw - pose.yaw > .pi { to.yaw -= 2 * .pi }
+        while pose.yaw - to.yaw > .pi { to.yaw += 2 * .pi }
+        animate(to: to)
+    }
+
     func fit(_ bounds: BoundingBox?) {
         guard let bounds else { return }
         animate(to: framing(bounds, yaw: pose.yaw, pitch: pose.pitch))

@@ -170,6 +170,14 @@ struct AssistantToolsTests {
         let roundedVolume: Double = roundInfo.structured?["mesh_volume_mm3"]?.number ?? 0
         expect(roundedVolume < chamferedVolume - 20, "round removes the corners")
         expect(roundInfo.structured?["edge_closed"]?.bool == true, "rounded plate closed")
+        // Pocket from the top face of a plate (sketch on face, into the part).
+        m.newDesign()
+        _ = await edit("add_box", ["width": 40, "depth": 30, "height": 5, "name": "Piastra"])
+        let square: JSONValue = .array([[-5, -5], [5, -5], [5, 5], [-5, 5]].map { ["x": .number($0[0]), "y": .number($0[1])] })
+        let pocket = await edit("add_extrude", ["points": square, "height": 3, "operation": "cut",
+                                                "face_point": ["x": 0, "y": 0, "z": 5], "face_normal": ["x": 0, "y": 0, "z": 1], "into_part": true])
+        let pocketInfo = await m.call("scene_info", arguments: [:])
+        expect(!pocket.isError && abs((pocketInfo.structured?["mesh_volume_mm3"]?.number ?? 0) - 5700) < 1e-6, "pocket from the top face")
         // Sheet metal: U channel in DC01 2 mm with the workshop rule.
         m.newDesign()
         let channel = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "width": 100, "depth": 40,

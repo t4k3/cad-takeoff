@@ -70,11 +70,21 @@ extension DesignModel: CADToolProvider {
             case "add_sheet_metal": kind = .sheetMetal(try sheetSpec(args))
             default: throw CADToolFailure("Comando non supportato.")
             }
+            var placement: FeaturePlacement?
+            if name == "add_extrude", let fp = args["face_point"], let fn = args["face_normal"] {
+                guard let px = fp["x"]?.number, let py = fp["y"]?.number, let pz = fp["z"]?.number,
+                      let nx = fn["x"]?.number, let ny = fn["y"]?.number, let nz = fn["z"]?.number, Vec3(nx, ny, nz).length > 0.5 else {
+                    throw CADToolFailure("face_point e face_normal: vettori {x,y,z}.")
+                }
+                placement = FeaturePlacement(plane: SketchPlane.onFace(point: Vec3(px, py, pz), normal: Vec3(nx, ny, nz)),
+                                             reversed: args["into_part"]?.bool ?? false)
+            }
             let f = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? "\(title) \(next.features.count + 1)",
                             kind: kind, position: try position(args) ?? .zero,
                             color: try args["color"].map { _ in try color(args) }
                                 ?? (name == "add_sheet_metal" ? PartColor(hex: "#7F8B97")! : .defaultColor),
-                            operation: name == "add_hole" ? .cut : (try operation(args) ?? .newBody))
+                            operation: name == "add_hole" ? .cut : (try operation(args) ?? .newBody),
+                            placement: placement)
             try CADToolValidation.feature(f)
             try CADToolValidation.mesh(f.buildMesh())
             next.features.append(f); changed = f.id; selected = f.id

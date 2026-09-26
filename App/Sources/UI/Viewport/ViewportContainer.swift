@@ -15,11 +15,11 @@ final class ViewportState {
     var viewSize: CGSize = .zero
 
     /// Sketch mode camera: animate to the top view, orthographic; restore on exit.
-    func applySketchCamera(_ entering: Bool) {
+    func applySketchCamera(_ entering: Bool, plane: SketchPlane = .xy, focus: Vec3? = nil) {
         if entering {
             projectionBeforeSketch = camera.projection
             camera.projection = .orthographic
-            camera.show(.top, bounds: nil)
+            if plane.isXY { camera.show(.top, bounds: nil) } else { camera.look(at: plane, target: focus) }
         } else {
             camera.projection = projectionBeforeSketch ?? .perspective
             camera.show(.home, bounds: renderer?.sceneBounds)
@@ -143,7 +143,7 @@ struct ViewportContainer: View {
         .background { sketchKeys }
         .onChange(of: workspace.sketchCameraRequest) { _, request in
             guard let request else { return }
-            viewport.applySketchCamera(request)
+            viewport.applySketchCamera(request, plane: workspace.sketch?.sketch.plane ?? .xy, focus: workspace.sketchFocus)
             workspace.sketchCameraRequest = nil
         }
         .overlay(alignment: .bottom) { navigationBar.padding(.bottom, 12) }
@@ -213,9 +213,12 @@ struct ViewportContainer: View {
     // MARK: Viewport input
 
     private func handleClick(_ point: CGPoint, _ ray: Ray, _ mods: NSEvent.ModifierFlags) {
+        if workspace.pickingSketchPlane {
+            pickSketchPlane(ray)
+            return
+        }
         if let sketch = workspace.sketch {
-            guard workspace.command == nil,
-                  let p = ray.intersect(planePoint: .zero, normal: SIMD3(0, 0, 1)) else { return }
+            guard workspace.command == nil, let p = sketch.intersect(ray) else { return }
             sketch.vertexSnap = 8 * viewport.mmPerPoint
             sketch.click(p)
             return
@@ -243,6 +246,23 @@ struct ViewportContainer: View {
         model.selection = viewport.pick(ray)
     }
 
+    /// «Schizzo»: a click on a planar face sketches on it; in empty space, on the XY plane.
+    private func pickSketchPlane(_ ray: Ray) {
+        workspace.pickingSketchPlane = false
+        let bodies = viewport.renderer?.visibleBodies ?? []
+        guard let hit = Picking.pick(ray, in: bodies),
+              let face = bodies.first(where: { $0.feature.id == hit.featureID })?.face(ofTriangle: hit.triangle) else {
+            workspace.enterSketch(); return
+        }
+        guard case let .plane(origin, normal) = face.surface else {
+            model.statusMessage = "Lo schizzo va su una faccia piana: scegli un'altra faccia."
+            workspace.pickingSketchPlane = true
+            return
+        }
+        let p = Vec3(Double(hit.point.x), Double(hit.point.y), Double(hit.point.z))
+        workspace.enterSketch(plane: SketchPlane.onFace(point: origin, normal: normal), focus: p)
+    }
+
     private func dragBegin(_ ray: Ray) -> Bool {
         guard let m = workspace.manipulator,
               m.hits(ray, length: arrowLength, tolerance: viewport.screenTolerance(10)) else { return false }
@@ -257,7 +277,7 @@ struct ViewportContainer: View {
         }
         if let sketch = workspace.sketch {
             sketch.vertexSnap = 8 * viewport.mmPerPoint
-            sketch.hover(ray?.intersect(planePoint: .zero, normal: SIMD3(0, 0, 1)), screen: point)
+            sketch.hover(ray.flatMap { sketch.intersect($0) }, screen: point)
             return
         }
         if let placement = workspace.holePlacement {
@@ -456,9 +476,21 @@ struct ViewportContainer: View {
             .overlayChip()
             .padding(.top, 10)
         }
+        if workspace.pickingSketchPlane {
+            HStack(spacing: 8) {
+                Label("SCHIZZO", systemImage: "pencil.and.outline").font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.Palette.sketch)
+                Text("Clicca una faccia piana del pezzo, oppure").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                Button("Piano XY") { workspace.pickingSketchPlane = false; workspace.enterSketch() }.controlSize(.small)
+                Button("Annulla") { workspace.pickingSketchPlane = false }.controlSize(.small)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .overlayChip()
+            .padding(.top, 10)
+        }
         if let sketch = workspace.sketch, workspace.command == nil {
             HStack(spacing: 8) {
-                Label("SCHIZZO · piano XY", systemImage: "pencil.and.outline")
+                Label("SCHIZZO · " + (sketch.sketch.plane.isXY ? "piano XY" : "su faccia"), systemImage: "pencil.and.outline")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.Palette.sketch)
                 Text(sketch.tool.hint).font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)

@@ -10,24 +10,47 @@ enum SketchCommands {
         guard let shape = sketch.extrudeCandidate, shape.profile != nil else { return nil }
         sketch.selection = shape.id
         sketch.previewHeight = 10
-        return CommandSession(
+        sketch.previewReversed = false
+        let onFace = !sketch.sketch.plane.isXY
+        func operation(_ f: [CommandField]) -> BooleanOperation {
+            if case let .index(i)? = f.first(where: { $0.id == "op" })?.value { return BooleanOperation.allCases[i] }
+            return .newBody
+        }
+        func reversed(_ f: [CommandField]) -> Bool {
+            if case let .index(i)? = f.first(where: { $0.id == "dir" })?.value { return onFace && i == 1 }
+            return false
+        }
+        var lastOp = BooleanOperation.newBody
+        weak var session: CommandSession?
+        let created = CommandSession(
             title: "Estrudi \(shape.typeName.lowercased())", symbol: "square.stack.3d.up",
             fields: [.init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
-                           help: "Altezza dell'estrusione verso +Z"),
+                           help: onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z"),
                      .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
-                           help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca")],
+                           help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca"),
+                     .init(id: "dir", label: "Direzione", kind: .choice(["Fuori dalla faccia", "Dentro il pezzo"]), value: .index(0),
+                           help: "Su una faccia: un taglio va dentro il pezzo, un'unione verso l'esterno", isHidden: !onFace)],
             onPreview: { f in
+                let op = operation(f)
+                // Switching to «Taglia» on a face flips the direction into the part (once).
+                if onFace, op == .cut, lastOp != .cut, case .index(0)? = f.first(where: { $0.id == "dir" })?.value {
+                    lastOp = op
+                    session?.update("dir") { $0.value = .index(1) }
+                    return
+                }
+                lastOp = op
                 sketch.previewHeight = f.first?.number
-                if case let .index(i)? = f.last?.value { sketch.previewIsCut = BooleanOperation.allCases[i] == .cut }
+                sketch.previewIsCut = op == .cut
+                sketch.previewReversed = reversed(f)
             },
             onCommit: { f in
                 let height = f.first?.number ?? 10
-                var op = BooleanOperation.newBody
-                if case let .index(i)? = f.last?.value { op = BooleanOperation.allCases[i] }
+                let op = operation(f)
                 sketch.previewHeight = nil
                 guard let current = sketch.shape(shape.id), let profile = current.profile else { return }
+                let placement = onFace ? FeaturePlacement(plane: sketch.sketch.plane, reversed: reversed(f)) : nil
                 let feature = Feature(name: (op == .cut ? "Taglio " : "Estrusione ") + "\(model.document.features.count + 1)",
-                                      kind: .extrude(profile: profile, height: height), operation: op)
+                                      kind: .extrude(profile: profile, height: height), operation: op, placement: placement)
                 do {
                     try CADToolValidation.feature(feature)
                 } catch {
@@ -45,5 +68,7 @@ enum SketchCommands {
                 workspace.exitSketch()
             },
             onCancel: { sketch.previewHeight = nil })
+        session = created
+        return created
     }
 }

@@ -115,11 +115,33 @@ final class WorkspaceState {
     @ObservationIgnored weak var sketchStore: SketchStore?
     @ObservationIgnored weak var model: DesignModel?
 
-    /// New sketch, or edit an existing saved one.
-    func enterSketch(editing existing: Sketch? = nil) {
+    /// «Schizzo» waits for a click on a planar face (or «Piano XY»).
+    var pickingSketchPlane = false
+    /// Point the sketch camera centres on (the clicked face).
+    var sketchFocus: Vec3?
+
+    /// Starts a new sketch: on the selected planar face, else asks for one.
+    func startSketch() {
         command?.onCancel(); command = nil
+        if case let .face(id)? = geoSelection.first?.kind, let body = geoSelection.first.flatMap({ ref in
+               model?.evaluation().bodies.first { $0.id == ref.feature } }),
+           let face = body.snapshot.faces.first(where: { $0.id == id }), case let .plane(origin, normal) = face.surface {
+            enterSketch(plane: SketchPlane.onFace(point: origin, normal: normal), focus: origin)
+            return
+        }
+        pickingSketchPlane = true
+    }
+
+    /// New sketch (on `plane`), or edit an existing saved one.
+    func enterSketch(editing existing: Sketch? = nil, plane: SketchPlane = .xy, focus: Vec3? = nil) {
+        command?.onCancel(); command = nil
+        pickingSketchPlane = false
         if sketch != nil { exitSketch() }
-        let session = SketchSession(sketch: existing ?? Sketch(name: sketchStore?.nextName ?? "Schizzo 1"))
+        let session = SketchSession(sketch: existing ?? Sketch(name: sketchStore?.nextName ?? "Schizzo 1", plane: plane))
+        sketchFocus = existing.map { $0.plane.world(Vec2(0, 0)) } ?? focus
+        if !session.sketch.plane.isXY, let model {
+            session.projectReferences(from: model.evaluation().bodies.map(\.snapshot))
+        }
         sketch = session
         model?.localUndoTarget = session
         tab = .sketch

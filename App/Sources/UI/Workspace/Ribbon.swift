@@ -64,8 +64,8 @@ struct Ribbon: View {
 
     @ViewBuilder private var solidTools: some View {
         ToolGroup("CREA") {
-            Button { workspace.enterSketch() } label: { Label("Schizzo", systemImage: "pencil.and.outline") }
-                .help("Nuovo schizzo sul piano XY")
+            Button { workspace.startSketch() } label: { Label("Schizzo", systemImage: "pencil.and.outline") }
+                .help("Nuovo schizzo: clicca una faccia piana del pezzo, o scegli il piano XY")
             Button { model.addBox() } label: { Label("Box", systemImage: "cube") }
                 .help("Nuovo parallelepipedo 20×20×20 mm")
             Button { model.addCylinder() } label: { Label("Cilindro", systemImage: "cylinder") }
@@ -156,7 +156,7 @@ struct Ribbon: View {
             }
         } else {
             ToolGroup("SCHIZZO") {
-                Button { workspace.enterSketch() } label: { Label("Crea schizzo", systemImage: "pencil.and.outline") }
+                Button { workspace.startSketch() } label: { Label("Crea schizzo", systemImage: "pencil.and.outline") }
                     .buttonStyle(RibbonButtonStyle(tint: Theme.Palette.sketch))
                     .help("Nuovo schizzo sul piano XY (piatto di stampa)")
             }

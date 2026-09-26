@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 14:47. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 15:04. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -107,9 +107,9 @@ flowchart LR
   subgraph P16["M1 · Ciclo Fusion"]
     T62["T62 · Kernel B-rep integrato (OCCT): build, link, firma in sandbox<br/><i>codex</i>"]:::blocked
     T63["T63 · Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza<br/><i>claude</i>"]:::todo
-    T64["T64 · Schizzo persistente su piano o faccia piana + proiezione spigoli<br/><i>claude</i>"]:::todo
+    T64["T64 · Schizzo persistente su piano o faccia piana + proiezione spigoli<br/><i>claude</i>"]:::done
     T65["T65 · Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione<br/><i>claude</i>"]:::todo
-    T66["T66 · UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0<br/><i>claude</i>"]:::todo
+    T66["T66 · UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0<br/><i>claude</i>"]:::done
     T67["T67 · UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore<br/><i>claude</i>"]:::todo
     T68["T68 · UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione<br/><i>claude</i>"]:::todo
     T70["T70 · Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT<br/><i>claude</i>"]:::done
@@ -399,9 +399,9 @@ flowchart LR
 | T61 | Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude | done | claude | T48, T25, T07 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace |
 | T62 | Kernel B-rep integrato (OCCT): build, link, firma in sandbox | blocked | codex | T26 | Packages/Kernel |
 | T63 | Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza | todo | claude | T75 | Packages/CADCore<br>App/Sources/Model |
-| T64 | Schizzo persistente su piano o faccia piana + proiezione spigoli | todo | claude | T63 | Packages/CADCore/Sources/CADCore/Sketch |
+| T64 | Schizzo persistente su piano o faccia piana + proiezione spigoli | done | claude | T63 | Packages/CADCore/Sources/CADCore/Sketch |
 | T65 | Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione | todo | claude | T63, T64 | Packages/CADCore/Sources/CADCore/Features |
-| T66 | UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0 | todo | claude | T64, T45 | App/Sources/UI/Sketch |
+| T66 | UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0 | done | claude | T64, T45 | App/Sources/UI/Sketch |
 | T67 | UX timeline M1: modifica, elimina, sopprimi, marker rollback, stati errore | todo | claude | T63, T25 | App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Timeline |
 | T68 | UX comandi solidi M1: Estrudi con operazioni, Raccordo, Smusso, Specchio, Dividi, piani di costruzione | todo | claude | T65, T45, T25 | App/Sources/UI/Command<br>App/Sources/UI/Features |
 | T69 | Verifica 3MF nei tre slicer e aggiornamento grafo sorgente | todo | claude | T59 | docs/architecture<br>scripts/architecture_graph.py<br>docs/requirements/PRINT_3MF.md<br>Tests/ThreeMF<br>result.json |

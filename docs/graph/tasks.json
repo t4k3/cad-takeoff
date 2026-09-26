@@ -1194,7 +1194,7 @@
       "id": "T64",
       "title": "Schizzo persistente su piano o faccia piana + proiezione spigoli",
       "phase": "M1 · Ciclo Fusion",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T63"
       ],
@@ -1202,7 +1202,11 @@
         "Packages/CADCore/Sources/CADCore/Sketch"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": null,
+      "finished": "2026-09-26 15:04",
+      "notes": [
+        "2026-09-26 15:04 ?: Schizzo su faccia: SketchPlane.onFace, FeaturePlacement (piano + verso) nel kernel (B-rep portato sul piano), camera frontale, spigoli proiettati come riferimenti con aggancio, Estrudi con direzione; add_extrude con face_point/face_normal/into_part. Test core e assistente; prova visiva in sospeso (schermo bloccato)."
+      ]
     },
     {
       "id": "T65",
@@ -1223,7 +1227,7 @@
       "id": "T66",
       "title": "UX schizzo su faccia (camera normale, proiezione spigoli), migrazione schizzo v0",
       "phase": "M1 · Ciclo Fusion",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T64",
         "T45"
@@ -1232,7 +1236,11 @@
         "App/Sources/UI/Sketch"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": null,
+      "finished": "2026-09-26 15:04",
+      "notes": [
+        "2026-09-26 15:04 ?: Schizzo su faccia: SketchPlane.onFace, FeaturePlacement (piano + verso) nel kernel (B-rep portato sul piano), camera frontale, spigoli proiettati come riferimenti con aggancio, Estrudi con direzione; add_extrude con face_point/face_normal/into_part. Test core e assistente; prova visiva in sospeso (schermo bloccato)."
+      ]
     },
     {
       "id": "T67",

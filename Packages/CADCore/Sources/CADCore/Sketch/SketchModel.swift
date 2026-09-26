@@ -19,6 +19,22 @@ public struct SketchPlane: Codable, Sendable, Equatable {
 
     public var normal: Vec3 { xAxis.cross(yAxis).normalized }
     public func world(_ p: Vec2) -> Vec3 { origin + xAxis * p.x + yAxis * p.y }
+    /// Plane coordinates of a world point (projected onto the plane).
+    public func local(_ p: Vec3) -> Vec2 { Vec2((p - origin).dot(xAxis), (p - origin).dot(yAxis)) }
+    /// World point at plane coordinates `p`, `height` along the normal.
+    public func world(_ p: Vec2, height: Double) -> Vec3 { world(p) + normal * height }
+
+    public var isXY: Bool { self == .xy }
+
+    /// Plane of a planar face (sketch on face): origin = the world origin projected onto it, so
+    /// on a horizontal face the coordinates are the world X/Y; on a vertical face X runs
+    /// horizontally and Y up.
+    public static func onFace(point: Vec3, normal: Vec3) -> SketchPlane {
+        let n = normal.normalized
+        let origin = n * point.dot(n)
+        let x = abs(n.z) > 0.999 ? Vec3(1, 0, 0) : Vec3(0, 0, 1).cross(n).normalized
+        return SketchPlane(origin: origin, xAxis: x, yAxis: n.cross(x).normalized)
+    }
 }
 
 /// One entity drawn in a sketch.

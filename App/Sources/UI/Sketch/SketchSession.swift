@@ -59,10 +59,25 @@ final class SketchSession {
     var previewHeight: Double?
     /// Preview drawn red when the extrusion cuts.
     var previewIsCut = false
+    /// Preview extruded into the part (against the plane's normal).
+    var previewReversed = false
     /// Snap radius in mm (~8 screen points), set by the viewport from the camera scale.
     var vertexSnap = 1.0
 
+    /// Edges of the part lying on the sketch plane, in sketch coordinates (projected references:
+    /// drawn dashed, snap targets; not part of the sketch).
+    var references: [[Vec2]] = []
+
     init(sketch: Sketch) { self.sketch = sketch }
+
+    /// Projects the bodies' edges that lie on the sketch plane (the face outline and holes).
+    func projectReferences(from bodies: [BodySnapshot]) {
+        let pl = sketch.plane
+        references = bodies.flatMap { b in
+            b.edges.filter { e in e.polyline.allSatisfy { abs(($0 - pl.origin).dot(pl.normal)) < 1e-4 } }
+                .map { $0.polyline.map { pl.local($0) } }
+        }
+    }
 
     private func record(_ old: Sketch) {
         let title = Self.describe(old, sketch)
@@ -110,13 +125,25 @@ final class SketchSession {
 
     // MARK: Input
 
+    /// Where a viewport ray meets the sketch plane.
+    func intersect(_ ray: Ray) -> SIMD3<Float>? {
+        let pl = sketch.plane
+        return ray.intersect(planePoint: SIMD3(Float(pl.origin.x), Float(pl.origin.y), Float(pl.origin.z)),
+                             normal: SIMD3(Float(pl.normal.x), Float(pl.normal.y), Float(pl.normal.z)))
+    }
+
+    /// Sketch coordinates of a world point on the plane.
+    private func local(_ world: SIMD3<Float>) -> Vec2 {
+        sketch.plane.local(Vec3(Double(world.x), Double(world.y), Double(world.z)))
+    }
+
     func hover(_ world: SIMD3<Float>?, screen: CGPoint?) {
-        cursor = world.map { snap(Vec2(Double($0.x), Double($0.y))) }
+        cursor = world.map { snap(local($0)) }
         cursorScreen = screen
     }
 
     func click(_ world: SIMD3<Float>) {
-        let raw = Vec2(Double(world.x), Double(world.y))
+        let raw = local(world)
         let p = snap(raw)
         switch tool {
         case .select:
@@ -198,7 +225,18 @@ final class SketchSession {
             case let .polygon(c, _, _, _, _): return [c] + s.outline
             default: return s.outline
             }
-        } + pending
+        } + pending + references.flatMap { line -> [Vec2] in
+            // Ends and midpoints of straight references; every point of curved ones (circle rims).
+            guard let a = line.first, let b = line.last else { return [] }
+            if line.count <= 2 { return [a, b, Vec2((a.x + b.x) / 2, (a.y + b.y) / 2)] }
+            let closed = dist(a, b) < 1e-6
+            let pts = closed ? Array(line.dropLast()) : line
+            if closed, pts.count > 8 {
+                let c = Vec2(pts.map(\.x).reduce(0, +) / Double(pts.count), pts.map(\.y).reduce(0, +) / Double(pts.count))
+                return [c] + stride(from: 0, to: pts.count, by: max(1, pts.count / 4)).map { pts[$0] }
+            }
+            return pts
+        }
         if let v = vertices.min(by: { dist($0, p) < dist($1, p) }), dist(v, p) < vertexSnap { return v }
         guard snapToGrid else { return p }
         return Vec2((p.x / gridStep).rounded() * gridStep, (p.y / gridStep).rounded() * gridStep)
@@ -265,17 +303,34 @@ final class SketchSession {
 
     func overlay(sketchColor: SIMD4<Float>, selectedColor: SIMD4<Float>, previewColor: SIMD4<Float>) -> [Line] {
         var out: [Line] = []
-        func w(_ p: Vec2, _ z: Double = 0) -> SIMD3<Float> { SIMD3(Float(p.x), Float(p.y), Float(z) + 0.02) }
+        func w(_ p: Vec2, _ z: Double = 0) -> SIMD3<Float> { world(p, z + 0.02) }
         func ring(_ pts: [Vec2], closed: Bool, _ color: SIMD4<Float>, z: Double = 0) {
             guard pts.count >= 2 else { return }
             for i in 0..<(closed ? pts.count : pts.count - 1) { out.append((w(pts[i], z), w(pts[(i + 1) % pts.count], z), color)) }
+        }
+        // Projected part edges: dashed, orange.
+        let refColor = SIMD4<Float>(1, 0.62, 0.25, 0.8)
+        for line in references {
+            for (k, (a, b)) in zip(line, line.dropFirst()).enumerated() {
+                let l = dist(a, b)
+                guard l > 1e-9 else { continue }
+                // Dashes of ~1.5 snap radii.
+                let dash = max(vertexSnap * 1.2, 0.3), steps = max(1, Int(l / dash))
+                for i in stride(from: 0, to: steps, by: 2) {
+                    let t0 = Double(i) / Double(steps), t1 = min(1, Double(i + 1) / Double(steps))
+                    out.append((w(Vec2(a.x + (b.x - a.x) * t0, a.y + (b.y - a.y) * t0)),
+                                w(Vec2(a.x + (b.x - a.x) * t1, a.y + (b.y - a.y) * t1)), refColor))
+                }
+                _ = k
+            }
         }
         for s in shapes {
             let selected = s.id == selection
             var color = selected ? selectedColor : sketchColor
             if s.isConstruction { color *= SIMD4(1, 1, 1, 0.45) }
             ring(s.outline, closed: s.isClosed, color)
-            if selected, let h = previewHeight, h > 0, s.profile != nil {
+            if selected, let h0 = previewHeight, h0 > 0, s.profile != nil {
+                let h = previewReversed ? -h0 : h0
                 let pc = previewIsCut ? SIMD4<Float>(0.95, 0.25, 0.25, 0.9) : previewColor
                 ring(s.outline, closed: true, pc, z: h)
                 let step = max(1, s.outline.count / 16)
@@ -306,9 +361,14 @@ final class SketchSession {
     }
 
     private func cross(_ p: Vec2, size: Double, color: SIMD4<Float>) -> [Line] {
-        let z: Float = 0.03
-        return [(SIMD3(Float(p.x - size), Float(p.y), z), SIMD3(Float(p.x + size), Float(p.y), z), color),
-                (SIMD3(Float(p.x), Float(p.y - size), z), SIMD3(Float(p.x), Float(p.y + size), z), color)]
+        [(world(Vec2(p.x - size, p.y), 0.03), world(Vec2(p.x + size, p.y), 0.03), color),
+         (world(Vec2(p.x, p.y - size), 0.03), world(Vec2(p.x, p.y + size), 0.03), color)]
+    }
+
+    /// World position of sketch coordinates, `height` off the plane (overlays sit just above it).
+    private func world(_ p: Vec2, _ height: Double) -> SIMD3<Float> {
+        let v = sketch.plane.world(p, height: height)
+        return SIMD3(Float(v.x), Float(v.y), Float(v.z))
     }
 }
 
