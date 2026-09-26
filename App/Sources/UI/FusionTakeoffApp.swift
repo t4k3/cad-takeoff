@@ -35,6 +35,14 @@ struct FusionTakeoffApp: App {
                 .frame(minWidth: 1100, minHeight: 700)
         }
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("Informazioni su CAD Takeoff") {
+                    NSApplication.shared.orderFrontStandardAboutPanel(options: [
+                        .applicationVersion: "\(AppVersion.version) (build \(AppVersion.build))",
+                        .credits: NSAttributedString(string: "Commit \(AppVersion.commit) · compilata il \(AppVersion.buildDate)\nhttps://github.com/t4k3/cad-takeoff"),
+                    ])
+                }
+            }
             CommandGroup(replacing: .undoRedo) { UndoMenuItems(model: model) }
             CommandGroup(replacing: .newItem) {
                 Button("Home") { library.showHome.toggle() }.keyboardShortcut("h", modifiers: [.command, .shift])

@@ -85,6 +85,11 @@ struct HomeView: View {
                     .controlSize(.small)
                     .help("Aggiunge a Fusion il comando «Esporta per CAD Takeoff»: salva il disegno come .ftk in una cartella dei progetti, anche a ogni salvataggio")
                 Button("Importa STL/3MF…") { library.showHome = false; model.importMeshWithPanel() }.controlSize(.small)
+                Divider().padding(.vertical, 4)
+                Text("CAD Takeoff \(AppVersion.short)")
+                    .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.Palette.textSecondary)
+                    .help(AppVersion.long).textSelection(.enabled)
+                Text("compilata il \(AppVersion.buildDate)").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
             }
             .padding(12)
         }

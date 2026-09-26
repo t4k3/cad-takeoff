@@ -34,6 +34,7 @@
 		5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BB2CC5B625AFE33908AA5 /* StatusBar.swift */; };
 		5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */; };
 		6391BD7137C19D938C85F761 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ACF2F56948E53B401DAEA56 /* HomeView.swift */; };
+		6A10CC336BAEA35811826D10 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069D2799753CD573213F79CB /* AppVersion.swift */; };
 		6A65AED3408C4EB0ECFB82BF /* ftk-mcp in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 8CDAC622763B58001C57E74E /* ftk-mcp */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */; };
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
@@ -47,6 +48,7 @@
 		95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A540789F432133B207D141A0 /* Theme.swift */; };
 		9E390BBDAE0C6659CE5ECBC6 /* ChamferCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = F565E8DD894590B674296FD8 /* ChamferCommand.swift */; };
 		9F5347637A122C50E1BABB0A /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD59C218754E0D11BA7F1DD8 /* Camera.swift */; };
+		A0002A11F1A414BC0C7E68D3 /* PressPullCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADF9849BD6F001008766D793 /* PressPullCommand.swift */; };
 		A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */; };
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
 		A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */; };
@@ -105,6 +107,7 @@
 /* Begin PBXFileReference section */
 		00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionTakeoffApp.swift; sourceTree = "<group>"; };
 		01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTConnector.swift; sourceTree = "<group>"; };
+		069D2799753CD573213F79CB /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersion.swift; sourceTree = "<group>"; };
 		0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStream.swift; sourceTree = "<group>"; };
 		0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIConversation.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
@@ -146,6 +149,7 @@
 		916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolBridge.swift; sourceTree = "<group>"; };
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		ADF9849BD6F001008766D793 /* PressPullCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressPullCommand.swift; sourceTree = "<group>"; };
 		B072E2898F0A20B8861C13F8 /* GeoSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoSelection.swift; sourceTree = "<group>"; };
 		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
@@ -270,6 +274,7 @@
 		7318D4B52E83AA93AF080D4A /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				069D2799753CD573213F79CB /* AppVersion.swift */,
 				00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */,
 				73C1EBFC2DD0A1230910F42D /* Assembly */,
 				785E63BA1C7AEB7EF9F2E4AD /* Assistant */,
@@ -312,6 +317,7 @@
 				14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
 				63320AFB5B8D43EF4528E264 /* PatternCommand.swift */,
+				ADF9849BD6F001008766D793 /* PressPullCommand.swift */,
 				E98CD345010D437D5502B155 /* SheetMetalCommand.swift */,
 				29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */,
 			);
@@ -516,6 +522,7 @@
 				86DDAB604F548008CFD459E3 /* Resources */,
 				A1B2E5B4989FE8AE9267A69F /* Frameworks */,
 				F26181B479C639D4162F3C29 /* Embed Dependencies */,
+				E7F5E8B753C77B4EFF6D6B23 /* Stamp version */,
 			);
 			buildRules = (
 			);
@@ -603,12 +610,35 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		E7F5E8B753C77B4EFF6D6B23 /* Stamp version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Stamp version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "plist=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\ncommit=$(git -C \"$SRCROOT\" rev-parse --short HEAD 2>/dev/null || echo \"sconosciuto\")\nif [ -n \"$(git -C \"$SRCROOT\" status --porcelain --untracked-files=no 2>/dev/null)\" ]; then commit=\"$commit+\"; fi\nstamp=$(date \"+%Y-%m-%d %H:%M\")\nfor pair in \"FTKCommit:$commit\" \"FTKBuildDate:$stamp\"; do\n  key=${pair%%:*}; value=${pair#*:}\n  /usr/libexec/PlistBuddy -c \"Set :$key $value\" \"$plist\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Add :$key string $value\" \"$plist\"\ndone\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		31CEDEF2C9F90F41AD0A6EB9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */,
+				6A10CC336BAEA35811826D10 /* AppVersion.swift in Sources */,
 				A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */,
 				D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */,
 				A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */,
@@ -650,6 +680,7 @@
 				276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */,
 				DC033B9B3B5890AC57D182B5 /* PatternCommand.swift in Sources */,
 				15B9E5F66063E99E492FD242 /* Picking.swift in Sources */,
+				A0002A11F1A414BC0C7E68D3 /* PressPullCommand.swift in Sources */,
 				3AC54D45E3D318B30B845B0B /* ProjectLibrary.swift in Sources */,
 				2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */,
 				D8376DC2B3B2C7537A925E5D /* ShaderSource.swift in Sources */,
@@ -698,6 +729,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/FusionTakeoff.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -845,6 +877,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/FusionTakeoff.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

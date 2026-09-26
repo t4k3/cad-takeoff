@@ -59,6 +59,22 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff
         CODE_SIGN_ENTITLEMENTS: App/FusionTakeoff.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # The version stamp below reads .git: outside the script sandbox.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    # Git commit and build time into the built Info.plist, shown in the status bar and Home, so
+    # anyone can check they run the latest version (a "+" marks uncommitted changes).
+    postBuildScripts:
+      - name: Stamp version
+        basedOnDependencyAnalysis: false
+        script: |
+          plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+          commit=$(git -C "$SRCROOT" rev-parse --short HEAD 2>/dev/null || echo "sconosciuto")
+          if [ -n "$(git -C "$SRCROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]; then commit="$commit+"; fi
+          stamp=$(date "+%Y-%m-%d %H:%M")
+          for pair in "FTKCommit:$commit" "FTKBuildDate:$stamp"; do
+            key=${pair%%:*}; value=${pair#*:}
+            /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
+          done
     scheme:
       testTargets: []
   ftk-mcp:

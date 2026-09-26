@@ -16,6 +16,8 @@ struct StatusBar: View {
             Text("mm · Z↑")
             Divider().frame(height: 12)
             MCPStatusButton()
+            Divider().frame(height: 12)
+            Text(AppVersion.short).help(AppVersion.long).textSelection(.enabled)
         }
         .labelStyle(.titleAndIcon)
         .font(.system(size: 10.5).monospacedDigit())
