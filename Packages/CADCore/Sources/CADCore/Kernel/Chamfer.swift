@@ -382,9 +382,10 @@ public enum ChamferGeometry {
         guard abs(axisDir.normalized.dot(a)) > 0.999 else {
             throw KernelError.invalidParameter("smusso: cilindro non perpendicolare alla faccia")
         }
-        guard let first = edge.polyline.first, let last = edge.polyline.last, (first - last).length < 1e-4 else {
-            throw KernelError.invalidParameter("smusso: bordo circolare non chiuso (arco) non ancora disponibile")
+        guard let first = edge.polyline.first, let last = edge.polyline.last, edge.polyline.count >= 2 else {
+            throw KernelError.invalidParameter("smusso: bordo circolare vuoto")
         }
+        let closed = (first - last).length < 1e-4
         let axis = axisDir.normalized
         let centre = axisOrigin + axis * (po - axisOrigin).dot(axis)
         // Boss (material inside the cylinder) or hole (material outside)?
@@ -409,6 +410,17 @@ public enum ChamferGeometry {
         guard alongWall <= wall + 1e-6 else { throw tooBig(spec, max: wall) }
         let helper = abs(a.z) < 0.9 ? Vec3(0, 0, 1) : Vec3(1, 0, 0)
         let u = helper.cross(a).normalized, v = a.cross(u)
+        // Angular range swept: the whole turn for a rim, the arc's own span for part of one
+        // (slot ends, rounded corners), going the way the edge runs through its middle.
+        var t0 = 0.0, span = 2 * Double.pi
+        if !closed {
+            func angle(_ p: Vec3) -> Double { let d = p - centre; return atan2(d.dot(v), d.dot(u)) }
+            func wrapped(_ x: Double) -> Double { let m = x.truncatingRemainder(dividingBy: 2 * .pi); return m < 0 ? m + 2 * .pi : m }
+            let a0 = angle(first), a1 = angle(last), am = angle(edge.polyline[edge.polyline.count / 2])
+            let ccw = wrapped(a1 - a0)
+            if wrapped(am - a0) < ccw { t0 = a0; span = ccw } else { t0 = a1; span = 2 * .pi - ccw }
+        }
+        let steps = closed ? segments : max(1, Int((span / (2 * .pi / Double(segments))).rounded(.up)))
 
         // Profile in (radius, height above the face); `special` = its sides that become the
         // bevel (cone) or round (torus) surface.
@@ -502,7 +514,7 @@ public enum ChamferGeometry {
         var faces: [CSGFace] = []
         var polys: [CSGSolid.Polygon] = []
         func point(_ p: (Double, Double), _ step: Int) -> Vec3 {
-            let t = Double(step) / Double(segments) * 2 * .pi
+            let t = t0 + Double(step) / Double(steps) * span
             return centre + a * p.1 + (u * cos(t) + v * sin(t)) * p.0
         }
         faces.append(CSGFace(id: FaceID(rawValue: prefix), surface: surface, flipped: toolFlipped))
@@ -516,11 +528,36 @@ public enum ChamferGeometry {
                 faces.append(CSGFace(id: FaceID(rawValue: prefix + "/aux\(i)"), surface: .plane(origin: point(p, 0), normal: a), flipped: false))
                 face = faces.count - 1
             }
-            for s in 0..<segments {
+            for s in 0..<steps {
                 var quad = [point(p, s), point(p, s + 1), point(q, s + 1), point(q, s)]
                 if p.0 == 0 { quad.remove(at: 1) } else if q.0 == 0 { quad.remove(at: 2) }
                 guard (quad[1] - quad[0]).cross(quad[2] - quad[0]).length > 1e-12 else { continue }
                 polys.append(CSGSolid.Polygon(vertices: quad, face: face))
+            }
+        }
+        if !closed {
+            // End caps: the profile itself at both ends of the sweep, triangulated (it can be concave).
+            let flat = Profile2D(points: profile.map { Vec2($0.0, $0.1) })
+            let loop = flat.points.map { ($0.x, $0.y) }
+            // The sides face out when the profile runs counter-clockwise; otherwise everything is
+            // inside out until `oriented` turns it round, and the caps must match the sides.
+            let signed = profile.indices.reduce(0.0) { acc, i in
+                let p = profile[i], q = profile[(i + 1) % profile.count]
+                return acc + p.0 * q.1 - q.0 * p.1
+            }
+            for (step, name) in [(0, "start"), (steps, "end")] {
+                faces.append(CSGFace(id: FaceID(rawValue: prefix + "/" + name), surface: .plane(origin: point(loop[0], step), normal: a), flipped: false))
+                let face = faces.count - 1
+                for (i, j, k) in flat.triangulate() {
+                    var tri = [loop[i], loop[j], loop[k]]
+                    let area = (tri[1].0 - tri[0].0) * (tri[2].1 - tri[0].1) - (tri[2].0 - tri[0].0) * (tri[1].1 - tri[0].1)
+                    if area < 0 { tri.swapAt(1, 2) }
+                    // A counter-clockwise (radius, height) triangle faces back along the sweep: right for the start.
+                    if (step != 0) == (signed > 0) { tri.swapAt(1, 2) }
+                    let verts = tri.map { point($0, step) }
+                    guard (verts[1] - verts[0]).cross(verts[2] - verts[0]).length > 1e-12 else { continue }
+                    polys.append(CSGSolid.Polygon(vertices: verts, face: face))
+                }
             }
         }
         return (oriented(polys, faces), concave)

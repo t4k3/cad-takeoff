@@ -75,6 +75,10 @@ public enum PrimitiveKernel {
             throw KernelError.invalidProfile("triangolazione incompleta")
         }
         let n = points.count, prefix = feature.id.uuidString.lowercased() + "/"
+        // Sides of an extruded profile that approximate an arc (sketch circles, slot ends) make one
+        // cylindrical wall with one rim edge top and bottom, like the cylinder primitive: fillets,
+        // chamfers and selection take the whole arc, and the wall renders smooth.
+        let arcs: [ProfileArc?] = family == "extrude" ? profileArcs(points) : Array(repeating: nil, count: n)
         func faceID(_ role: String) -> FaceID { FaceID(rawValue: prefix + role) }
         func edgeID(_ role: String) -> EdgeID { EdgeID(rawValue: prefix + role) }
         let positions = points.map { Vec3($0.x, $0.y, 0) + feature.position }
@@ -98,11 +102,18 @@ public enum PrimitiveKernel {
             loops.append([i, j, j + n, i + n])
             let sideID = faceID(profileKey + "/side/\(i)")
             ids.append(sideID)
-            selectionIDs.append(radius == nil ? sideID : faceID("cylinder/wall"))
             let normal = (positions[j] - positions[i]).cross(positions[i + n] - positions[i]).normalized
             if let radius {
+                selectionIDs.append(faceID("cylinder/wall"))
                 surfaces.append(.cylinder(axisOrigin: feature.position, axisDirection: Vec3(0, 0, 1), radius: radius))
-            } else { surfaces.append(.plane(origin: positions[i], normal: normal)) }
+            } else if let arc = arcs[i] {
+                selectionIDs.append(faceID(profileKey + "/arc/\(arc.index)/wall"))
+                surfaces.append(.cylinder(axisOrigin: Vec3(arc.center.x, arc.center.y, 0) + feature.position,
+                                          axisDirection: Vec3(0, 0, 1), radius: arc.radius))
+            } else {
+                selectionIDs.append(sideID)
+                surfaces.append(.plane(origin: positions[i], normal: normal))
+            }
             triangles.append([UInt32(i), UInt32(j), UInt32(j + n), UInt32(i), UInt32(j + n), UInt32(i + n)])
         }
 
@@ -122,7 +133,15 @@ public enum PrimitiveKernel {
                 let id = edgeID(profileKey + "/edge/\(role)/\(i)")
                 edgeLookup[EdgeKey(pair.0, pair.1)] = endpoints.count
                 endpoints.append(pair); edgeIDs.append(id)
-                selectedEdges.append(radius == nil ? id : (level == 2 ? nil : edgeID("cylinder/rim/\(role)")))
+                if radius != nil {
+                    selectedEdges.append(level == 2 ? nil : edgeID("cylinder/rim/\(role)"))
+                } else if level < 2, let arc = arcs[i] {
+                    selectedEdges.append(edgeID(profileKey + "/arc/\(arc.index)/rim/\(role)"))
+                } else if level == 2, smoothJoint((i + n - 1) % n, points, arcs) {
+                    selectedEdges.append(nil)   // inside an arc or where it runs tangent into a line
+                } else {
+                    selectedEdges.append(id)
+                }
             }
         }
         struct Use { let origin: Int, destination: Int, edge: Int, face: Int, next: Int }
@@ -152,10 +171,102 @@ public enum PrimitiveKernel {
                      halfEdges: edgeUses[e], selectionID: selectedEdges[e])
         }
         let body = BRepBody(id: feature.id, vertices: vertices, edges: edges, halfEdges: halfEdges, faces: faces,
-                            maximumSurfaceDeviation: radius.map { $0 * (1 - cos(.pi / Double(n))) } ?? 0,
+                            maximumSurfaceDeviation: radius.map { $0 * (1 - cos(.pi / Double(n))) }
+                                ?? arcs.compactMap { $0.map { $0.radius * (1 - cos($0.step / 2)) } }.max() ?? 0,
                             faceTriangles: triangles)
         try body.validate()
         return body
+    }
+
+    struct ProfileArc: Equatable {
+        /// Which arc of the profile (0, 1… in profile order).
+        let index: Int
+        let center: Vec2
+        let radius: Double
+        /// Angle subtended by one side.
+        let step: Double
+    }
+
+    /// Per side of the profile (side i runs from point i to i + 1): the arc it approximates, if any.
+    /// An arc is 5+ consecutive co-circular vertices with sides of at most 20°, so regular polygons
+    /// (hexagons…) stay flat-sided while sketch circles and slot ends (64 per turn) are arcs.
+    static func profileArcs(_ p: [Vec2]) -> [ProfileArc?] {
+        let n = p.count
+        guard n >= 4 else { return Array(repeating: nil, count: n) }
+        func at(_ i: Int) -> Vec2 { p[((i % n) + n) % n] }
+        // Circle through a vertex and its two neighbours.
+        func circle(_ i: Int) -> (c: Vec2, r: Double)? {
+            let a = at(i - 1), b = at(i), c = at(i + 1)
+            let d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))
+            guard abs(d) > 1e-12 else { return nil }
+            let a2 = a.x * a.x + a.y * a.y, b2 = b.x * b.x + b.y * b.y, c2 = c.x * c.x + c.y * c.y
+            let o = Vec2((a2 * (b.y - c.y) + b2 * (c.y - a.y) + c2 * (a.y - b.y)) / d,
+                         (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d)
+            let r = ((b - o).x * (b - o).x + (b - o).y * (b - o).y).squareRoot()
+            guard r.isFinite, r < 1e6 else { return nil }
+            return (o, r)
+        }
+        func same(_ u: (c: Vec2, r: Double), _ v: (c: Vec2, r: Double)) -> Bool {
+            let tol = 1e-6 * max(1, u.r)
+            return abs(u.r - v.r) <= tol && abs(u.c.x - v.c.x) <= tol && abs(u.c.y - v.c.y) <= tol
+        }
+        func onCircle(_ q: Vec2, _ c: (c: Vec2, r: Double)) -> Bool {
+            abs(((q - c.c).x * (q - c.c).x + (q - c.c).y * (q - c.c).y).squareRoot() - c.r) <= 1e-6 * max(1, c.r)
+        }
+        func angle(_ i: Int, _ c: (c: Vec2, r: Double)) -> Double {
+            let l = ((at(i + 1) - at(i)).x * (at(i + 1) - at(i)).x + (at(i + 1) - at(i)).y * (at(i + 1) - at(i)).y).squareRoot()
+            return 2 * asin(min(1, l / (2 * c.r)))
+        }
+        let maxStep = 20 * Double.pi / 180
+        let circles = (0..<n).map { circle($0) }
+        // A vertex is inside an arc when its circle agrees with both neighbours' (5 co-circular points:
+        // 4 are not enough, a line between two mirrored arc ends is co-circular with them).
+        let arcVertex: [Bool] = (0..<n).map { i in
+            guard let c = circles[i] else { return false }
+            return [circles[(i + n - 1) % n], circles[(i + 1) % n]].allSatisfy { $0.map { same($0, c) } ?? false }
+        }
+        let sideCircle: [(c: Vec2, r: Double)?] = (0..<n).map { i in
+            let j = (i + 1) % n
+            for v in [i, j, (i + n - 1) % n, (i + 2) % n] where arcVertex[v] {
+                let c = circles[v]!
+                if onCircle(p[i], c), onCircle(p[j], c), angle(i, c) <= maxStep + 1e-9 { return c }
+            }
+            return nil
+        }
+        // Group consecutive sides on the same circle; a lone side is not an arc.
+        var out = [ProfileArc?](repeating: nil, count: n)
+        let start = (0..<n).first { i in sideCircle[i] == nil || sideCircle[(i + n - 1) % n].map { !same($0, sideCircle[i]!) } ?? true }
+        guard let first = start else {
+            // Every side on one circle: a full circle.
+            let c = sideCircle[0]!
+            return (0..<n).map { i in ProfileArc(index: 0, center: c.c, radius: c.r, step: angle(i, c)) }
+        }
+        var index = 0
+        var k = 0
+        while k < n {
+            let i = (first + k) % n
+            guard let c = sideCircle[i] else { k += 1; continue }
+            var run = [i]
+            while run.count < n, let next = sideCircle[(run.last! + 1) % n], same(next, c) { run.append((run.last! + 1) % n) }
+            if run.count >= 2 {
+                for s in run { out[s] = ProfileArc(index: index, center: c.c, radius: c.r, step: angle(s, c)) }
+                index += 1
+            }
+            k += run.count
+        }
+        return out
+    }
+
+    /// Vertical edge at profile vertex i + 1 (between sides i and i + 1) is not a crease: both sides on
+    /// the same arc, or an arc meeting a side along its tangent.
+    private static func smoothJoint(_ i: Int, _ p: [Vec2], _ arcs: [ProfileArc?]) -> Bool {
+        let n = p.count, j = (i + 1) % n
+        let a = arcs[i], b = arcs[j]
+        if let a, let b, a.index == b.index { return true }
+        guard let arc = a ?? b else { return false }
+        let u = p[j] - p[i], v = p[(j + 1) % n] - p[j]
+        let turn = abs(atan2(u.cross(v), u.x * v.x + u.y * v.y))
+        return turn <= arc.step * 0.6 + 1e-9
     }
 
     private static func dimension(_ value: Double) throws {
@@ -219,5 +330,25 @@ extension BRepBody {
                             maximumSurfaceDeviation: maximumSurfaceDeviation, faceTriangles: faceTriangles)
         try body.validate()
         return body
+    }
+}
+
+extension Profile2D {
+    /// What the profile is made of, as a designer sees it: "Cerchio Ø22", "2 linee, 2 archi",
+    /// "4 linee" (a sketch circle is one entity, not its 64 vertices).
+    public var entitiesDescription: String {
+        let arcs = PrimitiveKernel.profileArcs(points)
+        func mm(_ v: Double) -> String {
+            var s = String(format: "%.2f", v)
+            while s.hasSuffix("0") { s.removeLast() }
+            if s.hasSuffix(".") { s.removeLast() }
+            return s.replacingOccurrences(of: ".", with: ",")
+        }
+        if let first = arcs.first ?? nil, arcs.allSatisfy({ $0?.index == first.index }) { return "Cerchio Ø\(mm(2 * first.radius))" }
+        let arcCount = Set(arcs.compactMap { $0?.index }).count, lines = arcs.filter { $0 == nil }.count
+        var parts: [String] = []
+        if lines > 0 { parts.append("\(lines) line\(lines == 1 ? "a" : "e")") }
+        if arcCount > 0 { parts.append("\(arcCount) arc\(arcCount == 1 ? "o" : "hi")") }
+        return parts.joined(separator: ", ")
     }
 }

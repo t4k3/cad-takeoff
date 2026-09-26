@@ -171,7 +171,7 @@ struct InspectorPanel: View {
             }
             .controlSize(.small)
         case let .extrude(p, h):
-            info("Profilo", "\(p.points.count) vertici")
+            info("Profilo", p.entitiesDescription)
             DimensionField(title: "Altezza", value: Binding(get: { h }, set: { kind.wrappedValue = .extrude(profile: p, height: $0) }))
         }
     }

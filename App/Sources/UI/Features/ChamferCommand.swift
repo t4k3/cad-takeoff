@@ -59,6 +59,9 @@ enum ChamferCommand {
         let fields: [CommandField] = [
             .init(id: "edges", label: "Spigoli", kind: .reference(prompt: "Clicca gli spigoli", maxCount: 500), value: edgeValue(),
                   help: original == nil ? "Clicca uno spigolo per aggiungerlo, cliccalo di nuovo per toglierlo" : "Gli spigoli restano quelli scelti alla creazione"),
+            .init(id: "chain", label: "Catena tangente", kind: .toggle, value: .flag(true),
+                  help: "Un clic prende anche gli spigoli che proseguono in tangenza (il contorno di un'asola, il bordo di un cerchio)",
+                  isHidden: original != nil),
             .init(id: "profile", label: "Forma", kind: .choice(profiles.map(\.label)), value: .index(profiles.firstIndex(of: spec.profile) ?? 0),
                   help: "Piatto: smusso a 45° o con due distanze/angolo. Tondo: raccordo a raggio costante."),
             .init(id: "mode", label: "Misura", kind: .choice(modes.map(\.label)), value: .index(modes.firstIndex(of: spec.mode) ?? 0),
@@ -164,8 +167,31 @@ enum ChamferCommand {
                 if !problems.isEmpty { model.statusMessage = problems.sorted().joined(separator: " · ") }
             },
             onCancel: { finish() })
+        // Tangent chain: a clicked edge brings the edges it runs on into smoothly; unclicking one
+        // takes its chain away.
+        var lastSelection = Set(workspace.geoSelection)
+        func chain(_ ref: GeoRef) -> [GeoRef] {
+            guard case let .edge(id) = ref.kind,
+                  let body = model.evaluation().bodies.first(where: { $0.id == ref.feature }) else { return [ref] }
+            return body.snapshot.tangentChain(of: id).map { GeoRef(feature: ref.feature, kind: .edge($0)) }
+        }
+        func chainOn() -> Bool {
+            if case let .flag(on)? = session?.fields.first(where: { $0.id == "chain" })?.value { on } else { false }
+        }
+        func expandChains() {
+            let current = workspace.geoSelection
+            guard original == nil, chainOn() else { lastSelection = Set(current); return }
+            let added = current.filter { !lastSelection.contains($0) }
+            let removed = lastSelection.filter { !current.contains($0) }
+            var next = current
+            for r in removed { let gone = Set(chain(r)); next.removeAll { gone.contains($0) } }
+            for r in added { for c in chain(r) where !next.contains(c) { next.append(c) } }
+            lastSelection = Set(next)
+            if next != current { workspace.geoSelection = next }
+        }
         // The edge count, the arrow and the preview follow the viewport selection.
         workspace.onGeoSelectionChange = { [weak session] in
+            expandChains()
             guard let session, let i = session.fields.firstIndex(where: { $0.id == "edges" }) else { return }
             session.fields[i].value = edgeValue()
         }

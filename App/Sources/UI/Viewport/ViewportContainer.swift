@@ -355,21 +355,7 @@ struct ViewportContainer: View {
     /// Value next to the arrow tip, like Fusion's on-canvas input.
     @ViewBuilder private var manipulatorLabel: some View {
         if let m = workspace.manipulator, let p = viewport.screenPoint(m.tip(length: arrowLength)) {
-            let active = m.isDragging || m.isHot
-            HStack(spacing: 4) {
-                Text(m.label).font(.system(size: 10, weight: .bold)).opacity(0.8)
-                Text(String(format: "%.1f", m.value)).font(.system(size: 12, weight: .semibold).monospacedDigit())
-                Text("mm").font(.system(size: 10, weight: .medium)).opacity(0.8)
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 9).padding(.vertical, 4)
-            .background(Capsule().fill(active ? Color(red: 1, green: 0.6, blue: 0.12) : Color(red: 0.16, green: 0.52, blue: 1)))
-            .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
-            .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
-            .fixedSize()
-            .offset(x: p.x + 12, y: p.y - 14)
-            .allowsHitTesting(false)
-            .animation(.easeOut(duration: 0.12), value: active)
+            ManipulatorLabel(manipulator: m).offset(x: p.x + 12, y: p.y - 14)
         }
     }
 
@@ -626,4 +612,66 @@ struct ViewportContainer: View {
 
 extension Array {
     subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
+}
+
+/// Value next to a drag arrow's tip, like Fusion's on-canvas input: click it to type the value
+/// (Invio conferma, Esc annulla).
+private struct ManipulatorLabel: View {
+    let manipulator: DistanceManipulator
+    @State private var editing = false
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        let m = manipulator
+        let active = m.isDragging || m.isHot || editing
+        HStack(spacing: 4) {
+            Text(m.label).font(.system(size: 10, weight: .bold)).opacity(0.8)
+            if editing {
+                TextField("", text: $text)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 52)
+                    .focused($focused)
+                    .onSubmit { commit() }
+                    .onExitCommand { editing = false }
+                    .onChange(of: focused) { _, isFocused in if !isFocused, editing { commit() } }
+            } else {
+                Text(Self.format(m.value)).font(.system(size: 12, weight: .semibold).monospacedDigit())
+            }
+            Text("mm").font(.system(size: 10, weight: .medium)).opacity(0.8)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 9).padding(.vertical, 4)
+        .background(Capsule().fill(active ? Color(red: 1, green: 0.6, blue: 0.12) : Color(red: 0.16, green: 0.52, blue: 1)))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 1))
+        .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
+        .fixedSize()
+        .contentShape(Capsule())
+        .onTapGesture {
+            guard !editing else { return }
+            text = Self.format(m.value)
+            editing = true
+            DispatchQueue.main.async { focused = true }
+        }
+        .help("Clicca per scrivere il valore")
+        .animation(.easeOut(duration: 0.12), value: active)
+    }
+
+    private func commit() {
+        editing = false
+        let clean = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
+            .replacingOccurrences(of: "mm", with: "").trimmingCharacters(in: .whitespaces)
+        guard let v = Double(clean), v.isFinite else { return }
+        let m = manipulator
+        let next = min(max(v, m.range.lowerBound), m.range.upperBound)
+        guard next != m.value else { return }
+        m.value = next
+        m.onChange(next)
+    }
+
+    static func format(_ v: Double) -> String {
+        String(format: v == v.rounded() ? "%.0f" : (v * 10 == (v * 10).rounded() ? "%.1f" : "%.2f"), v).replacingOccurrences(of: ".", with: ",")
+    }
 }

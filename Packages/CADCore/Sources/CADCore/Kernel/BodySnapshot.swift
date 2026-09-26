@@ -105,3 +105,30 @@ extension BRepBody {
                             faces: faceInfo, edges: edgeInfo, maximumSurfaceDeviation: maximumSurfaceDeviation)
     }
 }
+
+extension BodySnapshot {
+    /// Tangent chain (Fusion's "Tangent chain"): the edge plus every edge reached through ends where
+    /// the curve carries on smoothly (≤ `maxAngle` degrees between the end directions), e.g. the
+    /// lines and arcs around a slot's top. Closed edges (a full rim) are their own chain.
+    public func tangentChain(of id: EdgeID, maxAngle: Double = 12) -> [EdgeID] {
+        guard let start = edges.first(where: { $0.id == id }) else { return [] }
+        let cosMax = cos(maxAngle * .pi / 180)
+        let tol = 1e-6
+        func ends(_ e: EdgeInfo) -> [(point: Vec3, outward: Vec3)] {
+            let p = e.polyline
+            guard p.count >= 2, let first = p.first, let last = p.last, (last - first).length > tol else { return [] }
+            return [(first, (p[0] - p[1]).normalized), (last, (p[p.count - 1] - p[p.count - 2]).normalized)]
+        }
+        var chain = [start.id], seen: Set<EdgeID> = [start.id], queue = [start]
+        while let e = queue.popLast() {
+            for end in ends(e) {
+                for other in edges where !seen.contains(other.id) {
+                    // Joined here, and the other edge leaves the joint straight on (opposite outward directions).
+                    guard ends(other).contains(where: { ($0.point - end.point).length <= tol && -$0.outward.dot(end.outward) >= cosMax }) else { continue }
+                    seen.insert(other.id); chain.append(other.id); queue.append(other)
+                }
+            }
+        }
+        return chain
+    }
+}

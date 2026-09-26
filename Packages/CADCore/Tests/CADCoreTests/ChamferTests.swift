@@ -200,3 +200,60 @@ private func roundArea(_ r: Double, _ n: Int = 16) -> Double { r * r - Double(n)
     let (_, tall, _) = chamfered([boss], ChamferSpec(edges: refs([boss], allAt(z: 3)), profile: .round, distance: 4))
     #expect(tall.contains { $0.message.contains("troppo grande") })
 }
+
+// MARK: Arcs in extruded sketches
+
+@Test func profileArcsFindCirclesAndSlotEnds() {
+    let circle = PrimitiveKernel.profileArcs(Profile2D.circle(radius: 10).points)
+    #expect(circle.allSatisfy { $0?.index == 0 && abs($0!.radius - 10) < 1e-9 })
+    let slot = SketchShape(kind: .slot(start: Vec2(0, 0), end: Vec2(30, 0), width: 10)).outline
+    let arcs = PrimitiveKernel.profileArcs(Profile2D(points: slot).points)
+    #expect(Set(arcs.compactMap { $0?.index }) == [0, 1] && arcs.filter { $0 == nil }.count == 2)
+    #expect(PrimitiveKernel.profileArcs(Profile2D.regularPolygon(sides: 6, radius: 10).points).allSatisfy { $0 == nil })
+    #expect(PrimitiveKernel.profileArcs(Profile2D.rectangle(width: 10, height: 5).points).allSatisfy { $0 == nil })
+    #expect(Profile2D.circle(radius: 11).entitiesDescription == "Cerchio Ø22")
+    #expect(Profile2D(points: slot).entitiesDescription == "2 linee, 2 archi")
+    #expect(Profile2D.rectangle(width: 10, height: 5).entitiesDescription == "4 linee")
+}
+
+@Test func roundOnExtrudedSketchCircleTakesTheWholeRim() {
+    // A sketch circle extruded is a cylinder: one wall face, one rim edge, filleted all round.
+    let disc = Feature(name: "Disco", kind: .extrude(profile: .circle(radius: 10), height: 20))
+    let snap = DesignEvaluator.evaluate(CADDocument(features: [disc]), revision: "r").bodies[0].snapshot
+    #expect(snap.faces.count == 3 && snap.edges.count == 2)
+    #expect(snap.faces.contains { if case let .cylinder(_, _, r) = $0.surface { abs(r - 10) < 1e-9 } else { false } })
+    let rim = refs([disc], allAt(z: 20))
+    #expect(rim.count == 1)
+    let (mesh, issues, after) = chamfered([disc], ChamferSpec(edges: rim, profile: .round, distance: 2))
+    #expect(issues.isEmpty && MeshValidator.validate(mesh).isWatertight)
+    let centroid = (10 - 3 * Double.pi) / (12 - 3 * Double.pi)
+    let expected = 2 * .pi * (10 - 2 * centroid) * 4 * (1 - .pi / 4)
+    #expect(abs((Profile2D.circle(radius: 10).area * 20 - mesh.volume) - expected) < expected * 0.03)
+    #expect(after?.faces.contains { if case .torus = $0.surface { true } else { false } } == true)
+    // A slot: two arc walls, two flat sides, and no crease where they meet tangentially.
+    let slot = Feature(name: "Asola", kind: .extrude(profile: SketchShape(kind: .slot(start: Vec2(0, 0), end: Vec2(30, 0), width: 10)).profile!, height: 5))
+    let s = DesignEvaluator.evaluate(CADDocument(features: [slot]), revision: "r").bodies[0].snapshot
+    #expect(s.faces.count == 6 && s.edges.count == 8)
+}
+
+@Test func tangentChainFollowsSmoothJoints() {
+    // Slot top: line, arc, line, arc all tangent → one chain of 4; a box top edge has no tangent neighbours.
+    let slot = Feature(name: "Asola", kind: .extrude(profile: SketchShape(kind: .slot(start: Vec2(0, 0), end: Vec2(30, 0), width: 10)).profile!, height: 5))
+    let s = DesignEvaluator.evaluate(CADDocument(features: [slot]), revision: "r").bodies[0].snapshot
+    let top = s.edges.filter { $0.polyline.allSatisfy { abs($0.z - 5) < 1e-9 } }
+    #expect(top.count == 4)
+    #expect(Set(s.tangentChain(of: top[0].id)) == Set(top.map(\.id)))
+    let b = DesignEvaluator.evaluate(CADDocument(features: [base]), revision: "r").bodies[0].snapshot
+    let edge = b.edges.first { $0.polyline.allSatisfy { abs($0.z - 5) < 1e-9 } }!
+    #expect(b.tangentChain(of: edge.id) == [edge.id])
+    // The rounded slot top in one feature: closed and lighter by the swept quarter-round.
+    let refsTop = top.compactMap(EdgeRef.init)
+    let (mesh, issues, _) = chamfered([slot], ChamferSpec(edges: refsTop, profile: .round, distance: 1))
+    #expect(issues.isEmpty, "\(issues.map(\.message))")
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    // Removed: a quarter round along both 30 mm sides plus one full turn (two half rings) at r = 5.
+    let before = SketchShape(kind: .slot(start: Vec2(0, 0), end: Vec2(30, 0), width: 10)).profile!.area * 5
+    let centroid = (10 - 3 * Double.pi) / (12 - 3 * Double.pi)
+    let expected = 60 * roundArea(1) + 2 * .pi * (5 - centroid) * (1 - .pi / 4)
+    #expect(abs((before - mesh.volume) - expected) < expected * 0.03, "\(before - mesh.volume) vs \(expected)")
+}

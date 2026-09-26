@@ -389,8 +389,14 @@ final class SketchSession {
                 let h = previewReversed ? -h0 : h0
                 let pc = previewIsCut ? SIMD4<Float>(0.95, 0.25, 0.25, 0.9) : previewColor
                 ring(s.outline, closed: true, pc, z: h)
-                let step = max(1, s.outline.count / 16)
-                for (i, p) in s.outline.enumerated() where i % step == 0 { out.append((w(p), w(p, h), pc)) }
+                // Side lines at the corners only: quadrants of a circle, the four tangent points of a slot.
+                let n = s.outline.count
+                let sides: [Int] = switch s.kind {
+                case .circle: [0, n / 4, n / 2, 3 * n / 4]
+                case .slot: [0, n / 2 - 1, n / 2, n - 1]
+                default: Array(0..<n)
+                }
+                for i in sides where i < n { out.append((w(s.outline[i]), w(s.outline[i], h), pc)) }
             }
             switch s.kind {
             case let .circle(c, _): out += cross(c, size: vertexSnap * 0.35, color: color)
