@@ -108,3 +108,21 @@ private func box(_ w: Double, _ d: Double, _ h: Double, at p: Vec3 = .zero) -> F
     let big = Feature(name: "Big", kind: .box(width: 50, depth: 50, height: 50), position: Vec3(0, 0, -20), operation: .cut)
     #expect(DesignEvaluator.evaluate(CADDocument(features: [a, big]), revision: "r").bodies.isEmpty)
 }
+
+/// Fragments of each face (and of each facet of curved faces) are merged before triangulating:
+/// the same closed solid with far fewer triangles.
+@Test func mergedFacesAreLighterAndStayClosed() {
+    let plate = Feature(name: "Piastra", kind: .box(width: 40, depth: 40, height: 10))
+    let hole = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(0, 0, 10)], fit: .manual, diameter: 6)), operation: .cut)
+    let b = DesignEvaluator.evaluate(CADDocument(features: [plate, hole]), revision: "r").bodies[0]
+    let rim = b.snapshot.edges.first { $0.faces.contains { $0.rawValue.contains("bore") } && $0.polyline.allSatisfy { abs($0.z - 10) < 1e-9 } }!
+    let bevel = Feature(name: "S", kind: .chamfer(ChamferSpec(edges: [EdgeRef(rim)!], distance: 1)), operation: .cut)
+    let doc = CADDocument(features: [plate, hole, bevel])
+    CoplanarMerge.isEnabled = false
+    let raw = DesignEvaluator.evaluate(doc, revision: "r").bodies[0].mesh
+    CoplanarMerge.isEnabled = true
+    let merged = DesignEvaluator.evaluate(doc, revision: "r").bodies[0].mesh
+    #expect(MeshValidator.validate(merged).isWatertight)
+    #expect(Double(merged.triangleCount) < 0.6 * Double(raw.triangleCount))
+    #expect(abs(merged.volume - raw.volume) < 1e-6)
+}

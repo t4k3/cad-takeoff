@@ -42,8 +42,7 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
 
 - Smusso/raccordo su spigoli **concavi** (aggiunge materiale) e su **archi** parziali; angolo sferico dove si incontrano tre raccordi.
 - Freccia di trascinamento anche per Estrudi, Foro (profondità) e parametri dei solidi.
-- **Semplificare la mesh dopo le booleane** (unire i frammenti complanari della stessa faccia): oggi un foro + smusso su una piastra
-  produce ~16.000 triangoli; serve prima del raccordo e del filetto modellato per restare veloci.
+- Booleane più veloci: la mesh finale ora è unita per faccia (−50/−55% triangoli, 26/09), ma l'albero BSP lavora ancora sui frammenti; servono un BSP con poligoni convessi uniti o un motore diverso (anche per il filetto modellato).
 
 - Spigoli di selezione più spessi nel viewport (linee larghe via quad in Metal).
 - **Home / gestione progetti (idea di Ross, 25/09)** — come il pannello Dati di Fusion, ma **in locale**:

@@ -326,7 +326,27 @@ public extension CSGSolid {
         //    (never degenerate), plain loops a vertex fan.
         var mesh = Mesh(vertices: positions, indices: [])
         var triangleFace: [Int] = []
-        for (ids, face) in loops {
+        // Planar faces split into many fragments are re-triangulated as one polygon.
+        var merged = Set<Int>()
+        let byFace = Dictionary(grouping: loops.indices, by: { loops[$0].face })
+        // Curved faces are facets: fragments are merged per facet plane.
+        for (face, members) in byFace where members.count > 1 && CoplanarMerge.isEnabled {
+            var clusters: [(n: Vec3, w: Double, members: [Int])] = []
+            for m in members {
+                let nn = newell(loops[m].ids, positions)
+                guard nn.length > 1e-14 else { continue }
+                let n = nn.normalized, w = n.dot(positions[Int(loops[m].ids[0])])
+                if let i = clusters.firstIndex(where: { $0.n.dot(n) > 1 - 1e-9 && abs($0.w - w) < 1e-7 }) {
+                    clusters[i].members.append(m)
+                } else { clusters.append((n, w, [m])) }
+            }
+            for cluster in clusters where cluster.members.count > 1 {
+                guard let tris = CoplanarMerge.triangulate(cluster.members.map { loops[$0].ids }, positions, normal: cluster.n) else { continue }
+                for (a, b, c) in tris { addTriangle(&mesh, &triangleFace, a, b, c, face) }
+                merged.formUnion(cluster.members)
+            }
+        }
+        for (li, (ids, face)) in loops.enumerated() where !merged.contains(li) {
             if ids.count == 3 || !hasCollinear(ids, positions) {
                 for k in 1..<(ids.count - 1) {
                     addTriangle(&mesh, &triangleFace, ids[0], ids[k], ids[k + 1], face)
@@ -371,6 +391,16 @@ public extension CSGSolid {
             outFaces.append(faces[t])
         }
         return (out, outFaces)
+    }
+
+    /// Area-weighted normal of a loop (Newell), zero for a degenerate one.
+    private func newell(_ ids: [UInt32], _ p: [Vec3]) -> Vec3 {
+        var n = Vec3.zero
+        for k in ids.indices {
+            let a = p[Int(ids[k])], b = p[Int(ids[(k + 1) % ids.count])]
+            n = n + Vec3((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y))
+        }
+        return n
     }
 
     private func hasCollinear(_ ids: [UInt32], _ p: [Vec3]) -> Bool {
