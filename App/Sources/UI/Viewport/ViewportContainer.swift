@@ -248,7 +248,6 @@ struct ViewportContainer: View {
 
     /// «Schizzo»: a click on a planar face sketches on it; in empty space, on the XY plane.
     private func pickSketchPlane(_ ray: Ray) {
-        workspace.pickingSketchPlane = false
         let bodies = viewport.renderer?.visibleBodies ?? []
         guard let hit = Picking.pick(ray, in: bodies),
               let face = bodies.first(where: { $0.feature.id == hit.featureID })?.face(ofTriangle: hit.triangle) else {
@@ -483,8 +482,16 @@ struct ViewportContainer: View {
             HStack(spacing: 8) {
                 Label("SCHIZZO", systemImage: "pencil.and.outline").font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.Palette.sketch)
-                Text("Clicca una faccia piana del pezzo, oppure").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
-                Button("Piano XY") { workspace.pickingSketchPlane = false; workspace.enterSketch() }.controlSize(.small)
+                Text("Clicca una faccia piana, oppure").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                Button("XY") { workspace.enterSketch(plane: .xy) }.controlSize(.small).help("Piano di base (vista dall'alto)")
+                Button("XZ") { workspace.enterSketch(plane: .xz) }.controlSize(.small).help("Piano frontale (vista di fronte)")
+                Button("YZ") { workspace.enterSketch(plane: .yz) }.controlSize(.small).help("Piano laterale (vista da destra)")
+                Text("Sfalsa").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                TextField("0", value: Binding(get: { workspace.sketchPlaneOffset }, set: { workspace.sketchPlaneOffset = $0 }),
+                          format: .number.precision(.fractionLength(0...2)))
+                    .frame(width: 54).multilineTextAlignment(.trailing).font(.system(size: 11).monospacedDigit())
+                    .help("Piano di costruzione: sposta il piano scelto lungo la sua normale (mm)")
+                Text("mm").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
                 Button("Annulla") { workspace.pickingSketchPlane = false }.controlSize(.small)
             }
             .padding(.horizontal, 10).padding(.vertical, 6)

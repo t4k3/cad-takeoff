@@ -26,6 +26,15 @@ public struct SketchPlane: Codable, Sendable, Equatable {
 
     public var isXY: Bool { self == .xy }
 
+    /// Front plane (world XZ, seen from −Y) and side plane (world YZ, seen from +X).
+    public static let xz = SketchPlane(origin: .zero, xAxis: Vec3(1, 0, 0), yAxis: Vec3(0, 0, 1))
+    public static let yz = SketchPlane(origin: .zero, xAxis: Vec3(0, 1, 0), yAxis: Vec3(0, 0, 1))
+
+    /// The same plane moved along its normal (construction plane).
+    public func offset(by distance: Double) -> SketchPlane {
+        SketchPlane(origin: origin + normal * distance, xAxis: xAxis, yAxis: yAxis)
+    }
+
     /// Plane of a planar face (sketch on face): origin = the world origin projected onto it, so
     /// on a horizontal face the coordinates are the world X/Y; on a vertical face X runs
     /// horizontally and Y up.

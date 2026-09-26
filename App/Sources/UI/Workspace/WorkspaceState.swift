@@ -132,8 +132,10 @@ final class WorkspaceState {
     @ObservationIgnored weak var sketchStore: SketchStore?
     @ObservationIgnored weak var model: DesignModel?
 
-    /// «Schizzo» waits for a click on a planar face (or «Piano XY»).
+    /// «Schizzo» waits for a click on a planar face (or a base plane).
     var pickingSketchPlane = false
+    /// Construction plane: the chosen face or base plane moved along its normal (mm).
+    var sketchPlaneOffset = 0.0
     /// Point the sketch camera centres on (the clicked face).
     var sketchFocus: Vec3?
 
@@ -150,8 +152,9 @@ final class WorkspaceState {
     }
 
     /// New sketch (on `plane`), or edit an existing saved one.
-    func enterSketch(editing existing: Sketch? = nil, plane: SketchPlane = .xy, focus: Vec3? = nil) {
+    func enterSketch(editing existing: Sketch? = nil, plane chosen: SketchPlane = .xy, focus: Vec3? = nil) {
         command?.onCancel(); command = nil
+        let plane = existing == nil && pickingSketchPlane && sketchPlaneOffset != 0 ? chosen.offset(by: sketchPlaneOffset) : chosen
         pickingSketchPlane = false
         if sketch != nil { exitSketch() }
         let session = SketchSession(sketch: existing ?? Sketch(name: sketchStore?.nextName ?? "Schizzo 1", plane: plane))

@@ -79,3 +79,10 @@ import Testing
     #expect(try CADDocument.decode(doc.encoded()) == doc)
     #expect(abs(pocket.buildMesh().volume - 300) < 1e-9)
 }
+
+@Test func basePlanesAndConstructionOffsets() {
+    #expect(SketchPlane.xz.normal == Vec3(0, -1, 0) && SketchPlane.yz.normal == Vec3(1, 0, 0))
+    let raised = SketchPlane.xy.offset(by: 15)
+    #expect(raised.origin == Vec3(0, 0, 15) && !raised.isXY)
+    #expect(SketchPlane.xz.offset(by: 10).origin == Vec3(0, -10, 0))
+}
