@@ -68,7 +68,7 @@
       "phase": "1 · Core",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T00",
         "T01"
@@ -84,7 +84,7 @@
       "phase": "2 · App",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T16",
         "T27"
@@ -116,7 +116,7 @@
       "phase": "2 · App",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T05",
         "T15",
@@ -154,7 +154,7 @@
       "phase": "3 · Modellazione",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T03",
         "T70",
@@ -171,7 +171,7 @@
       "phase": "3 · Modellazione",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T03",
         "T70",
@@ -188,7 +188,7 @@
       "phase": "4 · Stampa 3D",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T03",
         "T27",
@@ -205,7 +205,7 @@
       "phase": "4 · Stampa 3D",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T31"
       ],
@@ -219,7 +219,7 @@
       "phase": "4 · Stampa 3D",
       "status": "todo",
       "owner": null,
-      "suggested": "codex",
+      "suggested": "claude",
       "deps": [
         "T03",
         "T27",
@@ -506,7 +506,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -523,7 +523,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -572,7 +572,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -589,7 +589,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -608,7 +608,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -626,7 +626,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -643,7 +643,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -660,7 +660,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -676,7 +676,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -693,7 +693,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -710,7 +710,7 @@
         "App/Sources/Model",
         "docs/architecture/API.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -814,7 +814,7 @@
         "Packages/CADCore/Tests",
         "App/Tests"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -835,7 +835,7 @@
         "App/Tests",
         "docs/requirements/ACCEPTANCE_RESULTS.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -996,7 +996,7 @@
       "paths": [
         "App/Sources/Model/Tools"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -1014,7 +1014,7 @@
       "paths": [
         "docs/connectors/E2E.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -1187,7 +1187,7 @@
         "Packages/CADCore",
         "App/Sources/Model"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -1216,7 +1216,7 @@
       "paths": [
         "Packages/CADCore/Sources/CADCore/Features"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {
@@ -1282,7 +1282,7 @@
         "Tests/ThreeMF",
         "result.json"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null,
       "started": "2026-09-25 10:54",
       "notes": [
@@ -1309,11 +1309,12 @@
         "docs/ROADMAP.md",
         "docs/architecture"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null,
       "started": "2026-09-25 11:14",
       "notes": [
-        "2026-09-25 11:30 codex: Prima base completata e verificata nella milestone T75; codice e contratto pronti, T76 integra UI. T70 resta aperto per booleane robuste e genealogia/rimappatura split-merge previste nelle tappe successive, non implementate ora. Storico T63 e snapshot v2 T30 dipendono dalla base T75, senza attendere le booleane. Per riprendere leggere KERNEL_V1.md e rispettare ordine ROADMAP."
+        "2026-09-25 11:30 codex: Prima base completata e verificata nella milestone T75; codice e contratto pronti, T76 integra UI. T70 resta aperto per booleane robuste e genealogia/rimappatura split-merge previste nelle tappe successive, non implementate ora. Storico T63 e snapshot v2 T30 dipendono dalla base T75, senza attendere le booleane. Per riprendere leggere KERNEL_V1.md e rispettare ordine ROADMAP.",
+        "2026-09-26 09:07 ?: Presa in carico da Claude (Ross 26/09): base T75 fatta, restano booleane robuste e genealogia split/merge"
       ]
     },
     {
@@ -1493,7 +1494,7 @@
         "scripts/test-sheet-metal-integration.sh",
         "docs/requirements/SHEET_METAL_V1.md"
       ],
-      "suggested": "codex",
+      "suggested": "claude",
       "owner": null
     },
     {

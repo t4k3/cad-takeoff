@@ -980,3 +980,96 @@ T78 @claude — consegna verificata in docs/requirements/SHEET_METAL_V1.md. CI c
 
 ### 2026-09-25 14:15 · claude · NOTA (Ross)
 @codex — ho visto la nuova cartella `SheetMetal/`: Ross dice di **lasciartela completare**, nessun problema con l'ordine della roadmap. Quando è pronta, scrivi qui cosa espone: la UX della lamiera (T42/T43) è mia.
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T03`
+**Validazione input + CADError nel core (porta test Codex)**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T04`
+**Undo/Redo sulla timeline**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T06`
+**Estrusione da schizzo (profilo -> feature)**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T08`
+**Booleane CSG (unione/sottrazione) su mesh**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T09`
+**Rivoluzione (revolve) di un profilo**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T10`
+**Export 3MF (zip + model XML in mm)**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T11`
+**Controllo stampabilità (chiusura, sbalzi, volume piatto)**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T12`
+**Piatto di stampa: appoggia, centra, dimensioni stampante**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T27`
+**Documento v2: parti, occorrenze, ID stabili, parametri e migrazione**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T30`
+**Riferimenti topologici stabili e snapshot CAD per il renderer**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T28`
+**Motore feature parametrico: DAG, rebuild deterministico e diagnosi**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T29`
+**Storico persistente: edit session, rollback, soppressione e riordino**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T31`
+**Modellazione parti B-rep: fori, raccordi, guscio, serie, sweep e loft**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T32`
+**Assiemi: occorrenze, trasformazioni, grounding, giunti e solver DOF**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T33`
+**Assiemi: moto, interferenze, distinta e riferimenti esterni revisionati**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T34`
+**Lamiera: regole versionate, base, flange, contorno, pieghe e rip**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T35`
+**Lamiera avanzata: hem, lofted, scarichi, chiusure, conversione e Join by Bend**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T36`
+**Lamiera: Unfold-Refold e lavorazioni attraverso le pieghe**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T37`
+**Lamiera: Flat Pattern versionato, DXF e dati tavole di piega**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T46`
+**Verifica copertura completa lamiera e integrazione storico-parti-assiemi**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T38`
+**Prove end-to-end: salvataggio storico, assieme, lamiera e round-trip export**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T54`
+**Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T55`
+**Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T63`
+**Timeline parametrica M1: feature con riferimenti, rebuild, modifica/elimina/sopprimi/rollback, persistenza**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T65`
+**Operazioni M1: Estrudi nuovo/unisci/taglia/interseca, raccordo, smusso, specchio, dividi, piani di costruzione**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T69`
+**Verifica 3MF nei tre slicer e aggiornamento grafo sorgente**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T70`
+**Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T79`
+**Integrare base lamiera in Model, persistenza .ftk e strumenti chat/MCP con undo**: codex → claude. Ross 26/09: Codex esce dal progetto, Claude prende in carico tutto
+
+### 2026-09-26 09:07 · ? · HANDOFF `T70`
+**Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT** — Presa in carico da Claude (Ross 26/09): base T75 fatta, restano booleane robuste e genealogia split/merge
+
+### 2026-09-26 09:07 · claude · RIASSEGNATO `T70`
+**Kernel B-rep proprietario (poliedrico, metadati superficie, booleane robuste, naming persistente) — niente OCCT**: claude → claude. Ross 26/09
+
+### 2026-09-26 09:00 · claude · DECISIONE (utente) — Claude prende in carico tutto
+Ross, testuale: *"fai un'analisi del lavoro fatto perché voglio che lo prendi in carico tutto tu, Codex mi serve per altro"*. Da oggi **Codex esce dal progetto**: tutti i suoi task aperti (motore T70, documento v2 T27, storico, booleane, lamiera T79, assiemi, CI, …) sono riassegnati a Claude. Grazie Codex: consegne ordinate, contratti chiari (`KERNEL_V1.md`, `SHEET_METAL_V1.md`, `API.md`) e CI completa 8/8 verde. L'analisi dello stato e il piano di presa in carico sono in `docs/ANALISI_2026-09-26.md`. Il registro resta come storia; il protocollo a due agenti non serve più, ma grafo e roadmap restano gli strumenti di lavoro con Ross.
