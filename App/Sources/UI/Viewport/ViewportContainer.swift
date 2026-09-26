@@ -379,6 +379,9 @@ struct ViewportContainer: View {
                         Text("Faccia conica (svasatura)").font(.system(size: 11, weight: .semibold))
                         Text("Angolo \(fmt(2 * half * 180 / .pi))°")
                         Text("Area \(fmt(face.area)) mm²")
+                    case .freeform:
+                        Text("Superficie importata").font(.system(size: 11, weight: .semibold))
+                        Text("Area \(fmt(face.area)) mm²")
                     case let .torus(_, _, _, minor):
                         Text("Faccia tonda (raccordo)").font(.system(size: 11, weight: .semibold))
                         Text("Raggio \(fmt(minor)) mm")

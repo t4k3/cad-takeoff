@@ -44,6 +44,8 @@ public enum PrimitiveKernel {
             throw KernelError.invalidParameter("la lamiera viene calcolata dal valutatore")
         case .component:
             throw KernelError.invalidParameter("il componente viene letto dal suo file dal valutatore")
+        case .importedMesh:
+            throw KernelError.invalidParameter("la mesh importata viene preparata dal valutatore")
         case let .chamfer(spec):
             try spec.validate()
             throw KernelError.invalidParameter("lo smusso modifica un corpo esistente: viene calcolato dal valutatore")
@@ -199,6 +201,7 @@ extension BRepBody {
             case let .plane(o, nn): .plane(origin: point(o), normal: direction(nn))
             case let .cylinder(o, a, r): .cylinder(axisOrigin: point(o), axisDirection: direction(a), radius: r)
             case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
+            case .freeform: .freeform
             case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
             }
         }

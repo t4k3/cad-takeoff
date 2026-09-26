@@ -106,6 +106,16 @@ struct DesignHistoryTests {
         expect(bom.count == 1 && bom[0].quantity == 2 && bom[0].material.hasPrefix("Acciaio DC01"), "BOM groups the instances")
         expect(abs((bom[0].mass ?? 0) - bom[0].volume * 7.85e-6) < 1e-9 && m.evaluation().bodies.count == 2, "mass from the material, two bodies")
 
+        // Import: an STL file becomes one body, one undo step.
+        m.replaceDocument(CADDocument(), status: "Import")
+        let stlURL = FileManager.default.temporaryDirectory.appendingPathComponent("ftk-import-\(UUID().uuidString).stl")
+        try! STLExporter.binary(try! PrimitiveKernel.build(Feature(name: "B", kind: .box(width: 10, depth: 10, height: 10))).mesh).write(to: stlURL)
+        expect((try? m.importMesh(from: stlURL)) == 1 && m.evaluation().bodies.count == 1, "STL imported as one body")
+        expect(abs(m.evaluation().bodies[0].mesh.volume - 1000) < 1e-6 && m.undoTitle?.hasPrefix("Importa") == true, "imported volume, one step")
+        m.undo()
+        expect(m.document.features.isEmpty, "undo removes the import")
+        try? FileManager.default.removeItem(at: stlURL)
+
         // Opening a file starts a fresh history.
         m.replaceDocument(CADDocument(), status: "Aperto")
         expect(!m.canUndo && !m.canRedo, "open/new clears history")

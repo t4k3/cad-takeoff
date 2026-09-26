@@ -111,7 +111,7 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole, .chamfer, .sheetMetal, .component:
+                case .hole, .chamfer, .sheetMetal, .component, .importedMesh:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
                 case let .extrude(p, h):
                     legal = ["points", "height"]
@@ -242,6 +242,10 @@ extension DesignModel: CADToolProvider {
             if s.mode == .twoDistances { value["distance2"] = .number(s.distance2) }
             if s.mode == .distanceAngle { value["angle"] = .number(s.angle) }
             value["edge_count"] = .number(Double(s.edges.count))
+        case let .importedMesh(m):
+            value["kind"] = "imported_mesh"
+            value["source"] = .string(m.source)
+            value["triangles"] = .number(Double(m.mesh.triangleCount))
         case let .component(c):
             value["kind"] = "component"
             value["path"] = .string(c.path)

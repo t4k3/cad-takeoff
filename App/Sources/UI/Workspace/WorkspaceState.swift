@@ -212,6 +212,7 @@ extension Feature.Kind {
         case let .chamfer(s): s.profile == .round ? "circle.bottomhalf.filled" : "skew"
         case .sheetMetal: "square.stack.3d.down.forward"
         case .component: "puzzlepiece.extension"
+        case .importedMesh: "square.and.arrow.down.on.square"
         }
     }
 
@@ -224,6 +225,7 @@ extension Feature.Kind {
         case let .chamfer(s): s.profile == .round ? "Raccordo" : "Smusso"
         case .sheetMetal: "Lamiera"
         case .component: "Componente"
+        case .importedMesh: "Mesh importata"
         }
     }
 }

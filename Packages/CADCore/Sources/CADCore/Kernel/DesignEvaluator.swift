@@ -129,6 +129,14 @@ public enum DesignEvaluator {
                 }
                 let placed = placeComponent(inner, ref: ref, position: feature.position, bodyID: feature.id, revision: revision)
                 fresh = Work(source: feature, snapshot: placed.snapshot, solid: nil, mesh: placed.mesh, modifiedBy: [])
+            } else if case let .importedMesh(imported) = feature.kind {
+                let solid = MeshFaces.solid(imported.mesh.translated(by: feature.position), featureID: feature.id)
+                let (mesh, triFace) = solid.triangulated()
+                if !MeshValidator.validate(mesh).isWatertight {
+                    issues.append(.init(featureID: feature.id, message: "Mesh importata non chiusa: si vede e si esporta, ma fori e tagli potrebbero non riuscire."))
+                }
+                fresh = Work(source: feature, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: feature.id, revision: revision),
+                             solid: solid, mesh: mesh, modifiedBy: [])
             } else if case let .sheetMetal(spec) = feature.kind {
                 let solid: CSGSolid
                 do { solid = try SheetMetalGeometry.build(spec, featureID: feature.id, position: feature.position).folded } catch {
@@ -197,6 +205,7 @@ public enum DesignEvaluator {
             case let .plane(o, n): .plane(origin: point(o), normal: direction(n))
             case let .cylinder(o, a, r): .cylinder(axisOrigin: point(o), axisDirection: direction(a), radius: r)
             case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
+            case .freeform: .freeform
             case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
             }
         }
@@ -266,7 +275,7 @@ public enum DesignEvaluator {
     private static func surface(_ f: CSGFace) -> SurfaceDescriptor {
         switch f.surface {
         case let .plane(o, n): .plane(origin: o, normal: f.flipped ? -n : n)
-        case .cylinder, .cone, .torus: f.surface
+        case .cylinder, .cone, .torus, .freeform: f.surface
         }
     }
 
@@ -286,7 +295,7 @@ public enum DesignEvaluator {
             let ring = centre + (d - axis * d.dot(axis)).normalized * major
             let n = (p - ring).normalized
             return f.flipped ? -n : n
-        case .plane:
+        case .plane, .freeform:
             return nil
         }
     }

@@ -25,6 +25,8 @@ public enum SurfaceDescriptor: Equatable, Sendable {
     /// Torus (rounds on circular edges): tube of `minorRadius` around a circle of `majorRadius`
     /// centred on `center`, perpendicular to `axisDirection`.
     case torus(center: Vec3, axisDirection: Vec3, majorRadius: Double, minorRadius: Double)
+    /// Imported mesh region that is not a plane (no exact description).
+    case freeform
 }
 
 public enum KernelError: Error, LocalizedError, Equatable, Sendable {

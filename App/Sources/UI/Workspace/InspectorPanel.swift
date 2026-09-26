@@ -115,6 +115,10 @@ struct InspectorPanel: View {
                 DimensionField(title: "Distanza 2", value: Binding(get: { spec.distance2 }, set: { var s = spec; s.distance2 = $0; kind.wrappedValue = .chamfer(s) }))
             }
             if spec.profile == .flat, spec.mode == .distanceAngle { info("Angolo", String(format: "%.0f°", spec.angle)) }
+        case let .importedMesh(m):
+            info("Origine", m.source)
+            info("Triangoli", "\(m.mesh.triangleCount)")
+            info("Nota", "Facce piane riconosciute: si possono selezionare, forare e usare per schizzi")
         case let .component(ref):
             info("Pezzo", ref.partName)
             info("File", ref.path)

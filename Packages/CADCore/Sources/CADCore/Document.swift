@@ -21,6 +21,53 @@ public enum BooleanOperation: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// An imported triangle mesh, stored compactly in the design (float32 positions, uint32 indices,
+/// base64): the file keeps working even if the original STL/3MF is moved.
+public struct ImportedMesh: Codable, Sendable, Equatable {
+    public var mesh: Mesh
+    /// Original file name (for the browser).
+    public var source: String
+
+    /// Positions are kept at float precision, as stored (save/open gives back the same mesh).
+    public init(mesh: Mesh, source: String) {
+        self.mesh = Mesh(vertices: mesh.vertices.map { Vec3(Double(Float($0.x)), Double(Float($0.y)), Double(Float($0.z))) },
+                         indices: mesh.indices)
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey { case positions, indices, source }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        source = try c.decode(String.self, forKey: .source)
+        let p = try c.decode(Data.self, forKey: .positions), i = try c.decode(Data.self, forKey: .indices)
+        guard p.count % 12 == 0, i.count % 12 == 0 else {
+            throw DecodingError.dataCorruptedError(forKey: .positions, in: c, debugDescription: "mesh importata danneggiata")
+        }
+        let floats: [Float] = p.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }.map { Float(bitPattern: $0.bitPattern.littleEndian) }
+        let ints: [UInt32] = i.withUnsafeBytes { Array($0.bindMemory(to: UInt32.self)) }.map { $0.littleEndian }
+        let count = UInt32(floats.count / 3)
+        guard ints.allSatisfy({ $0 < count }) else {
+            throw DecodingError.dataCorruptedError(forKey: .indices, in: c, debugDescription: "indici fuori dalla mesh")
+        }
+        mesh = Mesh(vertices: stride(from: 0, to: floats.count, by: 3).map { Vec3(Double(floats[$0]), Double(floats[$0 + 1]), Double(floats[$0 + 2])) },
+                    indices: ints)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(source, forKey: .source)
+        let floats = mesh.vertices.flatMap { [Float($0.x), Float($0.y), Float($0.z)] }.map { $0.bitPattern.littleEndian }
+        try c.encode(floats.withUnsafeBufferPointer { Data(buffer: $0) }, forKey: .positions)
+        let ints = mesh.indices.map(\.littleEndian)
+        try c.encode(ints.withUnsafeBufferPointer { Data(buffer: $0) }, forKey: .indices)
+    }
+
+    public static func == (a: ImportedMesh, b: ImportedMesh) -> Bool {
+        a.source == b.source && a.mesh.indices == b.mesh.indices && a.mesh.vertices == b.mesh.vertices
+    }
+}
+
 /// A design of the project inserted in another one (assembly component). The referenced file is
 /// read when evaluating, so the assembly follows the part's changes.
 public struct ComponentRef: Codable, Sendable, Equatable {
@@ -65,6 +112,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case sheetMetal(SheetMetalSpec)
         /// Another design of the project placed in this one (assemblies).
         case component(ComponentRef)
+        /// Triangle mesh from an STL/OBJ/3MF file (e.g. exported from Fusion 360).
+        case importedMesh(ImportedMesh)
     }
 
     public var id: UUID
@@ -119,6 +168,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
             guard let build = try? SheetMetalGeometry.build(spec, featureID: id, position: position) else { return Mesh() }
             return build.folded.triangulated().mesh
         case .component: return Mesh(vertices: [], indices: [])   // geometry comes from the referenced file
+        case let .importedMesh(m): return m.mesh.translated(by: position)
         }
         return local.translated(by: position)
     }

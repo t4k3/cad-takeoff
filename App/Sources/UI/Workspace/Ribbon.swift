@@ -72,6 +72,8 @@ struct Ribbon: View {
                 .help("Nuovo cilindro Ø20×20 mm")
             Button { model.addHexPrism() } label: { Label("Prisma", systemImage: "hexagon") }
                 .help("Nuovo prisma esagonale estruso")
+            Button { model.importMeshWithPanel() } label: { Label("Importa", systemImage: "square.and.arrow.down.on.square") }
+                .help("Importa STL, OBJ o 3MF (anche esportati da Fusion 360) come corpi: le facce piane restano selezionabili (⇧⌘I)")
         }
         ToolGroup("ASSIEME") {
             Button { workspace.showComponentPicker = true } label: { Label("Inserisci", systemImage: "puzzlepiece.extension") }

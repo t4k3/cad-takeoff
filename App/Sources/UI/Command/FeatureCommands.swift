@@ -25,6 +25,10 @@ enum FeatureCommands {
             return nil   // own panels (HoleCommand, ChamferCommand, SheetMetalCommand)
         case let .component(ref):
             return component(id, ref: ref, original: original, model: model)
+        case let .importedMesh(m):
+            fields = [.init(id: "note", label: "Da \(m.source) · \(m.mesh.triangleCount) triangoli", kind: .note(warning: false), value: .flag(false)),
+                      .init(id: "x", label: "Posizione X", kind: .length(-100_000...100_000), value: .number(original.position.x)),
+                      .init(id: "y", label: "Posizione Y", kind: .length(-100_000...100_000), value: .number(original.position.y))]
         }
         fields += [.init(id: "z", label: "Offset Z", kind: .length(-1000...1000), value: .number(original.position.z)),
                    .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)),
@@ -39,6 +43,7 @@ enum FeatureCommands {
             case .cylinder: f.kind = .cylinder(radius: v("r"), height: v("h"))
             case let .extrude(p, _): f.kind = .extrude(profile: p, height: v("h"))
             case .hole, .chamfer, .sheetMetal, .component: break
+            case .importedMesh: f.position.x = v("x"); f.position.y = v("y")
             }
             f.position.z = v("z")
             if case let .index(i)? = fields.first(where: { $0.id == "op" })?.value { f.operation = BooleanOperation.allCases[i] }

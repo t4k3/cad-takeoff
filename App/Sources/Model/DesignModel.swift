@@ -325,6 +325,35 @@ final class DesignModel {
         return try ThreeMFExporter.archive(parts: parts)
     }
 
+    // MARK: Import (T74)
+
+    /// STL, OBJ or 3MF (e.g. from Fusion 360): one imported body per part, one undo step.
+    func importMesh(from url: URL) throws -> Int {
+        let parts = try MeshImport.read(try Data(contentsOf: url), fileExtension: url.pathExtension)
+        let base = url.deletingPathExtension().lastPathComponent
+        let features = parts.enumerated().map { i, p in
+            Feature(name: p.name.isEmpty ? (parts.count == 1 ? base : "\(base) \(i + 1)") : p.name,
+                    kind: .importedMesh(ImportedMesh(mesh: p.mesh, source: url.lastPathComponent)))
+        }
+        edit("Importa \(url.lastPathComponent)", selected: .some(features.first?.id), changed: features.map(\.id)) {
+            $0.features.append(contentsOf: features)
+        }
+        return features.count
+    }
+
+    func importMeshWithPanel() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = ["stl", "obj", "3mf"].compactMap { UTType(filenameExtension: $0) }
+        panel.message = "Importa una mesh (STL, OBJ o 3MF), ad esempio esportata da Fusion 360. Unità: millimetri (il 3MF dichiara le sue)."
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let n = try importMesh(from: url)
+            let issues = evaluation().issues.filter { i in document.features.suffix(n).contains { $0.id == i.featureID } }
+            statusMessage = "Importat\(n == 1 ? "o" : "i") \(n) corp\(n == 1 ? "o" : "i") da \(url.lastPathComponent)"
+                + (issues.isEmpty ? "" : " — " + (issues.first?.message ?? ""))
+        } catch { statusMessage = "Import non riuscito: \(error.localizedDescription)" }
+    }
+
     // MARK: Assemblies
 
     struct BOMRow: Identifiable {
