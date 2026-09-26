@@ -36,5 +36,6 @@ run_step 04-openai bash scripts/test-openai-provider.sh
 run_step 05-connector python3 -m unittest discover -s Tests/ChatGPTConnector -v
 run_step 06-3mf bash scripts/test-3mf.sh
 run_step 07-sheet-metal bash scripts/test-sheet-metal.sh
+run_step 07b-fusion-addin bash scripts/test-fusion-addin.sh
 run_step 08-app bash scripts/build.sh
 printf '\nVerifica completa: %s passaggi riusciti. Log: %s\n' "$(grep -c '^run_step ' "$0")" "$ci_run_dir"

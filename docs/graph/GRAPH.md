@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 15:10. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-26 15:20. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -46,7 +46,7 @@ flowchart LR
     T25["T25 · Pannello comando generico stile Fusion (OK/Annulla, anteprima, da ParameterSpec)<br/><i>claude</i>"]:::done
     T61["T61 · Schizzo v0: disegno XY (linea, rettangolo, cerchio, poligono) + Estrudi via add_extrude<br/><i>claude</i>"]:::done
     T73["T73 · Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard<br/><i>claude</i>"]:::in_progress
-    T74["T74 · Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home<br/><i>claude</i>"]:::todo
+    T74["T74 · Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home<br/><i>claude</i>"]:::done
     T77["T77 · Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file<br/><i>claude</i>"]:::in_progress
   end
   subgraph P7["6 · CAD parametrico"]
@@ -411,7 +411,7 @@ flowchart LR
 | T71 | Allineare roadmap e regole sulle dipendenze alla richiesta di Ross | done | codex | T24 | docs/ROADMAP.md<br>docs/requirements/DEPENDENCY_POLICY.md<br>docs/requirements/CAD_SCOPE_V2.md<br>docs/architecture/PROJECT.md |
 | T72 | UX selezione facce e spigoli: filtro Corpo/Faccia/Spigolo, hover, selezione, misure (adattatore provvisorio finché T30) | done | claude | T19 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T73 | Home progetti locale: libreria progetti/cartelle/disegni, miniature, file corrente (salva/salva con nome), dashboard | in_progress | claude | T17 | App/Sources/Integration/Projects<br>App/Sources/UI/Home<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/FusionTakeoff.entitlements |
-| T74 | Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home | todo | claude | T73 | Tools/FusionAddin<br>App/Sources/Integration/FusionImport<br>App/Sources/UI/Home |
+| T74 | Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home | done | claude | T73 | Tools/FusionAddin<br>App/Sources/Integration/FusionImport<br>App/Sources/UI/Home |
 | T75 | Fondazione CAD: B-rep primitive e snapshot renderer (prima consegna T70) | done | codex | T24 | docs/requirements/KERNEL_V1.md |
 | T76 | Collegare selezione e renderer allo snapshot CADCore al posto di DerivedTopology | done | claude | T72, T75 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Workspace |
 | T77 | Schizzo v1 (Ross+Claude): modello nel core, parametri delle entità nel pannello, asola, poligono completo, salvataggio nel file | in_progress | claude | T61 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests/SketchTests.swift<br>App/Sources/UI/Sketch<br>App/Sources/UI/Workspace<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Sources/Integration/Projects |

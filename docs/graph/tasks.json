@@ -1393,7 +1393,7 @@
       "id": "T74",
       "title": "Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home",
       "phase": "2 · UX",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T73"
       ],
@@ -1403,7 +1403,11 @@
         "App/Sources/UI/Home"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": null,
+      "finished": "2026-09-26 15:20",
+      "notes": [
+        "2026-09-26 15:20 ?: Import mesh STL/OBJ/3MF (facce piane riconosciute) + add-in Fusion 360 che scrive .ftk (corpi e componenti, colori, mm, Y-su→Z-su, anche a ogni salvataggio), installabile dall'app; collaudo con API Fusion simulata + CADCore reale (CI 07b). Da provare nel vero Fusion. Fase 2: storico parametrico."
+      ]
     },
     {
       "id": "T75",

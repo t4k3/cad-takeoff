@@ -50,15 +50,10 @@ T78, senza chiudere la copertura completa o alterare il lavoro schizzo di Claude
   per creare, aprire, rinominare, spostare e cercare i disegni e tenere ordinato un progetto intero.
   È la base naturale per gli assiemi (riferimenti tra file dello stesso progetto).
   Chi: Codex (struttura su disco, indice, versioni, riferimenti tra file) + Claude (dashboard, anteprime, navigazione).
-- **Import automatico da Fusion 360 (idea di Ross, 25/09)** — ➜ **affidato a Claude da Ross (T74), dopo la Home (T73).** collegata alla Home. Note tecniche:
-  il formato `.f3d/.f3z` è chiuso e non documentato, quindi leggerlo direttamente non è affidabile.
-  Strade possibili, dalla più semplice alla più completa:
-  1. import di mesh (STL/3MF/OBJ esportati da Fusion): subito fattibile, ma senza storico;
-  2. **add-in "Esporta per Fusion Takeoff" dentro Fusion** (API ufficiale di Fusion, Fusion è installato su questo Mac):
-     legge timeline, schizzi e parametri e scrive il nostro formato, anche in automatico su una cartella del progetto
-     → import *con storico*, limitato alle operazioni che il nostro motore supporta;
-  3. import STEP: richiede di convertire superfici NURBS nel nostro motore, lavoro pesante.
-  Da decidere con Ross: dove metterla nell'ordine (proposta: Home dopo il passo 4, import via add-in insieme al passo 7 parti e assiemi).
+- **Import da Fusion 360 (T74) — fase 1 fatta 26/09**: import STL/OBJ/3MF come corpi con facce piane vere (selezione, fori, schizzi);
+  add-in per Fusion «Esporta per Fusion Takeoff» (un clic o a ogni salvataggio, scrive il .ftk nella cartella del progetto: corpi e
+  componenti già posizionati, colori, mm, Y-su → Z-su), installabile dalla Home. Collaudato con un'API Fusion simulata; **da provare
+  nel vero Fusion con Ross**. Fase 2: storico parametrico (schizzi, estrusioni, fori) invece delle sole mesh.
 
 ## Decisioni già prese
 

@@ -36,6 +36,7 @@
 		777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */; };
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
 		7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */; };
+		829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */ = {isa = PBXBuildFile; fileRef = 2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */; };
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
 		89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */; };
 		8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */; };
@@ -47,6 +48,7 @@
 		A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */; };
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
 		A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */; };
+		AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AE2553C670B5E2BE5C6306 /* FusionAddInInstaller.swift */; };
 		B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */; };
 		B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */; };
 		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
@@ -69,6 +71,7 @@
 		F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
 		FE2BFC396A55BAC42977CD69 /* HoleCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */; };
+		FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */ = {isa = PBXBuildFile; fileRef = 3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,12 +105,15 @@
 		0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIConversation.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
 		14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceManipulator.swift; sourceTree = "<group>"; };
+		15AE2553C670B5E2BE5C6306 /* FusionAddInInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionAddInInstaller.swift; sourceTree = "<group>"; };
 		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
+		2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */ = {isa = PBXFileReference; path = FusionTakeoffExport.manifest; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblySheets.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
+		3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = FusionTakeoffExport.py; sourceTree = "<group>"; };
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
@@ -201,6 +207,7 @@
 			isa = PBXGroup;
 			children = (
 				5CAB5E2F59180CD118CF8961 /* .gitkeep */,
+				E4B1A91129EF63A88EF293AD /* FusionAddIn */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -414,10 +421,20 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
+		E4B1A91129EF63A88EF293AD /* FusionAddIn */ = {
+			isa = PBXGroup;
+			children = (
+				2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */,
+				3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */,
+			);
+			path = FusionAddIn;
+			sourceTree = "<group>";
+		};
 		E54D06769E79DD9CC57427D9 /* Projects */ = {
 			isa = PBXGroup;
 			children = (
 				C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */,
+				15AE2553C670B5E2BE5C6306 /* FusionAddInInstaller.swift */,
 				642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */,
 				6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */,
 				F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */,
@@ -484,6 +501,7 @@
 			buildConfigurationList = 95E227F3C5A780CCB4B1D93B /* Build configuration list for PBXNativeTarget "FusionTakeoff" */;
 			buildPhases = (
 				31CEDEF2C9F90F41AD0A6EB9 /* Sources */,
+				86DDAB604F548008CFD459E3 /* Resources */,
 				A1B2E5B4989FE8AE9267A69F /* Frameworks */,
 				F26181B479C639D4162F3C29 /* Embed Dependencies */,
 			);
@@ -559,6 +577,18 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		86DDAB604F548008CFD459E3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */,
+				FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		31CEDEF2C9F90F41AD0A6EB9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -588,6 +618,7 @@
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
+				AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
 				13A90DD582DD0DFADFC02690 /* GeoSelection.swift in Sources */,
 				FE2BFC396A55BAC42977CD69 /* HoleCommand.swift in Sources */,

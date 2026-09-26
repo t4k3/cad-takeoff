@@ -40,6 +40,7 @@ struct FusionTakeoffApp: App {
                 Button("Nuovo disegno") { library.newUntitled(model: model) }.keyboardShortcut("n")
                 Button("Apri…") { library.openWithPanel(model: model) }.keyboardShortcut("o")
                 Button("Importa mesh (STL, OBJ, 3MF)…") { model.importMeshWithPanel() }.keyboardShortcut("i", modifiers: [.command, .shift])
+                Button("Installa add-in in Fusion 360…") { model.statusMessage = FusionAddInInstaller.installWithPanel() }
             }
             CommandGroup(replacing: .saveItem) {
                 Button("Salva") { library.save(model: model) }.keyboardShortcut("s")

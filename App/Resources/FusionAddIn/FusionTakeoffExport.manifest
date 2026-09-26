@@ -1,0 +1,13 @@
+{
+	"autodeskProduct": "Fusion360",
+	"type": "addin",
+	"id": "8f4c2b7e-1d5a-4e3c-9b6f-3a2d1c0e5f77",
+	"author": "Fusion Takeoff",
+	"description": {
+		"": "Esporta il disegno attivo come .ftk per Fusion Takeoff (un clic o a ogni salvataggio)"
+	},
+	"version": "1.0.0",
+	"runOnStartup": true,
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}

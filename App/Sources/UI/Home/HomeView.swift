@@ -79,6 +79,12 @@ struct HomeView: View {
                 Text(library.rootURL?.path.replacingOccurrences(of: ProjectLibraryHome.path, with: "~") ?? "non scelta")
                     .font(.system(size: 10.5, design: .monospaced)).lineLimit(2).truncationMode(.middle)
                 Button("Cambia cartella…") { library.chooseRoot(); project = nil; path = [] }.controlSize(.small)
+                Divider().padding(.vertical, 4)
+                Text("Da Fusion 360").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+                Button("Installa add-in…") { model.statusMessage = FusionAddInInstaller.installWithPanel() }
+                    .controlSize(.small)
+                    .help("Aggiunge a Fusion il comando «Esporta per Fusion Takeoff»: salva il disegno come .ftk in una cartella dei progetti, anche a ogni salvataggio")
+                Button("Importa STL/3MF…") { library.showHome = false; model.importMeshWithPanel() }.controlSize(.small)
             }
             .padding(12)
         }

@@ -1163,3 +1163,6 @@ Inizio **Assiemi fase 1: componenti collegati da file del progetto, posizione/ro
 
 ### 2026-09-26 15:10 · claude · DONE `T87`
 **Assiemi fase 1: componenti collegati da file del progetto, posizione/rotazione, distinta base CSV** — Feature.Kind.component(ComponentRef: percorso relativo alla radice + rotazione XYZ): il valutatore legge il file tramite un risolutore fornito dall'app (core puro), sposta e fonde i corpi del pezzo (facce/spigoli trasformati, ID prefissati), segnala mancanti e circolari, annidamento fino a 8 livelli. App: SOLIDO › ASSIEME › Inserisci (elenco disegni della libreria), Posiziona (pannello X/Y/Z e rotazioni con anteprima), Apri pezzo, Distinta base (quantità, materiale e massa per la lamiera, volume) con CSV. Test core e cronologia; prova a schermo in sospeso.
+
+### 2026-09-26 15:20 · ? · DONE `T74`
+**Import da Fusion 360: add-in Fusion che esporta timeline/schizzi/parametri + import mesh STL/3MF/OBJ nella Home** — Import mesh STL/OBJ/3MF (facce piane riconosciute) + add-in Fusion 360 che scrive .ftk (corpi e componenti, colori, mm, Y-su→Z-su, anche a ogni salvataggio), installabile dall'app; collaudo con API Fusion simulata + CADCore reale (CI 07b). Da provare nel vero Fusion. Fase 2: storico parametrico.
