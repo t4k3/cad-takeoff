@@ -68,6 +68,8 @@ final class DesignModel {
     /// Commits work still open in an editor (e.g. the sketch) into the document, so saving,
     /// opening another file or quitting never silently drops it.
     @ObservationIgnored var finishPendingEdits: () -> Void = {}
+    /// States after each unchanged history prefix, shared with the background previews.
+    let evaluationCache = EvaluationCache()
     /// Reads assembly components from the project library (set by the app).
     @ObservationIgnored var componentResolver: DesignEvaluator.ComponentResolver?
     /// Designs of the project library as component paths (set by the app; for the assistant).
@@ -95,7 +97,7 @@ final class DesignModel {
     /// Bodies of the design after running the active history with its booleans (cached per revision).
     func evaluation() -> (bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue]) {
         if let c = cachedEvaluation, c.revision == designRevision { return (c.bodies, c.issues) }
-        let (bodies, issues) = DesignEvaluator.evaluate(document, revision: designRevision, components: componentResolver)
+        let (bodies, issues) = DesignEvaluator.evaluate(document, revision: designRevision, components: componentResolver, cache: evaluationCache)
         cachedEvaluation = (designRevision, bodies, issues)
         return (bodies, issues)
     }

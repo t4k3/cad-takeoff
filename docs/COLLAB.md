@@ -1184,3 +1184,12 @@ Inizio **Dividi corpo con piano**. File: Packages/CADCore, App/Sources
 
 ### 2026-09-26 15:35 · claude · DONE `T89`
 **Dividi corpo con piano** — SplitSpec: piano YZ/XZ/XY a una posizione, tieni entrambe (la parte + diventa un corpo nuovo) o un lato; pannello con anteprima, ispettore, add_split (20 strumenti). CI 10/10.
+
+### 2026-09-26 15:50 · claude · NUOVO TASK `T90`
+Valutazione incrementale (cache per prefisso) e mesh deterministica (dipende da T84)
+
+### 2026-09-26 15:50 · claude · CLAIM `T90`
+Inizio **Valutazione incrementale (cache per prefisso) e mesh deterministica**. File: Packages/CADCore, App/Sources
+
+### 2026-09-26 15:50 · claude · DONE `T90`
+**Valutazione incrementale (cache per prefisso) e mesh deterministica** — EvaluationCache: stato dopo ogni passo con chiave SHA-256 del prefisso (feature + file dei componenti), condivisa tra modello e anteprime in background, LRU 24; triangolazione deterministica (chiavi ordinate). Release: modifica dell'ultimo passo 0,46 → 0,25 s sul pezzo di prova.

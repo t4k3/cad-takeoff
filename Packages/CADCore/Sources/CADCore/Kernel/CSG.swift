@@ -330,7 +330,10 @@ public extension CSGSolid {
         var merged = Set<Int>()
         let byFace = Dictionary(grouping: loops.indices, by: { loops[$0].face })
         // Curved faces are facets: fragments are merged per facet plane.
-        for (face, members) in byFace where members.count > 1 && CoplanarMerge.isEnabled {
+        // Sorted: dictionary order differs between runs, the mesh must not.
+        for face in byFace.keys.sorted() where CoplanarMerge.isEnabled {
+            let members = byFace[face]!
+            guard members.count > 1 else { continue }
             var clusters: [(n: Vec3, w: Double, members: [Int])] = []
             for m in members {
                 let nn = newell(loops[m].ids, positions)

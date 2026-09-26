@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Runs the active history in order and produces the bodies of the design (phase 3, T84).
@@ -23,18 +24,32 @@ public enum DesignEvaluator {
     /// Reads a component's design by its library path (the app provides it; nil = not found).
     public typealias ComponentResolver = @Sendable (String) -> CADDocument?
 
-    public static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver? = nil) -> (bodies: [Body], issues: [Issue]) {
-        evaluate(doc, revision: revision, components: components, depth: 0)
+    /// `cache`: reuse the state after an unchanged prefix of the history (editing the last steps
+    /// or previewing a new one does not recompute the earlier booleans).
+    public static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver? = nil,
+                                cache: EvaluationCache? = nil) -> (bodies: [Body], issues: [Issue]) {
+        evaluate(doc, revision: revision, components: components, depth: 0, cache: cache)
     }
 
-    private static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver?, depth: Int) -> (bodies: [Body], issues: [Issue]) {
-        struct Work { var source: Feature; var snapshot: BodySnapshot; var solid: CSGSolid?; var mesh: Mesh; var modifiedBy: [UUID] }
+    /// A body while the history runs.
+    struct Work: Sendable { var source: Feature; var snapshot: BodySnapshot; var solid: CSGSolid?; var mesh: Mesh; var modifiedBy: [UUID] }
+
+    private static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver?, depth: Int,
+                                 cache: EvaluationCache? = nil) -> (bodies: [Body], issues: [Issue]) {
         var bodies: [Work] = []
         var issues: [Issue] = []
+        let features = doc.activeFeatures
         // A damaged file with the same ID twice: exclude every copy, never guess which one is meant.
-        let counts = Dictionary(grouping: doc.activeFeatures, by: \.id).mapValues(\.count)
+        let counts = Dictionary(grouping: features, by: \.id).mapValues(\.count)
         var reported = Set<UUID>()
-        for feature in doc.activeFeatures {
+        // Prefix keys (every step and, for components, the file it reads) and the longest cached prefix.
+        let keys = cache == nil ? [] : EvaluationCache.prefixKeys(features, components: components)
+        var start = 0
+        if let cache, let (k, state) = cache.longestPrefix(keys) {
+            bodies = state.bodies; issues = state.issues; reported = state.reported; start = k + 1
+        }
+        for (k, feature) in features.enumerated() where k >= start {
+            defer { if let cache, k < keys.count { cache.store(keys[k], .init(bodies: bodies, issues: issues, reported: reported)) } }
             guard counts[feature.id] == 1 else {
                 if reported.insert(feature.id).inserted {
                     issues.append(.init(featureID: feature.id, message: "Identificatore di parte duplicato nel documento."))
@@ -508,4 +523,54 @@ extension CSGSolid {
         let (mesh, triFace) = triangulated()
         return (mesh, DesignEvaluator.snapshot(of: self, mesh: mesh, triangleFace: triFace, bodyID: bodyID, revision: revision))
     }
+}
+
+/// States of the history after each step, keyed by a digest of the steps so far (T90).
+/// Thread-safe: the model and the background previews share it.
+public final class EvaluationCache: @unchecked Sendable {
+    struct State: Sendable {
+        let bodies: [DesignEvaluator.Work]
+        let issues: [DesignEvaluator.Issue]
+        let reported: Set<UUID>
+    }
+
+    private let lock = NSLock()
+    private var states: [String: State] = [:]
+    private var order: [String] = []
+    private let capacity: Int
+
+    public init(capacity: Int = 24) { self.capacity = capacity }
+
+    static func prefixKeys(_ features: [Feature], components: DesignEvaluator.ComponentResolver?) -> [String] {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        var digest = SHA256()
+        return features.map { f in
+            digest.update(data: (try? encoder.encode(f)) ?? Data(f.id.uuidString.utf8))
+            // A component's content is its file: a changed part invalidates what follows.
+            if case let .component(ref) = f.kind, let child = components?(ref.path) {
+                digest.update(data: (try? child.encoded()) ?? Data())
+            }
+            return digest.finalizedHex
+        }
+    }
+
+    func longestPrefix(_ keys: [String]) -> (Int, State)? {
+        lock.lock(); defer { lock.unlock() }
+        for k in keys.indices.reversed() { if let s = states[keys[k]] { return (k, s) } }
+        return nil
+    }
+
+    func store(_ key: String, _ state: State) {
+        lock.lock(); defer { lock.unlock() }
+        if states[key] == nil {
+            order.append(key)
+            if order.count > capacity { states[order.removeFirst()] = nil }
+        }
+        states[key] = state
+    }
+}
+
+private extension SHA256 {
+    var finalizedHex: String { self.finalize().map { String(format: "%02x", $0) }.joined() }
 }

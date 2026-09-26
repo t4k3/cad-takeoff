@@ -69,9 +69,11 @@ final class WorkspaceState {
         pendingPreview = nil; previewBusy = true
         let generation = previewGeneration
         let revision = "preview-\(UUID().uuidString)"
-        let resolver = model?.componentResolver
+        let resolver = model?.componentResolver, cache = model?.evaluationCache
         Task { [weak self] in
-            let result = await Task.detached(priority: .userInitiated) { DesignEvaluator.evaluate(doc, revision: revision, components: resolver) }.value
+            let result = await Task.detached(priority: .userInitiated) {
+                DesignEvaluator.evaluate(doc, revision: revision, components: resolver, cache: cache)
+            }.value
             guard let self else { return }
             if generation == self.previewGeneration {
                 self.previewSnapshot = DesignSnapshot(revision: revision, bodies: result.bodies.filter(\.isVisible).map(\.snapshot),
