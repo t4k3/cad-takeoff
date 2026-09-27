@@ -17,8 +17,11 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     #expect(s.lines.contains { $0.style == .center })
     // Overall size and the hole's diameter (the same circle top and bottom: once).
     let texts = s.texts.map(\.text)
-    for t in ["60", "40", "8", "Ø10", "Prova à", "PLA", "1:1", "A4"] { #expect(texts.contains(t), "\(t)") }
-    #expect(texts.filter { $0.hasPrefix("Ø") }.count == 1)
+    for t in ["60", "40", "8", "Prova à", "PLA", "1:1", "A4"] { #expect(texts.contains(t), "\(t)") }
+    // The hole (the same circle top and bottom: once) is in the hole table as F1: X 15, Y 20,
+    // Ø 10, from the part's lower-left corner.
+    for t in ["Foro", "F1", "15", "20", "10", "0,0"] { #expect(texts.contains(t), "\(t)") }
+    #expect(texts.filter { $0 == "F1" }.count == 2)   // table row and the label on the view
     // Everything inside the A4 sheet.
     #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
 }

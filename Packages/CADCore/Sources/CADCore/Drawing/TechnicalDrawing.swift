@@ -66,26 +66,29 @@ public enum TechnicalDrawing {
         let ef = extent(front), et = extent(top), el = extent(left), ei = extent(iso)
         func w(_ e: (min: Vec2, max: Vec2)) -> Double { e.max.x - e.min.x }
         func h(_ e: (min: Vec2, max: Vec2)) -> Double { e.max.y - e.min.y }
-        // Largest standard scale that fits: three columns and two rows with room for dimensions.
-        let gap = 22.0
+        // Largest standard scale that fits, trying two layouts: the isometric in a third column,
+        // or beside the view from above (second row).
+        let gap = 18.0
         let availW = frame.x1 - frame.x0 - 4 * gap, availH = frame.y1 - frame.y0 - titleH - 3 * gap
-        let needW = w(ef) + w(el) + w(ei), needH = max(h(ef), h(el)) + max(h(et), 1)
-        let fit = min(availW / max(needW, 1e-6), availH / max(needH, 1e-6))
-        guard let (scale, label) = scales.first(where: { $0.0 <= fit }) else { throw KernelError.invalidParameter("disegno: pezzo troppo grande per il foglio") }
+        let row1 = max(h(ef), h(el))
+        let fitColumn = min(availW / max(w(ef) + w(el) + w(ei), 1e-6), availH / max(row1 + max(h(et), 1), 1e-6))
+        let fitRow = min((availW + gap) / max(max(w(ef) + w(el), w(et) + w(ei)), 1e-6), availH / max(row1 + max(h(et), h(ei)), 1e-6))
+        let isoBelow = fitRow > fitColumn
+        guard let (scale, label) = scales.first(where: { $0.0 <= max(fitColumn, fitRow) }) else { throw KernelError.invalidParameter("disegno: pezzo troppo grande per il foglio") }
 
         // Placement: front top-left, the view from the left on its right, from above below it
-        // (first angle); the isometric in the right column.
-        let rowTop = frame.y1 - gap - max(h(ef), h(el)) * scale
+        // (first angle); the isometric in the right column or right of the view from above.
+        let rowTop = frame.y1 - gap - row1 * scale
         let colFront = frame.x0 + gap
         let colLeft = colFront + w(ef) * scale + gap
-        let colIso = colLeft + w(el) * scale + gap
+        let colIso = isoBelow ? colFront + w(et) * scale + gap : colLeft + w(el) * scale + gap
         func place(_ v: View, _ e: (min: Vec2, max: Vec2), at origin: Vec2) -> (Vec2) -> Vec2 {
             { p in Vec2(origin.x + (p.x - e.min.x) * scale, origin.y + (p.y - e.min.y) * scale) }
         }
         let frontAt = place(front, ef, at: Vec2(colFront, rowTop))
         let leftAt = place(left, el, at: Vec2(colLeft, rowTop))
         let topAt = place(top, et, at: Vec2(colFront, rowTop - gap - h(et) * scale))
-        let isoAt = place(iso, ei, at: Vec2(colIso, rowTop + (max(h(ef), h(el)) - h(ei)) * scale))
+        let isoAt = place(iso, ei, at: isoBelow ? Vec2(colIso, rowTop - gap - h(ei) * scale) : Vec2(colIso, rowTop + (row1 - h(ei)) * scale))
         for (v, at) in [(front, frontAt), (left, leftAt), (top, topAt), (iso, isoAt)] where !(section && v.look == front.look) {
             for seg in model.edges(for: v, hidden: v.look != iso.look) {
                 sheet.lines.append(.init(a: at(seg.a), b: at(seg.b), style: seg.visible ? .visible : .hidden))
@@ -145,8 +148,14 @@ public enum TechnicalDrawing {
                 sheet.lines.append(.init(a: at(Vec2(x, zs.0)) - Vec2(0, 2), b: at(Vec2(x, zs.1)) + Vec2(0, 2), style: .center))
             }
         }
+        // Holes go in the hole table; the leaders are for the rest (bosses, shafts).
+        let holes = circles.filter { c in
+            let mid = (c.depth.lowerBound + c.depth.upperBound) / 2
+            return !model.contains(Vec3(c.centre.x, c.centre.y, -mid))
+        }.sorted { ($0.centre.y, $0.centre.x) < ($1.centre.y, $1.centre.x) }
+        let tabled = !holes.isEmpty && holes.count <= 26
         var labelled: [Vec2] = []
-        let shown = Array(circles.prefix(8))
+        let shown = Array(circles.filter { c in !(tabled && holes.contains { ($0.centre - c.centre).length < 1e-9 && $0.radius == c.radius }) }.prefix(8))
         for c in shown {
             let centre = topAt(c.centre), r = c.radius * scale
             // Circles on the same centre (a bore, a groove, a counterbore): leaders fanned out on
@@ -165,6 +174,35 @@ public enum TechnicalDrawing {
             sheet.texts.append(.init(at: knee + Vec2(right ? 1 : -1, 1), text: "Ø" + number(2 * c.radius), size: 3.2, align: right ? .left : .right))
         }
         titleBlock(&sheet, x1: frame.x1, y0: frame.y0, width: titleW, height: titleH, info: info, scale: label, format: format)
+        // Hole table (for the workshop and CNC): holes seen from above, lettered on the view, with
+        // X/Y from the part's lower-left corner and the diameter.
+        if tabled {
+            // Bottom left, beside the title block.
+            let rowH = 5.0, cols = [12.0, 20, 20, 20], width = cols.reduce(0, +)
+            let x0 = frame.x0 + 4, tableTop = frame.y0 + 4 + rowH * Double(holes.count + 1)
+            let cells = [["Foro", "X", "Y", "Ø"]] + holes.enumerated().map { k, c in
+                ["F\(k + 1)", number(c.centre.x - box.min.x), number(c.centre.y - box.min.y), number(2 * c.radius)]
+            }
+            for (r, row) in cells.enumerated() {
+                let y = tableTop - rowH * Double(r + 1)
+                var x = x0
+                for (k, text) in row.enumerated() {
+                    sheet.texts.append(.init(at: Vec2(x + cols[k] / 2, y + 1.4), text: text, size: r == 0 ? 2.5 : 2.8, align: .center))
+                    x += cols[k]
+                }
+                sheet.lines.append(.init(a: Vec2(x0, y), b: Vec2(x0 + width, y), style: r == 0 ? .visible : .thin))
+            }
+            rect(&sheet, x0, tableTop - rowH * Double(cells.count), x0 + width, tableTop, .visible)
+            var x = x0
+            for w in cols.dropLast() { x += w; sheet.lines.append(.init(a: Vec2(x, tableTop - rowH * Double(cells.count)), b: Vec2(x, tableTop), style: .thin)) }
+            // Letters beside each hole, and the origin marked at the corner.
+            for (k, c) in holes.enumerated() {
+                let at = topAt(c.centre) + Vec2(-c.radius * scale - 1.5, c.radius * scale * 0.7 + 1)
+                sheet.texts.append(.init(at: at, text: "F\(k + 1)", size: 3, align: .right))
+            }
+            let corner = topAt(Vec2(box.min.x * top.right.x, box.min.y * top.up.y))
+            sheet.texts.append(.init(at: corner + Vec2(-1.5, -4), text: "0,0", size: 2.5, align: .right))
+        }
         return sheet
     }
 
@@ -310,6 +348,23 @@ public enum TechnicalDrawing {
                 }
             }
             return merged(segs).map { ($0.a, $0.b) }
+        }
+
+        /// Whether a point is inside the solid (ray parity along a slanted direction).
+        func contains(_ p: Vec3) -> Bool {
+            let d = Vec3(0.5773, 0.5774, 0.5775).normalized
+            var hits = 0
+            for t in tris {
+                let a = points[t.v[0]], b = points[t.v[1]], c = points[t.v[2]]
+                let e1 = b - a, e2 = c - a, q = d.cross(e2), det = e1.dot(q)
+                guard abs(det) > 1e-14 else { continue }
+                let f = 1 / det, w = p - a, u = w.dot(q) * f
+                guard u >= 0, u <= 1 else { continue }
+                let r = w.cross(e1), v = d.dot(r) * f
+                guard v >= 0, u + v <= 1 else { continue }
+                if e2.dot(r) * f > 1e-9 { hits += 1 }
+            }
+            return hits % 2 == 1
         }
 
         /// Collinear touching runs of the same kind joined (fewer, cleaner lines).
