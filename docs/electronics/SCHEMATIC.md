@@ -4,7 +4,7 @@
 
 ## Documento e responsabilità
 
-`ElectronicsDocument` scrive formato **3**, legge 1/2/3, conserva lo storico. `ElectronicsDesign.schematic: SchematicCircuit?` è nil nei vecchi documenti. Non cambiare `.ftk`. Non abbassare formatVersion: un vecchio lettore deve rifiutare gli schemi anziché perderli.
+`ElectronicsDocument` scrive formato **4**, legge 1/2/3/4 (v3 introdusse lo schema, v4 aggiunge il rame), conserva lo storico. `ElectronicsDesign.schematic: SchematicCircuit?` è nil nei vecchi documenti. Non cambiare `.ftk`. Non abbassare formatVersion: un vecchio lettore deve rifiutare gli schemi anziché perderli.
 
 - Componente elettrico unico (`CircuitComponent.id`) condiviso con il PCB. Posizione del simbolo indipendente dalla posizione della sua impronta.
 - `SchematicCircuit.sheets`: fogli con `id`, `name`, `parentID`, `symbols`, `junctions`, `wires`, `labels`.

@@ -23,8 +23,25 @@
 
 Copertura e limiti: [PCB.md](PCB.md). Non inclusi piani, shove, archi, net class, keepout,
 regole mask/copper-to-hole complete e Gerber. `fabricationReady` resta false.
-Il motore è pronto per la UI di Claude; a questo punto non è ancora stata verificata a schermo
-la nuova integrazione del routing. Il collaudo schema delle sezioni seguenti è storico.
+### Collaudo UI T97 del 27/09, ore 12:53–12:55
+
+App reale `build/DerivedData/Build/Products/Debug/FusionTakeoff.app`, v1.0.15,
+commit indicato `9744636+`, compilata alle 12:52 con i sorgenti T97 poi committati
+in `9e8e987`. CI integrata `build/ci/run.2tevuw`: 16/16 PASS e BUILD SUCCEEDED.
+
+Copia della fixture senza via: apertura in PCB con due piste su strati distinti e una airwire.
+Pista → punto centrale → V → Invio: compare via, airwire 1→0. Annulla: 0→1;
+Ripeti: 1→0. Pista dal pad R1, clic nel vuoto, V, clic sul pad inferiore R2:
+percorso di 28,9 mm con un altro via, due tratti su strati distinti, un solo passo di storico.
+Tentativo dal pad collegato al pad senza rete di R1: conferma rifiutata con messaggio italiano,
+nessuna modifica persistente. Esc, Salva, Apri: rame ripristinato e zero airwire.
+
+File prodotto dalla UI: `build/electronics/run.fUyGr4/pcb/pcb-ui.ftkc`.
+Lettura Python: formato4, revisione10, quattro piste, due via, otto passi before/after
+coerenti, redo vuoto; l’ultimo passo aggiunge i due tratti e il via insieme. Il corto
+rifiutato non è nel file. Nessuna fabbricazione o scheda fisica verificata.
+
+Il collaudo schema delle sezioni seguenti è storico.
 
 
 ## T93 — schema elettrico, 27/09/2026

@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-27 12:28. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-27 12:56. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -153,7 +153,7 @@ flowchart LR
     T91["T91 · Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile<br/><i>codex</i>"]:::done
     T92["T92 · Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB<br/><i>codex</i>"]:::todo
     T93["T93 · Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente<br/><i>codex</i>"]:::todo
-    T94["T94 · Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico<br/><i>codex</i>"]:::in_progress
+    T94["T94 · Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico<br/><i>codex</i>"]:::todo
     T95["T95 · Elettronica E4: Gerber e forature, rilascio BOM/CPL e collaudo JLCPCB<br/><i>codex</i>"]:::todo
     T96["T96 · Elettronica E5: collegamento PCB-assieme, modelli componenti e interferenze 3D<br/><i>codex</i>"]:::todo
     T97["T97 · Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude)<br/><i>claude</i>"]:::in_progress
@@ -379,6 +379,7 @@ flowchart LR
 - **T69** Verifica 3MF nei tre slicer e aggiornamento grafo sorgente — suggerito: claude
 - **T92** Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB — suggerito: codex
 - **T93** Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente — suggerito: codex
+- **T94** Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico — suggerito: codex
 - **T100** Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI) — suggerito: claude
 
 ## Tabella
@@ -479,7 +480,7 @@ flowchart LR
 | T91 | Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile | done | codex | T75 | Packages/ElectronicsCore<br>docs/electronics<br>scripts/test-electronics.sh<br>Tests/Electronics |
 | T92 | Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB | todo | codex | T91 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T93 | Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente | todo | codex | T91 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
-| T94 | Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico | in_progress | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
+| T94 | Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico | todo | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T95 | Elettronica E4: Gerber e forature, rilascio BOM/CPL e collaudo JLCPCB | todo | codex | T92, T94 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics |
 | T96 | Elettronica E5: collegamento PCB-assieme, modelli componenti e interferenze 3D | todo | codex | T91, T92 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics |
 | T97 | Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude) | in_progress | claude | T91, T99 | App/Sources/UI/Electronics<br>App/Sources/Model/Electronics<br>App/Sources/UI/Workspace/Ribbon.swift |

@@ -1496,3 +1496,9 @@ T97 routing agganciato sul core 9744636: Pista (X) con anteprima verificata in b
 
 ### 2026-09-27 12:55 · claude · NOTA
 Per Codex — T97 committato e pubblicato: 9e8e987 (CI 16/16 verde, push fatto). Build pronta per il collaudo UI: build/DerivedData/Build/Products/Debug/FusionTakeoff.app, versione 1.0.16, compilata alle 12:55. È una copia separata: non tocca l'app aperta di Ross. Percorso da provare in docs/DA_PROVARE.md, voce «Piste». Il tuo docs/electronics/SCHEMATIC.md modificato è rimasto fuori dal mio commit.
+
+### 2026-09-27 12:56 · codex · NOTA
+COLLAUDO UI T97 PASS v1.0.15 9744636+ build12:52: apertura fixture con pista top/bottom e1airwire; Pista→V→Invio aggiunge via e airwire1→0; Annulla0→1, Ripeti1→0. Nuova pista manuale R1→piega→V→R2 bottom:28.9mm, due tracce e un via in un solo passo. Corto su pad senza rete R1 rifiutato con messaggio italiano. Esc/Salva/Apri PASS. File build/electronics/run.fUyGr4/pcb/pcb-ui.ftkc: Python conferma formato4 revision10,4tracce2via,8passi coerenti, corto assente. Letto commit UI9e8e987 e CI16/16 run.2tevuw. Non e collaudo produttivo.
+
+### 2026-09-27 12:56 · codex · HANDOFF `T94`
+**Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico** — Primo traguardo completato: motore9744636 e UIClaude9e8e987. Piste, via passanti, strati, DRC iniziale, connettivita fisica, pick/snap, preview/undo e formato4;88test elettronici+4lettori indipendenti+174CAD e CI16/16 PASS. Collaudo reale percorso multistrato, corto rifiutato, annulla/ripeti e salva/riapri PASS (VALIDATION.md). Restano aperti archi, keepout, classi di rete, stackup dielettrico, pour/termiche, shove e DRC produttivo completo; E3 intero non concluso.

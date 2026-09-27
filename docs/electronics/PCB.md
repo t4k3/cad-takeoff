@@ -1,6 +1,6 @@
 # PCB nativo — contratto T94
 
-Stato: primo traguardo del motore collaudato automaticamente (88 test totali e quattro lettori indipendenti). Integrazione e collaudo UI T97 separati. Il motore non dipende da librerie esterne.
+Stato: primo traguardo del motore collaudato automaticamente (88 test totali e quattro lettori indipendenti). Integrazione T97 di Claude e collaudo UI reale completati per piste, via, corto rifiutato e storico: [VALIDATION.md](VALIDATION.md). Il motore non dipende da librerie esterne.
 
 ## Dati e transazioni
 
