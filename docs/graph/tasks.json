@@ -1829,10 +1829,11 @@
       ],
       "suggested": "codex",
       "owner": null,
-      "started": "2026-09-27 12:59",
+      "started": "2026-09-27 13:43",
       "notes": [
         "2026-09-27 12:56 codex: Primo traguardo completato: motore9744636 e UIClaude9e8e987. Piste, via passanti, strati, DRC iniziale, connettivita fisica, pick/snap, preview/undo e formato4;88test elettronici+4lettori indipendenti+174CAD e CI16/16 PASS. Collaudo reale percorso multistrato, corto rifiutato, annulla/ripeti e salva/riapri PASS (VALIDATION.md). Restano aperti archi, keepout, classi di rete, stackup dielettrico, pour/termiche, shove e DRC produttivo completo; E3 intero non concluso.",
-        "2026-09-27 13:35 codex: Secondo traguardo classi/keepout completato: core da1f641+873c78d, UI Claude b2b65d5;107 test elettronici,4 lettori,177 CAD e CI16/16 PASS. Collaudo app classi/preview/DRC/rifiuto rame/drag/undo/persistenza PASS;13 passi storico verificati nel file UI. Due difetti app (stato e riferimento pannello file) consegnati a Claude; vedi VALIDATION.md. Restano archi, stackup dielettrico, pour/termiche, shove e DRC completo. T94 intero non concluso."
+        "2026-09-27 13:35 codex: Secondo traguardo classi/keepout completato: core da1f641+873c78d, UI Claude b2b65d5;107 test elettronici,4 lettori,177 CAD e CI16/16 PASS. Collaudo app classi/preview/DRC/rifiuto rame/drag/undo/persistenza PASS;13 passi storico verificati nel file UI. Due difetti app (stato e riferimento pannello file) consegnati a Claude; vedi VALIDATION.md. Restano archi, stackup dielettrico, pour/termiche, shove e DRC completo. T94 intero non concluso.",
+        "2026-09-27 13:44 codex: Classi e aree vietate: secondo traguardo core+UI collaudato. Ultima build provata1.0.26/64f2973; status corretto, Salva->Apri immediato PASS con selezione verificata. Rettificata diagnosi I/O: automazione selezionava JSON diverso, nessuna corruzione del circuito. File UI originale revision19, copia finale23;13 passi persistiti. CI run.6kTf89 16/16 PASS;107 test elettronici,4 lettori,177 CAD. Restano archi, pour/termiche, stackup dielettrico, shove e DRC completo; nessuna qualificazione produttiva."
       ]
     },
     {

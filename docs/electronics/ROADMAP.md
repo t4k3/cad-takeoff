@@ -71,7 +71,8 @@ lettura 1–5 e storico; classi conservate dopo separazione delle reti automatic
 107 test motore, quattro lettori indipendenti e 177 CAD PASS. Contratto [PCB_RULES.md](PCB_RULES.md).
 Claude ha integrato T97: Classi e Area vietata nella scheda PCB. Collaudo a schermo di
 assegnazione, modifica, anteprima, rifiuto del rame vietato, spostamento, annulla/ripeti
-e persistenza registrato separatamente in [VALIDATION.md](VALIDATION.md), insieme ai
-difetti di stato e pannello file consegnati a Claude.
+e persistenza registrato separatamente in [VALIDATION.md](VALIDATION.md). Il difetto
+del messaggio di stato è corretto e verificato nella v1.0.26; la prima diagnosi sul
+pannello file è stata rettificata dopo aver isolato una selezione errata nell'automazione.
 Restano T94 avanzato (archi, stackup dielettrico, pour/termiche, shove, DRC completo)
 e T95 per fabbricazione. Nessuna qualificazione produttiva.

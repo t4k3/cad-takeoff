@@ -52,12 +52,21 @@ before/after coerente, due piste e un via originali, classe assegnata a SIGNAL e
 sola area spostata a y=15…18,25 mm; minimo negativo e pista rifiutata assenti da ogni
 stato persistito. Decode del file tramite la libreria Swift compilata PASS.
 
-Due difetti del ponte app consegnati a Claude per correzione: il precedente messaggio
-di errore rimaneva dopo una modifica riuscita; NSOpenPanel ha restituito una volta
-un riferimento al file non più risolvibile dopo salvataggio atomico (URL AX
-`com-apple-unresolvable-file-reference-url:`). Apertura dello stesso file con
-Cmd⇧G e percorso completo riuscita, con classe e storico integri. Non è stata osservata
-corruzione dei dati; la correzione del pannello va verificata su una nuova build.
+Difetto confermato e corretto da Claude in `64f2973`: il precedente messaggio di errore
+rimaneva dopo una modifica riuscita. Prova mirata sulla **v1.0.26 / 64f2973**, compilata
+alle 13:38: pista nell'area rifiutata, Esc, trascina l'area fuori dal rame; lo stato diventa
+«Sposta area vietata» e il DRC torna a zero errori. CI `build/ci/run.6kTf89`:
+**16/16 PASS**, inclusi nuovi test del messaggio e del file mancante, BUILD SUCCEEDED.
+
+**Rettifica della prima diagnosi sul pannello Apri:** un clic automatizzato CUA richiesto
+sul nome del circuito selezionava invece `rule-preview-keepout.json`; l'errore «missing»
+non dimostrava un difetto di riapertura del circuito. La selezione è stata isolata e
+controllata prima di Open. Salva → Apri immediato, prima riga scelta con la tastiera:
+**PASS**, «Aperto rules-ui-io» e dati integri. Anche un URL esposto da AX come
+`com-apple-unresolvable-file-reference-url:` non ha impedito questa apertura e da solo
+non prova un errore I/O. La conversione al percorso e il messaggio italiano per file
+mancante aggiunti da Claude restano un irrobustimento; non una corruzione riprodotta.
+La prova finale usa una copia `rules-ui-io.ftkc`, lasciando intatta `rules-ui.ftkc`.
 
 ## 27/09/2026 — T94: motore del rame e DRC iniziale
 
