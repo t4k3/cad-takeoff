@@ -26,6 +26,10 @@ enum SketchCommands {
             if case let .index(i)? = f.first(where: { $0.id == "op" })?.value { return BooleanOperation.allCases[i] }
             return .newBody
         }
+        func symmetric(_ f: [CommandField]) -> Bool {
+            if case .index(1)? = f.first(where: { $0.id == "extent" })?.value { return true }
+            return false
+        }
         func reversed(_ f: [CommandField]) -> Bool {
             if case let .index(i)? = f.first(where: { $0.id == "dir" })?.value { return onFace && i == 1 }
             return false
@@ -53,6 +57,8 @@ enum SketchCommands {
         workspace.viewRequest = .home
         func finish() {
             sketch.previewHeight = nil
+            sketch.previewSymmetric = false
+            sketch.previewTaper = 0
             sketch.pickingRegions = false
             sketch.selectedSeeds = []
             sketch.onRegionsChange = {}
@@ -65,6 +71,10 @@ enum SketchCommands {
                      .init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
                            help: (onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z") + " · anche un'espressione dei Parametri",
                            acceptsExpression: true),
+                     .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica"]), value: .index(0),
+                           help: "Simmetrica: metà distanza da ogni parte del piano dello schizzo"),
+                     .init(id: "taper", label: "Sformo", kind: .angle(-60...60), value: .number(0),
+                           help: "Angolo delle pareti: positivo le stringe allontanandosi dallo schizzo (sformo per stampi), negativo le allarga"),
                      .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
                            help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca"),
                      .init(id: "dir", label: "Direzione", kind: .choice(["Fuori dalla faccia", "Dentro il pezzo"]), value: .index(0),
@@ -79,6 +89,8 @@ enum SketchCommands {
                 }
                 lastOp = op
                 sketch.previewHeight = f.first { $0.id == "h" }?.number
+                sketch.previewSymmetric = symmetric(f)
+                sketch.previewTaper = f.first { $0.id == "taper" }?.number ?? 0
                 sketch.previewIsCut = op == .cut
                 sketch.previewReversed = reversed(f)
                 // Drag arrow on the profile, along the extrusion.
@@ -103,6 +115,8 @@ enum SketchCommands {
                                           kind: .extrude(profile: Profile2D(points: area.outline), height: height), operation: op, placement: placement,
                                           holes: area.holes.map { Profile2D(points: $0) })
                     if let heightExpression { feature.expressions["height"] = heightExpression }
+                    feature.symmetric = symmetric(f)
+                    feature.taper = f.first { $0.id == "taper" }?.number ?? 0
                     do {
                         try CADToolValidation.feature(feature)
                     } catch {

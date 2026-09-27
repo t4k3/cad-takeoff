@@ -138,6 +138,9 @@ final class SketchSession {
     var previewIsCut = false
     /// Preview extruded into the part (against the plane's normal).
     var previewReversed = false
+    /// Extrusion preview: across the plane (Simmetrica) and with a draft (degrees).
+    var previewSymmetric = false
+    var previewTaper = 0.0
     /// Snap radius in mm (~8 screen points), set by the viewport from the camera scale.
     var vertexSnap = 1.0
     /// While the Extrude panel is open, clicks pick areas (regions) instead of drawing, as with
@@ -593,9 +596,19 @@ final class SketchSession {
         if pickingRegions, let h0 = previewHeight, h0 > 0 {
             let h = previewReversed ? -h0 : h0
             let pc = previewIsCut ? SIMD4<Float>(0.95, 0.25, 0.25, 0.9) : previewColor
+            let base = previewSymmetric ? -h / 2 : 0
+            let inset = h0 * tan(previewTaper * .pi / 180)
+            func moved(_ loop: [Vec2], _ d: Double) -> [Vec2] {
+                guard d != 0, loop.count >= 3 else { return loop }
+                var twice = 0.0
+                for i in loop.indices { let a = loop[i], b = loop[(i + 1) % loop.count]; twice += a.x * b.y - b.x * a.y }
+                return Sketch.offsetPolyline(loop, closed: true, left: twice > 0 ? d : -d)
+            }
             for area in pickedAreas {
-                for loop in [area.outline] + area.holes {
-                    ring(loop, closed: true, pc, z: h)
+                for (k, loop) in ([area.outline] + area.holes).enumerated() {
+                    let topLoop = moved(loop, k == 0 ? inset : -inset)
+                    ring(topLoop, closed: true, pc, z: base + h)
+                    if base != 0 { ring(loop, closed: true, pc, z: base) }
                     // Side lines at real corners only (not along the facets of a circle or an arc),
                     // plus a few on smooth loops so they read as walls.
                     let n = loop.count
@@ -607,7 +620,7 @@ final class SketchSession {
                         if turn > 0.35 { sides.append(i) }
                     }
                     if sides.isEmpty { sides = [0, n / 4, n / 2, 3 * n / 4] }
-                    for i in sides where i < n { out.append((w(loop[i]), w(loop[i], h), pc)) }
+                    for i in sides where i < n { out.append((w(loop[i], base), w(topLoop[min(i, topLoop.count - 1)], base + h), pc)) }
                 }
             }
         }

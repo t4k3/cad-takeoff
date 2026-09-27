@@ -4,7 +4,12 @@ import Foundation
 /// XY profile extrusions. Does not infer topology by comparing triangle normals.
 public enum PrimitiveKernel {
     public static func build(_ feature: Feature, cylinderSegments: Int = 64) throws -> BRepBody {
-        guard let placement = feature.placement else { return try buildLocal(feature, cylinderSegments: cylinderSegments) }
+        guard let placement = feature.placement else {
+            guard feature.symmetric, case let .extrude(_, h) = feature.kind else { return try buildLocal(feature, cylinderSegments: cylinderSegments) }
+            var centred = feature
+            centred.position.z -= h / 2
+            return try buildLocal(centred, cylinderSegments: cylinderSegments)
+        }
         // Built at the origin in the plane's frame, then carried onto the plane (and position).
         var local = feature
         local.placement = nil
@@ -14,7 +19,8 @@ public enum PrimitiveKernel {
         case let .box(_, _, h), let .cylinder(_, h), let .extrude(_, h): h
         default: 0
         }
-        return try body.placed(on: placement.plane, depthOffset: placement.reversed ? -height : 0, translation: feature.position)
+        let offset = feature.symmetric ? -height / 2 : (placement.reversed ? -height : 0)
+        return try body.placed(on: placement.plane, depthOffset: offset, translation: feature.position)
     }
 
     /// An extrusion with holes: the outline's solid minus a prism per hole, 1 mm past both ends.
@@ -29,15 +35,22 @@ public enum PrimitiveKernel {
             var bytes = feature.id.uuid
             bytes.15 ^= UInt8(truncatingIfNeeded: k + 1); bytes.14 ^= 0xA5
             tool.id = UUID(uuid: bytes)
-            tool.kind = .extrude(profile: hole, height: height + 2)
+            // With a draft the hole widens as the outline narrows: 1 mm below the base it is
+            // tan(angle) smaller, and it opens the other way.
+            let slope = tan(feature.taper * .pi / 180)
+            let start = slope == 0 ? hole : Profile2D(points: Sketch.offsetPolyline(hole.points, closed: true, left: slope))
+            tool.kind = .extrude(profile: start, height: height + 2)
+            tool.taper = -feature.taper
+            tool.symmetric = false
+            let base = feature.symmetric ? -height / 2 : 0
             let body: BRepBody
             if let placement = feature.placement {
                 var local = tool
                 local.placement = nil; local.position = Vec3(0, 0, -1)
                 body = try buildLocal(local, cylinderSegments: 64)
-                    .placed(on: placement.plane, depthOffset: placement.reversed ? -height : 0, translation: feature.position)
+                    .placed(on: placement.plane, depthOffset: feature.symmetric ? base : (placement.reversed ? -height : 0), translation: feature.position)
             } else {
-                tool.position = feature.position - Vec3(0, 0, 1)
+                tool.position = feature.position - Vec3(0, 0, 1 - base)
                 body = try buildLocal(tool, cylinderSegments: 64)
             }
             solid = solid.subtracting(CSGSolid(body.snapshot(revision: revision)))
@@ -124,8 +137,26 @@ public enum PrimitiveKernel {
         }
         func faceID(_ role: String) -> FaceID { FaceID(rawValue: prefix + role) }
         func edgeID(_ role: String) -> EdgeID { EdgeID(rawValue: prefix + role) }
+        // Draft: the top outline is the bottom one moved in (positive angle) by h·tan(angle).
+        let inset = family == "extrude" ? height * tan(feature.taper * .pi / 180) : 0
+        var top = onArcs
+        var topTriangles = capTriangles
+        if inset != 0 {
+            guard abs(feature.taper) < 89 else { throw KernelError.invalidParameter("sformo tra -89° e 89°") }
+            top = Sketch.offsetPolyline(onArcs, closed: true, left: inset)
+            // Every side keeps its direction and the outline its turn: otherwise the draft is too steep.
+            let flipped = (0..<n).contains { i in
+                let a = onArcs[(i + 1) % n] - onArcs[i], b = top[(i + 1) % n] - top[i]
+                return a.dot(b) <= 0
+            }
+            guard !flipped, Profile2D.signedArea(top) > 1e-9 else {
+                throw KernelError.invalidParameter("sformo troppo forte per questo profilo e questa altezza")
+            }
+            topTriangles = Profile2D(points: top).triangulate()
+            guard topTriangles.count == n - 2 else { throw KernelError.invalidProfile("triangolazione incompleta") }
+        }
         let positions = onArcs.map { Vec3($0.x, $0.y, 0) + feature.position }
-            + onArcs.map { Vec3($0.x, $0.y, height) + feature.position }
+            + top.map { Vec3($0.x, $0.y, height) + feature.position }
         let vertices = positions.enumerated().map { i, p in
             BRepVertex(id: VertexID(rawValue: prefix + profileKey + "/\(i < n ? "bottom" : "top")/vertex/\(i % n)"), position: p)
         }
@@ -138,7 +169,7 @@ public enum PrimitiveKernel {
         ]
         var triangles: [[UInt32]] = [
             capTriangles.flatMap { [UInt32($0.0), UInt32($0.2), UInt32($0.1)] },
-            capTriangles.flatMap { [UInt32($0.0 + n), UInt32($0.1 + n), UInt32($0.2 + n)] }
+            topTriangles.flatMap { [UInt32($0.0 + n), UInt32($0.1 + n), UInt32($0.2 + n)] }
         ]
         for i in 0..<n {
             let j = (i + 1) % n
@@ -151,8 +182,18 @@ public enum PrimitiveKernel {
                 surfaces.append(.cylinder(axisOrigin: feature.position, axisDirection: Vec3(0, 0, 1), radius: radius))
             } else if let arc = arcs[i] {
                 selectionIDs.append(faceID(profileKey + "/arc/\(arc.index)/wall"))
-                surfaces.append(.cylinder(axisOrigin: Vec3(arc.center.x, arc.center.y, 0) + feature.position,
-                                          axisDirection: Vec3(0, 0, 1), radius: arc.radius))
+                let axis = Vec3(arc.center.x, arc.center.y, 0) + feature.position
+                if inset == 0 {
+                    surfaces.append(.cylinder(axisOrigin: axis, axisDirection: Vec3(0, 0, 1), radius: arc.radius))
+                } else {
+                    // A drafted arc wall is a cone; its apex where the radius runs out. Inside an
+                    // arc bending the other way (a concave corner) the radius grows instead.
+                    let convexArc = (arc.center - onArcs[i]).dot(Vec2(-(onArcs[j] - onArcs[i]).y, (onArcs[j] - onArcs[i]).x)) > 0
+                    let shrink = convexArc ? inset : -inset
+                    let apexZ = arc.radius * height / shrink
+                    surfaces.append(.cone(apex: axis + Vec3(0, 0, apexZ), axisDirection: Vec3(0, 0, apexZ > 0 ? -1 : 1),
+                                          halfAngle: abs(feature.taper) * .pi / 180))
+                }
             } else {
                 selectionIDs.append(sideID)
                 surfaces.append(.plane(origin: positions[i], normal: normal))

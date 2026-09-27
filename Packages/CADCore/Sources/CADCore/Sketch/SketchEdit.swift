@@ -537,7 +537,7 @@ extension Sketch {
 
     /// A polyline moved sideways by `left` (negative: to the right of its direction); the corners
     /// are where the moved sides meet.
-    static func offsetPolyline(_ p: [Vec2], closed: Bool, left δ: Double) -> [Vec2] {
+    public static func offsetPolyline(_ p: [Vec2], closed: Bool, left δ: Double) -> [Vec2] {
         let n = p.count
         let segs = closed ? n : n - 1
         guard segs >= 1 else { return p }

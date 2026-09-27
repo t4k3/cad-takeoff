@@ -40,6 +40,8 @@ public enum PressPull {
         if parts.count >= 3, let id = UUID(uuidString: parts[0]), ["extrude", "box", "cylinder"].contains(parts[1]),
            ["top", "bottom"].contains(parts.last!),
            let feature = document.features.first(where: { $0.id == id }), height(of: feature) != nil,
+           // Symmetric or drafted: changing the height would move the other cap or the walls too.
+           !feature.symmetric, feature.taper == 0,
            let shift = capShift(feature, face: face, normal: frame.normal) {
             return .height(featureID: id, normal: frame.normal, shift: shift)
         }

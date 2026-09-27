@@ -242,6 +242,10 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public var holes: [Profile2D]
     /// Sizes driven by parameter expressions, by key ("height" → "spessore * 2").
     public var expressions: [String: String] = [:]
+    /// Extrusions: half the height each side of the sketch plane (Fusion's «Simmetrica»).
+    public var symmetric = false
+    /// Extrusions: draft angle of the sides in degrees; positive narrows away from the sketch.
+    public var taper = 0.0
 
     public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true,
                 color: PartColor = .defaultColor, operation: BooleanOperation = .newBody, placement: FeaturePlacement? = nil,
@@ -250,7 +254,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         self.color = color; self.operation = operation; self.placement = placement; self.holes = holes
     }
 
-    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes, expressions }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes, expressions, symmetric, taper }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -265,6 +269,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         placement = try c.decodeIfPresent(FeaturePlacement.self, forKey: .placement)
         holes = try c.decodeIfPresent([Profile2D].self, forKey: .holes) ?? []
         expressions = try c.decodeIfPresent([String: String].self, forKey: .expressions) ?? [:]
+        symmetric = try c.decodeIfPresent(Bool.self, forKey: .symmetric) ?? false
+        taper = try c.decodeIfPresent(Double.self, forKey: .taper) ?? 0
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -275,6 +281,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         try c.encodeIfPresent(placement, forKey: .placement)
         if !holes.isEmpty { try c.encode(holes, forKey: .holes) }
         if !expressions.isEmpty { try c.encode(expressions, forKey: .expressions) }
+        if symmetric { try c.encode(symmetric, forKey: .symmetric) }
+        if taper != 0 { try c.encode(taper, forKey: .taper) }
     }
 
     public func buildMesh() -> Mesh {
@@ -282,7 +290,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
             return (try? Revolve.build(spec, holes: holes, featureID: id, position: position))?.triangulated().mesh ?? Mesh()
         }
         if !holes.isEmpty { return (try? PrimitiveKernel.solidWithHoles(self))?.triangulated().mesh ?? Mesh() }
-        if placement != nil, let brep = try? PrimitiveKernel.build(self) { return brep.mesh }
+        if placement != nil || symmetric || taper != 0, let brep = try? PrimitiveKernel.build(self) { return brep.mesh }
         let local: Mesh
         switch kind {
         case let .box(w, d, h): local = Primitives.box(width: w, depth: d, height: h)
