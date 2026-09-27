@@ -155,10 +155,11 @@ extension CircuitModel {
         return s.pickZones(point: p, tolerance: tolerance, layer: activeLayer).first ?? s.pickZones(point: p, tolerance: tolerance).first
     }
 
+    /// At the revision the change was checked on, when given.
     @discardableResult
-    func updateZone(_ z: PCBZone) async -> Bool {
+    func updateZone(_ z: PCBZone, expectedRevision: UInt64? = nil) async -> Bool {
         guard zone(z.id) != z else { return true }
-        return await runPCB(.updateZone(z))
+        return await runPCB(.updateZone(z), expectedRevision: expectedRevision)
     }
 
     func moveZone(_ id: UUID, by offset: PCBPoint) async {
