@@ -2,7 +2,8 @@
 
 Questa seconda tranche estende [PCB.md](PCB.md). API compilanti e 107 test del motore
 verdi, inclusi 19 nuovi casi sulle regole. Lettore Python indipendente e fixture
-esportata verificati; integrazione UI in corso.
+esportata verificati. Integrazione T97 di Claude e collaudo nell'app completati per
+classi, anteprima, aree, blocco del rame vietato e storico: [VALIDATION.md](VALIDATION.md).
 
 ## Classi
 

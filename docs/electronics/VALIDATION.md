@@ -22,9 +22,42 @@
   rettangoli distribuiti, non garanzia su ogni progetto. Snapshot/preview restano
   cancellabili in background; la risoluzione completa delle regole non va fatta a ogni hover.
 
-Integrazione UI T97 in corso, da registrare dopo prova nell'app. Contratto e limiti in
+Contratto e limiti in
 [PCB_RULES.md](PCB_RULES.md): nessun piano di rame, Gerber, collaudo del produttore o
 scheda fisica. Le prove PCB precedenti sotto restano riferite alle rispettive build.
+
+### Collaudo UI T97 del 27/09, ore 13:27–13:36
+
+Core nei commit `da1f641` e `873c78d`; UI di Claude in `b2b65d5`. Prova effettiva sulla
+copia separata dell'app v1.0.21, indicazione `873c78d+`, compilata alle 13:26 con gli
+ultimi sorgenti UI prima del commit. CI integrata finale `build/ci/run.7hhAmx`: 16/16
+PASS, `08-app.log` con BUILD SUCCEEDED; la build 1.0.23 successiva non era quella aperta
+durante questa prova.
+
+- Classe «Potenza», assegnazione di SIGNAL prima della modifica: Applica conserva la
+  rete. Minimo 0,5 mm segnala le due piste esistenti da 0,25 mm; il rame resta invariato.
+- Minimo −1, Chiudi → Applica: rifiuto con pannello e draft conservati. Correzione a
+  0,2 mm accettata; preferenze pista 0,5 mm, via 0,8 mm e foro 0,4 mm usate dal router.
+- Area rettangolare sul rame sopra: anteprima stabile e un conflitto già prima di
+  confermare; conferma, Annulla e Ripeti producono rispettivamente uno, zero e un errore.
+- Nuova pista nell'area: anteprima rossa e conferma rifiutata. Esc non lascia rame.
+  Trascinamento dell'area fuori dalla pista: errore eliminato; un singolo Annulla lo
+  ripristina, Ripeti lo elimina.
+- Salvataggio e riapertura: classe, assegnazione, dimensioni, area e storico presenti.
+  Annulla/Ripeti dopo riapertura cambia ancora il DRC correttamente.
+
+Artefatto UI: `build/electronics/run.7d8g5T/pcb/rules-ui.ftkc`. Verifica indipendente
+Python: formato5, revisione19 dopo l'ultima coppia undo/redo, 13 passi con catena
+before/after coerente, due piste e un via originali, classe assegnata a SIGNAL e una
+sola area spostata a y=15…18,25 mm; minimo negativo e pista rifiutata assenti da ogni
+stato persistito. Decode del file tramite la libreria Swift compilata PASS.
+
+Due difetti del ponte app consegnati a Claude per correzione: il precedente messaggio
+di errore rimaneva dopo una modifica riuscita; NSOpenPanel ha restituito una volta
+un riferimento al file non più risolvibile dopo salvataggio atomico (URL AX
+`com-apple-unresolvable-file-reference-url:`). Apertura dello stesso file con
+Cmd⇧G e percorso completo riuscita, con classe e storico integri. Non è stata osservata
+corruzione dei dati; la correzione del pannello va verificata su una nuova build.
 
 ## 27/09/2026 — T94: motore del rame e DRC iniziale
 

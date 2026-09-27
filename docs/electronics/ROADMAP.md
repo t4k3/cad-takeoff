@@ -69,6 +69,9 @@ per strato/tipo con contorno concavo, primitive e pick/snap indicizzati. Regole 
 senza alterare il rame esistente, nuovi tratti non conformi rifiutati. Documento v5 con
 lettura 1–5 e storico; classi conservate dopo separazione delle reti automatiche.
 107 test motore, quattro lettori indipendenti e 177 CAD PASS. Contratto [PCB_RULES.md](PCB_RULES.md).
-Claude integra T97; il collaudo visivo è registrato separatamente in VALIDATION.md.
+Claude ha integrato T97: Classi e Area vietata nella scheda PCB. Collaudo a schermo di
+assegnazione, modifica, anteprima, rifiuto del rame vietato, spostamento, annulla/ripeti
+e persistenza registrato separatamente in [VALIDATION.md](VALIDATION.md), insieme ai
+difetti di stato e pannello file consegnati a Claude.
 Restano T94 avanzato (archi, stackup dielettrico, pour/termiche, shove, DRC completo)
 e T95 per fabbricazione. Nessuna qualificazione produttiva.

@@ -2,7 +2,7 @@
 
 Stato: primo traguardo del motore collaudato automaticamente (88 test totali e quattro lettori indipendenti). Integrazione T97 di Claude e collaudo UI reale completati per piste, via, corto rifiutato e storico: [VALIDATION.md](VALIDATION.md). Il motore non dipende da librerie esterne.
 
-Secondo traguardo (107 test motore e lettore indipendente PASS; integrazione UI in corso): [classi di rete e aree vietate](PCB_RULES.md).
+Secondo traguardo (107 test motore e lettore indipendente PASS, integrazione UI e prova reale di classi/aree/storico): [classi di rete e aree vietate](PCB_RULES.md).
 
 ## Dati e transazioni
 
