@@ -41,3 +41,24 @@ private func topFace(_ snap: BodySnapshot) -> FaceID {
     let doc = CADDocument(features: [cyl, shell])
     #expect(try CADDocument.decode(doc.encoded()) == doc)
 }
+
+/// The usual enclosure: a box rounded on every edge, then hollowed with the top open; and it
+/// keeps working when the box changes size afterwards.
+@Test func roundedBoxShellsAndFollowsItsSize() throws {
+    for width in [40.0, 60.0, 25.0] {
+        let box = Feature(name: "B", kind: .box(width: width, depth: 30, height: 20))
+        let snap = DesignEvaluator.evaluate(CADDocument(features: [Feature(name: "B", kind: .box(width: 40, depth: 30, height: 20))]), revision: "a").bodies[0].snapshot
+        _ = snap
+        let base = DesignEvaluator.evaluate(CADDocument(features: [box]), revision: "b\(width)").bodies[0].snapshot
+        let round = Feature(name: "R", kind: .chamfer(ChamferSpec(edges: base.edges.filter(\.isSharp).compactMap(EdgeRef.init), profile: .round, distance: 3)))
+        let rounded = DesignEvaluator.evaluate(CADDocument(features: [box, round]), revision: "r\(width)").bodies[0]
+        let top = rounded.snapshot.faces.first { if case let .plane(_, n) = $0.surface { n.z > 0.99 } else { false } }!.id
+        let shell = Feature(name: "G", kind: .shell(ShellSpec(body: box.id, thickness: 2, openFaces: [top])))
+        let r = DesignEvaluator.evaluate(CADDocument(features: [box, round, shell]), revision: "s\(width)")
+        #expect(r.issues.isEmpty, "\(r.issues.map(\.message))")
+        let m = r.bodies[0].mesh
+        #expect(MeshValidator.validate(m).isWatertight)
+        // Walls about 2 mm: far less than the solid, more than a paper-thin skin.
+        #expect(m.volume < rounded.mesh.volume * 0.6 && m.volume > rounded.mesh.volume * 0.1)
+    }
+}

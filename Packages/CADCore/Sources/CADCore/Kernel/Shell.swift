@@ -49,7 +49,10 @@ enum ShellGeometry {
             let u = n * (1 / l)
             normals.append(u)
             let face = snapshot.faces[Int(snapshot.triangleFace[f])].id
-            let d = u.dot(a) + (open.contains(face) ? margin : -t)
+            // Every face in by the thickness (a closed cavity: robust where faces meet tangentially,
+            // as rounds do); the open faces are cut through afterwards.
+            _ = face
+            let d = u.dot(a) - t
             for v in [tri[f * 3], tri[f * 3 + 1], tri[f * 3 + 2]] where !planes[v].contains(where: { $0.0.dot(u) > 1 - 1e-9 }) {
                 planes[v].append((u, d))
             }
@@ -72,7 +75,7 @@ enum ShellGeometry {
         let faces = snapshot.faces.map { f -> CSGFace in
             let s: SurfaceDescriptor
             switch f.surface {
-            case let .plane(o, n): s = .plane(origin: o - n.normalized * (open.contains(f.id) ? -margin : t), normal: n)
+            case let .plane(o, n): s = .plane(origin: o - n.normalized * t, normal: n)
             case let .cylinder(o, d, r): s = r > t ? .cylinder(axisOrigin: o, axisDirection: d, radius: r - t) : .freeform
             default: s = .freeform
             }
@@ -89,7 +92,57 @@ enum ShellGeometry {
             guard n.length > 1e-12 else { continue }
             polys.append(CSGSolid.Polygon(vertices: v, face: Int(snapshot.triangleFace[f])))
         }
-        return CSGSolid(polygons: polys, faces: faces)
+        let cavity = CSGSolid(polygons: polys, faces: faces)
+        // Walls thicker than the part allows turn the cavity inside out (its volume goes negative)
+        // or leave it bigger than the part.
+        func volume(_ ps: [CSGSolid.Polygon]) -> Double {
+            guard let o = ps.first?.vertices.first else { return 0 }
+            var v = 0.0
+            for p in ps { for k in 1..<(p.vertices.count - 1) { v += (p.vertices[0] - o).dot((p.vertices[k] - o).cross(p.vertices[k + 1] - o)) } }
+            return v / 6
+        }
+        var bodyVolume = 0.0
+        for f in 0..<count where normals[f] != .zero {
+            bodyVolume += points[tri[f * 3]].dot(points[tri[f * 3 + 1]].cross(points[tri[f * 3 + 2]])) / 6
+        }
+        let cavityVolume = volume(polys)
+        guard cavityVolume > 1e-9, cavityVolume < abs(bodyVolume) else {
+            throw KernelError.invalidParameter(String(format: "guscio: spessore %.2f mm troppo grande per questo corpo", t))
+        }
+        guard !open.isEmpty else { return cavity }
+        // The opening: the cavity's open faces pushed out through the wall (t + margin) and a
+        // little into the cavity, as a prism; so the lid is gone and the walls stay whole.
+        var prisms: CSGSolid?
+        for faceIndex in snapshot.faces.indices where open.contains(snapshot.faces[faceIndex].id) {
+            let tris = (0..<count).filter { normals[$0] != .zero && Int(snapshot.triangleFace[$0]) == faceIndex }
+            guard !tris.isEmpty else { continue }
+            var n = Vec3.zero
+            for f in tris { n = n + normals[f] }
+            n = n.normalized
+            let down = -min(0.2, 0.5 * t), up = t + margin
+            var sides: [SIMD2<Int>: Int] = [:]
+            var pp: [CSGSolid.Polygon] = []
+            let capFace = snapshot.faces.count, sideFace = snapshot.faces.count + 1
+            for f in tris {
+                let v = [tri[f * 3], tri[f * 3 + 1], tri[f * 3 + 2]]
+                let bottom = v.map { moved[$0] + n * down }, top = v.map { moved[$0] + n * up }
+                pp.append(CSGSolid.Polygon(vertices: [bottom[0], bottom[2], bottom[1]], face: capFace))
+                pp.append(CSGSolid.Polygon(vertices: top, face: capFace))
+                for k in 0..<3 { sides[SIMD2(v[k], v[(k + 1) % 3]), default: 0] += 1 }
+            }
+            // Walls along the region's outline (edges used once, in the triangles' direction).
+            for (e, _) in sides where sides[SIMD2(e.y, e.x)] == nil {
+                let a = moved[e.x], b = moved[e.y]
+                let quad = [a + n * down, b + n * down, b + n * up, a + n * up]
+                guard (quad[1] - quad[0]).cross(quad[3] - quad[0]).length > 1e-14 else { continue }
+                pp.append(CSGSolid.Polygon(vertices: quad, face: sideFace))
+            }
+            let piece = CSGSolid(polygons: pp, faces: faces + [CSGFace(id: FaceID(rawValue: prefix + "opening/\(faceIndex)"), surface: .plane(origin: moved[tri[tris[0] * 3]] + n * up, normal: n), flipped: false),
+                                                        CSGFace(id: FaceID(rawValue: prefix + "opening/\(faceIndex)/side"), surface: .freeform, flipped: false)])
+            prisms = prisms.map { $0.union(piece) } ?? piece
+        }
+        guard let prisms else { return cavity }
+        return cavity.union(prisms)
     }
 
     /// 3×3 linear solve (Gaussian elimination with pivoting).
