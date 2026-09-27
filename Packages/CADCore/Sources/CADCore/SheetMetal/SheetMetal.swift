@@ -298,6 +298,10 @@ struct SheetLayout: Sendable {
         let edge: SheetEdge; let theta: Double; let straight: Double; let allowance: Double; let up: Bool
         /// Straight part run on past the side's start/end (closed corners).
         var extStart = 0.0, extEnd = 0.0
+        /// The lip at the tip, if any: its bend, straight part, side, and how much shorter than
+        /// the side it is at each end.
+        struct Lip: Sendable { let theta: Double; let straight: Double; let allowance: Double; let inward: Bool; let trimStart: Double; let trimEnd: Double }
+        var lip: Lip?
     }
     let x0: Double, x1: Double, y0: Double, y1: Double
     let r: Double, t: Double
@@ -318,7 +322,7 @@ struct SheetLayout: Sendable {
         if only == nil, abs(axis.z) > 0.999, q.x >= x0 - e, q.x <= x1 + e, q.y >= y0 - e, q.y <= y1 + e, !inSheet || (q.z >= -e && q.z <= t + e) {
             return (Vec2(q.x, q.y), 0)
         }
-        for (k, b) in flanges.enumerated() where only == nil || only == k + 1 {
+        for (k, b) in flanges.enumerated() where only == nil || only == k + 1 || only == 101 + k {
             let (origin, out, along, span): (Vec2, Vec2, Vec2, Double) = switch b.edge {
             case .front: (Vec2(x0, y0), Vec2(0, -1), Vec2(1, 0), x1 - x0)
             case .back: (Vec2(x0, y1), Vec2(0, 1), Vec2(1, 0), x1 - x0)
@@ -339,6 +343,26 @@ struct SheetLayout: Sendable {
             // The flange's normal in world: perpendicular to d in the (out, z) plane.
             let normal = Vec3(out.x * -d.y, out.y * -d.y, d.x)
             let inBend = along2 < e
+            // The lip's straight part (region 101 + k): its mid line in this section.
+            if let lip = b.lip, only == nil || only == 101 + k {
+                let nIn = b.up ? Vec2(-sin(b.theta), cos(b.theta)) : Vec2(-sin(b.theta), -cos(b.theta))
+                func mirror(_ p: Vec2) -> Vec2 { b.up ? p : Vec2(p.x, t - p.y) }
+                let outerTip = mirror(Vec2((r + t) * sin(b.theta), (r + t) * (1 - cos(b.theta)))) + d * b.straight
+                let innerTip = mirror(Vec2(r * sin(b.theta), r + t - r * cos(b.theta))) + d * b.straight
+                let o = lip.inward ? outerTip : innerTip, y = lip.inward ? nIn : nIn * -1
+                let m = o + d * (rm * sin(lip.theta)) + y * (r + t - rm * cos(lip.theta))
+                let d2 = d * cos(lip.theta) + y * sin(lip.theta)
+                let along3 = (u - m.x) * d2.x + (w - m.y) * d2.y
+                let across3 = abs((u - m.x) * -d2.y + (w - m.y) * d2.x)
+                let normal2 = Vec3(out.x * -d2.y, out.y * -d2.y, d2.x)
+                let fits = only != nil || (s >= lip.trimStart - e && s <= span - lip.trimEnd + e && along3 >= -e && along3 <= lip.straight + e
+                                           && (!inSheet || across3 <= t / 2 + e))
+                if fits, abs(normal2.dot(axis)) > 0.999 {
+                    let reach = b.allowance + b.straight + lip.allowance + along3
+                    return (Vec2(origin.x + along.x * s + out.x * reach, origin.y + along.y * s + out.y * reach), 101 + k)
+                }
+                if only != nil { return nil }
+            }
             if only != nil {
                 guard abs(normal.dot(axis)) > 0.999 else { return nil }
                 let reach = b.allowance + along2
@@ -578,9 +602,11 @@ public enum SheetMetalGeometry {
         }
         let flat = SheetFlatPattern(outline: simplified(raw), bends: bends, thickness: t, origin: position)
         let layout = SheetLayout(x0: x0, x1: x1, y0: y0, y1: y1, r: r, t: t, position: position,
-                                 flanges: SheetEdge.allCases.compactMap { e in bent[e].map {
-                                     .init(edge: e, theta: $0.theta, straight: $0.straight, allowance: $0.allowance, up: $0.flange.direction == .up,
-                                           extStart: ext[e]?.start ?? 0, extEnd: ext[e]?.end ?? 0)
+                                 flanges: SheetEdge.allCases.compactMap { e in bent[e].map { b in
+                                     .init(edge: e, theta: b.theta, straight: b.straight, allowance: b.allowance, up: b.flange.direction == .up,
+                                           extStart: ext[e]?.start ?? 0, extEnd: ext[e]?.end ?? 0,
+                                           lip: b.flange.lip.map { l in .init(theta: b.lipTheta, straight: b.lipStraight, allowance: b.lipAllowance, inward: l.inward,
+                                                                             trimStart: lipTrim[e]?.start ?? 0, trimEnd: lipTrim[e]?.end ?? 0) })
                                  } })
         return SheetMetalBuild(rule: rule, folded: solid, flat: flat, warnings: warnings, layout: layout)
     }

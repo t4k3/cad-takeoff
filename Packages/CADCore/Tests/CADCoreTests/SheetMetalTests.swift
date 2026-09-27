@@ -284,3 +284,24 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     #expect(Profile2D(points: flat.outline).area > 0)
     #expect(flat.outline.contains(Vec2(45, 5)) && flat.outline.contains(Vec2(45, -5)))
 }
+
+@Test func holesOnLipsUnfold() throws {
+    // C channel: lips 12 long curling in at the top (z = 30 outside face). A Ø5 hole drilled down
+    // through the front lip, 4 in from the wall's outer face.
+    let lip = SheetLip(length: 12)
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 60, depth: 40,
+                              flanges: [.front: SheetFlange(length: 30, lip: lip), .back: SheetFlange(length: 30, lip: lip)])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID(), folded: false)
+    let hole = HoleSpec(centers: [Vec3(10, -20 + 8, 30)], fit: .manual, diameter: 5)
+    let (flat, skipped) = build.flat(adding: [hole])
+    #expect(skipped == 0 && flat.holes.count == 1)
+    // Along the blank: plate edge, first bend, wall, lip bend, then the lip's straight part from
+    // its tangent (r + t from the wall's outer face) to the hole.
+    let r = build.rule.insideRadius, t = 2.0, a = build.rule.allowance(angleDegrees: 90)
+    let yPlate = -20 + r + t, wall = 30 - 2 * (r + t)
+    let expected = yPlate - a - wall - a - (8 - (r + t))
+    #expect(abs(flat.holes[0].center.y - expected) < 1e-9 && abs(flat.holes[0].center.x - 10) < 1e-9)
+    // A slot cut down through the lip is a cut-out on the lip's strip.
+    let slot = SheetCutout(outline: [Vec3(-20, -15, 40), Vec3(-10, -15, 40), Vec3(-10, -12, 40), Vec3(-20, -12, 40)], axis: Vec3(0, 0, -1))
+    #expect(build.flat(adding: [], cutouts: [slot]).flat.cutouts.count == 1)
+}
