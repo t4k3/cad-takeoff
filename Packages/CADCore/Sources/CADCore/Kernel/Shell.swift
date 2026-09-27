@@ -70,6 +70,34 @@ enum ShellGeometry {
             guard let x = solve3(A, rhs) else { throw KernelError.invalidParameter("guscio: geometria non gestita") }
             moved[v] = Vec3(x[0], x[1], x[2])
         }
+        // Points in the middle of a straight edge (booleans leave them) have only the edge's two
+        // planes: solved alone they keep their place along the edge, and near a corner they end
+        // up beyond the moved corner — the outline crosses itself. Each goes where it was between
+        // the edge's two corners, on the moved edge.
+        func planeKey(_ q: (Vec3, Double)) -> SIMD4<Int64> {
+            SIMD4(Int64((q.0.x * 1e6).rounded()), Int64((q.0.y * 1e6).rounded()), Int64((q.0.z * 1e6).rounded()), Int64((q.1 * 1e5).rounded()))
+        }
+        func pairKey(_ a: SIMD4<Int64>, _ b: SIMD4<Int64>) -> [SIMD4<Int64>] {
+            (a.x, a.y, a.z, a.w) < (b.x, b.y, b.z, b.w) ? [a, b] : [b, a]
+        }
+        var cornersOn: [[SIMD4<Int64>]: [Int]] = [:]
+        for v in points.indices where planes[v].count >= 3 {
+            let keys = planes[v].map(planeKey)
+            for i in keys.indices { for j in (i + 1)..<keys.count { cornersOn[pairKey(keys[i], keys[j]), default: []].append(v) } }
+        }
+        var slid = moved
+        for v in points.indices where planes[v].count == 2 {
+            let (a, b) = (planes[v][0], planes[v][1])
+            let dir = a.0.cross(b.0)
+            guard dir.length > 1e-6, let corners = cornersOn[pairKey(planeKey(a), planeKey(b))] else { continue }
+            let axis = dir.normalized, here = points[v].dot(axis)
+            let below = corners.filter { points[$0].dot(axis) < here - 1e-9 }.max { points[$0].dot(axis) < points[$1].dot(axis) }
+            let above = corners.filter { points[$0].dot(axis) > here + 1e-9 }.min { points[$0].dot(axis) < points[$1].dot(axis) }
+            guard let lo = below, let hi = above else { continue }
+            let s = (here - points[lo].dot(axis)) / (points[hi].dot(axis) - points[lo].dot(axis))
+            slid[v] = moved[lo] + (moved[hi] - moved[lo]) * s
+        }
+        moved = slid
         // Faces of the cavity: the body's, moved in (the subtraction flips them).
         let prefix = featureID.uuidString.lowercased() + "/shell/"
         // Each curved surface moved exactly into the material: towards its axis or centre where
@@ -96,7 +124,26 @@ enum ShellGeometry {
             return CSGFace(id: FaceID(rawValue: prefix + f.id.rawValue), surface: s, flipped: false)
         }
         var polys: [CSGSolid.Polygon] = []
-        for f in 0..<count where normals[f] != .zero {
+        // A flat face is rebuilt from its moved outline (outer loop and holes) when it can be: its
+        // own triangles, moved corner by corner, can turn over where the face meets a hole (a
+        // sliver from a box corner to the rim) although the moved outline is fine. The other
+        // faces keep their triangles, and one turned over means the walls meet inside.
+        var rebuilt = Set<Int>()
+        let faceTris = Dictionary(grouping: (0..<count).filter { normals[$0] != .zero }) { Int(snapshot.triangleFace[$0]) }
+        for (slot, list) in faceTris {
+            guard case let .plane(_, n) = snapshot.faces[slot].surface, list.count > 1 else { continue }
+            let loops = list.map { f in [UInt32(tri[f * 3]), UInt32(tri[f * 3 + 1]), UInt32(tri[f * 3 + 2])] }
+            guard let flat = CoplanarMerge.triangulate(loops, moved, normal: n) else { continue }
+            let merged = flat.map { [moved[Int($0.0)], moved[Int($0.1)], moved[Int($0.2)]] }
+            // The moved outline itself turned (a hole grown past the outer edge): too thick.
+            let signed = merged.reduce(0.0) { $0 + ($1[1] - $1[0]).cross($1[2] - $1[0]).dot(n.normalized) }
+            guard signed > 1e-12 else {
+                throw KernelError.invalidParameter(String(format: "guscio: spessore %.2f mm troppo grande per questo corpo", t))
+            }
+            for v in merged where (v[1] - v[0]).cross(v[2] - v[0]).length > 1e-12 { polys.append(CSGSolid.Polygon(vertices: v, face: slot)) }
+            rebuilt.insert(slot)
+        }
+        for f in 0..<count where normals[f] != .zero && !rebuilt.contains(Int(snapshot.triangleFace[f])) {
             let v = [moved[tri[f * 3]], moved[tri[f * 3 + 1]], moved[tri[f * 3 + 2]]]
             let n = (v[1] - v[0]).cross(v[2] - v[0])
             // A face turned over: the walls meet inside (thickness larger than the part allows).
@@ -127,22 +174,46 @@ enum ShellGeometry {
         // The opening: the cavity's open faces pushed out through the wall (t + margin) and a
         // little into the cavity, as a prism; so the lid is gone and the walls stay whole.
         var prisms: CSGSolid?
-        for faceIndex in snapshot.faces.indices where open.contains(snapshot.faces[faceIndex].id) {
+        let openSlots = snapshot.faces.indices.filter { open.contains(snapshot.faces[$0].id) }
+        // One open face (a box's top): the cavity's own face is replaced by the prism's walls and
+        // lid on the same moved outline — one closed solid, nothing coplanar left for a union to
+        // decide (a hole through the face put walls on the cavity's walls). Several open faces
+        // meeting at an edge: the prisms are joined to the cavity.
+        let single = openSlots.count == 1
+        for faceIndex in openSlots {
             let tris = (0..<count).filter { normals[$0] != .zero && Int(snapshot.triangleFace[$0]) == faceIndex }
             guard !tris.isEmpty else { continue }
             var n = Vec3.zero
             for f in tris { n = n + normals[f] }
             n = n.normalized
-            let down = -min(0.2, 0.5 * t), up = t + margin
+            let down = single ? 0 : -min(0.2, 0.5 * t), up = t + margin
             var sides: [SIMD2<Int>: Int] = [:]
             var pp: [CSGSolid.Polygon] = []
             let capFace = snapshot.faces.count, sideFace = snapshot.faces.count + 1
+            // Booleans leave the face in fragments with T-junctions (a vertex in the middle of a
+            // neighbour's edge): each edge is split at the face's vertices lying on it, so the
+            // inner edges cancel and only the outline makes walls.
+            let faceVertices = Array(Set(tris.flatMap { [tri[$0 * 3], tri[$0 * 3 + 1], tri[$0 * 3 + 2]] }))
+            func pieces(_ a: Int, _ b: Int) -> [Int] {
+                let pa = points[a], ab = points[b] - pa, len2 = ab.dot(ab)
+                guard len2 > 1e-18 else { return [a, b] }
+                var inner: [(Double, Int)] = []
+                for w in faceVertices where w != a && w != b {
+                    let s = (points[w] - pa).dot(ab) / len2
+                    guard s > 1e-9, s < 1 - 1e-9 else { continue }
+                    if (points[w] - (pa + ab * s)).length < 1e-7 { inner.append((s, w)) }
+                }
+                return [a] + inner.sorted { $0.0 < $1.0 }.map(\.1) + [b]
+            }
             for f in tris {
                 let v = [tri[f * 3], tri[f * 3 + 1], tri[f * 3 + 2]]
                 let bottom = v.map { moved[$0] + n * down }, top = v.map { moved[$0] + n * up }
-                pp.append(CSGSolid.Polygon(vertices: [bottom[0], bottom[2], bottom[1]], face: capFace))
+                if !single { pp.append(CSGSolid.Polygon(vertices: [bottom[0], bottom[2], bottom[1]], face: capFace)) }
                 pp.append(CSGSolid.Polygon(vertices: top, face: capFace))
-                for k in 0..<3 { sides[SIMD2(v[k], v[(k + 1) % 3]), default: 0] += 1 }
+                for k in 0..<3 {
+                    let chain = pieces(v[k], v[(k + 1) % 3])
+                    for (a, b) in zip(chain, chain.dropFirst()) { sides[SIMD2(a, b), default: 0] += 1 }
+                }
             }
             // Walls along the region's outline (edges used once, in the triangles' direction).
             for (e, _) in sides where sides[SIMD2(e.y, e.x)] == nil {
@@ -150,6 +221,11 @@ enum ShellGeometry {
                 let quad = [a + n * down, b + n * down, b + n * up, a + n * up]
                 guard (quad[1] - quad[0]).cross(quad[3] - quad[0]).length > 1e-14 else { continue }
                 pp.append(CSGSolid.Polygon(vertices: quad, face: sideFace))
+            }
+            if single {
+                let openFaces = [CSGFace(id: FaceID(rawValue: prefix + "opening/\(faceIndex)"), surface: .plane(origin: moved[tri[tris[0] * 3]] + n * up, normal: n), flipped: false),
+                                 CSGFace(id: FaceID(rawValue: prefix + "opening/\(faceIndex)/side"), surface: .freeform, flipped: false)]
+                return CSGSolid(polygons: polys.filter { $0.face != faceIndex } + pp, faces: faces + openFaces)
             }
             let piece = CSGSolid(polygons: pp, faces: faces + [CSGFace(id: FaceID(rawValue: prefix + "opening/\(faceIndex)"), surface: .plane(origin: moved[tri[tris[0] * 3]] + n * up, normal: n), flipped: false),
                                                         CSGFace(id: FaceID(rawValue: prefix + "opening/\(faceIndex)/side"), surface: .freeform, flipped: false)])

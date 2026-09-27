@@ -103,9 +103,13 @@ risoluzione; STEP tutto esatto per i pezzi di prova del RobotVolley.
 ### Tappa 4 — Raccordi, smussi e gusci sulle superfici vere
 
 **27/09:** il guscio descrive ora esatte le pareti spostate (cilindri, sfere, coni, tori; verso
-l'asse per un albero, lontano per un foro — prima un foro dava r − t). Limite trovato: svuotare un
-pezzo con un **foro passante** fallisce («spessore troppo grande»): gli angoli si calcolano dai
-piani delle faccette, e sul bordo del foro non reggono. È il primo caso da risolvere qui.
+l'asse per un albero, lontano per un foro — prima un foro dava r − t). Svuotare un pezzo con un
+**foro passante** ora riesce: tubo di parete t attorno al foro, dal fondo alla faccia aperta
+(cilindri esatti r e r + t). Tre cause corrette: i punti intermedi degli spigoli dritti (lasciati
+dalle booleane) finivano oltre l'angolo spostato e il contorno si incrociava — ora stanno dove
+erano tra i due angoli dello spigolo; le facce piane si ricostruiscono dal contorno spostato; con
+una sola faccia aperta la cavità prende pareti e tappo dell'apertura sullo stesso contorno (un
+solo solido, niente facce complanari da unire), e le giunzioni a T non fanno più pareti fasulle.
 
 Raccordo a sfera rotolante sulle coppie analitiche (piano–piano, piano–cilindro, cilindro–
 cilindro coassiale), smusso per distanze sulle superfici, guscio per superfici offset.
@@ -127,6 +131,8 @@ senza rivalutare la cronologia.
   facce che si toccano. Per questo restano le booleane di oggi come riserva, caso per caso.
 - Ogni cambiamento di nomi di faccia richiede la migrazione dei disegni salvati: è la prima
   cosa che si prova in ogni tappa.
-- Due errori già visti nella mappa, da correggere lungo la strada: il guscio di un foro riduce
-  il raggio invece di aumentarlo (`Shell.swift:79`); in una rivoluzione un arco centrato
-  sull'asse diventa un toro di raggio nullo invece di una sfera (e STEP lo scarta).
+- Due errori già visti nella mappa, corretti il 27/09: il guscio di un foro riduceva il raggio
+  invece di aumentarlo; in una rivoluzione un arco centrato sull'asse diventava un toro di raggio
+  nullo invece di una sfera. Ora è una sfera esatta, anche in STEP: una sfera intera (senza
+  spigoli) è chiusa da un vertice al polo; OpenCascade legge sfera Ø20 e perno con testa a calotta
+  con i volumi esatti (4188,790 e 8377,580 mm³).

@@ -94,3 +94,36 @@ private func solidMesh(_ spec: RevolveSpec, holes: [Profile2D] = []) throws -> M
     guard case let .revolve(s) = doc.features[0].kind else { Issue.record("no revolve"); return }
     #expect(abs(s.profile.area - 200) < 1e-9 && s.axisStart.x == -2)
 }
+
+@Test func anArcCentredOnTheAxisSweepsASphere() throws {
+    // Half a disc of radius 10 against the axis: a ball, one exact sphere face (not a torus of
+    // radius zero, which STEP readers refuse).
+    let half = Profile2D(points: (0...32).map { k -> Vec2 in
+        let a = -Double.pi / 2 + Double.pi * Double(k) / 32
+        return Vec2(10 * cos(a), 10 * sin(a))
+    })
+    let spec = RevolveSpec(profile: half, axisStart: Vec2(0, -1), axisEnd: Vec2(0, 1))
+    let solid = try Revolve.build(spec, holes: [], featureID: UUID(), position: .zero)
+    let spheres = solid.faces.compactMap { if case let .sphere(_, r) = $0.surface { r } else { nil } }
+    #expect(spheres.count == 1 && abs(spheres[0] - 10) < 1e-9)
+    #expect(!solid.faces.contains { if case .torus = $0.surface { true } else { false } })
+    let m = solid.triangulated().mesh
+    #expect(MeshValidator.validate(m).isWatertight)
+    let ball = Feature(name: "Sfera", kind: .revolve(spec))
+    let step = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [ball])))
+    #expect(step.contains("SPHERICAL_SURFACE") && !step.contains("TOROIDAL_SURFACE"))
+}
+
+@Test func aDomedPinIsExactInSTEP() throws {
+    // Cylinder Ø20 × 20 with a half-sphere cap: the sphere meets the cylinder on an exact circle.
+    let cap = (1...16).map { k -> Vec2 in
+        let a = Double.pi / 2 * Double(k) / 16
+        return Vec2(10 * cos(a), 20 + 10 * sin(a))
+    }
+    let profile = Profile2D(points: [Vec2(0, 0), Vec2(10, 0), Vec2(10, 20)] + cap.dropLast() + [Vec2(0, 30)])
+    let spec = RevolveSpec(profile: profile, axisStart: Vec2(0, 0), axisEnd: Vec2(0, 1))
+    let solid = try Revolve.build(spec, holes: [], featureID: UUID(), position: .zero)
+    #expect(solid.faces.contains { if case .sphere = $0.surface { true } else { false } })
+    let step = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [Feature(name: "Perno", kind: .revolve(spec))])))
+    #expect(step.contains("SPHERICAL_SURFACE") && step.contains("CYLINDRICAL_SURFACE") && !step.contains("TOROIDAL_SURFACE"))
+}

@@ -73,3 +73,24 @@ private func topFace(_ snap: BodySnapshot) -> FaceID {
     let radii = body.snapshot.faces.compactMap { f -> Double? in if case let .cylinder(_, _, r) = f.surface { r } else { nil } }
     #expect(Set(radii) == [10, 8.5], "\(radii)")
 }
+
+@Test func shellOfABoxWithAThroughHoleKeepsATubeAroundIt() throws {
+    let box = Feature(name: "Scatola", kind: .box(width: 40, depth: 30, height: 20))
+    var hole = Feature(name: "Foro", kind: .cylinder(radius: 4, height: 20))
+    hole.operation = .cut
+    let base = DesignEvaluator.evaluate(CADDocument(features: [box, hole]), revision: "a")
+    #expect(base.issues.isEmpty)
+    let snap = base.bodies[0].snapshot
+    let shell = Feature(name: "Guscio", kind: .shell(ShellSpec(body: box.id, thickness: 2, openFaces: [topFace(snap)])))
+    let result = DesignEvaluator.evaluate(CADDocument(features: [box, hole, shell]), revision: "b")
+    #expect(result.issues.isEmpty, "\(result.issues)")
+    let m = try #require(result.bodies.first).mesh
+    #expect(MeshValidator.validate(m).isWatertight)
+    // Walls 2 mm, floor 2 mm, and a tube 2 mm thick around the hole, from the floor up to the top.
+    let facet = sin(2 * Double.pi / 64) * 64 / (2 * .pi)
+    let expected = 40 * 30 * 20 - .pi * 16 * 20 * facet - (36 * 26 * 18 - .pi * 36 * 18 * facet)
+    #expect(abs(m.volume - expected) / expected < 2e-3, "\(m.volume) vs \(expected)")
+    // The tube's two walls on their exact cylinders: the hole (r 4) and 2 mm out (r 6).
+    let radii = Set(try #require(result.bodies.first).snapshot.faces.compactMap { f -> Double? in if case let .cylinder(_, _, r) = f.surface { r } else { nil } })
+    #expect(radii == [4, 6], "\(radii)")
+}

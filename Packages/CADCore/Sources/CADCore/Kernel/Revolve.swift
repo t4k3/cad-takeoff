@@ -105,7 +105,11 @@ enum Revolve {
                 let f: Int
                 if let arc = arcs[i] {
                     let c = hr(arc.center)
-                    f = face("\(loop.tag)/arc/\(arc.index)", .torus(center: origin + axis * c.h, axisDirection: axis, majorRadius: c.r, minorRadius: arc.radius))
+                    // An arc centred on the axis sweeps a sphere, not a torus of radius zero.
+                    let onAxis = abs(c.r) <= 1e-7 * max(1, arc.radius)
+                    f = face("\(loop.tag)/arc/\(arc.index)", onAxis
+                             ? .sphere(center: origin + axis * c.h, radius: arc.radius)
+                             : .torus(center: origin + axis * c.h, axisDirection: axis, majorRadius: c.r, minorRadius: arc.radius))
                 } else {
                     f = face("\(loop.tag)/side/\(i)", surface(a, b))
                 }

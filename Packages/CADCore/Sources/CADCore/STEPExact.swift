@@ -410,6 +410,12 @@ extension STEPExporter {
                     }
                     bounds.append((w.add("EDGE_LOOP('',(\(oriented.joined(separator: ","))))"), rotated.map(\.a)))
                 }
+                // A whole sphere has no edges: its face is bounded by a single vertex at a pole
+                // (a VERTEX_LOOP), as closed surfaces are written in STEP.
+                if bounds.isEmpty, pk.plane == .zero, case let .sphere(c, r)? = curved(pk.face) {
+                    let pole = w.add("VERTEX_POINT('',\(w.point(c + Vec3(0, 0, r))))")
+                    bounds.append((w.add("VERTEX_LOOP('',\(pole))"), []))
+                }
                 guard !bounds.isEmpty else { continue }
                 // Surface and its sense (outward normal from the triangles).
                 var n = Vec3.zero
