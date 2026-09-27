@@ -16,7 +16,7 @@ def close(a, b):
     return math.dist(a, b) < 1e-9
 
 doc = read('routed.ftkc')
-assert doc['formatVersion'] == 6
+assert doc['formatVersion'] == 7
 for name in ('routed.ftkc', 'without-via.ftkc', 'undo.ftkc', 'redo.ftkc'):
     f = read(name)
     assert f['past'][-1]['after'] == f['design']
@@ -80,7 +80,7 @@ print('PASS independent PCB reader: pad transforms, layer continuity, via drill/
 
 # Second fixture: independently check design constraints and polygon exclusion.
 rules_doc = read('rules.ftkc')
-assert rules_doc['formatVersion'] == 6
+assert rules_doc['formatVersion'] == 7
 rules_copper = rules_doc['design']['board']['copper']
 classes = rules_copper['netClasses']
 assert len(classes) == 1 and classes[0]['name'] == 'Potenza'

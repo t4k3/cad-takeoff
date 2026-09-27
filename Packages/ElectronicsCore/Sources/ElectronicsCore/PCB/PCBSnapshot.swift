@@ -103,7 +103,8 @@ extension ElectronicsPCB {
         for v in copper.vias.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
             primitives.append(.init(item:.via(v.id),netID:v.netID,layers:Array(0..<copper.layerCount),core:[v.position],radius:v.diameter/2,drillDiameter:v.drill))
         }
-        primitives += try PCBZoneFilling.primitives(design:design,copper:primitives,rules:rulesByNet)
+        let filled = try PCBZoneFilling.fill(design:design,copper:primitives,pads:base.pads,rules:rulesByNet)
+        primitives += filled.primitives
         let index = try PCBIndex(primitives)
         var issues: [ElectronicsIssue] = [], issueKeys = Set<String>()
         func add(_ code: String, _ message: String, _ items: [PCBItem], _ point: PCBPoint, severity: ElectronicsIssue.Severity = .error) {
@@ -188,9 +189,24 @@ extension ElectronicsPCB {
             let all = primitives.indices.filter { primitives[$0].item == .zone(zone.id) }
             let kept = all.filter { !removed.contains($0) }
             let cells = kept.map { primitives[$0].core }
+            let detail = filled.details[zone.id]!
+            let thermals = try PCBZoneThermals.resolve(detail.candidates,cells:cells)
             zoneFills.append(.init(zone:zone,cells:cells,islandCount:Set(kept.map { roots[$0] }).count,
                                   removedIslandCount:Set(all.filter { removed.contains($0) }.map { roots[$0] }).count,
-                                  area:cells.map(PCBPolygonFill.area).reduce(0,+)))
+                                  area:cells.map(PCBPolygonFill.area).reduce(0,+),thermals:thermals,removedNarrowArea:detail.removedNarrowArea))
+            for thermal in thermals {
+                let items: [PCBItem] = [.zone(zone.id),.pad(componentID:thermal.componentID,padID:thermal.padID)]
+                if thermal.connectedSpokes < zone.minimumSpokes {
+                    add("pcb_thermal_starved","Termica con \(thermal.connectedSpokes) raggi completi, minimo \(zone.minimumSpokes): spostare gli ostacoli o modificare angolo e dimensioni.",items,thermal.position)
+                }
+                let minimum = max(zone.minimumWidth,rulesByNet[zone.netID]?.minimumTrackWidth ?? copper.rules.minimumTrackWidth)
+                if zone.thermalSpokeWidth+PCBGeometry.epsilon < minimum {
+                    add("pcb_thermal_width","Ponticelli da \(zone.thermalSpokeWidth) mm, minimo \(minimum) mm: aumentare la larghezza.",items,thermal.position)
+                }
+            }
+            if let point = detail.necks.first, !cells.isEmpty {
+                add("pcb_zone_neck","Il piano contiene un collo senza un percorso largo \(zone.minimumWidth) mm: allargare il rame o spostare gli ostacoli.",[.zone(zone.id)],point)
+            }
             if cells.isEmpty {
                 add("pcb_zone_empty","Piano «\(zone.name)» senza rame: controllare contorno, strato, ostacoli e collegamento a una piazzola della rete.",[.zone(zone.id)],zone.outline[0],severity:.warning)
             }

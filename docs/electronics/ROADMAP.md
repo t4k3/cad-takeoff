@@ -94,3 +94,18 @@ recenti preservate, ultima richiesta prevalente; test deterministici e CI finale
 Riapertura del circuito verificata anche nella build **1.0.38**.
 Restano termiche, larghezza minima dei colli, archi, stackup dielettrico, shove e DRC completo;
 T95 comprende il successivo rilascio produttivo. Nessuna libreria geometrica esterna aggiunta.
+
+## Quarto traguardo T94 — termiche e larghezza del rame, 27/09/2026
+
+Contratto [PCB_THERMALS.md](PCB_THERMALS.md): quattro ponticelli orientati su SMD/passanti,
+modalità piena/termica/solo passanti/isolata, gap e larghezza configurabili, controllo dei raggi
+realmente completi nel rame finale. Via pieni e fori vuoti. Filtro opzionale della larghezza
+tramite erosione/dilatazione, senza cancellare le giunzioni artificiali delle celle; i colli
+corti rimasti vengono diagnosticati. Implementazione nativa, senza dipendenze esterne.
+
+Formato7 con migrazione completa1–7 e conservazione dello storico. 136 test Swift e sei
+lettori Python indipendenti passano; corpus sintetico a 16 piazzole/64 ponticelli.
+Aggancio UI e collaudo reale registrati in [VALIDATION.md](VALIDATION.md).
+
+Restano priorità avanzate, override per pad, archi, stackup dielettrico, shove e DRC completo.
+T94 resta aperto; questo traguardo non abilita un rilascio produttivo Gerber/JLCPCB.

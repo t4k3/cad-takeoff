@@ -10,10 +10,18 @@ enum PCBPolygonFill {
         func y(_ x: Double) -> Double { a.y + (b.y-a.y) * ((x-a.x)/(b.x-a.x)) }
     }
     static func cells(subject: [PCBPoint], board: [PCBPoint], obstacles: [[PCBPoint]]) throws -> [[PCBPoint]] {
-        let bounds = PCBBox(subject)
-        let polygons = [subject,board] + obstacles.filter { PCBBox($0).intersects(bounds) }
+        try cells(groups:[[subject],[board]],obstacles:obstacles)
+    }
+    /// Intersection of groups; each group is a union. Used for dilation of a decomposed
+    /// region without treating its internal cell boundaries as physical boundaries.
+    static func cells(groups: [[[PCBPoint]]], obstacles: [[PCBPoint]]) throws -> [[PCBPoint]] {
+        guard !groups.isEmpty, groups.allSatisfy({ !$0.isEmpty }) else { return [] }
+        let bounds = PCBBox(groups[0].flatMap { $0 })
+        let groupForPolygon = groups.enumerated().flatMap { n,group in group.map { _ in n } }
+        let positiveCount = groupForPolygon.count
+        let polygons = groups.flatMap { $0 } + obstacles.filter { PCBBox($0).intersects(bounds) }
         let edges = polygons.enumerated().flatMap { p,points in PCBGeometry.edges(points).map { Edge(a:$0.0,b:$0.1,polygon:p) } }
-        guard edges.count <= 8_000 else { throw tooComplex() }
+        guard edges.count <= 32_000 else { throw tooComplex() }
         let index = try PCBIndex(boxes:edges.map { PCBBox([$0.a,$0.b]) })
         var events = edges.flatMap { [$0.a.x,$0.b.x] }.filter { $0 >= bounds.minX && $0 <= bounds.maxX }
         var work = 0
@@ -37,30 +45,37 @@ enum PCBPolygonFill {
         // Never coalesce distinct x events: even a narrow slab can separate two nets.
         var xs: [Double] = []
         for x in events where xs.last != x { xs.append(x) }
-        guard xs.count * max(1,edges.count) <= 24_000_000 else { throw tooComplex() }
+        let starting = edges.indices.sorted { min(edges[$0].a.x,edges[$0].b.x) < min(edges[$1].a.x,edges[$1].b.x) }
+        var active = Set<Int>(), next = 0, sweepWork = 0
         var result: [[PCBPoint]] = []
         for (left,right) in zip(xs,xs.dropFirst()) {
             try Task.checkCancellation()
             let middle = left+(right-left)/2
             if middle == left || middle == right { continue }
-            let crossings = edges.indices.filter {
-                min(edges[$0].a.x,edges[$0].b.x) < middle && max(edges[$0].a.x,edges[$0].b.x) > middle
-            }.sorted {
+            while next < starting.count, min(edges[starting[next]].a.x,edges[starting[next]].b.x) < middle {
+                active.insert(starting[next]); next += 1
+            }
+            active = active.filter { max(edges[$0].a.x,edges[$0].b.x) > middle }
+            sweepWork += active.count
+            guard sweepWork <= 24_000_000 else { throw tooComplex() }
+            let crossings = active.sorted {
                 let a = edges[$0].y(middle), b = edges[$1].y(middle)
                 return a == b ? $0 < $1 : a < b
             }
             var inside = Array(repeating:false,count:polygons.count)
+            var counts = Array(repeating:0,count:groups.count)
             var exclusions = 0, start: Int?, k = 0
             while k < crossings.count {
                 let first = crossings[k], y = edges[first].y(middle)
-                let wasFilled = inside[0] && inside[1] && exclusions == 0
+                let wasFilled = counts.allSatisfy { $0 > 0 } && exclusions == 0
                 repeat {
                     let p = edges[crossings[k]].polygon
                     inside[p].toggle()
-                    if p >= 2 { exclusions += inside[p] ? 1 : -1 }
+                    if p >= positiveCount { exclusions += inside[p] ? 1 : -1 }
+                    else { counts[groupForPolygon[p]] += inside[p] ? 1 : -1 }
                     k += 1
                 } while k < crossings.count && edges[crossings[k]].y(middle) == y
-                let filled = inside[0] && inside[1] && exclusions == 0
+                let filled = counts.allSatisfy { $0 > 0 } && exclusions == 0
                 if !wasFilled && filled { start = first }
                 if wasFilled && !filled, let lower = start {
                     let l0 = edges[lower].y(left), l1 = edges[lower].y(right)
@@ -89,9 +104,10 @@ enum PCBPolygonFill {
     }
     /// A circumscribed polygon, so approximating a circular obstacle can only REMOVE
     /// extra copper. Radial overcut <= 0.005 mm; never undercut a required clearance.
-    static func expandedConvex(_ core: [PCBPoint], radius: Double) throws -> [PCBPoint] {
+    static func expandedConvex(_ core: [PCBPoint], radius: Double, symmetric: Bool = false) throws -> [PCBPoint] {
         if radius <= 0 { return core }
-        let count = max(16,Int(ceil(Double.pi/acos(radius/(radius+0.005)))))
+        var count = max(16,Int(ceil(Double.pi/acos(radius/(radius+0.005)))))
+        if symmetric && count % 2 != 0 { count += 1 }
         guard count <= 512 else { throw tooComplex() }
         let r = radius/cos(.pi/Double(count))
         let ring = (0..<count).map { i in PCBPoint(r*cos(2 * .pi * Double(i)/Double(count)), r*sin(2 * .pi * Double(i)/Double(count))) }

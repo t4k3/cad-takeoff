@@ -2,14 +2,25 @@ import Foundation
 
 enum PCBZoneFilling {
     static let guardBand = 1e-6 // mm, makes keepout boundaries/drill bores strictly excluded
-    static func primitives(design: ElectronicsDesign, copper: [PCBCopperPrimitive], rules: [UUID:PCBDesignRules]) throws -> [PCBCopperPrimitive] {
+    struct Detail {
+        let candidates: [PCBZoneThermals.Candidate]
+        let removedNarrowArea: Double
+        let necks: [PCBPoint]
+    }
+    struct Result {
+        var primitives: [PCBCopperPrimitive] = []
+        var details: [UUID:Detail] = [:]
+    }
+    static func fill(design: ElectronicsDesign, copper: [PCBCopperPrimitive], pads: [PlacedPad], rules: [UUID:PCBDesignRules]) throws -> Result {
         let model = design.board.copper ?? .init()
-        var result: [PCBCopperPrimitive] = []
+        var result = Result()
+        let padModels = Dictionary(uniqueKeysWithValues:pads.map { (PCBItem.pad(componentID:$0.componentID,padID:$0.padID),$0) })
         for zone in model.zones.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
             try Task.checkCancellation()
             let rule = rules[zone.netID] ?? model.rules
             let bounds = PCBBox(zone.outline)
             var obstacles: [[PCBPoint]] = []
+            var candidates: [PCBZoneThermals.Candidate] = []
             var edgeCount = zone.outline.count + design.board.outline.count
             func append(_ polygon: [PCBPoint]) throws {
                 guard PCBBox(polygon).intersects(bounds) else { return }
@@ -41,6 +52,12 @@ enum PCBZoneFilling {
                         try append(PCBPolygonFill.expandedConvex([p.center],radius:hole/2+guardBand))
                     }
                 }
+                if p.netID == zone.netID, let pad = padModels[p.item],
+                   PCBGeometry.coreDistance(p.core,zone.outline) <= p.radius+zone.thermalGap+0.006 {
+                    let cutout = try PCBZoneThermals.cutout(pad:pad,primitive:p,zone:zone)
+                    for polygon in cutout.obstacles { try append(polygon) }
+                    if let c = cutout.candidate, PCBGeometry.coreDistance(p.core,zone.outline) <= p.radius+PCBGeometry.epsilon { candidates.append(c) }
+                }
             }
             for keepout in model.keepouts where keepout.zones && keepout.layers.contains(zone.layer) {
                 try exclude(keepout.outline,margin:guardBand)
@@ -48,9 +65,11 @@ enum PCBZoneFilling {
             for other in model.zones where other.netID != zone.netID && other.layer == zone.layer {
                 try exclude(other.outline,margin:max(rule.clearance,rules[other.netID]?.clearance ?? model.rules.clearance)+guardBand)
             }
-            let cells = try PCBPolygonFill.cells(subject:zone.outline,board:design.board.outline,obstacles:obstacles)
-            result += cells.map { .init(item:.zone(zone.id),netID:zone.netID,layers:[zone.layer],core:$0,radius:0) }
-            guard result.count <= 30_000 else { throw PCBPolygonFill.tooComplex() }
+            let raw = try PCBPolygonFill.cells(subject:zone.outline,board:design.board.outline,obstacles:obstacles)
+            let filtered = try PCBZoneWidth.filter(zone:zone,board:design.board.outline,obstacles:obstacles,raw:raw)
+            result.primitives += filtered.cells.map { .init(item:.zone(zone.id),netID:zone.netID,layers:[zone.layer],core:$0,radius:0) }
+            result.details[zone.id] = .init(candidates:candidates,removedNarrowArea:filtered.removedArea,necks:filtered.necks)
+            guard result.primitives.count <= 30_000 else { throw PCBPolygonFill.tooComplex() }
         }
         return result
     }

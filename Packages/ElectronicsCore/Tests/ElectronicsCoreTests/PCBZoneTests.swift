@@ -77,7 +77,7 @@ final class PCBZoneTests: XCTestCase {
         XCTAssertEqual(try preview.pcbSnapshot().zones,try ElectronicsPCB.snapshot(d).zones)
         try apply(.moveZone(id:z.id,offset:.init(1,0)),&d)
         let moved = d.design
-        d = try ElectronicsDocument.decode(d.encoded()); XCTAssertEqual(d.formatVersion,6)
+        d = try ElectronicsDocument.decode(d.encoded()); XCTAssertEqual(d.formatVersion,7)
         try d.undo(expectedRevision:d.revision); XCTAssertEqual(d.design.board.copper?.zones,[z])
         try d.redo(expectedRevision:d.revision); XCTAssertEqual(d.design,moved)
         let before = d

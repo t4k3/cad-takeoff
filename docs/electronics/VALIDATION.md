@@ -1,5 +1,29 @@
 # Elettronica — prove del motore e dell’app
 
+## 27/09/2026 — T94: termiche e minimo del piano
+
+- **136 test Swift PASS**, 12 nuovi; **sei lettori Python indipendenti PASS**. Esecuzione
+  completa exit0 `/tmp/ftk-thermals-final.log`, artefatti `build/electronics/run.BZv5Gj`.
+- **180 test CADCore PASS**, exit0 `/tmp/ftk-thermals-cad.log`; nessun file CADCore modificato.
+- Termiche SMD e passanti, fori/via, rotazione e lato inferiore, raggio interrotto solo
+  parzialmente, isolamento anche della piazzola esterna al contorno, collo lungo rimosso e
+  corto diagnosticato, collo ruotato, giunzioni delle celle preservate, cancellazione del
+  filtro, rifiuto atomico, preview/UUID, storico/undo/redo e migrazione di tutta la catena v6.
+- `check_thermals.py` verifica i poligoni esportati con aritmetica Python indipendente:
+  copertura dell'intera larghezza dei raggi, vuoti termici, ostacoli, clearance POWER,
+  isolamento e colli, area e interni non sovrapposti, catena persistente. Il corpus denso
+  verifica separatamente la presenza dei 64 raggi; non prende il conteggio Swift come prova.
+- Release finale: quattro piazzole filtrate **117,77 ms**, query pick+pickZones+snap
+  **p95 0,0317 ms**; 16 piazzole, 525 celle, **308,75 ms** (`thermals-release-03`).
+  Exit0 `/tmp/ftk-thermals-release-final.log`, lettori PCB/regole, piani e termiche PASS.
+  Debug finale: quattro piazzole **1641,50 ms**; 16 piazzole **4191,00 ms**. Misure locali
+  sintetiche: il worker cancellabile rimane necessario. Non è una misura su schede industriali.
+
+API in [PCB_THERMALS.md](PCB_THERMALS.md). Aggancio e build UI gestiti da Claude T97:
+**collaudo grafico di questo traguardo ancora da eseguire**. Il collaudo dei piani pieni
+riportato sotto resta evidenza storica distinta. Nessuna qualificazione produttiva;
+`fabricationReady` resta `false`.
+
 ## 27/09/2026 — T94: piani di rame a collegamento pieno
 
 - Suite elettronica: **124 test Swift PASS**, 17 nuovi sui piani; **cinque lettori Python
