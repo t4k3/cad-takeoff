@@ -752,10 +752,13 @@ struct ViewportContainer: View {
                 Label("SCHIZZO · " + (sketch.sketch.plane.isXY ? "piano XY" : "su faccia"), systemImage: "pencil.and.outline")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.Palette.sketch)
+                // The hint gives way first (the button must stay reachable).
                 if let notice = sketch.notice {
                     Label(notice, systemImage: "exclamationmark.triangle.fill").font(.system(size: 11)).foregroundStyle(.orange)
+                        .lineLimit(1).truncationMode(.tail)
                 } else {
                     Text(sketch.constraintTool?.hint ?? sketch.tool.hint).font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+                        .lineLimit(1).truncationMode(.tail)
                 }
                 if !sketch.sketch.constraints.isEmpty {
                     Text(sketch.freedom == 0 ? "Vincolato" : (sketch.freedom == 1 ? "1 grado libero" : "\(sketch.freedom) gradi liberi"))
@@ -765,10 +768,12 @@ struct ViewportContainer: View {
                         .help("Gradi di libertà rimasti: 0 = lo schizzo è completamente definito da vincoli e quote")
                 }
                 Button("Termina") { workspace.exitSketch() }.controlSize(.small)
+                    .fixedSize().layoutPriority(1)
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
             .overlayChip()
             .padding(.top, 10)
+            .padding(.horizontal, 120)   // clear of the ViewCube
         }
     }
 
