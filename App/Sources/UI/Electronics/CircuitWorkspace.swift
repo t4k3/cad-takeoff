@@ -53,6 +53,8 @@ struct CircuitBoardView: View {
     @State private var hoveredPad: PlacedPad?
     /// Where the mouse is on the board (placing a component, the Collega rubber band).
     @State private var cursor: PCBPoint?
+    /// Posa: the part's pads where it would go (the engine's preview).
+    @State private var ghost: [PlacedPad] = []
     @State private var dragging: (component: UUID, from: PCBPoint, delta: PCBPoint)?
     @GestureState private var pinch: CGFloat = 1
     @FocusState private var focused: Bool
@@ -104,9 +106,13 @@ struct CircuitBoardView: View {
                     if case let .active(q) = phase {
                         let p = m.board(q)
                         hoveredPad = pad(at: p)
-                        cursor = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)   // 0,5 mm grid
+                        let snapped = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)   // 0,5 mm grid
+                        if snapped != cursor, case let .place(placing) = circuits.tool {
+                            ghost = circuits.placementPreview(placing, at: snapped)
+                        }
+                        cursor = snapped
                         placingCursor(true)
-                    } else { hoveredPad = nil; cursor = nil; placingCursor(false) }
+                    } else { hoveredPad = nil; cursor = nil; ghost = []; placingCursor(false) }
                 }
                 .gesture(
                     DragGesture(minimumDistance: 2)
@@ -156,7 +162,10 @@ struct CircuitBoardView: View {
                 .overlay(alignment: .bottomTrailing) { zoomButtons.padding(12) }
                 .overlay(alignment: .topLeading) { hoverChip.padding(12) }
                 .overlay(alignment: .top) { toolHint.padding(.top, 12) }
-                .onChange(of: circuits.tool) { _, _ in focused = true }
+                .onChange(of: circuits.tool) { _, tool in
+                    focused = true
+                    if case let .place(p) = tool, let c = cursor { ghost = circuits.placementPreview(p, at: c) } else { ghost = [] }
+                }
         }
     }
 
@@ -164,24 +173,12 @@ struct CircuitBoardView: View {
     private func click(_ p: PCBPoint) {
         switch circuits.tool {
         case let .place(placing):
+            // Keeps placing (next identity and reference) until Esc: the model moves the session on.
             let at = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)
-            if circuits.addComponent(placing, at: at) != nil {
-                // Keep placing the same part with the next reference; Esc ends.
-                var next = placing
-                next.reference = circuits.nextReference(prefix: placing.prefix)
-                circuits.tool = .place(next)
-            }
+            circuits.addComponent(placing, at: at)
+            if case let .place(next) = circuits.tool { ghost = circuits.placementPreview(next, at: at) }
         case .connect:
-            guard let hit = pad(at: p) else { return }
-            if let first = circuits.connectFrom {
-                if first.padID != hit.padID {
-                    circuits.connect(PinReference(componentID: first.componentID, pinID: first.pinID),
-                                     PinReference(componentID: hit.componentID, pinID: hit.pinID))
-                }
-                circuits.connectFrom = nil
-            } else {
-                circuits.connectFrom = hit
-            }
+            if let hit = pad(at: p) { circuits.connectClick(hit) }
         case .select:
             circuits.selection = pad(at: p)?.componentID
         }
@@ -293,7 +290,17 @@ struct CircuitBoardView: View {
             let r: CGFloat = 5, q = m.screen(first.center)
             ctx.stroke(Path(ellipseIn: CGRect(x: q.x - r, y: q.y - r, width: 2 * r, height: 2 * r)), with: .color(accent), lineWidth: 2)
         }
-        // Posa: where the part will go.
+        // Posa: the part's pads where it will go, then its reference.
+        if case .place = circuits.tool {
+            for pad in ghost {
+                let c = m.screen(pad.center)
+                let w = CGFloat(pad.size.x) * m.scale, h = CGFloat(pad.size.y) * m.scale
+                let rect = Path(roundedRect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: min(w, h) * 0.25)
+                    .applying(CGAffineTransform(rotationAngle: -CGFloat(pad.rotationDegrees) * .pi / 180))
+                    .applying(CGAffineTransform(translationX: c.x, y: c.y))
+                ctx.fill(rect, with: .color(accent.opacity(0.55)))
+            }
+        }
         if case let .place(p) = circuits.tool, let c = cursor {
             let q = m.screen(c), r: CGFloat = 8
             var cross = Path()
@@ -392,7 +399,7 @@ struct AddComponentSheet: View {
             Label("Aggiungi componente", systemImage: "cpu").font(.headline)
             let choices = circuits.deviceChoices
             if choices.isEmpty {
-                Text("La libreria di questo circuito è vuota. I modelli generici (resistenza, condensatore, connettore) e l'import di librerie KiCad/EasyEDA arrivano con il motore di Codex: per ora prova con «Esempio».")
+                Text("Nessun componente disponibile.")
                     .font(.callout).foregroundStyle(Theme.Palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
@@ -434,12 +441,12 @@ struct AddComponentSheet: View {
     private func select(_ c: CircuitModel.DeviceChoice) {
         if choice != c { choice = c }
         reference = circuits.nextReference(prefix: c.prefix)
+        value = c.defaultValue
     }
 
     private func place() {
         guard let c = choice else { return }
-        circuits.tool = .place(.init(device: c.key, name: c.name, prefix: c.prefix,
-                                     reference: reference.trimmingCharacters(in: .whitespaces), value: value))
+        circuits.startPlacing(c, reference: reference.trimmingCharacters(in: .whitespaces), value: value)
         circuits.showAddComponent = false
     }
 }

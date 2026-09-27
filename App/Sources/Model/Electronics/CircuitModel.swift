@@ -39,10 +39,9 @@ final class CircuitModel {
         report("Aperto \(url.deletingPathExtension().lastPathComponent) — \(summary)")
     }
 
-    /// A new, empty circuit: a 50 × 30 mm board, no components yet.
+    /// A new, empty circuit: a 50 × 30 mm board, no components yet (the engine's empty document).
     func newCircuit(name: String = "Nuovo circuito") throws {
-        let outline = [PCBPoint(0, 0), PCBPoint(50, 0), PCBPoint(50, 30), PCBPoint(0, 30)]
-        document = try ElectronicsDocument(design: ElectronicsDesign(name: name, library: ElectronicsLibrary(), board: PCBBoard(outline: outline)))
+        document = try ElectronicsDocument.empty(name: name)
         url = nil; isDirty = true
         refresh()
         report("Nuovo circuito: scheda 50 × 30 mm")
@@ -119,43 +118,36 @@ final class CircuitModel {
     /// Selects the component a check is about (if it names one).
     func select(_ issue: ElectronicsIssue) {
         guard let components = design?.components else { return }
-        // The engine is adding the subjects' identities to its issues (`subjectIDs`): read them
-        // when present, else find the component named in the subject (its reference or UUID).
-        let ids = Mirror(reflecting: issue).children.first { $0.label == "subjectIDs" }.flatMap { $0.value as? [UUID] } ?? []
+        // The subjects' identities first, else the component named in the subject.
+        let ids = issue.subjectIDs ?? []
         selection = ids.first { id in components.contains { $0.id == id } }
             ?? components.first { issue.subject.contains($0.id.uuidString) }?.id
             ?? components.first { c in issue.subject.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).contains { $0 == c.reference } }?.id
+    }
+
+    /// One of the engine's commands (docs/electronics/EDITING.md): checked, one undo step, or
+    /// refused whole with the engine's reason.
+    @discardableResult
+    func run(_ command: ElectronicsCommand, expectedRevision: UInt64? = nil) -> Bool {
+        guard var doc = document else { return false }
+        do {
+            try ElectronicsCommands.apply(command, to: &doc, expectedRevision: expectedRevision ?? doc.revision)
+            document = doc; isDirty = true
+            refresh()
+            return true
+        } catch {
+            report("\(command.title) non riuscito: \(Self.describe(error))")
+            return false
+        }
     }
 
     func placement(of component: UUID) -> ComponentPlacement? {
         design?.board.placements.first { $0.componentID == component }
     }
 
-    func move(_ component: UUID, to position: PCBPoint) {
-        let name = design?.components.first { $0.id == component }?.reference ?? "componente"
-        edit("Sposta \(name)") { d in
-            guard let i = d.board.placements.firstIndex(where: { $0.componentID == component }) else { return }
-            d.board.placements[i].position = position
-        }
-    }
-
-    func rotate(_ component: UUID, by degrees: Double = 90) {
-        let name = design?.components.first { $0.id == component }?.reference ?? "componente"
-        edit("Ruota \(name)") { d in
-            guard let i = d.board.placements.firstIndex(where: { $0.componentID == component }) else { return }
-            var a = (d.board.placements[i].rotationDegrees + degrees).truncatingRemainder(dividingBy: 360)
-            if a < 0 { a += 360 }
-            d.board.placements[i].rotationDegrees = a
-        }
-    }
-
-    func flip(_ component: UUID) {
-        let name = design?.components.first { $0.id == component }?.reference ?? "componente"
-        edit("Sposta \(name) sull'altro lato") { d in
-            guard let i = d.board.placements.firstIndex(where: { $0.componentID == component }) else { return }
-            d.board.placements[i].side = d.board.placements[i].side == .top ? .bottom : .top
-        }
-    }
+    func move(_ component: UUID, to position: PCBPoint) { run(.moveComponent(id: component, to: position)) }
+    func rotate(_ component: UUID, by degrees: Double = 90) { run(.rotateComponent(id: component, by: degrees)) }
+    func flip(_ component: UUID) { run(.flipComponent(component)) }
 
     func undo() {
         guard var doc = document else { return }
@@ -167,11 +159,7 @@ final class CircuitModel {
         do { try doc.redo(expectedRevision: doc.revision); document = doc; isDirty = true; refresh() } catch { report(Self.describe(error)) }
     }
 
-    // MARK: Building a circuit (T97; the engine's commands of docs/electronics/EDITING.md)
-    //
-    // Same names and rules as ElectronicsCommand (Codex, T93). Until ElectronicsCommands compiles
-    // they are done here through the engine's own transaction (`edit`: checked, one undo step);
-    // then they become ElectronicsCommands.preview/apply and the views do not change.
+    // MARK: Building a circuit (T97, on the engine's commands of docs/electronics/EDITING.md)
 
     /// What a click on the board does.
     enum Tool: Equatable {
@@ -182,13 +170,26 @@ final class CircuitModel {
         case connect
     }
 
+    /// A placing session: the same component identity and the same base revision from the
+    /// previews to the click that confirms (EDITING.md: the confirmed command is the previewed
+    /// one, at the revision it was previewed on); a new identity only after an insertion.
     struct Placing: Equatable {
         var device: LibraryRevision
+        /// One of the engine's generic models (its library comes into the circuit with it).
+        var starterID: String?
         var name: String
         var prefix: String
         var reference: String
         var value: String
         var side: BoardSide = .top
+        var componentID = UUID()
+        var baseRevision: UInt64 = 0
+    }
+
+    /// Starts placing `choice` (identity and base revision fixed for the session).
+    func startPlacing(_ choice: DeviceChoice, reference: String, value: String) {
+        tool = .place(.init(device: choice.key, starterID: choice.starterID, name: choice.name, prefix: choice.prefix,
+                            reference: reference, value: value, baseRevision: document?.revision ?? 0))
     }
 
     var tool: Tool = .select { didSet { if tool != .connect { connectFrom = nil } } }
@@ -203,95 +204,129 @@ final class CircuitModel {
     struct DeviceChoice: Identifiable, Hashable {
         var id: LibraryRevision { key }
         var key: LibraryRevision
+        var starterID: String?
         var name: String
         var detail: String
         var prefix: String
+        var defaultValue: String
     }
 
-    /// Devices the circuit's library holds (the engine's generic models join them in T93).
+    /// What can be placed: the engine's generic models first (always there, even in a new
+    /// circuit), then the devices of the circuit's own library.
     var deviceChoices: [DeviceChoice] {
-        guard let library = design?.library else { return [] }
-        return library.devices.map { d in
+        var out = ElectronicsStarterLibrary.components.map { t in
+            DeviceChoice(key: t.device, starterID: t.id, name: t.name, detail: "Modello generico · verificare impronta e piedinatura",
+                         prefix: t.referencePrefix, defaultValue: t.defaultValue)
+        }
+        guard let library = design?.library else { return out }
+        for d in library.devices where !out.contains(where: { $0.key == d.key }) {
             let symbol = library.symbols.first { $0.key == d.symbol }?.name ?? "Componente"
             let footprint = library.footprints.first { $0.key == d.footprint }?.name ?? ""
             let prefix = String(symbol.first(where: \.isLetter) ?? "U").uppercased()
-            return DeviceChoice(key: d.key, name: symbol, detail: [footprint, d.manufacturerPartNumber].filter { !$0.isEmpty }.joined(separator: " · "),
-                                prefix: prefix)
+            out.append(DeviceChoice(key: d.key, starterID: nil, name: symbol,
+                                    detail: [footprint, d.manufacturerPartNumber].filter { !$0.isEmpty }.joined(separator: " · "),
+                                    prefix: prefix, defaultValue: ""))
         }
+        return out
     }
 
-    /// The first free reference with this prefix (R1, R2…).
+    /// The first free reference with this prefix (R1, R2…), as the engine counts them.
     func nextReference(prefix: String) -> String {
-        let used = Set(design?.components.map(\.reference) ?? [])
-        var n = 1
-        while used.contains("\(prefix)\(n)") { n += 1 }
-        return "\(prefix)\(n)"
+        guard let design else { return prefix + "1" }
+        return ElectronicsCommands.nextReference(prefix: prefix, in: design)
+    }
+
+    /// The command that places `p` at `position` (with its library when it is a generic model).
+    func placeCommand(_ p: Placing, at position: PCBPoint) -> ElectronicsCommand {
+        let id = p.componentID
+        if let sid = p.starterID, let template = ElectronicsStarterLibrary.components.first(where: { $0.id == sid }) {
+            return template.command(componentID: id, reference: p.reference, value: p.value.isEmpty ? nil : p.value, position: position, side: p.side)
+        }
+        let component = CircuitComponent(id: id, reference: p.reference, value: p.value, device: p.device)
+        return .addComponent(component: component, placement: ComponentPlacement(componentID: id, position: position, side: p.side),
+                             library: ElectronicsLibrary())
+    }
+
+    /// Posa: the pads the part would have there, from the engine's preview (nothing changes).
+    func placementPreview(_ p: Placing, at position: PCBPoint) -> [PlacedPad] {
+        guard let doc = document,
+              let preview = try? ElectronicsCommands.preview(placeCommand(p, at: position), document: doc, expectedRevision: p.baseRevision)
+        else { return [] }
+        return preview.board.pads.filter { $0.componentID == p.componentID }
     }
 
     /// addComponent: the component and its placement in one step.
+    /// Places the session's component (at the revision it was previewed on). After it goes in,
+    /// the session goes on with a new identity, the next reference and the new revision; if the
+    /// circuit changed meanwhile (an undo…), the engine refuses and the session restarts on it.
     @discardableResult
     func addComponent(_ p: Placing, at position: PCBPoint) -> UUID? {
-        let component = CircuitComponent(reference: p.reference, value: p.value, device: p.device)
-        let ok = edit("Aggiungi \(p.reference)") { d in
-            guard !d.components.contains(where: { $0.reference == p.reference }) else {
-                throw CircuitEditError("La sigla \(p.reference) c'è già: scegline un'altra.")
-            }
-            d.components.append(component)
-            d.board.placements.append(ComponentPlacement(componentID: component.id, position: position, side: p.side))
+        if design?.components.contains(where: { $0.reference.uppercased() == p.reference.uppercased() }) == true {
+            report("La sigla \(p.reference) c'è già: scegline un'altra.")
+            return nil
         }
-        guard ok else { return nil }
-        selection = component.id
-        return component.id
+        guard run(placeCommand(p, at: position), expectedRevision: p.baseRevision) else {
+            if case var .place(session) = tool, session.componentID == p.componentID {
+                session.baseRevision = document?.revision ?? 0
+                tool = .place(session)
+            }
+            return nil
+        }
+        selection = p.componentID
+        if case .place = tool {
+            var next = p
+            next.componentID = UUID()
+            next.reference = nextReference(prefix: p.prefix)
+            next.baseRevision = document?.revision ?? 0
+            tool = .place(next)
+        }
+        return p.componentID
+    }
+
+    /// Collega: a click on a pad. Pins are told apart by component and pin (pads of one
+    /// footprint share their IDs across the components using it).
+    func connectClick(_ pad: PlacedPad) {
+        guard let first = connectFrom else { connectFrom = pad; return }
+        let a = PinReference(componentID: first.componentID, pinID: first.pinID)
+        let b = PinReference(componentID: pad.componentID, pinID: pad.pinID)
+        connectFrom = nil
+        if a != b { connect(a, b) }
     }
 
     /// removeComponent: its placement and connections go with it (one step); the library stays.
     func removeComponent(_ id: UUID) {
-        let name = design?.components.first { $0.id == id }?.reference ?? "componente"
-        if edit("Elimina \(name)", { d in
-            d.components.removeAll { $0.id == id }
-            d.board.placements.removeAll { $0.componentID == id }
-            d.connections.removeAll { $0.pin.componentID == id }
-        }) { selection = nil }
+        if run(.removeComponent(id)) { selection = nil }
     }
 
     /// connect: both pins on one net — the one either already has, or a new one. A pin already
     /// on another net is refused (no silent merging: disconnect it first).
     func connect(_ a: PinReference, _ b: PinReference) {
-        guard a != b, let d0 = design else { return }
-        let refA = d0.components.first { $0.id == a.componentID }?.reference ?? "?"
-        let refB = d0.components.first { $0.id == b.componentID }?.reference ?? "?"
-        edit("Collega \(refA)–\(refB)") { d in
-            func net(_ p: PinReference) -> UUID? { d.connections.first { $0.pin == p }?.netID ?? nil }
-            let na = net(a), nb = net(b)
-            if let na, let nb, na != nb {
-                let names = [na, nb].map { id in d.nets.first { $0.id == id }?.name ?? "?" }
-                throw CircuitEditError("\(refA) è sulla rete \(names[0]) e \(refB) sulla rete \(names[1]): scollega uno dei due prima.")
-            }
-            let target: UUID
-            if let existing = na ?? nb {
-                target = existing
-            } else {
-                var k = 1
-                while d.nets.contains(where: { $0.name == "N\(k)" }) { k += 1 }
-                let fresh = CircuitNet(name: "N\(k)")
-                d.nets.append(fresh)
-                target = fresh.id
-            }
-            for p in [a, b] {
-                d.connections.removeAll { $0.pin == p }
-                d.connections.append(PinConnection(pin: p, netID: target))
-            }
+        guard a != b, let d = design else { return }
+        func net(_ p: PinReference) -> UUID? { d.connections.first { $0.pin == p }?.netID ?? nil }
+        let na = net(a), nb = net(b)
+        if let na, let nb, na != nb {
+            let names = [na, nb].map { id in d.nets.first { $0.id == id }?.name ?? "?" }
+            let refs = [a, b].map { p in d.components.first { $0.id == p.componentID }?.reference ?? "?" }
+            report("\(refs[0]) è sulla rete \(names[0]) e \(refs[1]) sulla rete \(names[1]): scollega uno dei due prima.")
+            return
         }
+        // The net either pin is already on, or a new one (N1, N2…); the engine makes it in the same step.
+        let net: CircuitNet
+        if let existing = (na ?? nb).flatMap({ id in d.nets.first { $0.id == id } }) {
+            net = existing
+        } else {
+            var k = 1
+            while d.nets.contains(where: { $0.name == "N\(k)" }) { k += 1 }
+            net = CircuitNet(name: "N\(k)")
+        }
+        run(.connect(pins: [a, b], net: net))
     }
 
     /// setBoard: a rectangle from the origin, and the thickness.
     func setBoard(width: Double, height: Double, thickness: Double) {
+        guard width > 0, height > 0, thickness > 0 else { report("Larghezza, altezza e spessore devono essere maggiori di zero."); return }
         let outline = [PCBPoint(0, 0), PCBPoint(width, 0), PCBPoint(width, height), PCBPoint(0, height)]
-        edit(String(format: "Scheda %.1f × %.1f mm", width, height)) { d in
-            guard width > 0, height > 0, thickness > 0 else { throw CircuitEditError("Larghezza, altezza e spessore devono essere maggiori di zero.") }
-            d.board.outline = outline
-            d.board.thickness = thickness
-        }
+        run(.setBoard(outline: outline, thickness: thickness, assemblyOrigin: design?.board.assemblyOrigin ?? PCBPoint()))
     }
 
     // MARK: Manufacturing
@@ -333,7 +368,7 @@ final class CircuitModel {
     private func refresh() {
         guard let d = design else { board = nil; issues = []; return }
         board = try? ElectronicsConnectivity.snapshot(d)
-        issues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d)
+        issues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
     }
 
     static func describe(_ error: Error) -> String {

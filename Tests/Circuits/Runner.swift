@@ -12,29 +12,51 @@ struct CircuitTests {
         let c = CircuitModel()
         var last = ""
         c.report = { last = $0 }
+        // The example opens (a file written by the engine's own tests).
         try c.open(fixture)
-        let before = c.design!.components.count
-        guard let device = c.deviceChoices.first else { print("FALLITO: nessun dispositivo nell'esempio"); exit(1) }
+        check(!(c.design?.components.isEmpty ?? true), "esempio aperto")
 
-        // Componente: two of the same part, references in sequence.
-        let r1 = c.nextReference(prefix: device.prefix)
-        let a = c.addComponent(.init(device: device.key, name: device.name, prefix: device.prefix, reference: r1, value: "10k"), at: PCBPoint(10, 10))
-        let r2 = c.nextReference(prefix: device.prefix)
-        let b = c.addComponent(.init(device: device.key, name: device.name, prefix: device.prefix, reference: r2, value: "10k"), at: PCBPoint(20, 10))
-        check(a != nil && b != nil && r1 != r2 && c.design!.components.count == before + 2, "due componenti aggiunti (\(last))")
+        // From a NEW circuit: the generic models are there to choose (Ross's blocker).
+        try c.newCircuit()
+        check(c.design!.components.isEmpty && c.deviceChoices.count >= 3, "nuovo circuito: si può scegliere un componente")
+        guard let device = c.deviceChoices.first(where: { $0.starterID != nil }) else { print("FALLITO: nessun modello generico"); exit(1) }
+
+        // Posa: one session keeps the component's identity and base revision from the previews to
+        // the click; nothing changes while previewing.
+        c.startPlacing(device, reference: c.nextReference(prefix: device.prefix), value: device.defaultValue)
+        guard case let .place(session) = c.tool else { print("FALLITO: posa non avviata"); exit(1) }
+        let ghost1 = c.placementPreview(session, at: PCBPoint(10, 10)), ghost2 = c.placementPreview(session, at: PCBPoint(12, 10))
+        check(!ghost1.isEmpty && ghost1.allSatisfy { $0.componentID == session.componentID } && ghost2.allSatisfy { $0.componentID == session.componentID },
+              "anteprime con la stessa identità")
+        check(c.design!.components.isEmpty && !c.canUndo, "anteprima senza modifiche")
+        let a = c.addComponent(session, at: PCBPoint(10, 10))
+        check(a == session.componentID && c.design!.components.first?.reference == "R1", "R1 posato con l'identità dell'anteprima (\(last))")
+        guard case let .place(next) = c.tool else { print("FALLITO: la posa non continua"); exit(1) }
+        check(next.componentID != session.componentID && next.reference == "R2" && next.baseRevision == c.document!.revision, "sessione avanti: nuova identità, R2, revisione nuova")
+        let b = c.addComponent(next, at: PCBPoint(20, 10))
+        check(b == next.componentID && c.design!.components.count == 2, "R2 posato")
+        // A stale session (the circuit changed after its preview) is refused and restarts on the new revision.
+        guard case let .place(third) = c.tool else { print("FALLITO"); exit(1) }
+        c.undo(); c.redo()
+        check(c.addComponent(third, at: PCBPoint(30, 10)) == nil && c.design!.components.count == 2, "posa su revisione superata rifiutata")
+        if case let .place(restarted) = c.tool { check(restarted.baseRevision == c.document!.revision, "sessione ripartita sulla revisione attuale") }
+        c.tool = .select
         // The same reference twice is refused, the design untouched.
-        let again = c.addComponent(.init(device: device.key, name: device.name, prefix: device.prefix, reference: r1, value: "1k"), at: PCBPoint(30, 10))
-        check(again == nil && c.design!.components.count == before + 2 && last.contains("c'è già"), "sigla doppia rifiutata")
+        var dup = next; dup.componentID = UUID(); dup.baseRevision = c.document!.revision; dup.reference = "R1"
+        check(c.addComponent(dup, at: PCBPoint(30, 10)) == nil && c.design!.components.count == 2 && last.contains("c'è già"), "sigla doppia rifiutata")
 
-        // Collega: a pad of each, a new net.
+        // Collega: pin 1 of R1 to pin 1 of R2 — the same pad ID (one footprint), different pins.
         let pads = c.board!.pads
-        guard let pa = pads.first(where: { $0.componentID == a }), let pb = pads.first(where: { $0.componentID == b }) else {
+        guard let pa = pads.first(where: { $0.componentID == a }),
+              let pb = pads.first(where: { $0.componentID == b && $0.padID == pa.padID }) else {
             print("FALLITO: piazzole dei nuovi componenti non trovate"); exit(1)
         }
         let nets = c.design!.nets.count
-        c.connect(PinReference(componentID: a!, pinID: pa.pinID), PinReference(componentID: b!, pinID: pb.pinID))
-        check(c.design!.nets.count == nets + 1, "rete nuova (\(last))")
+        c.tool = .connect
+        c.connectClick(pa); c.connectClick(pb)
+        check(c.design!.nets.count == nets + 1, "R1.1–R2.1 collegati anche con la stessa piazzola d'impronta (\(last))")
         check(c.board!.airwires.contains { Set([$0.fromComponent, $0.toComponent]) == Set([a!, b!]) }, "collegamento da sbrogliare tra i due")
+        c.tool = .select
 
         // Scheda: bigger, then undo gives the old one back.
         let old = c.design!.board.outline
@@ -61,6 +83,6 @@ struct CircuitTests {
         try? FileManager.default.removeItem(at: out)
 
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
-        print("OK: circuiti — componenti, collegamenti, scheda, annulla, salva e riapri")
+        print("OK: circuiti — da nuovo: componenti generici, collegamento, scheda, annulla, salva e riapri")
     }
 }
