@@ -149,9 +149,13 @@ public enum TechnicalDrawing {
             }
         }
         // Holes go in the hole table; the leaders are for the rest (bosses, shafts).
+        // A hole: empty just inside its rim, material just outside (a shaft or a groove the reverse;
+        // the centre alone would fool a bush, empty on its axis).
         let holes = circles.filter { c in
-            let mid = (c.depth.lowerBound + c.depth.upperBound) / 2
-            return !model.contains(Vec3(c.centre.x, c.centre.y, -mid))
+            let z = -(c.depth.lowerBound + c.depth.upperBound) / 2
+            let dir = Vec2(cos(0.65), sin(0.65)), step = min(0.2, 0.05 * c.radius)
+            let inner = c.centre + dir * (c.radius - step), outer = c.centre + dir * (c.radius + step)
+            return !model.contains(Vec3(inner.x, inner.y, z)) && model.contains(Vec3(outer.x, outer.y, z))
         }.sorted { ($0.centre.y, $0.centre.x) < ($1.centre.y, $1.centre.x) }
         let tabled = !holes.isEmpty && holes.count <= 26
         var labelled: [Vec2] = []
