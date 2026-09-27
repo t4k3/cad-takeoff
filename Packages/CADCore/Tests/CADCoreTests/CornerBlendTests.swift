@@ -99,3 +99,26 @@ private func roundedCircle(_ c: Vec2, _ r: Double, _ n: Int = 32) -> [Vec2] {
     #expect(MeshValidator.validate(r2.bodies[0].mesh).isWatertight)
     #expect(r2.bodies[0].mesh.volume > base2.bodies[0].mesh.volume)
 }
+
+/// A box rounded on every edge gets ball corners, as in Fusion: its volume is the rounded box's
+/// (inner box + slabs + quarter cylinders + one sphere), not the bulkier crossing of cylinders.
+@Test func roundedBoxCornersAreBalls() throws {
+    let r = 5.0
+    let box = Feature(name: "B", kind: .box(width: 40, depth: 30, height: 20))
+    let snap = DesignEvaluator.evaluate(CADDocument(features: [box]), revision: "a").bodies[0].snapshot
+    let f = Feature(name: "R", kind: .chamfer(ChamferSpec(edges: snap.edges.filter(\.isSharp).compactMap(EdgeRef.init), profile: .round, distance: r)))
+    let result = DesignEvaluator.evaluate(CADDocument(features: [box, f]), revision: "b")
+    #expect(result.issues.isEmpty)
+    let body = result.bodies[0]
+    #expect(MeshValidator.validate(body.mesh).isWatertight)
+    #expect(body.snapshot.faces.filter { if case .sphere = $0.surface { true } else { false } }.count == 8)
+    let (a, b, c) = (40 - 2 * r, 30 - 2 * r, 20 - 2 * r)
+    let exact = a * b * c + 2 * r * (a * b + a * c + b * c) + .pi * r * r * (a + b + c) + 4.0 / 3 * .pi * r * r * r
+    // Facets make it a little smaller, never larger (crossing cylinders would be).
+    #expect(body.mesh.volume < exact && body.mesh.volume > exact * 0.998)
+    // In STEP every face is exact: 6 planes, 12 cylinders, 8 spheres.
+    let step = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [box, f])))
+    #expect(step.components(separatedBy: "=SPHERICAL_SURFACE(").count - 1 == 8)
+    #expect(step.components(separatedBy: "=CYLINDRICAL_SURFACE(").count - 1 == 12)
+    #expect(step.components(separatedBy: "=PLANE(").count - 1 == 6)
+}

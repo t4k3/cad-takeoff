@@ -222,6 +222,79 @@ public enum ChamferGeometry {
         return (mid, sum.normalized * (concave ? 1 : -1), cos(half), 1 / sin(half) - 1, limit)
     }
 
+    /// Ball corners (Fusion's rounded corner): where three rounds of the same radius meet on a
+    /// square convex corner (a box's), the corner is a sphere instead of three crossing cylinders.
+    /// The tool is the r-cube at the corner minus the ball; its tessellation matches the rounds'
+    /// (16 steps a quarter), so the seams meet point for point.
+    public static func cornerTool(edges: [EdgeInfo], spec: ChamferSpec, snapshot: BodySnapshot, featureID: UUID) -> CSGSolid? {
+        guard spec.profile == .round, spec.distance > 0 else { return nil }
+        let r = spec.distance
+        func key(_ p: Vec3) -> SIMD3<Int64> { SIMD3(Int64((p.x * 1e5).rounded()), Int64((p.y * 1e5).rounded()), Int64((p.z * 1e5).rounded())) }
+        var ends: [SIMD3<Int64>: [(p: Vec3, dir: Vec3, length: Double)]] = [:]
+        for e in edges {
+            guard let a = e.polyline.first, let b = e.polyline.last, (b - a).length > 1e-6 else { continue }
+            let d = (b - a).normalized
+            guard e.polyline.allSatisfy({ q in let w = q - a; return (w - d * w.dot(d)).length < 1e-5 }) else { continue }
+            ends[key(a), default: []].append((a, d, (b - a).length))
+            ends[key(b), default: []].append((b, -d, (b - a).length))
+        }
+        var tool: CSGSolid?
+        var k = 0
+        for (_, group) in ends.sorted(by: { "\($0.key)" < "\($1.key)" }) where group.count == 3 {
+            let d = group.map(\.dir)
+            guard abs(d[0].dot(d[1])) < 1e-6, abs(d[0].dot(d[2])) < 1e-6, abs(d[1].dot(d[2])) < 1e-6,
+                  group.allSatisfy({ $0.length > r + 1e-6 }) else { continue }
+            let v0 = group[0].p
+            // Convex: the material fills the octant the three edges span.
+            guard contains(v0 + (d[0] + d[1] + d[2]) * min(0.25 * r, 0.05), snapshot) else { continue }
+            var u = d[0], v = d[1]
+            if u.cross(v).dot(d[2]) < 0 { swap(&u, &v) }
+            let w = u.cross(v)
+            let centre = v0 + (u + v + w) * r
+            let ov = min(0.2, 0.25 * r)
+            let piece = hexahedron(v0 - (u + v + w) * ov, u, v, w, size: r + ov, prefix: "chamfer:\(featureID.uuidString)/corner\(k)")
+                .subtracting(ball(centre, r, u, v, w, id: FaceID(rawValue: "chamfer:\(featureID.uuidString)/corner\(k)")))
+            k += 1
+            guard !piece.isEmpty else { continue }
+            tool = tool.map { $0.union(piece) } ?? piece
+        }
+        return tool
+    }
+
+    /// A sphere tessellated in the frame (u, v, w): poles on ±w, 64 meridians from u, 32 bands.
+    static func ball(_ c: Vec3, _ r: Double, _ u: Vec3, _ v: Vec3, _ w: Vec3, id: FaceID) -> CSGSolid {
+        let lon = segments, lat = segments / 2
+        func p(_ i: Int, _ j: Int) -> Vec3 {
+            let th = Double(i) / Double(lat) * .pi, ph = Double(j % lon) / Double(lon) * 2 * .pi
+            return c + (u * (cos(ph) * sin(th)) + v * (sin(ph) * sin(th)) + w * cos(th)) * r
+        }
+        var polys: [CSGSolid.Polygon] = []
+        for i in 0..<lat {
+            for j in 0..<lon {
+                var quad = [p(i, j), p(i + 1, j), p(i + 1, j + 1), p(i, j + 1)]
+                if i == 0 { quad = [p(0, 0), p(1, j), p(1, j + 1)] }
+                if i == lat - 1 { quad = [p(i, j), p(lat, 0), p(i, j + 1)] }
+                guard (quad[1] - quad[0]).cross(quad[2] - quad[0]).length > 1e-14 else { continue }
+                polys.append(CSGSolid.Polygon(vertices: quad, face: 0))
+            }
+        }
+        return oriented(polys, [CSGFace(id: id, surface: .sphere(center: c, radius: r), flipped: false)])
+    }
+
+    /// Box with a corner at `o` and edges `size` along u, v, w.
+    static func hexahedron(_ o: Vec3, _ u: Vec3, _ v: Vec3, _ w: Vec3, size s: Double, prefix: String) -> CSGSolid {
+        let q = [o, o + u * s, o + u * s + v * s, o + v * s].flatMap { [$0, $0 + w * s] }
+        // Corners: 0 = o, 2 = o+u, 4 = o+u+v, 6 = o+v; odd ones the same + w.
+        let quads = [[0, 6, 4, 2], [1, 3, 5, 7], [0, 2, 3, 1], [2, 4, 5, 3], [4, 6, 7, 5], [6, 0, 1, 7]]
+        var faces: [CSGFace] = [], polys: [CSGSolid.Polygon] = []
+        for (k, quad) in quads.enumerated() {
+            let pts = quad.map { q[$0] }
+            faces.append(CSGFace(id: FaceID(rawValue: prefix + "/box\(k)"), surface: .plane(origin: pts[0], normal: (pts[1] - pts[0]).cross(pts[2] - pts[0]).normalized), flipped: false))
+            polys.append(CSGSolid.Polygon(vertices: pts, face: k))
+        }
+        return oriented(polys, faces)
+    }
+
     /// Whether a bevel or round on the edge would be too thin to see: the faces turn so little that
     /// it stays within 0.01 mm of them (a 2.7° crease with a 3 mm round: 0.001 mm). Such tools are
     /// slivers that only break the booleans where rounds meet, so they are skipped.
@@ -926,6 +999,7 @@ public enum ChamferGeometry {
             case let .torus(centre, ax, major, _):
                 let dd = c - centre
                 natural = (c - (centre + (dd - ax * dd.dot(ax)).normalized * major)).normalized
+            case let .sphere(centre, _): natural = (c - centre).normalized
             case .freeform: natural = sample.normal
             }
             fixed[0].flipped = natural.dot(sample.normal) < 0

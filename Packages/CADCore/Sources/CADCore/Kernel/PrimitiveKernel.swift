@@ -433,6 +433,7 @@ extension BRepBody {
             case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
             case .freeform: .freeform
             case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
+            case let .sphere(c, r): .sphere(center: point(c), radius: r)
             }
         }
         let body = BRepBody(id: id, vertices: vertices.map { BRepVertex(id: $0.id, position: point($0.position)) },

@@ -10,21 +10,23 @@ enum ExactSurface {
     case cylinder(origin: Vec3, axis: Vec3, radius: Double)
     case cone(apex: Vec3, axis: Vec3, half: Double)
     case torus(center: Vec3, axis: Vec3, major: Double, minor: Double)
+    case sphere(center: Vec3, radius: Double)
 
     init?(_ s: SurfaceDescriptor) {
         switch s {
         case let .cylinder(o, a, r): self = .cylinder(origin: o, axis: a.normalized, radius: r)
         case let .cone(apex, a, h) where h > 1e-6 && h < .pi / 2 - 1e-6: self = .cone(apex: apex, axis: a.normalized, half: h)
         case let .torus(c, a, R, r) where R > r + 1e-9 && r > 1e-9: self = .torus(center: c, axis: a.normalized, major: R, minor: r)
+        case let .sphere(c, r) where r > 1e-9: self = .sphere(center: c, radius: r)
         default: return nil
         }
     }
 
     var axis: Vec3 {
-        switch self { case let .cylinder(_, a, _), let .cone(_, a, _), let .torus(_, a, _, _): a }
+        switch self { case let .cylinder(_, a, _), let .cone(_, a, _), let .torus(_, a, _, _): a; case .sphere: Vec3(0, 0, 1) }
     }
     var origin: Vec3 {
-        switch self { case let .cylinder(o, _, _): o; case let .cone(apex, _, _): apex; case let .torus(c, _, _, _): c }
+        switch self { case let .cylinder(o, _, _): o; case let .cone(apex, _, _): apex; case let .torus(c, _, _, _), let .sphere(c, _): c }
     }
     /// Distance off the surface (approximate, mm).
     func distance(_ p: Vec3) -> Double {
@@ -33,6 +35,7 @@ enum ExactSurface {
         case let .cylinder(_, _, r): return abs(rho - r)
         case let .cone(_, _, half): return abs(rho * cos(half) - h * sin(half))
         case let .torus(_, _, R, r): return abs(((rho - R) * (rho - R) + h * h).squareRoot() - r)
+        case let .sphere(_, r): return abs(q.length - r)
         }
     }
     /// The surface's own normal direction (STEP: away from the axis, away from the tube).
@@ -41,6 +44,7 @@ enum ExactSurface {
         switch self {
         case .cylinder, .cone: return radial
         case let .torus(_, _, R, _): return q - radial.normalized * R
+        case .sphere: return q
         }
     }
     /// Whether a straight edge from p to q lies on the surface (a cylinder's or cone's generator).
@@ -51,12 +55,17 @@ enum ExactSurface {
         case let .cone(apex, _, _):
             let w = apex - p
             return (w - d * w.dot(d)).length < 1e-5
-        case .torus: return false
+        case .torus, .sphere: return false
         }
     }
     /// Whether a circle lies on the surface (a parallel: square to the axis, centred on it).
     func holdsCircle(center c: Vec3, normal n: Vec3, radius r: Double, sample: Vec3) -> Bool {
         let off = c - origin
+        if case .sphere = self {
+            // Any circle of the sphere: its centre on the line from the sphere's centre along n.
+            guard off.length < 1e-5 || abs(n.dot(off.normalized)) > 1 - 1e-9 else { return false }
+            return distance(sample) < 1e-5 * max(1, r)
+        }
         guard abs(n.dot(axis)) > 1 - 1e-9, (off - axis * off.dot(axis)).length < 1e-5 else { return false }
         return distance(sample) < 1e-5 * max(1, r)
     }
@@ -71,6 +80,8 @@ enum ExactSurface {
             return w.add("CONICAL_SURFACE('',\(w.placement(apex + a, normal: a, reference: ref)),\(w.real(tan(half))),\(w.real(half)))")
         case let .torus(c, a, R, r):
             return w.add("TOROIDAL_SURFACE('',\(w.placement(c, normal: a, reference: ref)),\(w.real(R)),\(w.real(r)))")
+        case let .sphere(c, r):
+            return w.add("SPHERICAL_SURFACE('',\(w.placement(c, normal: Vec3(0, 0, 1), reference: Vec3(1, 0, 0))),\(w.real(r)))")
         }
     }
 }

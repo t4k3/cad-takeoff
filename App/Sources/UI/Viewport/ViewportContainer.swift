@@ -441,6 +441,10 @@ struct ViewportContainer: View {
                     case .freeform:
                         Text("Superficie importata").font(.system(size: 11, weight: .semibold))
                         Text("Area \(fmt(face.area)) mm²")
+                    case let .sphere(_, r):
+                        Text("Faccia sferica (angolo raccordato)").font(.system(size: 11, weight: .semibold))
+                        Text("Raggio \(fmt(r)) mm")
+                        Text("Area \(fmt(face.area)) mm²")
                     case let .torus(_, _, _, minor):
                         Text("Faccia tonda (raccordo)").font(.system(size: 11, weight: .semibold))
                         Text("Raggio \(fmt(minor)) mm")

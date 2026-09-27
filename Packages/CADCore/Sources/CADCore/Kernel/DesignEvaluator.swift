@@ -122,6 +122,10 @@ public enum DesignEvaluator {
                     guard remove != nil || add != nil else { continue }
                     var solid = solidOf(bodies[i])
                     if let remove { solid = solid.subtracting(remove) }
+                    // Square corners where three rounds meet: a ball, as in Fusion.
+                    if let corners = ChamferGeometry.cornerTool(edges: perBody[i]!.map(\.1), spec: spec, snapshot: bodies[i].snapshot, featureID: feature.id) {
+                        solid = solid.subtracting(corners)
+                    }
                     if let add { solid = solid.union(add) }
                     if solid.isEmpty { bodies.remove(at: i) } else { bodies[i] = rebuilt(bodies[i], solid, by: feature.id, revision: revision) }
                 }
@@ -404,6 +408,7 @@ public enum DesignEvaluator {
                 case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
                 case .freeform: .freeform
                 case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
+                case let .sphere(c, r): .sphere(center: point(c), radius: r)
                 }
             }
             func fid(_ f: FaceID) -> FaceID { FaceID(rawValue: part.prefix + f.rawValue) }
@@ -473,7 +478,7 @@ public enum DesignEvaluator {
     private static func surface(_ f: CSGFace) -> SurfaceDescriptor {
         switch f.surface {
         case let .plane(o, n): .plane(origin: o, normal: f.flipped ? -n : n)
-        case .cylinder, .cone, .torus, .freeform: f.surface
+        case .cylinder, .cone, .torus, .sphere, .freeform: f.surface
         }
     }
 
@@ -492,6 +497,9 @@ public enum DesignEvaluator {
             let d = p - centre
             let ring = centre + (d - axis * d.dot(axis)).normalized * major
             let n = (p - ring).normalized
+            return f.flipped ? -n : n
+        case let .sphere(c, _):
+            let n = (p - c).normalized
             return f.flipped ? -n : n
         case .plane, .freeform:
             return nil
