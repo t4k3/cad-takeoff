@@ -62,7 +62,7 @@ final class CircuitModel {
     /// The copper layer being drawn on (0 = top, layerCount − 1 = bottom).
     var activeLayer = 0
     /// Pista: the route being drawn, the leg to the mouse, and whether the engine would take it.
-    var route: Route?
+    var route: Route? { didSet { if route != nil, route != oldValue { yieldOpen() } } }
     var routeCheck: RouteCheck?
     @ObservationIgnored var routeCheckTask: Task<Void, Never>?
     /// The next leg bends diagonally first (else straight first); / switches.
@@ -74,10 +74,10 @@ final class CircuitModel {
     /// Where the copper check chosen in VERIFICHE is (a ring on the board).
     var issueMark: PCBPoint?
     /// Area vietata: the outline being drawn (its points so far), and the area selected.
-    var keepoutDraft: KeepoutDraft?
+    var keepoutDraft: KeepoutDraft? { didSet { if keepoutDraft != nil, keepoutDraft != oldValue { yieldOpen() } } }
     var keepoutSelection: UUID?
     /// Piano di rame: the outline being drawn, and the plane selected (CircuitModel+Zones).
-    var zoneDraft: ZoneDraft?
+    var zoneDraft: ZoneDraft? { didSet { if zoneDraft != nil, zoneDraft != oldValue { yieldOpen() } } }
     var zoneSelection: UUID?
     @ObservationIgnored var lastZoneNet: UUID?
     /// The latest open request (only it may install its circuit), and how files are read (tests
@@ -110,8 +110,8 @@ final class CircuitModel {
     var netRules: NetRulesCache?
     @ObservationIgnored var netRulesTask: Task<Void, Never>?
     var schematicSelection: SchematicObject?
-    var wireStart: WireEnd?
-    var wireBends: [PCBPoint] = []
+    var wireStart: WireEnd? { didSet { if wireStart != nil, wireStart != oldValue { yieldOpen() } } }
+    var wireBends: [PCBPoint] = [] { didSet { if !wireBends.isEmpty, wireBends != oldValue { yieldOpen() } } }
     /// Etichetta: the terminal being named (the name panel is open).
     var labelTarget: SchematicTerminal?
     /// The circuit's own last message (the status bar shows it in CIRCUITI, never the CAD's).
@@ -169,8 +169,9 @@ final class CircuitModel {
         report("Aperto \(name) — \(summary)")
     }
 
-    /// Starting to draw (a route, an area, a plane) while a file is being opened: the open
-    /// gives way, said so — it would otherwise replace the circuit under the new drawing.
+    /// Drawing (a route, an area, a plane, a wire — started or changed) while a file is being
+    /// opened: the open gives way, said so — it would otherwise replace the circuit under the
+    /// drawing. Called by those properties' observers; nothing when no open is reading.
     func yieldOpen() {
         guard openRequest != nil else { return }
         openRequest = nil

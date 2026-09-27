@@ -162,7 +162,6 @@ extension CircuitModel {
     func keepoutClick(at p: PCBPoint, tolerance: Double) async {
         guard !pcbBusy else { return }
         let q = keepoutPoint(near: p, tolerance: tolerance)
-        if keepoutDraft == nil && zoneDraft == nil { yieldOpen() }
         var d = keepoutDraft ?? KeepoutDraft(baseRevision: document?.revision ?? 0, name: "Area vietata \(keepouts.count + 1)", layers: [activeLayer])
         if d.points.count >= 3, Self.distance(q, d.points[0]) <= tolerance { await finishKeepout(); return }
         // A second click on the last point (a double click) closes it: two points make the rectangle.

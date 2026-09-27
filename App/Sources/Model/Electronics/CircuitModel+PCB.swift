@@ -121,7 +121,6 @@ extension CircuitModel {
     }
 
     private func startRoute(at p: PCBPoint, tolerance: Double, in snapshot: PCBSnapshot) {
-        yieldOpen()
         // The layer being drawn on first (where top and bottom copper cross, the one in view).
         let onLayer = snapshot.pick(point: p, tolerance: tolerance, layer: activeLayer)
         let hits = onLayer.contains { $0.netID != nil } ? onLayer : snapshot.pick(point: p, tolerance: tolerance)

@@ -466,6 +466,14 @@ struct CircuitTests {
         await gate.release(outS2)
         do { try await openUnderDraft; check(false, "apertura sopra una bozza?") }
         catch { check(slow.keepoutDraft != nil && slow.document == drawn && (error as? CircuitEditError)?.isSuperseded == true, "bozza iniziata durante l'apertura conservata") }
+        // A draft already there when the open starts, changed during the read: the open gives way too.
+        async let openOverDraft: Void = slow.open(outS2)
+        await gate.arrived(outS2)
+        await slow.keepoutClick(at: PCBPoint(6, 6), tolerance: 0.01)
+        let grown = slow.keepoutDraft
+        await gate.release(outS2)
+        do { try await openOverDraft; check(false, "apertura sopra una bozza cambiata?") }
+        catch { check(slow.keepoutDraft == grown && grown?.points.count == 2 && slow.document == drawn, "vertice aggiunto durante l'apertura conservato") }
         slow.keepoutDraft = nil
         slow.tool = .select
 
