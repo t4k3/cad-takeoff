@@ -9,6 +9,8 @@ struct Ribbon: View {
     @Environment(CircuitModel.self) private var circuits
     /// The sketch constraints' list (VINCOLI › Vincoli).
     @State private var showConstraints = false
+    /// The copper layers' list (SBROGLIO › Strato).
+    @State private var showLayers = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -322,7 +324,40 @@ struct Ribbon: View {
                 .help("Collega due pin: clicca una piazzola, poi l'altra (stessa rete; collegamento logico, non ancora una pista)")
             Button { circuits.tool = .select; circuits.showBoard = true } label: { Label("Scheda", systemImage: "rectangle.dashed") }
                 .disabled(circuits.document == nil)
-                .help("Misure e spessore della scheda, con anteprima")
+                .help("Misure e spessore della scheda, strati del rame e regole, con anteprima")
+        }
+        ToolGroup("SBROGLIO") {
+            Button { circuits.tool = circuits.tool == .route ? .select : .route } label: {
+                Label("Pista", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+            }
+            .buttonStyle(RibbonButtonStyle(isActive: circuits.tool == .route, tint: Theme.Palette.accent))
+            .disabled(circuits.document == nil)
+            .help("Traccia una pista (X): clicca una piazzola, poi i punti di piega; finisce sul rame della stessa rete, con Invio o con un secondo clic sull'ultimo punto")
+            // The layers behind one button (up to 32: a list that opens below it).
+            Button { showLayers.toggle() } label: { Label(circuits.layerName(circuits.activeLayer), systemImage: "square.3.layers.3d") }
+                .disabled(circuits.document == nil)
+                .help("Strato su cui tracciare. Durante una pista, cambiarlo mette una via (V: lato opposto)")
+                .popover(isPresented: $showLayers, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        ForEach(0..<circuits.layerCount, id: \.self) { layer in
+                            Button {
+                                circuits.switchLayer(to: layer)
+                                showLayers = false
+                            } label: {
+                                Label(circuits.layerName(layer), systemImage: "square.fill")
+                                    .foregroundStyle(CopperColors.layer(layer, of: circuits.layerCount))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 8).padding(.vertical, 4)
+                                    .background(RoundedRectangle(cornerRadius: 5)
+                                        .fill(circuits.activeLayer == layer ? Theme.Palette.accent.opacity(0.3) : Color.clear))
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(6)
+                    .frame(width: 160)
+                }
         }
         ToolGroup("COMPONENTE") {
             Button { if let c = circuits.selection { circuits.rotate(c) } } label: { Label("Ruota", systemImage: "rotate.right") }
@@ -331,9 +366,12 @@ struct Ribbon: View {
             Button { if let c = circuits.selection { circuits.flip(c) } } label: { Label("Lato", systemImage: "arrow.up.arrow.down.square") }
                 .disabled(circuits.selection == nil)
                 .help("Porta il componente sull'altro lato della scheda (F)")
-            Button { if let c = circuits.selection { circuits.removeComponent(c) } } label: { Label("Elimina", systemImage: "trash") }
-                .disabled(circuits.selection == nil)
-                .help("Elimina il componente selezionato con i suoi collegamenti (Canc)")
+            Button {
+                if let item = circuits.copperSelection { circuits.removeCopper(item) }
+                else if let c = circuits.selection { circuits.removeComponent(c) }
+            } label: { Label("Elimina", systemImage: "trash") }
+                .disabled(circuits.selection == nil && circuits.copperSelection == nil)
+                .help("Elimina la pista o la via selezionata, o il componente con i suoi collegamenti (Canc)")
         }
         }
         ToolGroup("LIBRERIA") {

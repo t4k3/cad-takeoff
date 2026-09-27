@@ -66,10 +66,11 @@ extension CircuitModel {
         }
         if schematicIsCurrent { return }
         schematicTask?.cancel()
-        let design = doc.design, revision = doc.revision
+        let design = doc.design, revision = doc.revision, epoch = documentEpoch
         schematicTask = Task { [weak self] in
             let built = await Self.offMain { try? ElectronicsSchematic.snapshot(design: design, revision: revision, sheetID: sheet) }
-            guard !Task.isCancelled, let self, self.document?.revision == revision, self.currentSheetID == sheet else { return }
+            guard !Task.isCancelled, let self, self.documentEpoch == epoch, self.document?.revision == revision,
+                  self.currentSheetID == sheet else { return }
             self.schematic = built
         }
     }

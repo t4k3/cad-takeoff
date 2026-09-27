@@ -96,8 +96,12 @@ struct CircuitBoardView: View {
     @State private var pan: CGSize = .zero
     @State private var panStart: CGSize?
     @State private var hoveredPad: PlacedPad?
-    /// Where the mouse is on the board (placing a component, the Collega rubber band).
+    /// The track or via under the mouse (not on a pad).
+    @State private var hoveredCopper: PCBHit?
+    /// Where the mouse is on the board (placing a component, the Collega rubber band), on the
+    /// 0,5 mm grid, and exactly.
     @State private var cursor: PCBPoint?
+    @State private var pointer: PCBPoint?
 
     @State private var dragging: (component: UUID, from: PCBPoint, delta: PCBPoint)?
     @GestureState private var pinch: CGFloat = 1
@@ -120,25 +124,18 @@ struct CircuitBoardView: View {
         return Mapping(scale: scale, origin: CGPoint(x: centre.x - CGFloat(lo.x + w / 2) * scale, y: centre.y + CGFloat(lo.y + h / 2) * scale))
     }
 
-    /// Pads as drawn now: the dragged component's moved by the preview offset.
-    private var pads: [PlacedPad] {
-        guard let all = circuits.board?.pads else { return [] }
-        guard let d = dragging else { return all }
-        return all.map { p in
-            guard p.componentID == d.component else { return p }
-            var q = p; q.center = PCBPoint(p.center.x + d.delta.x, p.center.y + d.delta.y); return q
-        }
-    }
-
+    /// The pad under a point: the engine's exact copper (the same the DRC checks), the layer
+    /// being drawn on first.
     private func pad(at p: PCBPoint) -> PlacedPad? {
-        pads.min { distance($0, p) < distance($1, p) }.flatMap { distance($0, p) <= 0 ? $0 : nil }
+        guard circuits.pcbIsCurrent, let s = circuits.pcb else { return nil }
+        func pad(_ hits: [PCBHit]) -> PCBHit? { hits.first { if case .pad = $0.item { true } else { false } } }
+        guard let hit = pad(s.pick(point: p, tolerance: 0, layer: circuits.activeLayer)) ?? pad(s.pick(point: p, tolerance: 0)),
+              case let .pad(component, padID) = hit.item else { return nil }
+        return s.board.pads.first { $0.componentID == component && $0.padID == padID }
     }
 
-    /// 0 inside the pad (its larger half-size as radius: enough to aim), else how far out.
-    private func distance(_ pad: PlacedPad, _ p: PCBPoint) -> Double {
-        let r = max(pad.size.x, pad.size.y) / 2
-        return max(0, hypot(p.x - pad.center.x, p.y - pad.center.y) - r)
-    }
+    /// About 11 px in millimetres: how near the mouse must be to pick or snap copper.
+    private func tolerance(_ m: Mapping) -> Double { Double(11 / m.scale) }
 
     var body: some View {
         GeometryReader { geo in
@@ -150,16 +147,19 @@ struct CircuitBoardView: View {
                     if case let .active(q) = phase {
                         let p = m.board(q)
                         hoveredPad = pad(at: p)
+                        hoveredCopper = hoveredPad == nil ? circuits.copperHit(at: p, tolerance: tolerance(m)) : nil
                         cursor = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)   // 0,5 mm grid
+                        pointer = p
+                        if circuits.route != nil { circuits.previewLeg(to: p, tolerance: tolerance(m)) }
                         placingCursor(true)
-                    } else { hoveredPad = nil; cursor = nil; placingCursor(false) }
+                    } else { hoveredPad = nil; hoveredCopper = nil; cursor = nil; pointer = nil; placingCursor(false) }
                 }
                 .gesture(
                     DragGesture(minimumDistance: 2)
                         .onChanged { g in
                             if dragging == nil, panStart == nil {
                                 let start = m.board(g.startLocation)
-                                if let hit = pad(at: start), let place = circuits.placement(of: hit.componentID) {
+                                if circuits.tool != .route, let hit = pad(at: start), let place = circuits.placement(of: hit.componentID) {
                                     circuits.selection = hit.componentID
                                     dragging = (hit.componentID, place.position, PCBPoint())
                                 } else {
@@ -183,7 +183,7 @@ struct CircuitBoardView: View {
                         }
                 )
                 .simultaneousGesture(SpatialTapGesture().onEnded { tap in
-                    click(m.board(tap.location))
+                    click(m.board(tap.location), m)
                     focused = true
                 })
                 .gesture(MagnifyGesture().updating($pinch) { value, state, _ in state = value.magnification }
@@ -191,24 +191,45 @@ struct CircuitBoardView: View {
                 .focusable().focused($focused).focusEffectDisabled()
                 .onKeyPress("r") { if let c = circuits.selection { circuits.rotate(c) }; return .handled }
                 .onKeyPress("f") { if let c = circuits.selection { circuits.flip(c) }; return .handled }
-                .onKeyPress(.escape) {
-                    if circuits.connectFrom != nil { circuits.connectFrom = nil }
-                    else if circuits.tool != .select { circuits.tool = .select }
-                    else { circuits.selection = nil }
+                .onKeyPress("x") { circuits.tool = circuits.tool == .route ? .select : .route; return .handled }
+                .onKeyPress("v") { circuits.switchLayer(); return .handled }
+                .onKeyPress("/") {
+                    circuits.diagonalFirst.toggle()
+                    circuits.routeCheck = nil
+                    if let p = pointer { circuits.previewLeg(to: p, tolerance: tolerance(m)) }
                     return .handled
                 }
-                .onKeyPress(.delete) { if let c = circuits.selection { circuits.removeComponent(c) }; return .handled }
-                .onKeyPress(.deleteForward) { if let c = circuits.selection { circuits.removeComponent(c) }; return .handled }
+                .onKeyPress(.return) { circuits.finishRoute(); return .handled }
+                .onKeyPress(.escape) {
+                    if circuits.route != nil { circuits.route = nil; circuits.routeCheck = nil }
+                    else if circuits.connectFrom != nil { circuits.connectFrom = nil }
+                    else if circuits.tool != .select { circuits.tool = .select }
+                    else { circuits.selection = nil; circuits.copperSelection = nil; circuits.issueMark = nil }
+                    return .handled
+                }
+                .onKeyPress(.delete) { deleteSelection(); return .handled }
+                .onKeyPress(.deleteForward) { deleteSelection(); return .handled }
                 .overlay(alignment: .bottomTrailing) { zoomButtons.padding(12) }
+                .overlay(alignment: .bottomLeading) { routingBar.padding(12) }
                 .overlay(alignment: .topLeading) { hoverChip.padding(12) }
                 .overlay(alignment: .top) { toolHint.padding(.top, 12) }
                 .onChange(of: circuits.tool) { _, _ in focused = true }
         }
     }
 
-    /// A click on the board: place, connect or select, by the tool.
-    private func click(_ p: PCBPoint) {
+    /// Canc: the last leg of the route being drawn, else the copper or component selected.
+    private func deleteSelection() {
+        if circuits.route != nil { circuits.undoLeg() }
+        else if let item = circuits.copperSelection { circuits.removeCopper(item) }
+        else if let c = circuits.selection { circuits.removeComponent(c) }
+    }
+
+    /// A click on the board: place, connect, route or select, by the tool.
+    private func click(_ p: PCBPoint, _ m: Mapping) {
+        circuits.issueMark = nil
         switch circuits.tool {
+        case .route:
+            circuits.routeClick(at: p, tolerance: tolerance(m))
         case let .place(placing):
             // Keeps placing (next identity and reference) until Esc: the model moves the session on.
             let at = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)
@@ -218,7 +239,11 @@ struct CircuitBoardView: View {
         case let .placeExisting(id):
             circuits.placeExistingOnBoard(id, at: PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2))
         case .select:
-            circuits.selection = pad(at: p)?.componentID
+            if pad(at: p) == nil, let hit = circuits.copperHit(at: p, tolerance: tolerance(m)) {
+                circuits.copperSelection = hit.item; circuits.selection = nil
+            } else {
+                circuits.selection = pad(at: p)?.componentID; circuits.copperSelection = nil
+            }
         }
     }
 
@@ -226,7 +251,7 @@ struct CircuitBoardView: View {
     private func placingCursor(_ inside: Bool) {
         guard inside else { return }
         switch circuits.tool {
-        case .place, .placeExisting: NSCursor.crosshair.set()
+        case .place, .placeExisting, .route: NSCursor.crosshair.set()
         default: NSCursor.arrow.set()
         }
     }
@@ -238,14 +263,58 @@ struct CircuitBoardView: View {
             : "Collega: clicca la seconda piazzola · Esc per ricominciare"
         case let .placeExisting(id):
             "Clicca dove posare \(circuits.design?.components.first { $0.id == id }?.reference ?? "il componente") · Esc per finire"
+        case .route: routeHint
         case .select: nil
         }
         if let text {
-            Text(text).font(.system(size: 11, weight: .medium))
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .overlayChip()
+            VStack(spacing: 4) {
+                Text(text).font(.system(size: 11, weight: .medium))
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .overlayChip()
+                if let blocking = circuits.routeCheck?.blocking, let first = blocking.first {
+                    Label("Non confermabile: \(first.message)", systemImage: "xmark.octagon.fill")
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(.red)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .overlayChip()
+                }
+            }
         }
     }
+
+    private var routeHint: String {
+        let layer = circuits.layerName(circuits.activeLayer)
+        guard let r = circuits.route else {
+            return "Pista su \(layer): clicca una piazzola, una via o una pista · X per uscire"
+        }
+        let net = circuits.design?.nets.first { $0.id == r.netID }?.name ?? "?"
+        return "Rete \(net) su \(layer): clic per piegare · V via · / piega · Invio o clic sul rame della rete per finire · ⌫ toglie l'ultimo punto · Esc annulla"
+    }
+
+    /// Pista: the width of the next tracks and how the leg bends.
+    @ViewBuilder private var routingBar: some View {
+        if circuits.tool == .route {
+            @Bindable var c = circuits
+            HStack(spacing: 8) {
+                Circle().fill(CopperColors.layer(circuits.activeLayer, of: circuits.layerCount)).frame(width: 9, height: 9)
+                Text(circuits.layerName(circuits.activeLayer)).font(.system(size: 11, weight: .semibold))
+                Divider().frame(height: 14)
+                Menu {
+                    ForEach(circuits.trackWidths, id: \.self) { w in
+                        Button(Self.mm(w)) { circuits.trackWidth = w; circuits.route?.width = w; circuits.routeCheck = nil }
+                    }
+                } label: { Text("Larghezza \(Self.mm(circuits.route?.width ?? circuits.trackWidth))").font(.system(size: 11)) }
+                .menuStyle(.borderlessButton).fixedSize()
+                .help("Larghezza delle piste (la minima è quella delle regole: Scheda)")
+                Divider().frame(height: 14)
+                Toggle("45° prima", isOn: $c.diagonalFirst).toggleStyle(.checkbox).font(.system(size: 11))
+                    .help("Il tratto piega prima in diagonale, altrimenti prima dritto (/)")
+            }
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .overlayChip()
+        }
+    }
+
+    static func mm(_ v: Double) -> String { v.formatted(.number.precision(.fractionLength(0...2))) + " mm" }
 
     private var zoomButtons: some View {
         HStack(spacing: 2) {
@@ -258,7 +327,17 @@ struct CircuitBoardView: View {
     }
 
     @ViewBuilder private var hoverChip: some View {
-        if let pad = hoveredPad, let design = circuits.design {
+        if hoveredPad == nil, let hit = hoveredCopper, let design = circuits.design {
+            let net = hit.netID.flatMap { id in design.nets.first { $0.id == id } }?.name ?? "?"
+            let text: String = switch hit.item {
+            case .track(let id): circuits.track(id).map { "Pista · rete \(net) · \(circuits.layerName($0.layer)) · \(Self.mm($0.width))" } ?? "Pista"
+            case .via(let id): circuits.via(id).map { "Via · rete \(net) · Ø \(Self.mm($0.diameter)), foro \(Self.mm($0.drill))" } ?? "Via"
+            case .pad: "rete \(net)"
+            }
+            Text(text).font(.system(size: 11, weight: .medium))
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .overlayChip()
+        } else if let pad = hoveredPad, let design = circuits.design {
             let component = design.components.first { $0.id == pad.componentID }
             let net = pad.netID.flatMap { id in design.nets.first { $0.id == id } }
             Text("\(component?.reference ?? "?") · \(net.map { "rete \($0.name)" } ?? "non collegata")")
@@ -280,33 +359,25 @@ struct CircuitBoardView: View {
         ctx.fill(outline, with: .color(Color(red: 0.10, green: 0.33, blue: 0.20)))
         ctx.stroke(outline, with: .color(Color(red: 0.85, green: 0.9, blue: 0.8)), lineWidth: 1.5)
 
-        let litNet = hoveredPad?.netID
+        let litNet = hoveredPad?.netID ?? hoveredCopper?.netID ?? circuits.route?.netID
+        drawCopper(&ctx, m, litNet: litNet, accent: accent)
         let selected = circuits.selection
-        // Pads: copper, top gold and bottom blue; the net under the mouse and the selected
-        // component in the accent colour.
-        for pad in pads {
-            let c = m.screen(pad.center)
-            let w = CGFloat(pad.size.x) * m.scale, h = CGFloat(pad.size.y) * m.scale
-            let rect = CGRect(x: -w / 2, y: -h / 2, width: w, height: h)
-            // Shapes the engine may add later (rounded rectangles…) are drawn as rectangles with
-            // softened corners until it gives the exact outline (UX_RULES §6.3).
-            let shape: Path = switch pad.shape {
-            case .circle: Path(ellipseIn: rect)
-            case .oval: Path(roundedRect: rect, cornerRadius: min(w, h) / 2)
-            case .rectangle: Path(rect)
-            default: Path(roundedRect: rect, cornerRadius: min(w, h) * 0.25)
+        // Pads: the engine's exact copper, top gold and bottom blue; the net under the mouse and
+        // the selected component in the accent colour; the dragged component's moved by the offset.
+        for primitive in circuits.pcb?.primitives ?? [] {
+            guard case let .pad(component, _) = primitive.item else { continue }
+            var core = primitive.core
+            if let d = dragging, d.component == component { core = core.map { PCBPoint($0.x + d.delta.x, $0.y + d.delta.y) } }
+            var colour = primitive.layers.contains(0) ? Color(red: 0.84, green: 0.66, blue: 0.28) : Color(red: 0.35, green: 0.55, blue: 0.95)
+            if let n = litNet, primitive.netID == n { colour = accent }
+            if component == selected {
+                colour = accent
+                fill(&ctx, m, core: core, radius: primitive.radius + Double(1.2 / m.scale), with: .color(.white))
             }
-            let placed = shape.applying(CGAffineTransform(rotationAngle: -CGFloat(pad.rotationDegrees) * .pi / 180))
-                .applying(CGAffineTransform(translationX: c.x, y: c.y))
-            let top = pad.copperSides.contains(.top)
-            var colour = top ? Color(red: 0.84, green: 0.66, blue: 0.28) : Color(red: 0.35, green: 0.55, blue: 0.95)
-            if let n = litNet, pad.netID == n { colour = accent }
-            if pad.componentID == selected { colour = accent }
-            ctx.fill(placed, with: .color(colour))
-            if pad.componentID == selected { ctx.stroke(placed, with: .color(.white), lineWidth: 1.2) }
-            if let drill = pad.drillDiameter, drill > 0 {
-                let r = CGFloat(drill) * m.scale / 2
-                ctx.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r)), with: .color(.black))
+            fill(&ctx, m, core: core, radius: primitive.radius, with: .color(colour))
+            if let drill = primitive.drillDiameter, drill > 0 {
+                let c = core.reduce(PCBPoint()) { PCBPoint($0.x + $1.x / Double(core.count), $0.y + $1.y / Double(core.count)) }
+                fill(&ctx, m, core: [c], radius: drill / 2, with: .color(.black))
             }
         }
         // Connections still to route (airwires): thin, the lit net's brighter.
@@ -320,6 +391,7 @@ struct CircuitBoardView: View {
             let lit = wire.netID == litNet
             ctx.stroke(path, with: .color(lit ? accent : Color.white.opacity(0.55)), lineWidth: lit ? 1.6 : 0.8)
         }
+        drawRoute(&ctx, m, accent: accent)
         // Scheda: the new outline, dashed, until OK or Annulla.
         if let preview = circuits.boardPreview, preview.count >= 3 {
             var path = Path()
@@ -338,12 +410,7 @@ struct CircuitBoardView: View {
         if case .place = circuits.tool, let at = cursor {
             // The session's pads (previewed once at the origin) moved under the mouse.
             for pad in circuits.boardGhost {
-                let c = m.screen(PCBPoint(pad.center.x + at.x, pad.center.y + at.y))
-                let w = CGFloat(pad.size.x) * m.scale, h = CGFloat(pad.size.y) * m.scale
-                let rect = Path(roundedRect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: min(w, h) * 0.25)
-                    .applying(CGAffineTransform(rotationAngle: -CGFloat(pad.rotationDegrees) * .pi / 180))
-                    .applying(CGAffineTransform(translationX: c.x, y: c.y))
-                ctx.fill(rect, with: .color(accent.opacity(0.55)))
+                fill(&ctx, m, core: pad.core.map { PCBPoint($0.x + at.x, $0.y + at.y) }, radius: pad.radius, with: .color(accent.opacity(0.55)))
             }
         }
         if case let .place(p) = circuits.tool, let c = cursor {
@@ -364,6 +431,109 @@ struct CircuitBoardView: View {
                 .foregroundColor(place.componentID == selected ? accent : .white)
             ctx.draw(label, at: CGPoint(x: m.screen(at).x, y: m.screen(at).y - max(10, 2.5 * m.scale)))
         }
+        drawChecks(&ctx, m)
+    }
+
+    /// The engine's exact copper shape: its core (point, segment, convex polygon) swept by a disk.
+    private func fill(_ ctx: inout GraphicsContext, _ m: Mapping, core: [PCBPoint], radius: Double, with shading: GraphicsContext.Shading) {
+        let w = CGFloat(2 * radius) * m.scale
+        switch core.count {
+        case 0: return
+        case 1:
+            let c = m.screen(core[0]), r = w / 2
+            ctx.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r)), with: shading)
+        default:
+            var path = Path()
+            path.move(to: m.screen(core[0]))
+            for p in core.dropFirst() { path.addLine(to: m.screen(p)) }
+            if core.count > 2 { path.closeSubpath(); ctx.fill(path, with: shading) }
+            ctx.stroke(path, with: shading, style: StrokeStyle(lineWidth: max(w, 1), lineCap: .round, lineJoin: .round))
+        }
+    }
+
+    /// Tracks and vias of the drawing: other layers dimmed under the one being drawn on, vias on
+    /// top with their hole; the lit net and the selection in the accent colour.
+    private func drawCopper(_ ctx: inout GraphicsContext, _ m: Mapping, litNet: UUID?, accent: Color) {
+        guard let pcb = circuits.pcb else { return }
+        let active = circuits.activeLayer, count = pcb.layerCount
+        let copper = pcb.primitives.filter { if case .pad = $0.item { false } else { true } }
+        let tracks = copper.filter { if case .track = $0.item { true } else { false } }
+        let order = tracks.filter { !$0.layers.contains(active) }.sorted { ($0.layers.first ?? 0) > ($1.layers.first ?? 0) }
+            + tracks.filter { $0.layers.contains(active) }
+        for p in order {
+            let layer = p.layers.first ?? 0
+            var colour = CopperColors.layer(layer, of: count).opacity(layer == active ? 0.95 : 0.4)
+            if let n = litNet, p.netID == n { colour = accent.opacity(layer == active ? 1 : 0.6) }
+            if p.item == circuits.copperSelection { fill(&ctx, m, core: p.core, radius: p.radius + Double(1.5 / m.scale), with: .color(.white)) }
+            fill(&ctx, m, core: p.core, radius: p.radius, with: .color(colour))
+        }
+        for p in copper { if case .via = p.item {
+            if p.item == circuits.copperSelection { fill(&ctx, m, core: p.core, radius: p.radius + Double(1.5 / m.scale), with: .color(.white)) }
+            let lit = litNet != nil && p.netID == litNet
+            fill(&ctx, m, core: p.core, radius: p.radius, with: .color(lit ? accent : Color(white: 0.78)))
+            if let d = p.drillDiameter { fill(&ctx, m, core: p.core, radius: d / 2, with: .color(.black)) }
+        } }
+    }
+
+    /// Pista: the runs drawn so far, their vias, and the leg to the mouse — red when the engine
+    /// would refuse the route, dashed while it checks.
+    private func drawRoute(_ ctx: inout GraphicsContext, _ m: Mapping, accent: Color) {
+        guard let r = circuits.route else { return }
+        let count = circuits.layerCount
+        for run in r.runs where run.points.count > 1 {
+            var path = Path()
+            path.move(to: m.screen(run.points[0]))
+            for p in run.points.dropFirst() { path.addLine(to: m.screen(p)) }
+            ctx.stroke(path, with: .color(CopperColors.layer(run.layer, of: count)),
+                       style: StrokeStyle(lineWidth: max(CGFloat(r.width) * m.scale, 1), lineCap: .round, lineJoin: .round))
+        }
+        let rules = circuits.copperRules
+        let viaRadius = max(0.6, max(0.3, rules.minimumDrill) + 2 * rules.minimumAnnularRing) / 2
+        for v in r.vias { fill(&ctx, m, core: [v.position], radius: viaRadius, with: .color(Color(white: 0.85))) }
+        if let check = circuits.routeCheck, check.leg.count > 1 {
+            var path = Path()
+            path.move(to: m.screen(check.leg[0]))
+            for p in check.leg.dropFirst() { path.addLine(to: m.screen(p)) }
+            let refused = !(check.blocking?.isEmpty ?? true)
+            let colour = refused ? Color.red : CopperColors.layer(r.layer, of: count)
+            let w = max(CGFloat(r.width) * m.scale, 1)
+            ctx.stroke(path, with: .color(colour.opacity(0.85)),
+                       style: StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round, dash: check.blocking == nil ? [w * 1.5, w] : []))
+            for issue in check.blocking ?? [] { if let at = issue.position { ring(&ctx, m.screen(at), 7, .red) } }
+            if check.target.kind != .grid { ring(&ctx, m.screen(check.target.position), 6, accent) }
+        }
+        ring(&ctx, m.screen(r.tip), 4, .white)
+    }
+
+    /// The copper errors where they are, and the check chosen in VERIFICHE.
+    private func drawChecks(_ ctx: inout GraphicsContext, _ m: Mapping) {
+        if circuits.pcbIsCurrent {
+            for issue in circuits.pcb?.issues ?? [] where issue.severity == .error {
+                guard let at = issue.position else { continue }
+                let q = m.screen(at), r: CGFloat = 5
+                var x = Path()
+                x.move(to: CGPoint(x: q.x - r, y: q.y - r)); x.addLine(to: CGPoint(x: q.x + r, y: q.y + r))
+                x.move(to: CGPoint(x: q.x + r, y: q.y - r)); x.addLine(to: CGPoint(x: q.x - r, y: q.y + r))
+                ctx.stroke(x, with: .color(.red), lineWidth: 2)
+            }
+        }
+        if let at = circuits.issueMark { ring(&ctx, m.screen(at), 14, .yellow) }
+    }
+
+    private func ring(_ ctx: inout GraphicsContext, _ q: CGPoint, _ r: CGFloat, _ colour: Color) {
+        ctx.stroke(Path(ellipseIn: CGRect(x: q.x - r, y: q.y - r, width: 2 * r, height: 2 * r)), with: .color(colour), lineWidth: 2)
+    }
+}
+
+/// Copper layer colours: top red, bottom blue, inner layers each their own.
+enum CopperColors {
+    static func layer(_ layer: Int, of count: Int) -> Color {
+        if layer == 0 { return Color(red: 0.88, green: 0.30, blue: 0.24) }
+        if layer == count - 1 { return Color(red: 0.30, green: 0.52, blue: 0.96) }
+        let inner: [Color] = [Color(red: 0.92, green: 0.80, blue: 0.25), Color(red: 0.80, green: 0.38, blue: 0.85),
+                              Color(red: 0.30, green: 0.82, blue: 0.80), Color(red: 0.55, green: 0.85, blue: 0.30),
+                              Color(red: 0.96, green: 0.58, blue: 0.20), Color(red: 0.95, green: 0.45, blue: 0.65)]
+        return inner[(layer - 1) % inner.count]
     }
 }
 
@@ -390,6 +560,7 @@ struct CircuitChecksPanel: View {
                     }
                 }
             }
+            if let item = circuits.copperSelection { CopperDetail(item: item) }
             if let id = circuits.selection, let comp = circuits.design?.components.first(where: { $0.id == id }) {
                 Divider()
                 Text("\(comp.reference) · \(comp.value)").font(.callout.weight(.semibold))
@@ -406,6 +577,41 @@ struct CircuitChecksPanel: View {
         .padding(12)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(Theme.Palette.panel)
+    }
+}
+
+/// The track or via selected: net, layer, size; the track's width can change (one undo step).
+private struct CopperDetail: View {
+    @Environment(CircuitModel.self) private var circuits
+    let item: PCBItem
+
+    var body: some View {
+        let design = circuits.design
+        let netName = { (id: UUID) in design?.nets.first { $0.id == id }?.name ?? "?" }
+        Divider()
+        switch item {
+        case .track(let id):
+            if let t = circuits.track(id) {
+                let length = zip(t.points, t.points.dropFirst()).reduce(0.0) { $0 + CircuitModel.distance($1.0, $1.1) }
+                Text("Pista · rete \(netName(t.netID))").font(.callout.weight(.semibold))
+                Text("\(circuits.layerName(t.layer)) · \(String(format: "%.2f", length)) mm di lunghezza")
+                    .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
+                Menu {
+                    ForEach(circuits.trackWidths, id: \.self) { w in
+                        Button(CircuitBoardView.mm(w)) { circuits.setWidth(w, ofTrack: id) }
+                    }
+                } label: { Text("Larghezza \(CircuitBoardView.mm(t.width))") }
+                .fixedSize()
+            }
+        case .via(let id):
+            if let v = circuits.via(id) {
+                Text("Via · rete \(netName(v.netID))").font(.callout.weight(.semibold))
+                Text("Ø \(CircuitBoardView.mm(v.diameter)) · foro \(CircuitBoardView.mm(v.drill)) · passante")
+                    .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
+            }
+        case .pad: EmptyView()
+        }
+        Text("Canc elimina").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
     }
 }
 
@@ -528,6 +734,8 @@ struct BoardSheet: View {
     @State private var width = 50.0
     @State private var height = 30.0
     @State private var thickness = 1.6
+    @State private var layers = 2
+    @State private var rules = PCBDesignRules()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -538,8 +746,25 @@ struct BoardSheet: View {
                 row("Larghezza", $width, "mm")
                 row("Altezza", $height, "mm")
                 row("Spessore", $thickness, "mm")
+                GridRow {
+                    Text("Strati rame")
+                    Picker("", selection: $layers) {
+                        ForEach(Array(stride(from: 2, through: 32, by: 2)), id: \.self) { Text("\($0)").tag($0) }
+                    }
+                    .labelsHidden().frame(width: 90)
+                    .disabled(hasCopper)
+                    Text(hasCopper ? "togli piste e via per cambiarli" : "").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+                }
+                Divider().gridCellColumns(3)
+                row("Distanza fra reti", $rules.clearance, "mm")
+                row("Distanza dal bordo", $rules.edgeClearance, "mm")
+                row("Pista minima", $rules.minimumTrackWidth, "mm")
+                row("Foro minimo", $rules.minimumDrill, "mm")
+                row("Anello minimo", $rules.minimumAnnularRing, "mm")
             }
             .textFieldStyle(.roundedBorder)
+            Text("Regole di partenza del progetto, non quelle di un fornitore: controllale col produttore.")
+                .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
             if width <= 0 || height <= 0 || thickness <= 0 {
                 Text("Le misure devono essere maggiori di zero.").font(.caption).foregroundStyle(.red)
             }
@@ -550,6 +775,7 @@ struct BoardSheet: View {
                 Button("OK") {
                     circuits.boardPreview = nil
                     circuits.setBoard(width: width, height: height, thickness: thickness)
+                    circuits.configureCopper(layerCount: layers, rules: rules)
                     circuits.showBoard = false
                 }
                 .keyboardShortcut(.defaultAction)
@@ -557,18 +783,25 @@ struct BoardSheet: View {
             }
         }
         .padding(16)
-        .frame(width: 340, height: 250)
+        .frame(width: 380, height: 450)
         .onAppear {
             if let board = circuits.design?.board {
                 let xs = board.outline.map(\.x), ys = board.outline.map(\.y)
                 width = (xs.max() ?? 50) - (xs.min() ?? 0); height = (ys.max() ?? 30) - (ys.min() ?? 0)
                 thickness = board.thickness
             }
+            layers = circuits.layerCount
+            rules = circuits.copperRules
             preview()
         }
         .onChange(of: width) { preview() }
         .onChange(of: height) { preview() }
         .onDisappear { circuits.boardPreview = nil }
+    }
+
+    private var hasCopper: Bool {
+        guard let c = circuits.design?.board.copper else { return false }
+        return !c.tracks.isEmpty || !c.vias.isEmpty
     }
 
     private func preview() {

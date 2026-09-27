@@ -16,10 +16,13 @@ final class CircuitModel {
 
     private(set) var document: ElectronicsDocument?
     private(set) var url: URL?
-    /// Pads where they are on the board, with their nets, and the connections still to route.
-    private(set) var board: BoardConnectivity?
-    /// Integrity and electrical checks of the current revision.
-    private(set) var issues: [ElectronicsIssue] = []
+    /// Pads where they are on the board, with their nets, and the connections still to route
+    /// (from the copper drawing `pcb`, built off the main thread: the last one until the new is ready).
+    var board: BoardConnectivity? { pcb?.board }
+    /// Integrity and electrical checks of the current revision, then the copper's (DRC) when
+    /// its drawing is ready.
+    var issues: [ElectronicsIssue] { baseIssues + (pcbIsCurrent ? pcb?.issues ?? [] : []) }
+    private(set) var baseIssues: [ElectronicsIssue] = []
     private(set) var isDirty = false
     /// The selected component (by identity, never by index; the same on schematic and PCB).
     var selection: UUID?
@@ -47,11 +50,31 @@ final class CircuitModel {
     @ObservationIgnored var ghostTask: Task<Void, Never>?
     /// The placing session, revision and sheet the ghost was made for (any change: a new one).
     @ObservationIgnored var ghostSession: GhostKey?
-    /// PCB posa: the pads of the part being placed, at the origin, the same way.
-    private(set) var boardGhost: [PlacedPad] = []
+    /// PCB posa: the pads of the part being placed (the engine's exact copper), at the origin, the same way.
+    private(set) var boardGhost: [PCBCopperPrimitive] = []
     @ObservationIgnored var boardGhostSession: GhostKey?
     @ObservationIgnored var boardGhostTask: Task<Void, Never>?
     func boardGhostReady() async { await boardGhostTask?.value }
+    /// PCB: the copper drawing (pads, tracks, vias, DRC, airwires) of a revision, built off the
+    /// main thread; picks and snaps use it only while `pcbIsCurrent`.
+    var pcb: PCBSnapshot?
+    @ObservationIgnored var pcbTask: Task<Void, Never>?
+    /// The copper layer being drawn on (0 = top, layerCount − 1 = bottom).
+    var activeLayer = 0
+    /// Width of the next tracks (mm).
+    var trackWidth = 0.25
+    /// Pista: the route being drawn, the leg to the mouse, and whether the engine would take it.
+    var route: Route?
+    var routeCheck: RouteCheck?
+    @ObservationIgnored var routeCheckTask: Task<Void, Never>?
+    /// The next leg bends diagonally first (else straight first); / switches.
+    var diagonalFirst = true
+    /// A track or via selected on the board.
+    var copperSelection: PCBItem?
+    /// Which open document the drawings belong to (another file may have the same design and revision).
+    @ObservationIgnored var documentEpoch = 0
+    /// Where the copper check chosen in VERIFICHE is (a ring on the board).
+    var issueMark: PCBPoint?
     var schematicSelection: SchematicObject?
     var wireStart: WireEnd?
     var wireBends: [PCBPoint] = []
@@ -71,6 +94,7 @@ final class CircuitModel {
 
     func open(_ url: URL) throws {
         let doc = try ElectronicsDocument.decode(Data(contentsOf: url))
+        forgetDrawings()
         document = doc; self.url = url; isDirty = false
         refresh()
         report("Aperto \(url.deletingPathExtension().lastPathComponent) — \(summary)")
@@ -78,7 +102,9 @@ final class CircuitModel {
 
     /// A new, empty circuit: a 50 × 30 mm board, no components yet (the engine's empty document).
     func newCircuit(name: String = "Nuovo circuito") throws {
-        document = try ElectronicsDocument.empty(name: name)
+        let doc = try ElectronicsDocument.empty(name: name)
+        forgetDrawings()
+        document = doc
         url = nil; isDirty = true
         refresh()
         report("Nuovo circuito: scheda 50 × 30 mm")
@@ -157,6 +183,13 @@ final class CircuitModel {
         guard let components = design?.components else { return }
         // The subjects' identities first, else the component named in the subject.
         let ids = issue.subjectIDs ?? []
+        issueMark = issue.code.hasPrefix("pcb_") ? issue.position : nil
+        if issueMark != nil { canvas = .board }
+        // A track or via (DRC): that copper.
+        if let copper = design?.board.copper {
+            if let t = ids.first(where: { id in copper.tracks.contains { $0.id == id } }) { copperSelection = .track(t); canvas = .board; return }
+            if let v = ids.first(where: { id in copper.vias.contains { $0.id == id } }) { copperSelection = .via(v); canvas = .board; return }
+        }
         selection = ids.first { id in components.contains { $0.id == id } }
             ?? components.first { issue.subject.contains($0.id.uuidString) }?.id
             ?? components.first { c in issue.subject.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).contains { $0 == c.reference } }?.id
@@ -207,6 +240,8 @@ final class CircuitModel {
         case connect
         /// A component of the circuit (drawn on the schematic) still to put on the board.
         case placeExisting(UUID)
+        /// Pista: copper from a pad, via or track of a net, leg by leg (CircuitModel+PCB).
+        case route
     }
 
     /// PCB: puts a component that has no board position yet (from the schematic) where clicked.
@@ -214,7 +249,7 @@ final class CircuitModel {
         if run(.placeComponent(ComponentPlacement(componentID: id, position: position))) {
             selection = id
             // The next one still to place, if any.
-            if let next = board?.unplacedComponents.first { tool = .placeExisting(next) } else { tool = .select }
+            if let next = unplacedComponents.first { tool = .placeExisting(next) } else { tool = .select }
         }
     }
 
@@ -243,6 +278,7 @@ final class CircuitModel {
     var tool: Tool = .select {
         didSet {
             if tool != .connect { connectFrom = nil }
+            if tool != .route { route = nil }
             prepareBoardGhost()
         }
     }
@@ -320,9 +356,10 @@ final class CircuitModel {
         guard let doc = document else { return }
         let command = placeCommand(p, at: PCBPoint()), id = p.componentID, base = p.baseRevision
         boardGhostTask = Task { [weak self] in
-            let pads = await Self.offMain { () -> [PlacedPad] in
-                guard let preview = try? ElectronicsCommands.preview(command, document: doc, expectedRevision: base) else { return [] }
-                return preview.board.pads.filter { $0.componentID == id }
+            let pads = await Self.offMain { () -> [PCBCopperPrimitive] in
+                guard let preview = try? ElectronicsCommands.preview(command, document: doc, expectedRevision: base),
+                      let drawing = try? preview.pcbSnapshot() else { return [] }
+                return drawing.primitives.filter { if case let .pad(c, _) = $0.item { c == id } else { false } }
             }
             guard !Task.isCancelled, let self, self.boardGhostSession == key else { return }
             self.boardGhost = pads
@@ -573,7 +610,7 @@ final class CircuitModel {
         let assembly: AssemblyData
         do { assembly = try ElectronicsAssembly.export(document) } catch {
             report("Export JLCPCB non riuscito: \(Self.describe(error))")
-            if let failure = error as? ElectronicsFailure { issues = failure.issues }
+            if let failure = error as? ElectronicsFailure { baseIssues = failure.issues }
             return
         }
         let panel = NSOpenPanel()
@@ -600,11 +637,11 @@ final class CircuitModel {
         return s
     }
 
-    private func refresh() {
+    func refresh() {
         refreshSchematic()
-        guard let d = design else { board = nil; issues = []; return }
-        board = try? ElectronicsConnectivity.snapshot(d)
-        issues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
+        refreshPCB()
+        guard let d = design else { baseIssues = []; return }
+        baseIssues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
     }
 
     static func describe(_ error: Error) -> String {

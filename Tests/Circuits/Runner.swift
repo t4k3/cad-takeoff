@@ -7,7 +7,7 @@ import Foundation
 struct CircuitTests {
     @MainActor static func main() async throws {
         var failures = 0
-        func check(_ ok: Bool, _ what: String) { if !ok { failures += 1; print("FALLITO: \(what)") } }
+        func check(_ ok: Bool, _ what: String) { if !ok { failures += 1; print("FALLITO: \(what)"); fflush(stdout) } }
         let fixture = URL(fileURLWithPath: CommandLine.arguments[1])
         let c = CircuitModel()
         var last = ""
@@ -26,7 +26,7 @@ struct CircuitTests {
         c.startPlacing(device, reference: c.nextReference(prefix: device.prefix), value: device.defaultValue)
         guard case let .place(session) = c.tool else { print("FALLITO: posa non avviata"); exit(1) }
         await c.boardGhostReady()
-        check(!c.boardGhost.isEmpty && c.boardGhost.allSatisfy { $0.componentID == session.componentID },
+        check(!c.boardGhost.isEmpty && c.boardGhost.allSatisfy { $0.item.subjectIDs.first == session.componentID },
               "anteprima della posa (una per sessione) con l'identità della sessione")
         check(c.design!.components.isEmpty && !c.canUndo, "anteprima senza modifiche")
         let a = c.addComponent(session, at: PCBPoint(10, 10))
@@ -46,6 +46,7 @@ struct CircuitTests {
         check(c.addComponent(dup, at: PCBPoint(30, 10)) == nil && c.design!.components.count == 2 && last.contains("c'è già"), "sigla doppia rifiutata")
 
         // Collega: pin 1 of R1 to pin 1 of R2 — the same pad ID (one footprint), different pins.
+        await c.pcbReady()
         let pads = c.board!.pads
         guard let pa = pads.first(where: { $0.componentID == a }),
               let pb = pads.first(where: { $0.componentID == b && $0.padID == pa.padID }) else {
@@ -54,6 +55,7 @@ struct CircuitTests {
         let nets = c.design!.nets.count
         c.tool = .connect
         c.connectClick(pa); c.connectClick(pb)
+        await c.pcbReady()
         check(c.design!.nets.count == nets + 1, "R1.1–R2.1 collegati anche con la stessa piazzola d'impronta (\(last))")
         check(c.board!.airwires.contains { Set([$0.fromComponent, $0.toComponent]) == Set([a!, b!]) }, "collegamento da sbrogliare tra i due")
         c.tool = .select
@@ -156,23 +158,116 @@ struct CircuitTests {
             check(sc.sheets[0].junctions.count == 1 && sc.sheets[0].wires.count == 2, "giunzione: il filo diviso in due (\(last))")
         } else { check(false, "punto sul filo non agganciato") }
         // PCB: both components still to place; placed, the connection shows as an airwire.
+        await sc.pcbReady()
         check(Set(sc.board!.unplacedComponents) == Set([sp1.componentID, sp2.componentID]), "da posare sul PCB")
         sc.placeExistingOnBoard(sp1.componentID, at: PCBPoint(10, 10))
         sc.placeExistingOnBoard(sp2.componentID, at: PCBPoint(30, 10))
+        await sc.pcbReady()
         check(sc.board!.unplacedComponents.isEmpty && !sc.board!.airwires.isEmpty, "posati sul PCB, collegamento da sbrogliare (\(last))")
         // Undo the last, redo; save and reopen with the schematic.
         sc.undo()
+        await sc.pcbReady()
         check(sc.board!.unplacedComponents == [sp2.componentID], "annulla la posa di R2")
         sc.redo()
+        await sc.pcbReady()
+
+        // PISTA (T97 on T94): from R1's pad to R2's along the airwire, previewed then confirmed.
+        sc.canvas = .board
+        sc.tool = .route
+        guard let air = sc.board!.airwires.first else { print("FALLITO: nessun collegamento da sbrogliare"); exit(1) }
+        let airwires = sc.board!.airwires.count
+        sc.routeClick(at: air.from, tolerance: 0.5)
+        guard let started = sc.route else { print("FALLITO: pista non iniziata (\(last))"); exit(1) }
+        check(started.netID == air.netID && started.runs[0].points.count == 1 && CircuitModel.distance(started.runs[0].points[0], air.from) < 1e-6, "pista iniziata sulla piazzola, nella sua rete")
+        // Changing side at once: a via unless the pad goes through the board.
+        sc.switchLayer()
+        check(sc.route!.startLayers.contains(sc.layerCount - 1) ? sc.route!.vias.isEmpty : sc.route!.vias.count == 1, "cambio lato sul pad: via se il pad è solo su un lato")
+        sc.switchLayer(to: 0)
+        check(sc.route!.vias.isEmpty && sc.route!.layer == 0, "tornato sopra senza via")
+        sc.previewLeg(to: air.to, tolerance: 0.5)
+        await sc.routeCheckReady()
+        check(sc.routeCheck?.blocking == [] && sc.routeCheck?.target.kind == .pad, "anteprima confermabile, agganciata alla piazzola (\(sc.routeCheck?.blocking?.first?.message ?? "in corso"))")
+        let revisionBefore = sc.document!.revision
+        let trackID = sc.route!.runs[0].id
+        sc.routeClick(at: air.to, tolerance: 0.5)
+        await sc.pcbReady()
+        let tracks = sc.design!.board.copper?.tracks ?? []
+        check(sc.route == nil && tracks.count == 1 && tracks[0].id == trackID && tracks[0].layer == 0, "pista confermata con l'identità dell'anteprima (\(last))")
+        check(sc.board!.airwires.count == airwires - 1 && sc.document!.revision == revisionBefore + 1, "collegamento sbrogliato, un solo passo")
+        // Width, selection, delete, undo.
+        sc.setWidth(0.5, ofTrack: trackID)
+        check(sc.track(trackID)?.width == 0.5, "larghezza cambiata")
+        await sc.pcbReady()
+        let halfway = PCBPoint((air.from.x + air.to.x) / 2, (air.from.y + air.to.y) / 2)
+        sc.tool = .select
+        check(sc.copperHit(at: tracks[0].points.count > 2 ? tracks[0].points[1] : halfway, tolerance: 0.5)?.item == .track(trackID), "pista trovata sotto il mouse")
+        sc.removeCopper(.track(trackID))
+        check(sc.design!.board.copper?.tracks.isEmpty ?? true, "pista eliminata")
+        sc.undo()
+        check(sc.track(trackID) != nil, "annulla la rimette")
+        // Layers cannot change under copper; without it, 4 layers.
+        check(!sc.configureCopper(layerCount: 4, rules: sc.copperRules), "strati bloccati con rame presente (\(last))")
+        // A route with a via: out on top, via, on to R2 underneath or back up, then Invio.
+        sc.undo(); sc.undo()
+        await sc.pcbReady()
+        check(sc.design!.board.copper?.tracks.isEmpty ?? true, "rame tolto")
+        check(sc.configureCopper(layerCount: 4, rules: sc.copperRules) && sc.layerCount == 4, "4 strati (\(last))")
+        await sc.pcbReady()
+        sc.tool = .route
+        sc.activeLayer = 0
+        sc.routeClick(at: air.from, tolerance: 0.5)
+        sc.routeClick(at: PCBPoint(air.from.x + 4, air.from.y + 6), tolerance: 0.5)
+        sc.switchLayer(to: 3)
+        let viaID = sc.route?.vias.first?.id
+        check(sc.route?.vias.count == 1 && sc.route?.layer == 3, "via e strato Sotto")
+        sc.routeClick(at: PCBPoint(air.to.x - 4, air.from.y + 6), tolerance: 0.5)
+        sc.switchLayer(to: 0)
+        sc.routeClick(at: air.to, tolerance: 0.5)
+        await sc.pcbReady()
+        let copper = sc.design!.board.copper!
+        check(sc.route == nil && copper.tracks.count == 3 && copper.vias.count == 2 && copper.vias.contains { $0.id == viaID }, "pista con due via in un passo (\(last))")
+        check(!sc.board!.airwires.contains { $0.netID == air.netID }, "rete sbrogliata attraverso le via")
+        // A leg over another net's pad is shown as not confirmable, and refused.
+        if let other = sc.board!.pads.first(where: { $0.componentID == air.fromComponent && $0.netID != air.netID }) {
+            sc.activeLayer = 0
+            sc.routeClick(at: air.from, tolerance: 0.5)
+            sc.previewLeg(to: other.center, tolerance: 0.01)
+            await sc.routeCheckReady()
+            check(!(sc.routeCheck?.blocking ?? []).isEmpty, "anteprima su un'altra rete non confermabile")
+            let before = sc.document!.revision
+            sc.routeClick(at: other.center, tolerance: 0.01)
+            check(!sc.finishRoute() && sc.document!.revision == before, "corto rifiutato dal motore (\(last))")
+            sc.tool = .select
+            check(sc.route == nil, "uscire dallo strumento chiude la pista")
+        } else { check(false, "piazzola di un'altra rete non trovata") }
         let outS = FileManager.default.temporaryDirectory.appendingPathComponent("schema-\(UUID().uuidString).ftkc")
         try sc.save(to: outS)
         let reopened = CircuitModel()
         try reopened.open(outS)
         await reopened.schematicReady()
-        check(reopened.design == sc.design && reopened.schematic?.pins.count == 4, "schema salvato e riaperto")
+        check(reopened.design == sc.design && reopened.schematic?.pins.count == 4, "schema e rame salvati e riaperti")
         try? FileManager.default.removeItem(at: outS)
+        let outS2 = FileManager.default.temporaryDirectory.appendingPathComponent("rame-\(UUID().uuidString).ftkc")
+        try sc.save(to: outS2)
+
+        // Another document with the same revision: nothing of the previous drawings, route or selection.
+        let two = CircuitModel()
+        try two.newCircuit(name: "Primo")
+        await two.pcbReady()
+        let firstID = two.pcb?.designID
+        two.tool = .route
+        two.copperSelection = .via(UUID())
+        try two.newCircuit(name: "Secondo")
+        check(two.document!.revision == 0 && !two.pcbIsCurrent && two.route == nil && two.copperSelection == nil && two.tool == .select,
+              "altro circuito alla stessa revisione: niente disegno, pista o selezione del precedente")
+        await two.pcbReady()
+        check(two.pcbIsCurrent && two.pcb?.designID == two.design?.id && two.pcb?.designID != firstID, "disegno del nuovo circuito")
+        try two.open(outS2)
+        await two.pcbReady()
+        check(two.pcbIsCurrent && two.design == sc.design && two.design!.board.copper?.tracks.count == 3, "riaperto col suo rame")
+        try? FileManager.default.removeItem(at: outS2)
 
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
-        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, annulla, salva e riapri")
+        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, annulla, salva e riapri")
     }
 }
