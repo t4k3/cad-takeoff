@@ -325,6 +325,13 @@ extension CircuitModel: CADToolProvider {
 
     private func command(from args: [String: JSONValue], design d: ElectronicsDesign) throws -> (ElectronicsCommand, [UUID]) {
         guard let action = args["action"]?.string else { throw CircuitEditError("Parametro richiesto: action.") }
+        // Fields of another action are a mistake to correct, not something to ignore silently.
+        if let allowed = Self.actionFields[action] {
+            let extra = Set(args.keys).subtracting(allowed + ["action", "expected_revision"])
+            if !extra.isEmpty {
+                throw CircuitEditError("\(action) usa solo: \(allowed.joined(separator: ", ")). Non valgono qui: \(extra.sorted().joined(separator: ", ")).")
+            }
+        }
         func number(_ key: String) throws -> Double {
             guard let v = args[key]?.number, v.isFinite else { throw CircuitEditError("Per \(action) serve \(key) (numero, mm).") }
             return v
@@ -338,7 +345,10 @@ extension CircuitModel: CADToolProvider {
             return p
         }
         func net() throws -> UUID {
-            guard let given = args["net"]?.string else { throw CircuitEditError("Per \(action) serve net (nome o id).") }
+            guard let given = args["net"]?.string else {
+                throw CircuitEditError(action == "rename_net" ? "rename_net vuole net (nome attuale) e name (nome nuovo), es. {action: rename_net, net: \"N1\", name: \"VCC\"}."
+                                                              : "Per \(action) serve net (nome o id).")
+            }
             let matches = d.nets.filter { $0.id.uuidString.lowercased() == given.lowercased() || $0.name == given }
             guard matches.count == 1 else { throw CircuitEditError(matches.isEmpty ? "Rete sconosciuta: \(given)." : "Nome di rete ambiguo: \(given); usare l'id.") }
             return matches[0].id
@@ -371,7 +381,9 @@ extension CircuitModel: CADToolProvider {
                               thickness: thickness, assemblyOrigin: d.board.assemblyOrigin), [])
         case "rename_net":
             let id = try net()
-            guard let name = args["name"]?.string, !name.trimmingCharacters(in: .whitespaces).isEmpty else { throw CircuitEditError("Per rename_net serve name.") }
+            guard let name = args["name"]?.string, !name.trimmingCharacters(in: .whitespaces).isEmpty else {
+                throw CircuitEditError("rename_net vuole net (nome attuale) e name (nome nuovo), es. {action: rename_net, net: \"N1\", name: \"VCC\"}.")
+            }
             return (.renameNet(id: id, name: name), [id])
         case "add_track":
             let id = try net()
@@ -443,6 +455,17 @@ extension CircuitModel: CADToolProvider {
             throw CircuitEditError("Azione sconosciuta: \(action).")
         }
     }
+
+    /// The fields each `circuit_preview` action takes (the others are refused with this list).
+    nonisolated static let actionFields: [String: [String]] = [
+        "add_component": ["device", "reference", "value", "x", "y", "side"],
+        "connect": ["pins", "net"], "disconnect": ["pins"], "no_connect": ["pins"],
+        "move_component": ["component", "x", "y"], "rotate_component": ["component", "degrees"],
+        "flip_component": ["component"], "remove_component": ["component"],
+        "set_board": ["width", "height", "thickness"], "rename_net": ["net", "name"],
+        "add_track": ["net", "points", "layer", "width"], "add_via": ["net", "x", "y", "diameter", "drill"],
+        "remove_copper": ["id"],
+    ]
 
     // MARK: Results
 
@@ -536,15 +559,22 @@ enum CircuitToolCatalog {
             ]),
             tool("circuit_preview", "Anteprima modifica circuito", "Actions: add_component {device (from circuit_library), reference?, value?, x?, y?, side?} (placed on the board, default centre); connect {pins [R1.1, C1.2…], net?} (net name or id; new net N1… if omitted and no pin is on a net); disconnect {pins}; no_connect {pins} (mark unused pins); move_component {component, x, y}; rotate_component {component, degrees (CCW)}; flip_component {component} (other board side); remove_component {component}; set_board {width, height, thickness?} (rectangle from 0,0); rename_net {net, name}; add_track {net, points [{x,y}…], layer top|bottom, width?} (width defaults to the net's minimum); add_via {net, x, y, diameter?, drill?}; remove_copper {id} (track, via, plane or keepout). Returns preview_id, can_apply, blocking_issues, new_issues; nothing changes until circuit_apply with that preview_id. component = reference (R1) or id; net = name or id. Copper errors created by the change block it; existing diagnostics do not.", [
                 "action": ["type": "string", "enum": ["add_component", "connect", "disconnect", "no_connect", "move_component", "rotate_component", "flip_component", "remove_component", "set_board", "rename_net", "add_track", "add_via", "remove_copper"]],
-                "component": ["type": "string"], "net": ["type": "string"], "id": ["type": "string"],
-                "device": ["type": "string"], "reference": ["type": "string", "minLength": 1, "maxLength": 32],
-                "value": ["type": "string", "maxLength": 64], "side": ["type": "string", "enum": ["top", "bottom"]],
-                "pins": ["type": "array", "items": ["type": "string", "minLength": 3, "maxLength": 64], "minItems": 1, "maxItems": 64],
-                "name": ["type": "string", "minLength": 1, "maxLength": 120],
-                "x": coordinate, "y": coordinate, "degrees": ["type": "number", "minimum": -360, "maximum": 360],
+                // Short (≤ 60 characters: the small on-device model sees them whole) and naming the
+                // actions each field belongs to.
+                "component": ["type": "string", "description": "R1 or id: move/rotate/flip/remove_component"],
+                "net": ["type": "string", "description": "Existing net name: rename_net, connect, add_track/via"],
+                "name": ["type": "string", "minLength": 1, "maxLength": 120, "description": "rename_net: the NEW net name"],
+                "id": ["type": "string", "description": "remove_copper: track/via/plane/keepout id"],
+                "device": ["type": "string", "description": "add_component: device from circuit_library"],
+                "reference": ["type": "string", "minLength": 1, "maxLength": 32, "description": "add_component only: new reference, e.g. R3"],
+                "value": ["type": "string", "maxLength": 64, "description": "add_component only: value, e.g. 10k"],
+                "side": ["type": "string", "enum": ["top", "bottom"], "description": "add_component only: board side"],
+                "pins": ["type": "array", "items": ["type": "string", "minLength": 3, "maxLength": 64], "minItems": 1, "maxItems": 64,
+                         "description": "connect/disconnect/no_connect: [\"R1.2\", \"C1.1\"]"],
+                "x": coordinate, "y": coordinate, "degrees": ["type": "number", "minimum": -360, "maximum": 360, "description": "rotate_component: CCW degrees"],
                 "width": size, "height": size, "thickness": size, "diameter": size, "drill": size,
-                "layer": ["type": "string", "enum": ["top", "bottom"]],
-                "points": ["type": "array", "items": point, "minItems": 2, "maxItems": 64],
+                "layer": ["type": "string", "enum": ["top", "bottom"], "description": "add_track: copper layer"],
+                "points": ["type": "array", "items": point, "minItems": 2, "maxItems": 64, "description": "add_track: path [{x, y}, …]"],
             ], required: ["action"], write: true),
             tool("circuit_apply", "Applica modifica circuito", "Apply exactly the change previewed as preview_id: one undo step. Refused if the circuit changed since the preview (other edit, undo, another file opened) or if the preview was blocked.", [
                 "preview_id": ["type": "string"],

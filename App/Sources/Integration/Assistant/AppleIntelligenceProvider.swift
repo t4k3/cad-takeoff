@@ -60,6 +60,75 @@ final class AppleIntelligenceProvider: AssistantProvider {
     il motivo e non insistere. Pin come «R1.2». Dopo una modifica di' in una frase cosa hai fatto.
     """
 
+    static let smallCircuitInstructions = """
+    Sei l'assistente dei circuiti di CAD Takeoff su Mac. Rispondi in italiano, breve. Millimetri.
+    Ogni modifica in due chiamate: prima lo strumento dell'azione (circuit_rename_net, circuit_connect, \
+    circuit_add_component, circuit_move_component…), che prepara un'anteprima e restituisce preview_id; \
+    poi circuit_apply con quel preview_id. Usa i nomi esatti scritti dall'utente. Se can_apply è false \
+    spiega il motivo. Pin come «R1.2». Dopo la modifica di' in una frase cosa hai fatto.
+    """
+
+    /// The small model's circuit edits: one tool per action with only its fields, each a
+    /// `circuit_preview` of the catalogue (same command, same preview → apply). The generic
+    /// many-field preview was too much for it (27/09: a rename put the new name in `reference`).
+    struct FocusedAction {
+        let action: String
+        let title: String
+        let description: String
+        /// Tool field → catalogue field.
+        let fields: [(String, String)]
+        let required: [String]
+    }
+
+    static let focusedActions: [FocusedAction] = [
+        .init(action: "rename_net", title: "Rinomina rete", description: "Anteprima: rinomina una rete. net = nome attuale, new_name = nome nuovo.",
+              fields: [("net", "net"), ("new_name", "name")], required: ["net", "new_name"]),
+        .init(action: "add_component", title: "Aggiungi componente", description: "Anteprima: aggiunge un componente di circuit_library (device) sulla scheda.",
+              fields: [("device", "device"), ("value", "value"), ("x", "x"), ("y", "y")], required: ["device"]),
+        .init(action: "connect", title: "Collega pin", description: "Anteprima: collega pin come [\"R1.2\", \"C1.1\"]; net facoltativa (nome della rete).",
+              fields: [("pins", "pins"), ("net", "net")], required: ["pins"]),
+        .init(action: "disconnect", title: "Scollega pin", description: "Anteprima: scollega i pin indicati.", fields: [("pins", "pins")], required: ["pins"]),
+        .init(action: "no_connect", title: "Pin non collegati", description: "Anteprima: segna i pin come non collegati.", fields: [("pins", "pins")], required: ["pins"]),
+        .init(action: "move_component", title: "Sposta componente", description: "Anteprima: sposta un componente (R1) nel punto x, y in mm.",
+              fields: [("component", "component"), ("x", "x"), ("y", "y")], required: ["component", "x", "y"]),
+        .init(action: "rotate_component", title: "Ruota componente", description: "Anteprima: ruota un componente (R1) di degrees, antiorario.",
+              fields: [("component", "component"), ("degrees", "degrees")], required: ["component", "degrees"]),
+        .init(action: "remove_component", title: "Elimina componente", description: "Anteprima: elimina un componente (R1).",
+              fields: [("component", "component")], required: ["component"]),
+    ]
+
+    /// The focused tools, built from `circuit_preview`'s own field schemas (no second catalogue).
+    static func focusedTools(from tools: [ToolSpec]) -> [ToolSpec] {
+        guard let preview = tools.first(where: { $0.name == "circuit_preview" }),
+              case let .object(fields)? = preview.inputSchema["properties"] else { return [] }
+        return focusedActions.map { a in
+            var properties: [String: JSONValue] = [:]
+            for (mine, theirs) in a.fields {
+                guard case var .object(schema)? = fields[theirs] else { continue }
+                schema["description"] = nil
+                if mine == "new_name" { schema["description"] = "Il nome nuovo" }
+                if mine == "net", a.action == "rename_net" { schema["description"] = "Il nome attuale della rete" }
+                properties[mine] = .object(schema)
+            }
+            properties["expected_revision"] = fields["expected_revision"]
+            return ToolSpec(name: "circuit_" + a.action, title: a.title, description: a.description,
+                            inputSchema: ["type": "object", "properties": .object(properties),
+                                          "required": .array((a.required + ["expected_revision"]).map(JSONValue.string)), "additionalProperties": false],
+                            isReadOnly: false)
+        }
+    }
+
+    /// A focused tool's call as the catalogue's `circuit_preview` (nil for any other tool).
+    static func catalogueCall(_ name: String, _ arguments: JSONValue) -> (String, JSONValue)? {
+        guard let a = focusedActions.first(where: { "circuit_" + $0.action == name }), case let .object(given) = arguments else { return nil }
+        var mapped: [String: JSONValue] = ["action": .string(a.action)]
+        for (key, value) in given {
+            let target = a.fields.first { $0.0 == key }?.1 ?? key
+            mapped[target] = value
+        }
+        return ("circuit_preview", .object(mapped))
+    }
+
     func runTurn(system: String, tools: [ToolSpec], onEvent: @escaping (AssistantEvent) -> Void) async throws -> AssistantStop {
         guard isConfigured else { throw AssistantError(message: setupHint) }
         let model = SystemLanguageModel.default
@@ -73,7 +142,8 @@ final class AppleIntelligenceProvider: AssistantProvider {
             }
             let compact = model.contextSize < 16_000
             let fmTools: [any Tool] = chosen.compactMap { try? CADTool(spec: $0, compact: compact, run: runner) }
-            session = LanguageModelSession(model: model, tools: fmTools, instructions: focus == .circuits ? Self.circuitInstructions : Self.instructions)
+            let instructions = focus == .cad ? Self.instructions : (compact ? Self.smallCircuitInstructions : Self.circuitInstructions)
+            session = LanguageModelSession(model: model, tools: fmTools, instructions: instructions)
         }
         guard let session else { return .done }
         let prompt = pending
@@ -122,6 +192,7 @@ final class AppleIntelligenceProvider: AssistantProvider {
 
     private func run(_ name: String, _ arguments: JSONValue) async -> ToolResult {
         guard let executor else { return .error("Strumenti CAD non collegati.") }
+        if let (catalogue, mapped) = Self.catalogueCall(name, arguments) { return await executor(catalogue, mapped) }
         return await executor(name, arguments)
     }
 
@@ -129,9 +200,12 @@ final class AppleIntelligenceProvider: AssistantProvider {
     /// the user is in (the circuit's whole preview → apply cycle in CIRCUITI).
     static func select(_ tools: [ToolSpec], contextSize: Int, focus: AssistantFocus = .cad) -> [ToolSpec] {
         guard contextSize < 16_000 else { return tools }
-        let everyday = focus == .circuits
-            ? ["circuit_info", "circuit_library", "circuit_pins", "circuit_preview", "circuit_apply", "circuit_undo", "circuit_redo", "circuit_fabrication_check"]
-            : ["list_features", "add_box", "add_cylinder", "update_feature", "delete_feature", "undo"]
+        if focus == .circuits {
+            let reading = ["circuit_info", "circuit_library", "circuit_pins"].compactMap { name in tools.first { $0.name == name } }
+            let closing = ["circuit_apply", "circuit_undo", "circuit_redo", "circuit_fabrication_check"].compactMap { name in tools.first { $0.name == name } }
+            return reading + focusedTools(from: tools) + closing
+        }
+        let everyday = ["list_features", "add_box", "add_cylinder", "update_feature", "delete_feature", "undo"]
         return everyday.compactMap { name in tools.first { $0.name == name } }
     }
 }

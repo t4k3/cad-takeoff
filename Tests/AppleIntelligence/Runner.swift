@@ -45,12 +45,33 @@ struct AppleIntelligenceTests {
             check(kept["properties"]?[field] != nil, "circuit_preview compatto conserva \(field)")
         }
         check(kept["properties"]?["expected_revision"] == nil, "circuit_preview senza expected_revision (lo mette la sessione)")
+        var previewFields: [String: JSONValue] = [:]
+        if case let .object(o)? = preview.inputSchema["properties"] { previewFields = o }
+        for (field, schema) in previewFields where field != "expected_revision" {
+            if let d = schema["description"]?.string { check(d.count <= 60, "circuit_preview.\(field): descrizione intera nel contesto piccolo (\(d.count))") }
+        }
+        check(kept["properties"]?["name"]?["description"]?.string?.contains("rename_net") == true
+              && kept["properties"]?["net"]?["description"]?.string?.contains("rename_net") == true, "net e name dicono che servono a rename_net")
         let previewTool = try CADTool(spec: preview, compact: true) { _, _ in .error("prova") }
         check(["add_component", "connect", "no_connect", "move_component", "add_track"].allSatisfy { previewTool.description.contains($0) },
               "circuit_preview: la descrizione compatta elenca le azioni")
         let circuitSmall = AppleIntelligenceProvider.select(all, contextSize: 4096, focus: .circuits)
-        check(circuitSmall.map(\.name) == ["circuit_info", "circuit_library", "circuit_pins", "circuit_preview", "circuit_apply", "circuit_undo", "circuit_redo", "circuit_fabrication_check"],
-              "contesto piccolo in CIRCUITI: il ciclo anteprima → conferma")
+        check(circuitSmall.map(\.name) == ["circuit_info", "circuit_library", "circuit_pins",
+                                            "circuit_rename_net", "circuit_add_component", "circuit_connect", "circuit_disconnect", "circuit_no_connect",
+                                            "circuit_move_component", "circuit_rotate_component", "circuit_remove_component",
+                                            "circuit_apply", "circuit_undo", "circuit_redo", "circuit_fabrication_check"],
+              "contesto piccolo in CIRCUITI: letture, uno strumento per azione, conferma, storico e produzione (\(circuitSmall.map(\.name)))")
+        for spec in circuitSmall {
+            do { _ = try CADTool(spec: spec, compact: true) { _, _ in .error("prova") } }
+            catch { check(false, "\(spec.name): schema non convertibile (\(error))") }
+        }
+        let rename = circuitSmall.first { $0.name == "circuit_rename_net" }!
+        check(rename.inputSchema["properties"]?["new_name"] != nil && rename.inputSchema["properties"]?["reference"] == nil
+              && rename.inputSchema["required"]?.array?.compactMap(\.string).sorted() == ["expected_revision", "net", "new_name"], "circuit_rename_net: solo net e new_name")
+        let mapped = AppleIntelligenceProvider.catalogueCall("circuit_rename_net", ["net": "SUPPLY", "new_name": "QA_CHAT", "expected_revision": "t"])
+        check(mapped?.0 == "circuit_preview" && mapped?.1 == ["action": "rename_net", "net": "SUPPLY", "name": "QA_CHAT", "expected_revision": "t"],
+              "circuit_rename_net diventa circuit_preview rename_net del catalogo")
+        check(AppleIntelligenceProvider.catalogueCall("circuit_apply", [:]) == nil, "gli altri strumenti restano quelli del catalogo")
         // What the small window pays for the circuit tools (schemas + descriptions), roughly 4 chars a token.
         let circuitChars = circuitSmall.reduce(0) { total, spec in
             let schema = CADToolSchema.essentials(CADToolSchema.withoutRevision(spec.inputSchema),
@@ -82,6 +103,38 @@ struct AppleIntelligenceTests {
                       "dal vivo: il modello sul Mac ha creato il cubo")
             } else {
                 print("Apple Intelligence non disponibile qui:", session.provider.setupHint)
+            }
+            // CIRCUITI: Codex's natural request (QA 27/09) on a circuit with a SUPPLY net.
+            let circuits = CircuitModel()
+            try circuits.newCircuit(name: "Chat")
+            let liveRouter = ToolRouter(cad: model, circuits: circuits)
+            func step(_ args: [String: JSONValue]) async {
+                var a = args; a["expected_revision"] = .string(circuits.designRevision)
+                let p = await circuits.call("circuit_preview", arguments: .object(a))
+                if let id = p.structured?["preview_id"] { _ = await circuits.call("circuit_apply", arguments: ["preview_id": id, "expected_revision": .string(circuits.designRevision)]) }
+            }
+            await step(["action": "add_component", "device": "resistor-0603", "x": 10, "y": 10])
+            await step(["action": "add_component", "device": "resistor-0603", "x": 20, "y": 10])
+            await step(["action": "connect", "pins": ["R1.2", "R2.1"], "net": "SUPPLY"])
+            let chat = AssistantSession(providers: [AppleIntelligenceProvider()])
+            chat.tools = liveRouter
+            chat.focus = .circuits
+            if chat.provider.isConfigured, circuits.design?.nets.map(\.name) == ["SUPPLY"] {
+                let before = circuits.design
+                chat.send("Rinomina la rete SUPPLY in QA_CHAT. Esegui anteprima e applicazione, senza altre modifiche.")
+                while chat.isRunning { try await Task.sleep(for: .milliseconds(200)) }
+                for e in chat.entries { print("·", e.kind) }
+                var expected = before!
+                expected.nets[0].name = "QA_CHAT"
+                check(circuits.design == expected, "dal vivo: rete rinominata in QA_CHAT e nient'altro")
+                let undone = await liveRouter.call("circuit_undo", arguments: ["expected_revision": .string(circuits.designRevision)])
+                check(!undone.isError && circuits.design == before, "dal vivo: annulla dell'assistente riporta SUPPLY")
+                chat.send("Collega R1.1 e R2.2 alla rete GND.")
+                while chat.isRunning { try await Task.sleep(for: .milliseconds(200)) }
+                for e in chat.entries.suffix(4) { print("·", e.kind) }
+                let gnd = circuits.design?.nets.first { $0.name == "GND" }
+                let onGND = circuits.design?.connections.filter { $0.netID == gnd?.id }.count ?? 0
+                check(gnd != nil && onGND == 2 && circuits.design?.nets.count == 2, "dal vivo: R1.1 e R2.2 collegati a GND")
             }
         }
         if failures > 0 { fatalError("\(failures) verifiche fallite") }

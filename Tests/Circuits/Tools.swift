@@ -33,6 +33,11 @@ func circuitToolTests(fixture: URL, check: (Bool, String) -> Void) async throws 
     check(pins.structured?["pins"]?.array?.compactMap { $0["pin"]?.string } == ["R1.1", "R1.2"], "circuit_pins: R1.1 e R1.2")
     let wire = await step(["action": "connect", "pins": ["R1.2", "R2.1"]])
     check(!wire.isError && m.design?.nets.map(\.name) == ["N1"] && m.design?.connections.count == 2, "connect: rete N1 nuova (\(wire.text))")
+    // Fields of another action: refused with the right ones (the small model corrects itself).
+    let wrongFields = await m.call("circuit_preview", arguments: ["action": "rename_net", "component": "N1", "reference": "N1", "side": "top", "expected_revision": .string(tok())])
+    check(wrongFields.isError && wrongFields.text.contains("rename_net usa solo: net, name"), "campi di un'altra azione: rifiutati con quelli giusti (\(wrongFields.text))")
+    let noName = await m.call("circuit_preview", arguments: ["action": "rename_net", "net": "N1", "expected_revision": .string(tok())])
+    check(noName.isError && noName.text.contains("name (nome nuovo)"), "rename_net senza name: esempio nell'errore")
     let named = await step(["action": "connect", "pins": ["R1.1"], "net": "VCC"])
     check(!named.isError && m.design?.nets.contains { $0.name == "VCC" } == true, "connect a una rete col nome")
     let nc = await step(["action": "no_connect", "pins": ["R2.2"]])
