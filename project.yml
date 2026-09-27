@@ -14,7 +14,7 @@ settings:
     # number counts the commits since the series began (also stamped into the built app).
     # New series (Ross, 27/09: 1.0.0 with «Circuiti»): set major.minor here and FTK_SERIES_START
     # to the commit count the series' first commit will have (git rev-list --count HEAD + 1).
-    MARKETING_VERSION: "1.0.77"
+    MARKETING_VERSION: "1.0.78"
     FTK_SERIES_START: "164"
     CURRENT_PROJECT_VERSION: "1"
     # Signed with Ross's Apple Development identity (team 9F8D583GBV): needed for the
