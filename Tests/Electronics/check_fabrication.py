@@ -121,6 +121,10 @@ def pad_hit(world,pad,placement,margin=0):
 def run(folder,source):
     doc=json.loads(source.read_text()); d=doc['design']; origin=point(d['board']['assemblyOrigin'])
     manifest=json.loads((folder/'manifest.json').read_text()); assert manifest['revision']==doc['revision'] and manifest['designID']==d['id']
+    profile=manifest['profile']; variant_id=manifest.get('variantID')
+    variant=next((v for v in d['variants'] if v['id']==variant_id),None)
+    assert variant_id is None or variant is not None
+    excluded=set(variant['excludedComponents'] if variant else [])
     assert {x['name'] for x in manifest['files']} | {'manifest.json'} == {p.name for p in folder.iterdir()}
     for f in manifest['files']:
         b=(folder/f['name']).read_bytes(); assert len(b)==f['bytes'] and hashlib.sha256(b).hexdigest()==f['sha256']
@@ -165,8 +169,15 @@ def run(folder,source):
                         world=(center[0]+delta[0],center[1]+delta[1]); q=(world[0]-origin[0],world[1]-origin[1])
                         assert any(contains(s,q) for s in shapes)==pad_hit(world,pad,place),(component['reference'],pad['number'],q)
                         samples+=1
-                for suffix,margin in [('Mask',.05)]+([] if through or component['assembly']=='doNotPopulate' else [('Paste',0)]):
+                for suffix,margin in [('Mask',profile['solderMaskExpansion']),('Paste',-profile['pasteInset'])]:
                     matching=[shapes for p,shapes in layers[side+'_'+suffix].flashes if distance(p,output_center)<EPS]
+                    source_side=side if place['side']=='top' else ('B' if side=='F' else 'F')
+                    source_layers=pad.get('sourceLayers')
+                    enabled=(source_side+'.'+suffix in source_layers or '*.'+suffix in source_layers) if source_layers is not None else (suffix=='Mask' or not through)
+                    if suffix=='Paste': enabled=enabled and component['assembly']!='doNotPopulate' and component['id'] not in excluded
+                    if not enabled:
+                        assert not matching, ('unexpected opening',component['reference'],pad['number'],side,suffix)
+                        continue
                     assert len(matching)==1
                     shapes=[translate(s,*output_center) for s in matching[0]]
                     for ix in range(-15,16):
@@ -175,7 +186,15 @@ def run(folder,source):
                             assert any(contains(s,q) for s in shapes)==pad_hit(world,pad,place,margin),(suffix,component['reference'],pad['number'],q)
                             samples+=1
     for via in d['board']['copper']['vias']:
-        expected_holes.append((via['position']['x']-origin[0],via['position']['y']-origin[1],via['drill']))
+        center=(via['position']['x']-origin[0],via['position']['y']-origin[1])
+        expected_holes.append((*center,via['drill']))
+        for side in ['F','B']:
+            openings=[shapes for p,shapes in layers[side+'_Mask'].flashes if distance(p,center)<EPS]
+            assert len(openings)==(0 if profile['tentVias'] else 1)
+            if openings:
+                assert openings[0][0][0]=='circle'
+                assert abs(openings[0][0][1][1]-via['diameter']/2-profile['solderMaskExpansion'])<EPS
+            assert not any(distance(p,center)<EPS for p,_ in layers[side+'_Paste'].flashes)
     # Every track is drawn with its true circular aperture; endpoint and radius comparison.
     for side,number in [('F',0),('B',1)]:
         expected=[]
@@ -200,10 +219,22 @@ def run(folder,source):
     for e in expected_holes: assert any(distance(e,a)<EPS and abs(e[2]-a[2])<EPS for a in found)
     components=list(csv.DictReader(io.StringIO((folder/'components.csv').read_text())))
     assert {r['Designator'] for r in components}=={c['reference'] for c in d['components']}
+    for c in d['components']:
+        row=next(r for r in components if r['Designator']==c['reference'])
+        place=placement[c['id']]; device=devices[json.dumps(c['device'],sort_keys=True)]
+        footprint=footprints[json.dumps(device['footprint'],sort_keys=True)]
+        center=board(point(footprint['assemblyCentroid']),place)
+        assert row['Fitted']==('no' if c['assembly']=='doNotPopulate' or c['id'] in excluded else 'yes')
+        assert row['Method']==c['assembly'] and row['Side']==place['side']
+        assert abs(float(row['X mm'])-(center[0]-origin[0]))<EPS
+        assert abs(float(row['Y mm'])-(center[1]-origin[1]))<EPS
+        assert abs(float(row['Rotation deg'])-place['rotationDegrees'])<EPS
     # Synthetic fixture uses manual assembly: supplier files MUST NOT invent an LCSC identifier.
     assert list(csv.DictReader(io.StringIO((folder/'assembly-bom.csv').read_text())))==[]
     assert list(csv.DictReader(io.StringIO((folder/'assembly-cpl.csv').read_text())))==[]
     report=json.loads((folder/'preflight.json').read_text()); assert not any(i['severity']=='error' for i in report['issues'])
+    assert report['profile']==profile and report.get('variantID')==variant_id
+    assert report['revision']==doc['revision'] and report['designID']==d['id']
     print(f'PASS independent fabrication: 9 Gerber layers, {len(found)} PTH holes, {samples} pad/mask/paste probes, common origin, bottom orientation, job and SHA-256 manifest.')
 
 if __name__=='__main__':

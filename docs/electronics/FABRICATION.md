@@ -4,6 +4,12 @@ API additive compilanti al 27/09/2026; formato documento **7 invariato**.
 La prima consegna copre un pacchetto coerente da collaudare: non qualifica componenti,
 processo JLCPCB o circuito elettrico. T92/T94/T95 avanzati restano aperti.
 
+L'app espone ora **Circuiti → Produzione → Gerber**: profilo, variante, anteprima
+strati, problemi selezionabili ed export in una cartella nuova. Quattro export
+nativi della fixture sono verificati in [VALIDATION.md](VALIDATION.md); procedura
+ripetibile in [APP_ACCEPTANCE.md](APP_ACCEPTANCE.md). Il preflight è disponibile
+anche tramite `circuit_fabrication_check`: [contratto assistente](ASSISTANT.md).
+
 ## Contratto per app, chat e MCP
 
 ```swift

@@ -1,5 +1,103 @@
 # Elettronica — prove del motore e dell’app
 
+## T104 — Produzione nell'app e strumenti Circuiti, 27/09/2026
+
+Procedura ripetibile: [APP_ACCEPTANCE.md](APP_ACCEPTANCE.md). Il nucleo T103 rimane
+`73bb26b`; nessuna modifica a ElectronicsCore per questa integrazione.
+
+### Prova nativa Produzione
+
+Build Debug di Claude delle **18:24**, etichetta **1.0.55 / 73ec8d3+**, copia
+`build/qa-t97/FusionTakeoff.app`; collaudo Codex tramite interfaccia macOS su copie
+sintetiche in `build/electronics/acceptance-104`. Nessun progetto reale modificato.
+
+- Circuiti → Produzione → Gerber: nove strati, tre fori, nove avvisi, export consentito.
+  Primo pacchetto di 17 file **identico byte per byte alla CLI** e lettore indipendente PASS.
+- Secondo export con maschera **0,02 mm**, rientro pasta **0,1 mm**, via scoperti:
+  file verificati indipendentemente. Nuova cartella con suffisso «2», primo export intatto.
+- Terzo export con variante «Senza D1»: niente pasta inferiore, D1 `Fitted=no`,
+  rame/maschera/fori identici al secondo pacchetto; lettore indipendente PASS.
+  L'anteprima Pasta Sotto è visivamente vuota, con il solo contorno.
+- Maschera 0,1 mm: errore serigrafia e export disabilitato. Minimo maschera zero:
+  profilo non valido e export disabilitato. Ripristinando valori validi torna esportabile.
+- Fixture `02-pista-mancante.ftkc`: errore `pcb_unrouted`, export disabilitato;
+  clic sulla segnalazione chiude Produzione e seleziona J1 nel PCB.
+- Annulla resta disabilitato dopo anteprime ed export: nessuna modifica del documento.
+
+Revisioni consegnate a Claude: pubblicazione della cartella solo dopo controllo finale
+di identità/epoca/revisione/profilo senza sospensioni prima del rename; invalidazione
+alla chiusura della finestra; test dello staging sospeso durante modifica, riapertura
+e cancellazione. I test del ponte controllano il documento completo prima/dopo export.
+Le due rifiniture UX sono **PASS sulla build finale delle 18:43** (stessa etichetta
+1.0.55, sorgenti consolidati da Claude in `ad1977d`): errore del profilo senza spinner,
+export disabilitato; ripristino valido, quarto export di 17 file con esito e pulsante
+«Mostra nel Finder» dentro Produzione. File ancora identici al primo pacchetto
+verificato, lettore indipendente PASS con 26.324 sonde.
+
+### MCP nell'app reale
+
+**80 chiamate PASS** sulla build 18:43 attraverso `ftk-mcp` firmato, stdio → HTTP
+locale. Evidenze `build/electronics/acceptance-104/mcp-final/{calls,summary}.json`.
+Ripetizione dopo la correzione del provider: **81 chiamate PASS sulla build 18:53**,
+etichetta **1.0.56 / ad1977d+**, sorgenti consolidati in `2cd6312`; evidenze in
+`mcp-final-b`. Il caso aggiuntivo rifiuta un parametro valido per un'altra azione
+(`component` insieme a `rename_net`), senza ignorarlo silenziosamente.
+Catalogo: 27 strumenti CAD e nove Circuiti. Nessuna credenziale nelle evidenze;
+il bridge accede all'App Group tramite l'autorizzazione propria dell'app.
+
+- Preflight senza modifiche; numeri, booleani e layer di tipo errato rifiutati.
+- No-op senza passo Annulla; preview senza modifiche; stessa anteprima obsoleta
+  rifiutata sia con token vecchio sia con token attuale.
+- Due modifiche, due Annulla, due Ripeti e due Annulla; identità/reti ripristinate.
+- Nuova pista in corto rifiutata; pista valida attraverso il worker e poi Annulla.
+- Libreria/pin, posa R91 e R92, rete QA_LINK, NC, scollegamento e cinque Annulla.
+- Geometria e connettività iniziali ripristinate, revisione **0 → 20** monotona;
+  preflight finale ancora esportabile. File non salvato e poi riaperto dalla UI.
+
+### Chat locale dal vivo
+
+La chat Apple Intelligence ha effettuato dal vivo `circuit_fabrication_check`
+(«Pronta per la produzione, 9 avvisi») senza modificare il documento. La prima
+prova di rinomina naturale SUPPLY → QA_CHAT ha prodotto parametri errati: il motore
+li ha rifiutati, documento intatto. La correzione `2cd6312` presenta al modello
+piccolo strumenti distinti per azione, rimappati alla stessa anteprima del catalogo.
+
+**Ricollaudo nativo PASS nella build 18:53**: la stessa frase «Rinomina la rete SUPPLY
+in QA_CHAT. Esegui anteprima e applicazione, senza altre modifiche.» produce due
+schede verdi, `circuit_preview` e `circuit_apply`. Lettura indipendente via MCP:
+unicamente il nome della rete è cambiato; componenti, geometria delle piste, via,
+contorno e identità invariati; revisione **20 → 21**, un passo Annulla. La richiesta
+«Annulla l’ultima modifica al circuito.» chiama `circuit_undo`, restituisce tutte le
+reti e la geometria iniziali e porta la revisione a **22**. Evidenze
+`chat-rename.json` e `chat-undo.json` nella directory di accettazione.
+
+Anche `FTK_LIVE_FM=1 bash scripts/test-apple-intelligence.sh`, eseguito da Claude,
+è **exit 0**: Codex ha letto direttamente il log con chiamate reali preview/apply
+per rinomina e «Collega R1.1 e R2.2 alla rete GND.», più controllo del design
+atteso e Annulla della rinomina. Copia del log `apple-live-final.log` nella stessa
+directory. Modello locale disponibile, contesto dichiarato 8192 token. Questo
+dimostra i casi provati, non affidabilità universale. Nessuna chiamata ai provider
+remoti Claude/OpenAI dimostrata da questi test.
+
+CI integrata di `ad1977d`: **16 passaggi, exit 0**, verificati direttamente nel log
+`ci-ad1977d.log` di Claude, esecuzione `run.Weqepm`, incluso `BUILD SUCCEEDED`.
+La correzione successiva `2cd6312` passa la CI completa: **16 passaggi, exit 0**,
+`run.csXadg`, log `ci-2cd6312.log`. Codex ha verificato `BUILD SUCCEEDED`, riepilogo
+dei 16 passaggi e uscita zero del processo di Claude (task `b0hjj2i7n`).
+T100 e T104 conclusi per questo perimetro; le fasi avanzate restano aperte.
+
+### Regressioni del motore
+
+`bash scripts/test-electronics.sh`: **exit 0**, **155 test Swift e sette lettori
+indipendenti PASS**, log `/tmp/ftk-104-electronics.log`, corpus
+`build/electronics/run.YC3SWV`. Il lettore di fabbricazione controlla anche i profili
+modificati e le varianti provenienti dalla UI, inclusa maschera via e CSV componenti.
+`swift test --package-path Packages/CADCore --scratch-path build/codex-cad-fabrication-check`:
+**exit 0, 187 test PASS** su `73ec8d3`, log `/tmp/ftk-104-cad.log`.
+
+La fixture è sintetica e usa componenti generici a montaggio manuale: queste prove
+non qualificano un componente JLCPCB, un profilo produttivo o una scheda fisica.
+
 ## T103 — preflight e fabbricazione a due strati, 27/09/2026
 
 Contratto: [FABRICATION.md](FABRICATION.md). **155 test ElectronicsCore PASS**, inclusi

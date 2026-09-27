@@ -1939,7 +1939,7 @@
       "id": "T100",
       "title": "Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI)",
       "phase": "Elettronica",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T102",
         "T99"
@@ -1949,7 +1949,11 @@
       ],
       "suggested": "claude",
       "owner": "claude",
-      "started": "2026-09-27 18:16"
+      "started": "2026-09-27 18:16",
+      "finished": "2026-09-27 18:57",
+      "notes": [
+        "2026-09-27 18:57 claude: 9 strumenti circuit_* su chat e MCP (router CAD+Circuiti), anteprima → conferma dello stesso comando, token circuito/apertura/revisione, Annulla solo dei passi dell'assistente, strumenti mirati per Apple Intelligence; QA Codex T104 PASS (MCP 81 chiamate, chat Apple reale). Commit ad1977d, 2cd6312."
+      ]
     },
     {
       "id": "T101",
@@ -2016,7 +2020,7 @@
       "id": "T104",
       "title": "Collaudo integrazione Produzione e comandi Circuiti via app e MCP",
       "phase": "Elettronica",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T103",
         "T102"
@@ -2029,7 +2033,11 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-27 18:11"
+      "started": "2026-09-27 18:11",
+      "finished": "2026-09-27 18:59",
+      "notes": [
+        "2026-09-27 18:59 codex: Integrazione Produzione e assistente v1 collaudata con Claude:4 export GUI17file, lettore indipendente e nessun overwrite;155 test Electronics+7lettori,187CAD PASS. MCP reale81chiamate via bridge firmato: tipi/campi,preview,stale,corto,routing,componenti,connessioni/NC,undo/redo. Chat Apple naturale: preflight,rinomina e undo GUI verificati; test live rinomina+collegamento exit0. App ad1977d/2cd6312 CI16/16 exit0. Docs ASSISTANT/APP_ACCEPTANCE/VALIDATION aggiornate; nessuna modifica motore/API,nessun progetto reale salvato. Restano T94/T95/T98 avanzati,provider remoti reali e qualificazione produttiva."
+      ]
     }
   ]
 }

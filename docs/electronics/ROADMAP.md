@@ -122,4 +122,20 @@ nel parser ufficiale Ucamco; limiti ed evidenze in [VALIDATION.md](VALIDATION.md
 T103 e il nucleo verificato per il primo pacchetto. T95 resta aperto: NPTH, asole,
 ritagli, profili JLC qualificati e corpus reale non sono completati. La fixture resta
 sintetica; produzione e montaggio fisico non provati. Claude ha ricevuto le API per
-Produzione e T100; interfaccia/chat ancora da agganciare e collaudare.
+Produzione e T100; l'integrazione successiva è descritta qui sotto.
+
+## App Produzione e assistente v1 / T100–T104 — 27/09/2026
+
+Produzione nell'app: profilo e variante, nove anteprime, problemi navigabili,
+cartelle nuove senza sovrascritture e nessuna modifica dello storico. Quattro export
+dalla UI controllati indipendentemente, inclusi profilo modificato e variante DNP.
+
+Il router espone 27 strumenti CAD e nove Circuiti con token separati. Il contratto
+[ASSISTANT.md](ASSISTANT.md) copre componenti, connessioni/NC, scheda, piste e via,
+anteprima/conferma, storico e preflight. Il protocollo locale è collaudato sull'app
+reale; la prova in linguaggio naturale del singolo provider è registrata separatamente
+in [VALIDATION.md](VALIDATION.md). [Procedura di accettazione](APP_ACCEPTANCE.md).
+
+T98 resta aperto: parità con tutti i comandi dello schema e del PCB, componenti reali,
+accettazione presso il produttore e assieme elettromeccanico non sono sostituiti da
+questa integrazione iniziale.
