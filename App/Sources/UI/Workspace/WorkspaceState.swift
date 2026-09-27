@@ -291,6 +291,40 @@ final class WorkspaceState {
         command = SketchCommands.revolve(sketch: sketch, model: model, workspace: self)
     }
 
+    /// SOLIDO › Estrudi, as in Fusion: a picked planar face is pulled (Premi/Tira); otherwise the
+    /// profiles of a sketch — the one chosen, else the latest with closed profiles — are picked
+    /// and extruded, and the sketch closes again afterwards (on Annulla too). No sketch with a
+    /// closed profile yet: a new sketch starts.
+    func startExtrude(model: DesignModel, sketch chosen: Sketch? = nil) {
+        if chosen == nil, case .face? = geoSelection.first?.kind { startPressPull(model: model); return }
+        guard let target = chosen ?? Self.extrudableSketches(model).last else {
+            model.statusMessage = "Nessun profilo chiuso da estrudere: disegna uno schizzo (scegli il piano), poi Estrudi."
+            startSketch()
+            return
+        }
+        enterSketch(editing: target)
+        sketchCameraRequest = false          // the view stays where it is, as in Fusion
+        guard let session = sketch, let created = SketchCommands.extrude(sketch: session, model: model, workspace: self) else {
+            model.statusMessage = "«\(target.name)» non ha profili chiusi da estrudere."
+            exitSketch()
+            return
+        }
+        let cancel = created.onCancel
+        created.onCancel = { [weak self, weak created] in
+            created?.onCancel = cancel
+            cancel()
+            guard let self, self.sketch != nil else { return }
+            self.command = nil
+            self.exitSketch()
+        }
+        command = created
+    }
+
+    /// Sketches with at least one closed profile, in history order.
+    static func extrudableSketches(_ model: DesignModel) -> [Sketch] {
+        model.document.sketches.filter { !SketchSession(sketch: $0).faces.isEmpty }
+    }
+
     func extrudeSketch(model: DesignModel) {
         guard let sketch else { return }
         command?.onCancel()

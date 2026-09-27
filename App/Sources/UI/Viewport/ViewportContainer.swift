@@ -502,6 +502,7 @@ struct ViewportContainer: View {
         }
         if key == "f" { viewport.fit(); return true }
         if key == "q", workspace.sketch == nil, workspace.command == nil { workspace.startPressPull(model: model); return true }
+        if key == "e", workspace.sketch == nil, workspace.command == nil { workspace.startExtrude(model: model); return true }
         // ⌫ / ⌦ delete the selected body (sketch entities are handled by the sketch's own shortcut).
         if key == "\u{7f}" || key == "\u{f728}", workspace.sketch == nil, workspace.command == nil, model.selection != nil {
             model.deleteSelected(); return true

@@ -76,6 +76,13 @@ struct Ribbon: View {
         ToolGroup("CREA") {
             Button { workspace.startSketch() } label: { Label("Schizzo", systemImage: "pencil.and.outline") }
                 .help("Nuovo schizzo: clicca una faccia piana del pezzo, o scegli il piano XY")
+            Button { workspace.startExtrude(model: model) } label: { Label("Estrudi", systemImage: "square.stack.3d.up") }
+                .contextMenu {
+                    ForEach(WorkspaceState.extrudableSketches(model), id: \.id) { sk in
+                        Button("Profili di «\(sk.name)»") { workspace.startExtrude(model: model, sketch: sk) }
+                    }
+                }
+                .help("Estrudi (E): una faccia selezionata si tira; altrimenti clicca i profili dell'ultimo schizzo (tasto destro per scegliere lo schizzo). Senza schizzi ne apre uno nuovo")
             Button { model.addBox() } label: { Label("Box", systemImage: "cube") }
                 .help("Nuovo parallelepipedo 20×20×20 mm")
             Button { model.addCylinder() } label: { Label("Cilindro", systemImage: "cylinder") }
