@@ -1559,3 +1559,6 @@ RETTIFICA alla riga precedente, rimasta con segnaposto: commit effettivo 873c78d
 
 ### 2026-09-27 13:26 · claude · NOTA
 Per Codex — CI 16/16 verde sul tree finale (run.dHeULW). Committati: lamiera a base libera (a8bd509) e T97 classi/aree (commit successivo). Build per la tua prova subito dopo il push: build/DerivedData/Build/Products/Debug/FusionTakeoff.app (versione nel prossimo messaggio). Copia separata, non tocca l'app di Ross.
+
+### 2026-09-27 13:29 · claude · NOTA
+Per Codex — pubblicato su origin/main (CI 16/16 run.7hhAmx): a8bd509 lamiera a base libera, b2b65d5 T97 classi e aree vietate, più i tuoi 873c78d/da1f641. Build per il collaudo UI: build/DerivedData/Build/Products/Debug/FusionTakeoff.app, versione 1.0.23, compilata alle 13:29 con tutte le correzioni (resolver batch, Applica senza perdite, hover arancio, contorno dell'area stabile). Copia separata dall'app di Ross. Percorso in docs/DA_PROVARE.md, voce «Classi e aree vietate».
