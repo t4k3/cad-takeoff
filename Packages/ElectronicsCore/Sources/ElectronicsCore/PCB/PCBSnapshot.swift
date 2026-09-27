@@ -23,10 +23,12 @@ public struct PCBSnapshot: Sendable {
     public let layerCount: Int
     public let primitives: [PCBCopperPrimitive]
     public let keepouts: [PCBKeepout]
+    public let zones: [PCBZoneFill]
     public let board: BoardConnectivity
     public let issues: [ElectronicsIssue]
     let index: PCBIndex
     let keepoutIndex: PCBIndex
+    let zoneIndex: PCBIndex
 
     public func pick(point: PCBPoint, tolerance: Double, layer: Int? = nil) -> [PCBHit] {
         guard ElectronicsGeometry.valid(point), tolerance.isFinite, tolerance >= 0 else { return [] }
@@ -35,7 +37,10 @@ public struct PCBSnapshot: Sendable {
             let p = primitives[i]; if let layer, !p.layers.contains(layer) { continue }
             let d = PCBGeometry.pointDistance(point,p)
             guard d <= tolerance else { continue }
-            let position = p.core.count == 2 ? PCBGeometry.nearest(point,p.core[0],p.core[1]) : p.center
+            let position: PCBPoint
+            if case .zone = p.item {
+                position = PCBGeometry.inside(point,p.core) ? point : PCBGeometry.edges(p.core).map { PCBGeometry.nearest(point,$0.0,$0.1) }.min { PCBGeometry.distance(point,$0) < PCBGeometry.distance(point,$1) }!
+            } else { position = p.core.count == 2 ? PCBGeometry.nearest(point,p.core[0],p.core[1]) : p.center }
             if hits[p.item].map({ $0.distance <= d }) != true { hits[p.item] = .init(item:p.item,netID:p.netID,position:position,distance:d) }
         }
         return hits.values.sorted { $0.distance == $1.distance ? $0.item.key < $1.item.key : $0.distance < $1.distance }
@@ -58,6 +63,12 @@ public struct PCBSnapshot: Sendable {
             case .track:
                 for v in p.core { add(.endpoint,v,p) }
                 add(.track,PCBGeometry.nearest(point,p.core[0],p.core[1]),p)
+            case .zone:
+                // Inside filled copper is a valid routing target, never the outline of an empty island.
+                if PCBGeometry.inside(point,p.core) { add(.track,point,p) }
+                else {
+                    for (a,b) in PCBGeometry.edges(p.core) { add(.track,PCBGeometry.nearest(point,a,b),p) }
+                }
             }
         }
         if let grid, let p = ElectronicsPCB.gridPoint(point,spacing:grid) { add(.grid,p,nil) }
@@ -92,6 +103,7 @@ extension ElectronicsPCB {
         for v in copper.vias.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
             primitives.append(.init(item:.via(v.id),netID:v.netID,layers:Array(0..<copper.layerCount),core:[v.position],radius:v.diameter/2,drillDiameter:v.drill))
         }
+        primitives += try PCBZoneFilling.primitives(design:design,copper:primitives,rules:rulesByNet)
         let index = try PCBIndex(primitives)
         var issues: [ElectronicsIssue] = [], issueKeys = Set<String>()
         func add(_ code: String, _ message: String, _ items: [PCBItem], _ point: PCBPoint, severity: ElectronicsIssue.Severity = .error) {
@@ -143,7 +155,12 @@ extension ElectronicsPCB {
                 let b = primitives[j]
                 let pairClearance = max(rules.clearance, b.netID.flatMap { rulesByNet[$0]?.clearance } ?? copper.rules.clearance)
                 guard !Set(a.layers).isDisjoint(with:b.layers) else { continue }
-                if a.item == b.item { union(i,j); continue }
+                if a.item == b.item {
+                    if case .zone = a.item {
+                        if PCBGeometry.gap(a,b) <= PCBGeometry.epsilon { union(i,j) }
+                    } else { union(i,j) }
+                    continue
+                }
                 let sameSignal = (a.netID != nil && a.netID == b.netID) || (padPins[a.item] != nil && padPins[a.item] == padPins[b.item])
                 let gap = PCBGeometry.gap(a,b)
                 if sameSignal {
@@ -161,7 +178,25 @@ extension ElectronicsPCB {
         }
         let roots = primitives.indices.map { root($0) }
         let padRoots = Set(base.pads.indices.map { roots[$0] })
+        let zoneModels = Dictionary(uniqueKeysWithValues:copper.zones.map { ($0.id,$0) })
+        let removed = Set(primitives.indices.filter { i in
+            guard case .zone(let id) = primitives[i].item else { return false }
+            return zoneModels[id]?.removeIslands == true && !padRoots.contains(roots[i])
+        })
+        var zoneFills: [PCBZoneFill] = []
+        for zone in copper.zones.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
+            let all = primitives.indices.filter { primitives[$0].item == .zone(zone.id) }
+            let kept = all.filter { !removed.contains($0) }
+            let cells = kept.map { primitives[$0].core }
+            zoneFills.append(.init(zone:zone,cells:cells,islandCount:Set(kept.map { roots[$0] }).count,
+                                  removedIslandCount:Set(all.filter { removed.contains($0) }.map { roots[$0] }).count,
+                                  area:cells.map(PCBPolygonFill.area).reduce(0,+)))
+            if cells.isEmpty {
+                add("pcb_zone_empty","Piano «\(zone.name)» senza rame: controllare contorno, strato, ostacoli e collegamento a una piazzola della rete.",[.zone(zone.id)],zone.outline[0],severity:.warning)
+            }
+        }
         for i in primitives.indices where !padRoots.contains(roots[i]) {
+            if removed.contains(i) { continue }
             add("pcb_floating_copper","Rame non collegato fisicamente ad alcuna piazzola.",[primitives[i].item],primitives[i].center,severity:.warning)
         }
         var airwires: [Airwire] = []
@@ -186,7 +221,9 @@ extension ElectronicsPCB {
                 newlyReached = members.filter { !reached.contains($0) && roots[$0] == roots[next] }
             }
         }
-        return .init(designID:design.id,revision:revision,layerCount:copper.layerCount,primitives:primitives,keepouts:keepouts,
-                     board:.init(pads:base.pads,airwires:airwires,unplacedComponents:base.unplacedComponents),issues:issues,index:index,keepoutIndex:keepoutIndex)
+        let retained = primitives.indices.filter { !removed.contains($0) }.map { primitives[$0] }
+        return .init(designID:design.id,revision:revision,layerCount:copper.layerCount,primitives:retained,keepouts:keepouts,zones:zoneFills,
+                     board:.init(pads:base.pads,airwires:airwires,unplacedComponents:base.unplacedComponents),issues:issues,
+                     index:removed.isEmpty ? index : try PCBIndex(retained),keepoutIndex:keepoutIndex,zoneIndex:try PCBIndex(boxes:zoneFills.map { PCBBox($0.zone.outline) }))
     }
 }

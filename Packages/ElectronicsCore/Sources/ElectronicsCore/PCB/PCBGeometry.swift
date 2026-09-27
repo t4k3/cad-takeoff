@@ -1,6 +1,7 @@
 import Foundation
 
-// Shared by connectivity, DRC and picking. No tessellation-dependent clearance calculations.
+// Shared by connectivity, DRC and picking. Pad/track/via radii stay analytic;
+// zone polygons are the actual derived copper, conservatively clear of curved obstacles.
 enum PCBGeometry {
     static let epsilon = 1e-8 // mm, numerical contact tolerance (not a manufacturing tolerance)
     static func distance(_ a: PCBPoint, _ b: PCBPoint) -> Double { hypot(a.x-b.x, a.y-b.y) }

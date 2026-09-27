@@ -66,6 +66,7 @@ import ElectronicsCore
         times.sort()
         try save(Metrics(primitives:snapshot.primitives.count,snapshotMS:duration,queryP95MS:times[949],queryMaxMS:times.last!),"metrics.json")
         try PCBRuleCheck.run(in:output)
+        try PCBZoneCheck.run(in:output)
         print("PASS PCB: rame su due strati, via, corto rifiutato, storico e round-trip. 1000 primitive: snapshot \(duration) ms, query p95 \(times[949]) ms.")
     }
 }

@@ -47,14 +47,15 @@ public struct PCBCopper: Codable, Equatable, Sendable {
     public var vias: [PCBVia]
     public var netClasses: [PCBNetClass]
     public var keepouts: [PCBKeepout]
+    public var zones: [PCBZone]
     public init(layerCount: Int = 2, rules: PCBDesignRules = .init(), tracks: [PCBTrack] = [], vias: [PCBVia] = [],
-                netClasses: [PCBNetClass] = [], keepouts: [PCBKeepout] = []) {
+                netClasses: [PCBNetClass] = [], keepouts: [PCBKeepout] = [], zones: [PCBZone] = []) {
         self.layerCount = layerCount; self.rules = rules; self.tracks = tracks; self.vias = vias
-        self.netClasses = netClasses; self.keepouts = keepouts
+        self.netClasses = netClasses; self.keepouts = keepouts; self.zones = zones
     }
-    public var netIDs: Set<UUID> { Set(tracks.map(\.netID) + vias.map(\.netID)) }
+    public var netIDs: Set<UUID> { Set(tracks.map(\.netID) + vias.map(\.netID) + zones.map(\.netID)) }
     public var classifiedNetIDs: Set<UUID> { Set(netClasses.flatMap(\.netIDs)) }
-    private enum CodingKeys: String, CodingKey { case layerCount, rules, tracks, vias, netClasses, keepouts }
+    private enum CodingKeys: String, CodingKey { case layerCount, rules, tracks, vias, netClasses, keepouts, zones }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         layerCount = try c.decode(Int.self, forKey: .layerCount)
@@ -63,6 +64,7 @@ public struct PCBCopper: Codable, Equatable, Sendable {
         vias = try c.decode([PCBVia].self, forKey: .vias)
         netClasses = try c.decodeIfPresent([PCBNetClass].self, forKey: .netClasses) ?? []
         keepouts = try c.decodeIfPresent([PCBKeepout].self, forKey: .keepouts) ?? []
+        zones = try c.decodeIfPresent([PCBZone].self, forKey: .zones) ?? []
     }
 }
 
@@ -70,11 +72,12 @@ public enum PCBItem: Codable, Hashable, Sendable {
     case pad(componentID: UUID, padID: UUID)
     case track(UUID)
     case via(UUID)
+    case zone(UUID)
     public var subjectIDs: [UUID] {
-        switch self { case let .pad(c, p): [c, p]; case .track(let id), .via(let id): [id] }
+        switch self { case let .pad(c, p): [c, p]; case .track(let id), .via(let id), .zone(let id): [id] }
     }
     var key: String {
-        let prefix = switch self { case .pad: "0/"; case .via: "1/"; case .track: "2/" }
+        let prefix = switch self { case .pad: "0/"; case .via: "1/"; case .track: "2/"; case .zone: "3/" }
         return prefix + subjectIDs.map(\.uuidString).joined(separator: "/")
     }
 }
@@ -100,11 +103,15 @@ public indirect enum PCBCommand: Codable, Equatable, Sendable {
     case assignNetClass(netIDs: [UUID], classID: UUID?)
     case addKeepout(PCBKeepout), updateKeepout(PCBKeepout), removeKeepout(UUID)
     case moveKeepout(id: UUID, offset: PCBPoint)
+    case addZone(PCBZone), updateZone(PCBZone), removeZone(UUID)
+    case moveZone(id: UUID, offset: PCBPoint)
     case batch([PCBCommand])
     public var title: String {
         switch self {
         case .addTrack: "Traccia pista"; case .updateTrack: "Modifica pista"; case .removeTrack: "Elimina pista"
         case .addVia: "Inserisci via"; case .updateVia: "Modifica via"; case .removeVia: "Elimina via"
+        case .addZone: "Crea piano di rame"; case .updateZone: "Modifica piano di rame"
+        case .removeZone: "Elimina piano di rame"; case .moveZone: "Sposta piano di rame"
         case .configure: "Regole del PCB"; case .batch: "Modifica rame"
         case .addNetClass: "Crea classe di rete"; case .updateNetClass: "Modifica classe di rete"
         case .removeNetClass: "Elimina classe di rete"; case .assignNetClass: "Assegna classe di rete"

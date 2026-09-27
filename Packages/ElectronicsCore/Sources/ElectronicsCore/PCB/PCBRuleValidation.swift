@@ -30,7 +30,7 @@ extension ElectronicsPCB {
             if k.layers.isEmpty || Set(k.layers).count != k.layers.count || k.layers.contains(where: { $0 < 0 || $0 >= copper.layerCount }) {
                 add("invalid_keepout_layers", "Scegliere almeno uno strato esistente, senza duplicati.", [k.id])
             }
-            if !k.tracks && !k.vias && !k.pads { add("empty_keepout_rules", "Vietare almeno un tipo di oggetto: piste, via o piazzole.", [k.id]) }
+            if !k.tracks && !k.vias && !k.pads && !k.zones { add("empty_keepout_rules", "Vietare almeno un tipo di oggetto: piste, via, piazzole o piani.", [k.id]) }
         }
         return issues
     }

@@ -15,4 +15,5 @@ python3 Tests/Electronics/check_library.py "$electronics_bin_dir/electronics-lib
 python3 Tests/Electronics/check_schematic.py "$electronics_run_dir/schematic"
 "$electronics_bin_dir/electronics-pcb" "$electronics_run_dir/pcb"
 python3 Tests/Electronics/check_pcb.py "$electronics_run_dir/pcb"
+python3 Tests/Electronics/check_zones.py "$electronics_run_dir/pcb"
 printf 'Risultati elettronica: %s\n' "$electronics_run_dir"

@@ -14,7 +14,7 @@ public enum ElectronicsPCB {
         if ![rules.clearance,rules.edgeClearance,rules.minimumTrackWidth,rules.minimumDrill,rules.minimumAnnularRing].allSatisfy({ ElectronicsGeometry.valid($0) && $0 > 0 }) {
             add("invalid_pcb_rules", "Distanze, larghezze e forature minime devono essere positive e finite.")
         }
-        let ids = copper.tracks.map(\.id)+copper.vias.map(\.id)+copper.netClasses.map(\.id)+copper.keepouts.map(\.id)
+        let ids = copper.tracks.map(\.id)+copper.vias.map(\.id)+copper.netClasses.map(\.id)+copper.keepouts.map(\.id)+copper.zones.map(\.id)
         let foreign = Set(design.components.map(\.id)+design.nets.map(\.id)+design.library.footprints.flatMap { $0.pads.map(\.id) })
         if Set(ids).count != ids.count || !Set(ids).isDisjoint(with:foreign) { add("duplicate_copper_identity", "Identità del rame duplicate o condivise con altri oggetti.") }
         let nets = Set(design.nets.map(\.id))
@@ -33,6 +33,7 @@ public enum ElectronicsPCB {
             }
         }
         issues += ruleIntegrity(copper, nets: nets)
+        issues += zoneIntegrity(copper, nets:nets)
         return issues
     }
     static func mutate(_ command: PCBCommand, design: inout ElectronicsDesign, depth: Int = 0, count: inout Int) throws {
@@ -65,7 +66,7 @@ public enum ElectronicsPCB {
             copper.vias.removeAll { $0.id == id }
         case let .configure(layers,rules):
             // Existing copper must retain its physical layer; bottom pads would move too.
-            if layers != copper.layerCount && (!copper.tracks.isEmpty || !copper.vias.isEmpty || !copper.keepouts.isEmpty) {
+            if layers != copper.layerCount && (!copper.tracks.isEmpty || !copper.vias.isEmpty || !copper.keepouts.isEmpty || !copper.zones.isEmpty) {
                 throw failure("occupied_stackup", "Rimuovere il rame e le aree vietate prima di cambiare il numero di strati.")
             }
             copper.layerCount = layers; copper.rules = rules
@@ -100,13 +101,26 @@ public enum ElectronicsPCB {
             guard let i = copper.keepouts.firstIndex(where: { $0.id == id }) else { throw failure("keepout_missing", "Area vietata inesistente.", [id]) }
             guard ElectronicsGeometry.valid(offset) else { throw failure("invalid_keepout", "Spostamento non valido.", [id]) }
             copper.keepouts[i].outline = copper.keepouts[i].outline.map { .init($0.x+offset.x, $0.y+offset.y) }
+        case .addZone(let z):
+            guard !copper.zones.contains(where: { $0.id == z.id }) else { throw failure("zone_exists", "Piano già presente.", [z.id]) }
+            copper.zones.append(z)
+        case .updateZone(let z):
+            guard let i = copper.zones.firstIndex(where: { $0.id == z.id }) else { throw failure("zone_missing", "Piano inesistente.", [z.id]) }
+            copper.zones[i] = z
+        case .removeZone(let id):
+            guard copper.zones.contains(where: { $0.id == id }) else { throw failure("zone_missing", "Piano inesistente.", [id]) }
+            copper.zones.removeAll { $0.id == id }
+        case let .moveZone(id,offset):
+            guard let i = copper.zones.firstIndex(where: { $0.id == id }) else { throw failure("zone_missing", "Piano inesistente.", [id]) }
+            guard ElectronicsGeometry.valid(offset) else { throw failure("invalid_zone", "Spostamento non valido.", [id]) }
+            copper.zones[i].outline = copper.zones[i].outline.map { .init($0.x+offset.x,$0.y+offset.y) }
         case .batch: break
         }
         design.board.copper = copper
     }
     static func blockingIssues(before: ElectronicsDesign, after: ElectronicsDesign, issues: [ElectronicsIssue]) -> [ElectronicsIssue] {
         let old = before.board.copper ?? .init(), new = after.board.copper ?? .init()
-        let changed = Set(new.tracks.filter { !old.tracks.contains($0) }.map(\.id) + new.vias.filter { !old.vias.contains($0) }.map(\.id))
+        let changed = Set(new.tracks.filter { !old.tracks.contains($0) }.map(\.id) + new.vias.filter { !old.vias.contains($0) }.map(\.id) + new.zones.filter { !old.zones.contains($0) }.map(\.id))
         // Configuring rules diagnoses an existing board without preventing its repair.
         return issues.filter { $0.severity == .error && !changed.isDisjoint(with:$0.subjectIDs ?? []) }
     }

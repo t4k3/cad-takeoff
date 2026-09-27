@@ -160,7 +160,7 @@ final class PCBRuleTests: XCTestCase {
     func testInvalidKeepoutsRejectedBeforeGeometryAndBatchRollsBack() throws {
         var d = try document()
         var crossed = area(); crossed.outline = [.init(1,1),.init(5,5),.init(1,5),.init(5,1)]
-        var empty = area(); empty.tracks = false; empty.vias = false; empty.pads = false
+        var empty = area(); empty.tracks = false; empty.vias = false; empty.pads = false; empty.zones = false
         var duplicate = area(); duplicate.layers = [0,0]
         var outside = area(); outside.layers = [2]
         var degenerate = area(); degenerate.outline = [.init(),.init(1,1),.init(2,2)]
@@ -195,7 +195,7 @@ final class PCBRuleTests: XCTestCase {
         }
         json = strip(json) as! [String:Any]; json["formatVersion"] = 4
         var migrated = try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject:json))
-        XCTAssertEqual(migrated.formatVersion,5); XCTAssertEqual(migrated,d)
+        XCTAssertEqual(migrated.formatVersion,6); XCTAssertEqual(migrated,d)
         try migrated.undo(expectedRevision:migrated.revision)
         try migrated.redo(expectedRevision:migrated.revision); XCTAssertEqual(migrated.design,d.design)
     }

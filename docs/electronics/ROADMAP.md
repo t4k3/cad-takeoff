@@ -76,3 +76,14 @@ del messaggio di stato è corretto e verificato nella v1.0.26; la prima diagnosi
 pannello file è stata rettificata dopo aver isolato una selezione errata nell'automazione.
 Restano T94 avanzato (archi, stackup dielettrico, pour/termiche, shove, DRC completo)
 e T95 per fabbricazione. Nessuna qualificazione produttiva.
+
+## Terzo traguardo T94 — piani di rame, 27/09/2026
+
+Riempimento poligonale nativo Swift: contorno anche concavo, collegamenti pieni alle piazzole,
+distanze da bordo e altre reti secondo le classi, fori e aree vietate. Connettività effettiva
+tra celle, piste e via; isole senza percorso verso una piazzola rimuovibili, mai collegate
+per il solo UUID del piano. Documento v6 con lettura 1–6 e storico completo. Contratto
+[PCB_ZONES.md](PCB_ZONES.md), **124 test elettronici + cinque lettori + 178 CAD PASS**.
+Claude integra T97; collaudo e misure Release distinti in [VALIDATION.md](VALIDATION.md).
+Restano termiche, larghezza minima dei colli, archi, stackup dielettrico, shove e DRC completo;
+T95 comprende il successivo rilascio produttivo. Nessuna libreria geometrica esterna aggiunta.

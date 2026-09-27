@@ -4,6 +4,9 @@ Stato: primo traguardo del motore collaudato automaticamente (88 test totali e q
 
 Secondo traguardo (107 test motore e lettore indipendente PASS, integrazione UI e prova reale di classi/aree/storico): [classi di rete e aree vietate](PCB_RULES.md).
 
+Terzo traguardo (124 test motore e cinque lettori indipendenti PASS): [piani di rame](PCB_ZONES.md),
+collegamenti pieni, ritaglio secondo le regole e isole fisiche. Prova UI registrata in [VALIDATION.md](VALIDATION.md).
+
 ## Dati e transazioni
 
 - `PCBBoard.copper: PCBCopper?`: assente nei vecchi documenti; equivale a due strati senza piste.
@@ -17,7 +20,7 @@ Secondo traguardo (107 test motore e lettore indipendente PASS, integrazione UI 
 - `ElectronicsCommand.pcb(PCBCommand)` con `addTrack`, `updateTrack`, `removeTrack(UUID)`,
   `addVia`, `updateVia`, `removeVia(UUID)`, `configure(layerCount:rules:)`, `batch([PCBCommand])`.
   Il batch produce un unico passo Annulla, con revisione controllata e rollback totale.
-- Formato documento 5, lettura di 1–5, storico persistente incluso.
+- Formato documento 6, lettura di 1–6, storico persistente incluso.
 
 ## Contratto UI
 
@@ -54,7 +57,7 @@ diversi non conduce senza via o pad passante. Un corto viene segnalato, mai usat
 Le distanze considerano larghezze reali, forme delle piazzole e rotazioni, non solo linee centrali.
 Il perimetro può essere concavo; il rame deve essere dentro e rispettare la distanza dal bordo. Tolleranza numerica di contatto: `1e-8` mm; non è una tolleranza di produzione. Il foro vuoto non conduce: una pista interamente nella foratura non collega il pad.
 
-Non inclusi: piani/pour, blind/buried via, stackup dielettrico/impedenza, push-and-shove,
+Non inclusi: termiche e larghezza minima dei colli dei piani, blind/buried via, stackup dielettrico/impedenza, push-and-shove,
 autorouter, tuning differenziale, fori ovali, regole copper-to-hole separate, solder mask DRC, Gerber e rilascio produttivo.
 Riferimento funzionale studiato: [documentazione ufficiale KiCad, router interattivo](https://docs.kicad.org/9.0/it/pcbnew/pcbnew.html#routing-tracks).
 Nessun sorgente KiCad incorporato.

@@ -1,5 +1,30 @@
 # Elettronica — prove del motore e dell’app
 
+## 27/09/2026 — T94: piani di rame a collegamento pieno
+
+- Suite elettronica: **124 test Swift PASS**, 17 nuovi sui piani; **cinque lettori Python
+  indipendenti PASS**, incluso `Tests/Electronics/check_zones.py`. Esecuzione completa exit 0:
+  `/tmp/ftk-zones-complete.log`, artefatti `build/electronics/run.55mFbj`.
+- CADCore: **178 test PASS**, exit 0 `/tmp/ftk-zones-cad.log`. Nessuna modifica Codex al CAD.
+- Nuovi casi: intersezioni concave e ostacoli sovrapposti, bordo e classe più severa,
+  esclusione keepout per tipo/strato, isole separate e ponte di rame, collegamento tra strati
+  solo attraverso via/pad passanti, fori vuoti, zone senza pad, UUID/pick/snap, atomicità,
+  preview/storico, migrazione v5→v6 dell'intera catena, ordine deterministico, cancellazione,
+  coordinate lontane e eventi quasi coincidenti, margine circolare circoscritto e limite di complessità.
+- Il lettore Python misura distanze dai poligoni esportati, ne verifica copertura e interni
+  disgiunti e ricostruisce la connettività con union-find proprio: le due piazzole sono collegate
+  dal piano; il keepout le separa; una pista ripristina il collegamento. Controlla anche
+  storico e riapertura. Non chiama il motore Swift per decidere il risultato.
+- Release: `swift run -c release --package-path Packages/ElectronicsCore electronics-pcb
+  build/electronics/zones-release-20260927`, exit 0; lettori PCB/regole e piani PASS.
+  Log `/tmp/ftk-zones-release.log`. Piano con 100 ostacoli e 1.441 celle: snapshot **35,91 ms**,
+  pick + pickZones + snap **p95 0,0234 ms**; Debug **401,49 ms / 0,1812 ms**.
+  Misure sintetiche su questo Mac, non garanzie per progetti arbitrari. Worker cancellabili necessari.
+
+Aggancio T97 di Claude e collaudo app in corso. Nessuna prova UI implicita dai test del core.
+Limiti espliciti in [PCB_ZONES.md](PCB_ZONES.md): mancano termiche, larghezza minima dei colli,
+priorità tra reti sovrapposte e qualificazione produttiva; il riempimento usa connessioni piene.
+
 ## 27/09/2026 — T94: classi di rete e aree vietate
 
 - Suite elettronica: **107 test Swift PASS**, 19 nuovi sulle regole; quattro lettori

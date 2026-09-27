@@ -20,11 +20,12 @@ Codex possiede il core elettronico, i formati, i controlli e il contratto funzio
 | `DeviceDefinition` | Simbolo e impronta in revisioni esatte, mappatura esplicita pin→piazzole, produttore/MPN e identificativo JLC opzionale. |
 | `ElectronicsLibrary` | Snapshot incluso nel documento: riaprire non dipende da cataloghi online aggiornati. |
 | `ElectronicsDesign` | Componenti, reti, collegamenti/NC espliciti, contorno scheda, posizionamenti e varianti di montaggio. |
-| `ElectronicsDocument` | Scrittura formato 5, lettura 1/2/3/4/5; schema e rame opzionali, classi di rete e aree vietate, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
+| `ElectronicsDocument` | Scrittura formato 6, lettura 1–6; schema e rame opzionali, classi di rete, aree vietate e piani, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
 | `ElectronicsValidation.integrity` | Identità duplicate, riferimenti/revisioni mancanti, pin-map, contorno semplice, quote/angoli finiti, piazzole e fori coerenti. |
 | `ElectronicsValidation.electrical` | Prime verifiche: pin senza connessione/NC, pin NC collegati, uscite multiple sulla rete. Non è ERC completo. |
 | `ElectronicsConnectivity.snapshot` | Piazzole in coordinate PCB con rete associata; collegamenti ancora da sbrogliare fra isole fisiche, deterministici tramite albero minimo; piste/via provengono dai comandi PCB. |
 | `ElectronicsPCB`, `PCBCommand` | Piste, via passanti, strati, DRC, snapshot/pick/snap e anteprima transazionale: [PCB.md](PCB.md). |
+| `PCBZone`, `PCBZoneFill` | Piani a collegamento pieno, riempimento poligonale nativo, clearance e isole fisicamente connesse; contorni persistiti, rame ricalcolato: [PCB_ZONES.md](PCB_ZONES.md). |
 | `ElectronicsAssembly.export` | BOM/CPL JLC, istanze meccaniche e collegamenti; un’unica selezione di variante. Errori bloccanti prima di produrre risultati. |
 | `ElectronicsLibraryCommands` | Importazione e creazione dispositivo tipizzate, anteprima su copia e conferma atomica. Stesse API per app/chat/MCP. |
 | `KiCadLibraryImporter`, `EasyEDAStandardImporter` | Importatori proprietari con sottoinsiemi espliciti, provenienza, SHA-256 e report. Vedere [LIBRARIES.md](LIBRARIES.md). |
@@ -87,7 +88,7 @@ L’adattatore UI dovrà usare identità, non indici, per individuare l’oggett
 2. Workspace coordinati Libreria, Schema, PCB, Assieme e Preparazione produzione; selezione incrociata su UUID.
 3. Visualizzazione di revisioni, errori con soggetto selezionabile, reti ancora da sbrogliare e stato dei dati fornitore.
 4. Adapter CAD per la scheda e i modelli, con aggiornamenti revisionati e nessuna duplicazione delle trasformazioni.
-5. `bash scripts/test-electronics.sh` è collegato alla CI globale da Claude (T99); comprende test Swift e lettori Python indipendenti per assemblaggio, import librerie e schema. La prova del ponte app resta in `scripts/test-circuits.sh`.
+5. `bash scripts/test-electronics.sh` è collegato alla CI globale da Claude (T99); comprende test Swift e cinque lettori Python indipendenti per assemblaggio, import librerie, schema, PCB/regole e piani. La prova del ponte app resta in `scripts/test-circuits.sh`.
 
 ## Fonti studiate e scelte nostre
 

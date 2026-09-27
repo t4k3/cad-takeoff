@@ -42,8 +42,8 @@ anche la sua assegnazione. Non si deducono classi per fili nuovi privi di origin
 ## Aree vietate
 
 `PCBCopper.keepouts: [PCBKeepout]`, vuoto nei vecchi file.
-`PCBKeepout(id:name:outline:layers:tracks:vias:pads:)`: poligono semplice in mm,
-anche concavo, senza punto finale duplicato; strati espliciti; tre esclusioni
+`PCBKeepout(id:name:outline:layers:tracks:vias:pads:zones:)`: poligono semplice in mm,
+anche concavo, senza punto finale duplicato; strati espliciti; quattro esclusioni
 indipendenti, almeno una attiva. Vietano il rame anche della stessa rete.
 Il perimetro è incluso: il contatto col bordo dell'area è una violazione.
 L'area può superare il contorno della scheda. Nessun margine extra implicito:
@@ -68,11 +68,14 @@ Un'area interamente nel foro vuoto non collide con l'anello di rame.
 
 ## Persistenza e prove
 
-Formato documento **5**, legge 1–5 e conserva l'intera catena Annulla/Ripeti.
+Classi e aree introdotte nel formato **5**; il formato corrente **6** legge 1–6 e conserva
+l'intera catena Annulla/Ripeti. `zones` vale true anche nelle aree dei file precedenti:
+la terza tranche [PCB_ZONES.md](PCB_ZONES.md) aggiunge il divieto indipendente per i piani.
 Un vecchio lettore deve rifiutare il nuovo formato per non perdere le regole.
 Stesse API per UI, assistente e MCP. Snapshot in background e cache per identità/revisione.
 
 Riferimento funzionale studiato: [KiCad 9, aree di regola e classi](https://docs.kicad.org/9.0/en/pcbnew/pcbnew.html#rule-areas).
 Implementazione propria; nessun sorgente o libreria KiCad incorporato.
-Non comprende piani di rame, classi multiple/priorità, pattern sui nomi delle reti,
+I piani a collegamento pieno sono descritti in [PCB_ZONES.md](PCB_ZONES.md).
+Non comprende classi multiple/priorità, pattern sui nomi delle reti,
 impedenza, regole elettriche di sicurezza, Gerber o qualificazione produttiva.

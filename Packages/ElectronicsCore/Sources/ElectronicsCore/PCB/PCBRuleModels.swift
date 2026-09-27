@@ -52,13 +52,23 @@ public struct PCBKeepout: Codable, Equatable, Sendable {
     public var tracks: Bool
     public var vias: Bool
     public var pads: Bool
+    public var zones: Bool
     public init(id: UUID = UUID(), name: String = "Area vietata", outline: [PCBPoint], layers: [Int],
-                tracks: Bool = true, vias: Bool = true, pads: Bool = true) {
+                tracks: Bool = true, vias: Bool = true, pads: Bool = true, zones: Bool = true) {
         self.id = id; self.name = name; self.outline = outline; self.layers = layers
-        self.tracks = tracks; self.vias = vias; self.pads = pads
+        self.tracks = tracks; self.vias = vias; self.pads = pads; self.zones = zones
+    }
+    private enum CodingKeys: String, CodingKey { case id, name, outline, layers, tracks, vias, pads, zones }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy:CodingKeys.self)
+        id = try c.decode(UUID.self,forKey:.id); name = try c.decode(String.self,forKey:.name)
+        outline = try c.decode([PCBPoint].self,forKey:.outline); layers = try c.decode([Int].self,forKey:.layers)
+        tracks = try c.decode(Bool.self,forKey:.tracks); vias = try c.decode(Bool.self,forKey:.vias)
+        pads = try c.decode(Bool.self,forKey:.pads)
+        zones = try c.decodeIfPresent(Bool.self,forKey:.zones) ?? true
     }
     func excludes(_ item: PCBItem) -> Bool {
-        switch item { case .track: tracks; case .via: vias; case .pad: pads }
+        switch item { case .track: tracks; case .via: vias; case .pad: pads; case .zone: zones }
     }
 }
 
