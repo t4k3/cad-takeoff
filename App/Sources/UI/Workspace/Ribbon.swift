@@ -154,6 +154,9 @@ struct Ribbon: View {
             Button { model.exportFlatDXFWithPanel(selectedSheet?.id) } label: { Label("DXF", systemImage: "square.and.arrow.up") }
                 .disabled(!model.hasSheetMetal)
                 .help("Esporta lo sviluppo in DXF (mm): contorno di taglio e linee di piega per il laser e la piegatrice")
+            Button { model.exportFlatDrawingWithPanel(selectedSheet?.id) } label: { Label("Tavola", systemImage: "doc.richtext") }
+                .disabled(!model.hasSheetMetal)
+                .help("Tavola di piega (PDF o DXF): sviluppo quotato, linee di piega su/giù, tabella pieghe e fori")
         }
     }
 

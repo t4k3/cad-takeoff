@@ -57,3 +57,24 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     #expect(hatch.count > 20)
     #expect(cut.lines.filter { $0.style == .hidden }.count < plain.lines.filter { $0.style == .hidden }.count)
 }
+
+@Test func flatPatternSheetHasBendsTablesAndPositions() throws {
+    let spec = SheetMetalSpec(material: "dc01", thickness: 1.5, width: 120, depth: 60,
+                              flanges: [.front: SheetFlange(length: 20), .back: SheetFlange(length: 20),
+                                        .left: SheetFlange(length: 15, angle: 90, direction: .down)])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID(), folded: false)
+    let (flat, _) = build.flat(adding: [HoleSpec(centers: [Vec3(20, 0, 1.5), Vec3(-20, 0, 1.5)], size: "M5", diameter: 5.5)])
+    let s = try TechnicalDrawing.flatPattern(flat, rule: build.rule, info: .init(title: "Staffa", date: Date(timeIntervalSince1970: 0)))
+    let texts = s.texts.map(\.text)
+    // Three bends labelled on the blank and listed in the table; two holes F1, F2 (label + row).
+    for t in ["P1 SU 90°", "P2 SU 90°", "P3 GIÙ 90°", "Piega", "Foro", "SVILUPPO", "Staffa", "1:1"] { #expect(texts.contains(t), "\(t)") }
+    #expect(texts.filter { $0 == "F1" }.count == 2 && texts.filter { $0 == "F2" }.count == 2)
+    #expect(texts.filter { $0 == "giù" }.count == 1 && texts.filter { $0 == "su" }.count == 2)
+    // One centre line and two tangents per bend; blank size and each bend's position dimensioned.
+    #expect(s.lines.filter { $0.style == .center }.count == 3)
+    #expect(s.lines.filter { $0.style == .hidden }.count == 6)
+    let blank = flat.outline.map(\.x).max()! - flat.outline.map(\.x).min()!
+    #expect(texts.contains(TechnicalDrawing.number(blank)))
+    #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
+    #expect(DrawingDXF.dxf(s).contains("GI\\U+00D9"))
+}

@@ -618,13 +618,44 @@ final class DesignModel {
         }
     }
 
-    /// DXF of a part's flat pattern (the selected part, or the only one).
-    func flatPatternDXF(_ id: UUID? = nil) throws -> (name: String, dxf: String) {
+    /// The selected sheet part, or the only one.
+    func sheetPart(_ id: UUID? = nil) throws -> (feature: Feature, build: SheetMetalBuild, flat: SheetFlatPattern, skippedHoles: Int) {
         let parts = sheetParts()
         guard let part = id.flatMap({ id in parts.first { $0.feature.id == id } }) ?? (parts.count == 1 ? parts.first : nil) else {
             throw CADToolFailure(parts.isEmpty ? "Nessuna lamiera nel disegno." : "Seleziona la lamiera da sviluppare.")
         }
+        return part
+    }
+
+    /// DXF of a part's flat pattern (the selected part, or the only one).
+    func flatPatternDXF(_ id: UUID? = nil) throws -> (name: String, dxf: String) {
+        let part = try sheetPart(id)
         return (part.feature.name, SheetMetalDXF.export(part.flat, rule: part.build.rule, name: part.feature.name))
+    }
+
+    /// Workshop sheet of a part's flat pattern (blank, bend lines and positions, bend and hole
+    /// tables): PDF to print, or DXF, by the chosen extension; A4, A3 when the blank is large.
+    func exportFlatDrawingWithPanel(_ id: UUID? = nil) {
+        do {
+            let part = try sheetPart(id)
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.pdf, UTType(filenameExtension: "dxf") ?? .data]
+            panel.nameFieldStringValue = "\(part.feature.name) - tavola di piega.pdf"
+            panel.message = "Tavola di piega: .pdf per stampare, .dxf per altri CAD"
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            let info = TechnicalDrawing.Info(title: part.feature.name)
+            var sheet = try TechnicalDrawing.flatPattern(part.flat, rule: part.build.rule, info: info, format: .a4)
+            if let scale = sheet.texts.first(where: { t in TechnicalDrawing.scales.contains { $0.1 == t.text } }),
+               let value = TechnicalDrawing.scales.first(where: { $0.1 == scale.text })?.0, value <= 0.2 {
+                sheet = try TechnicalDrawing.flatPattern(part.flat, rule: part.build.rule, info: info, format: .a3)
+            }
+            if url.pathExtension.lowercased() == "dxf" {
+                try DrawingDXF.dxf(sheet).write(to: url, atomically: true, encoding: .utf8)
+            } else {
+                try PDFWriter.pdf(sheet).write(to: url)
+            }
+            statusMessage = "Tavola di piega salvata: \(url.lastPathComponent) — \(part.flat.bends.count) pieghe, \(part.flat.holes.count) fori"
+        } catch { statusMessage = "Tavola di piega non riuscita: \(error.localizedDescription)" }
     }
 
     func exportFlatDXFWithPanel(_ id: UUID? = nil) {
