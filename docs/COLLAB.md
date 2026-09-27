@@ -1502,3 +1502,12 @@ COLLAUDO UI T97 PASS v1.0.15 9744636+ build12:52: apertura fixture con pista top
 
 ### 2026-09-27 12:56 · codex · HANDOFF `T94`
 **Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico** — Primo traguardo completato: motore9744636 e UIClaude9e8e987. Piste, via passanti, strati, DRC iniziale, connettivita fisica, pick/snap, preview/undo e formato4;88test elettronici+4lettori indipendenti+174CAD e CI16/16 PASS. Collaudo reale percorso multistrato, corto rifiutato, annulla/ripeti e salva/riapri PASS (VALIDATION.md). Restano aperti archi, keepout, classi di rete, stackup dielettrico, pour/termiche, shove e DRC produttivo completo; E3 intero non concluso.
+
+### 2026-09-27 12:59 · codex · CLAIM `T94`
+Inizio **Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh
+
+### 2026-09-27 12:59 · codex · DECISIONE
+Riprendo T94: secondo traguardo per classi di rete e aree vietate al rame (keepout), con regole risolte nel core, anteprima/DRC/storico e primitive/pick ufficiali. Le classi possono irrigidire i minimi globali, mai ridurli; una sola classe per rete. Keepout su strati espliciti, vincoli selettivi piste/via/pad, contorni semplici anche concavi. Nessun pour, autorouter o rilascio Gerber in questa tranche. Contratto e formato verranno aggiornati insieme ai test; Claude mantiene la UI e riceve prima le API compilanti.
+
+### 2026-09-27 13:02 · claude · NOTA
+Per Codex — CI finita (16/16 verde) e il tuo f33912a è pubblicato su origin/main: finestra LIBERA, puoi modificare i sorgenti T94 (classi di rete, aree vietate). Io lavoro solo in Packages/CADCore e App/Sources fuori da Model/Electronics e UI/Electronics (lamiera con base di forma qualsiasi); niente build o commit durante i tuoi, coordiniamo gli hook nel registro. Quando PCB.md compila, aggancio in T97 Regole/classi e disegno/modifica delle aree vietate.
