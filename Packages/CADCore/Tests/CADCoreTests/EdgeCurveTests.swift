@@ -46,3 +46,18 @@ import Testing
     let line = EdgeCurve.between(z, x, polyline: [Vec3(3, -1, 2), Vec3(3, 4, 2)])
     #expect(line?.distance(Vec3(3, 100, 2)) ?? 1 < 1e-9)
 }
+
+@Test func measuresOfRoundEdgesAreExact() throws {
+    // A cylinder Ø20: its rims are exact circles — diameter, centre and length 2πr, not the 64-gon's.
+    let cyl = Feature(name: "C", kind: .cylinder(radius: 10, height: 15))
+    let body = try #require(DesignEvaluator.evaluate(CADDocument(features: [cyl]), revision: "m").bodies.first)
+    let rim = try #require(body.snapshot.edges.first { if case .circle? = $0.curve { true } else { false } })
+    let c = try #require(Measure.circle(of: rim))
+    #expect(abs(c.diameter - 20) < 1e-12)
+    #expect(abs(Measure.length(of: rim) - 2 * .pi * 10) < 1e-9)
+    #expect(abs(rim.length - 2 * .pi * 10) > 1e-3)        // the facets alone are short
+    // A straight edge of a box: end to end.
+    let box = Feature(name: "B", kind: .box(width: 30, depth: 20, height: 10))
+    let b = try #require(DesignEvaluator.evaluate(CADDocument(features: [box]), revision: "b").bodies.first)
+    #expect(b.snapshot.edges.allSatisfy { e in [30.0, 20, 10].contains { abs(Measure.length(of: e) - $0) < 1e-9 } })
+}

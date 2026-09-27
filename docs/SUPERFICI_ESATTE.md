@@ -92,8 +92,9 @@ OpenCascade 12007,320 mm³ contro 12007,319 esatti. **Volumi esatti nell'app (27
 delle faccette sul volume va come 1/n² (anche sulle curve delle booleane), quindi due risoluzioni
 lo cancellano, (4·V₂ₙ − Vₙ)/3: albero forato 2·10⁻⁷ relativo alla risoluzione normale (le faccette
 da sole 1,6·10⁻³), entro 10⁻⁶ a ogni risoluzione. Il pannello Proprietà mostra il volume esatto,
-calcolato in background per revisione (≈ quello delle faccette nel frattempo). Da fare: le stesse
-curve per tavola e misure.
+calcolato in background per revisione (≈ quello delle faccette nel frattempo). Misure: i bordi
+tondi danno Ø, centro e asse dal cerchio esatto e la lunghezza sull'arco vero (2πr per un cerchio
+intero, prima il 64-gono); gli spigoli dritti da capo a capo. Da fare: aree esatte delle facce.
 
 Intersezione faccia–faccia analitica dove esiste in forma chiusa (piano con piano, cilindro,
 cono, sfera, toro; cilindri coassiali o paralleli), numerica con tolleranza per le altre coppie

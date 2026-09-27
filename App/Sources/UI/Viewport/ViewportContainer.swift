@@ -610,10 +610,10 @@ struct ViewportContainer: View {
                     } else {
                         Text("Spigolo").font(.system(size: 11, weight: .semibold))
                     }
-                    Text("Lunghezza \(fmt(e.length)) mm")
+                    Text("Lunghezza \(fmt(Measure.length(of: e))) mm")
                 } else if edges.count > 1 {
                     Text("\(edges.count) spigoli").font(.system(size: 11, weight: .semibold))
-                    Text("Lunghezza totale \(fmt(edges.reduce(0) { $0 + $1.length })) mm")
+                    Text("Lunghezza totale \(fmt(edges.reduce(0) { $0 + Measure.length(of: $1) })) mm")
                 }
                 // Two picks (faces or edges, also on different bodies): the shortest distance.
                 if workspace.geoSelection.count == 2 {

@@ -25,12 +25,38 @@ public enum Measure {
 
     /// The round edge's diameter, centre and axis (nil when the edge is not a circle or an arc).
     public static func circle(of e: EdgeInfo) -> (diameter: Double, centre: Vec3, axis: Vec3)? {
+        // Its true circle when the kernel knows it (tappa 2 of the exact surfaces).
+        if case let .circle(c, axis, r)? = e.curve { return (2 * r, c, axis.normalized) }
+        if case .line? = e.curve { return nil }
         guard e.polyline.count >= 4, let frame = JointFrame.from(edge: e) else { return nil }
         let (a, b) = (e.polyline.first!, e.polyline.last!)
         // A straight edge gives its middle: not a circle.
         if e.polyline.allSatisfy({ q in let d = (b - a).normalized, w = q - a; return (w - d * w.dot(d)).length < 1e-6 }) { return nil }
         let r = JointFrame.corners(e.polyline).map { ($0 - frame.origin).length }.max()!
         return (2 * r, frame.origin, frame.axis)
+    }
+
+    /// The edge's length on its true curve: a straight edge end to end, an arc its angle times
+    /// its radius (a whole circle 2πr), else along the facets.
+    public static func length(of e: EdgeInfo) -> Double {
+        guard let first = e.polyline.first, let last = e.polyline.last else { return 0 }
+        switch e.curve {
+        case .line?:
+            return (last - first).length
+        case let .circle(c, axis, r)?:
+            let n = axis.normalized
+            func radial(_ p: Vec3) -> Vec3 { let v = p - c; return v - n * v.dot(n) }
+            var angle = 0.0
+            for (a, b) in zip(e.polyline, e.polyline.dropFirst()) {
+                let u = radial(a), v = radial(b)
+                angle += abs(atan2(u.cross(v).dot(n), u.dot(v)))
+            }
+            // A closed circle is a whole turn, whatever its facets add up to.
+            if (last - first).length < 1e-9 && e.polyline.count > 2 { angle = 2 * .pi }
+            return angle * r
+        case nil:
+            return e.length
+        }
     }
 
     /// Shortest distance between two shapes and the two closest points.
