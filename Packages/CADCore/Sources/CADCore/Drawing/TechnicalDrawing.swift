@@ -71,8 +71,19 @@ public enum TechnicalDrawing {
         let gap = 18.0
         let availW = frame.x1 - frame.x0 - 4 * gap, availH = frame.y1 - frame.y0 - titleH - 3 * gap
         let row1 = max(h(ef), h(el))
-        let fitColumn = min(availW / max(w(ef) + w(el) + w(ei), 1e-6), availH / max(row1 + max(h(et), 1), 1e-6))
-        let fitRow = min((availW + gap) / max(max(w(ef) + w(el), w(et) + w(ei)), 1e-6), availH / max(row1 + max(h(et), h(ei)), 1e-6))
+        // Heights where the part steps (horizontal edges seen from the front): dimensioned from the
+        // bottom on the right of the front view, so each needs a little room there.
+        let levels: [Double] = {
+            var zs = Set<Int64>()
+            for seg in model.edges(for: front, hidden: true) where abs(seg.a.y - seg.b.y) < 1e-6 && abs(seg.a.x - seg.b.x) > 1e-6 {
+                zs.insert(Int64((seg.a.y * 100).rounded()))
+            }
+            let all = zs.map { Double($0) / 100 }.filter { $0 > ef.min.y + 0.05 && $0 < ef.max.y - 0.05 }.sorted()
+            return all.count <= 6 ? all : []
+        }()
+        let levelRoom = levels.isEmpty ? 0.0 : 6 * Double(levels.count) + 4
+        let fitColumn = min((availW - levelRoom) / max(w(ef) + w(el) + w(ei), 1e-6), availH / max(row1 + max(h(et), 1), 1e-6))
+        let fitRow = min((availW + gap - levelRoom) / max(max(w(ef) + w(el), w(et) + w(ei)), 1e-6), availH / max(row1 + max(h(et), h(ei)), 1e-6))
         let isoBelow = fitRow > fitColumn
         guard let (scale, label) = scales.first(where: { $0.0 <= max(fitColumn, fitRow) }) else { throw KernelError.invalidParameter("disegno: pezzo troppo grande per il foglio") }
 
@@ -80,7 +91,7 @@ public enum TechnicalDrawing {
         // (first angle); the isometric in the right column or right of the view from above.
         let rowTop = frame.y1 - gap - row1 * scale
         let colFront = frame.x0 + gap
-        let colLeft = colFront + w(ef) * scale + gap
+        let colLeft = colFront + w(ef) * scale + gap + levelRoom
         let colIso = isoBelow ? colFront + w(et) * scale + gap : colLeft + w(el) * scale + gap
         func place(_ v: View, _ e: (min: Vec2, max: Vec2), at origin: Vec2) -> (Vec2) -> Vec2 {
             { p in Vec2(origin.x + (p.x - e.min.x) * scale, origin.y + (p.y - e.min.y) * scale) }
@@ -129,6 +140,9 @@ public enum TechnicalDrawing {
         let size = box.max - box.min
         dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, ef.min.y)), offset: -8, value: size.x)
         dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.min.x, ef.max.y)), offset: 8, value: size.z)
+        for (k, z) in levels.enumerated() {
+            dimension(&sheet, from: frontAt(Vec2(ef.max.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, z)), offset: -(8 + 6 * Double(k)), value: z - ef.min.y)
+        }
         dimension(&sheet, from: leftAt(Vec2(el.min.x, el.min.y)), to: leftAt(Vec2(el.max.x, el.min.y)), offset: -8, value: size.y)
         // Round holes and bosses seen end-on from above: their diameters.
         // Centre lines: a cross on every circle seen end-on in the top view.
