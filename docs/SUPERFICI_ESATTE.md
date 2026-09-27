@@ -107,6 +107,12 @@ cilindro coassiale), smusso per distanze sulle superfici, guscio per superfici o
 
 ### Tappa 5 — Vista a risoluzione di schermo
 
+**Stato 27/09 — fatta la prima versione.** Il viewport sceglie la finezza dallo zoom (×2 oltre
+~900 punti di pezzo sullo schermo, ×4 oltre ~2500) e chiede al modello la stessa cronologia
+valutata più fine, in background e in una cache sua; appena pronta la mostra al posto della
+normale. Nomi di facce e spigoli identici: selezione, evidenziazione e comandi non cambiano.
+Da migliorare: rifinire solo le facce curve visibili invece di tutto il pezzo.
+
 Il viewport chiede la sfaccettatura in base allo zoom (cerchi lisci da vicino), in background,
 senza rivalutare la cronologia.
 

@@ -87,6 +87,44 @@ final class DesignModel {
 
     var selectedIndex: Int? { document.features.firstIndex { $0.id == selection } }
 
+    /// Tappa 5 (docs/SUPERFICI_ESATTE.md): the design evaluated finer for the screen, when its
+    /// curves are big there — built in the background, shown once ready; the same faces and
+    /// edges (the same names), so selection and commands do not notice.
+    private(set) var screenSnapshot: (revision: String, factor: Int, snapshot: DesignSnapshot)?
+    @ObservationIgnored private var screenTask: Task<Void, Never>?
+    @ObservationIgnored private var screenWanted = 1
+    private let screenCache = EvaluationCache(capacity: 6)
+
+    /// The snapshot to show at a screen factor: the finer one when ready for this revision (any
+    /// factor at least that fine), else the model's.
+    func displaySnapshot(factor: Int) -> DesignSnapshot {
+        if factor > 1, let s = screenSnapshot, s.revision == designRevision, s.factor >= factor { return s.snapshot }
+        return snapshot()
+    }
+
+    func screenReady() async { await screenTask?.value }
+
+    /// Asks for the design at `factor` for the screen (1: nothing to build).
+    func requestScreenFactor(_ factor: Int) {
+        screenWanted = factor
+        guard factor > 1 else { screenTask?.cancel(); return }
+        if let s = screenSnapshot, s.revision == designRevision, s.factor >= factor { return }
+        screenTask?.cancel()
+        let doc = document, revision = designRevision, components = componentResolver, cache = screenCache
+        screenTask = Task { [weak self] in
+            let built = await Task.detached(priority: .utility) { () -> DesignSnapshot? in
+                let e = Tessellation.$factor.withValue(factor) {
+                    DesignEvaluator.evaluate(doc, revision: revision + "-screen\(factor)", components: components, cache: cache)
+                }
+                guard !Task.isCancelled else { return nil }
+                return DesignSnapshot(revision: revision + "-screen\(factor)", bodies: e.bodies.filter(\.isVisible).map(\.snapshot),
+                                      issues: e.issues.map { .init(featureID: $0.featureID, message: $0.message) })
+            }.value
+            guard !Task.isCancelled, let self, let built, self.designRevision == revision else { return }
+            self.screenSnapshot = (revision, factor, built)
+        }
+    }
+
     /// Topology comes from feature parameters in CADCore, never from viewport triangles.
     /// A document edit invalidates the cache through designRevision, including undo/reopen.
     func snapshot() -> DesignSnapshot {

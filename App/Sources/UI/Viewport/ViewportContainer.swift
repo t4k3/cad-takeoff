@@ -127,6 +127,8 @@ struct ViewportContainer: View {
             LinearGradient(colors: [Color(white: 0.30), Color(white: 0.17)], startPoint: .top, endPoint: .bottom)
                 .overlay(Theme.Palette.canvas.opacity(0.0))
             metal
+                // Curves drawn finer when the part is big on screen (built in the background).
+                .task(id: "\(model.designRevision)#\(screenFactor)") { model.requestScreenFactor(screenFactor) }
         }
         .background(GeometryReader { g in Color.clear.onAppear { viewport.viewSize = g.size }.onChange(of: g.size) { _, s in viewport.viewSize = s } })
         .overlay(alignment: .topLeading) { sketchHUD }
@@ -230,11 +232,20 @@ struct ViewportContainer: View {
         return nil
     }
 
-    /// Command preview, flat patterns (LAMIERA › Sviluppo) or the design.
+    /// Command preview, flat patterns (LAMIERA › Sviluppo) or the design (finer when it is big
+    /// on screen, once ready).
     private var displayedSnapshot: DesignSnapshot {
         if let preview = workspace.previewSnapshot { return preview }
         if workspace.showFlat, model.hasSheetMetal { return model.flatView().snapshot }
-        return model.snapshot()
+        return model.displaySnapshot(factor: screenFactor)
+    }
+
+    /// How finely curves are drawn for the zoom: the part's size on screen decides (its facets'
+    /// sagitta grows with it) — ×2 past ~900 points across, ×4 past ~2500.
+    private var screenFactor: Int {
+        guard let b = viewport.renderer?.sceneBounds else { return 1 }
+        let across = (b.max - b.min).length / max(viewport.mmPerPoint, 1e-9)
+        return across > 2500 ? 4 : across > 900 ? 2 : 1
     }
 
     /// Bend lines on the flat patterns: red = up, blue = down; tangents faint.

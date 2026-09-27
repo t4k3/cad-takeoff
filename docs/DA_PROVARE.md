@@ -48,6 +48,9 @@ sono le prove a mano, sull'interfaccia.
 - [ ] Un pezzo semplice (schizzo quotato + estrusione + raccordo): «Esporta per CAD Takeoff», aprilo qui. Nella barra di stato: «Da Fusion: N corpi modificabili…». Doppio clic sullo schizzo: quote e vincoli ci sono; cambia un parametro in «Parametri».
 - [ ] Rilancia lo script «Importa progetto in CAD Takeoff» su «025 RobotVolley»: riesporta tutto (i vecchi .ftk senza cronologia non vengono saltati). Mandami import-fusion.txt e i messaggi «non convertiti» dei pezzi che ti servono.
 
+## Curve lisce a schermo
+- [ ] Un cilindro o un foro grande: avvicinati molto (zoom): dopo un attimo le faccette spariscono (la vista si rifà più fine in background). Allontanandoti torna quella normale; selezionare facce e spigoli funziona uguale.
+
 ## Export più liscio per la stampa
 - [ ] Esporta STL o 3MF: nel pannello «Qualità fine: curve lisce» (predefinita, ricordata) — un cilindro o un raccordo grande nello slicer non mostra più le faccette; «Qualità normale» = come prima. Il modello a schermo non cambia.
 

@@ -210,6 +210,18 @@ struct AssistantToolsTests {
         expect(!second.isError && unknownPart.isError, "components inserted, unknown path refused")
         expect(bom.structured?["rows"]?.array?.first?["quantity"]?.number == 2, "BOM quantity 2")
         m.componentResolver = nil; m.projectDesigns = nil
+        // Tappa 5: the design finer for the screen, built in the background — same faces, more triangles;
+        // after an edit the normal one again until the finer is ready.
+        m.newDesign()
+        _ = await edit("add_cylinder", ["radius": 30, "height": 10])
+        m.requestScreenFactor(4)
+        await m.screenReady()
+        let coarse = m.displaySnapshot(factor: 1), fine = m.displaySnapshot(factor: 4)
+        expect(fine.bodies.first!.triangles.count > 3 * coarse.bodies.first!.triangles.count
+               && Set(fine.bodies.first!.faces.map(\.id)) == Set(coarse.bodies.first!.faces.map(\.id)), "screen snapshot finer, same faces")
+        _ = await edit("add_box", ["width": 5, "depth": 5, "height": 5, "position": ["x": 60, "y": 0, "z": 0]])
+        expect(m.displaySnapshot(factor: 4).revision == m.snapshot().revision, "after an edit: the normal snapshot until the finer is ready")
+
         // Sheet metal: U channel in DC01 2 mm with the workshop rule.
         m.newDesign()
         let channel = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "width": 100, "depth": 40,
