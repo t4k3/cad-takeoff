@@ -76,6 +76,24 @@ final class CircuitModel {
     /// Area vietata: the outline being drawn (its points so far), and the area selected.
     var keepoutDraft: KeepoutDraft?
     var keepoutSelection: UUID?
+    /// Piano di rame: the outline being drawn, and the plane selected (CircuitModel+Zones).
+    var zoneDraft: ZoneDraft?
+    var zoneSelection: UUID?
+    @ObservationIgnored var lastZoneNet: UUID?
+    /// A copper change is being applied (runPCB): its token and its work.
+    private(set) var pcbBusy = false
+    @ObservationIgnored private(set) var pcbOperation: UUID?
+    @ObservationIgnored var pcbWork: Task<Result<ElectronicsDocument, any Error>, Never>?
+
+    /// Esc / Annulla during a copper change: it will not be installed; another can start.
+    func cancelPCB() {
+        guard pcbBusy else { return }
+        pcbWork?.cancel()
+        pcbWork = nil; pcbOperation = nil; pcbBusy = false
+        report("Modifica del rame annullata.")
+    }
+    /// «Togli le isole» for the next plane (before its first click too).
+    var zoneRemoveIslands = true
     /// What the engine says of a rule change before it is confirmed (an area being drawn or
     /// moved, a class being edited): checked in the background, the last request wins.
     var ruleCheck: RuleCheck?
@@ -212,6 +230,8 @@ final class CircuitModel {
         if let copper = design?.board.copper {
             if let t = ids.first(where: { id in copper.tracks.contains { $0.id == id } }) { copperSelection = .track(t); canvas = .board; return }
             if let v = ids.first(where: { id in copper.vias.contains { $0.id == id } }) { copperSelection = .via(v); canvas = .board; return }
+            if let z = ids.first(where: { id in copper.zones.contains { $0.id == id } }) { zoneSelection = z; canvas = .board; return }
+            if let k = ids.first(where: { id in copper.keepouts.contains { $0.id == id } }), ids.count == 1 { keepoutSelection = k; canvas = .board; return }
         }
         selection = ids.first { id in components.contains { $0.id == id } }
             ?? components.first { issue.subject.contains($0.id.uuidString) }?.id
@@ -231,6 +251,48 @@ final class CircuitModel {
             report(command.title)
             return true
         } catch {
+            report("\(command.title) non riuscito: \(Self.describe(error))")
+            return false
+        }
+    }
+
+    /// A copper change (tracks, vias, rules, keepouts, planes): the engine re-checks the copper
+    /// and refills the planes, so it runs off the main thread. One at a time (a second is refused,
+    /// not queued); the result lands only on the document and revision it was made for — if the
+    /// circuit changed meanwhile, nothing is applied and the caller keeps its draft.
+    /// Esc / Annulla while it runs: the work is cancelled and its result, even if already
+    /// computed, is never installed.
+    @discardableResult
+    func runPCB(_ command: PCBCommand, expectedRevision: UInt64? = nil) async -> Bool {
+        guard let doc = document else { return false }
+        guard !pcbBusy else { report("Un'altra modifica del rame è in corso: attendi un attimo."); return false }
+        let token = UUID()
+        pcbOperation = token
+        pcbBusy = true
+        defer { if pcbOperation == token { pcbOperation = nil; pcbBusy = false; pcbWork = nil } }
+        let epoch = documentEpoch, base = expectedRevision ?? doc.revision
+        let work = Task.detached(priority: .userInitiated) { () -> Result<ElectronicsDocument, any Error> in
+            var d = doc
+            do { try ElectronicsCommands.apply(.pcb(command), to: &d, expectedRevision: base); return .success(d) }
+            catch { return .failure(error) }
+        }
+        pcbWork = work
+        let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+        guard pcbOperation == token, !Task.isCancelled, !work.isCancelled else {
+            report("\(command.title) annullato.")
+            return false
+        }
+        guard documentEpoch == epoch, document?.revision == doc.revision else {
+            report("\(command.title) non applicato: il circuito è cambiato nel frattempo.")
+            return false
+        }
+        switch result {
+        case .success(let d):
+            document = d; isDirty = true
+            refresh()
+            report(command.title)
+            return true
+        case .failure(let error):
             report("\(command.title) non riuscito: \(Self.describe(error))")
             return false
         }
@@ -269,6 +331,8 @@ final class CircuitModel {
         case route
         /// Area vietata: an outline clicked point by point on the layer being drawn on (CircuitModel+Rules).
         case keepout
+        /// Piano di rame: an outline filled by the engine with a net's copper (CircuitModel+Zones).
+        case zone
     }
 
     /// PCB: puts a component that has no board position yet (from the schematic) where clicked.
@@ -306,7 +370,10 @@ final class CircuitModel {
         didSet {
             if tool != .connect { connectFrom = nil }
             if tool != .route { route = nil }
-            if tool != .keepout { keepoutDraft = nil; ruleCheck = nil }
+            // Drafts of areas and planes stay (Esc, a new revision or OK end them); their check restarts.
+            if tool != .keepout && tool != .zone { ruleCheckTask?.cancel(); ruleCheck = nil }
+            else if tool == .keepout { checkRule(keepoutDraft?.area().map { .addKeepout($0) }) }
+            else { checkRule(zoneDraft?.plane().map { .addZone($0) }) }
             prepareBoardGhost()
         }
     }
@@ -669,6 +736,7 @@ final class CircuitModel {
         // Sessions made on another revision are over (an undo, a change elsewhere).
         if let r = route, r.baseRevision != document?.revision { route = nil; routeCheck = nil }
         if let k = keepoutDraft, k.baseRevision != document?.revision { keepoutDraft = nil }
+        if let z = zoneDraft, z.baseRevision != document?.revision { zoneDraft = nil }
         if let c = ruleCheck, c.revision != document?.revision { ruleCheckTask?.cancel(); ruleCheck = nil }
         refreshSchematic()
         refreshPCB()

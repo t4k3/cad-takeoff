@@ -176,7 +176,7 @@ struct CircuitTests {
         sc.tool = .route
         guard let air = sc.board!.airwires.first else { print("FALLITO: nessun collegamento da sbrogliare"); exit(1) }
         let airwires = sc.board!.airwires.count
-        sc.routeClick(at: air.from, tolerance: 0.5)
+        await sc.routeClick(at: air.from, tolerance: 0.5)
         guard let started = sc.route else { print("FALLITO: pista non iniziata (\(last))"); exit(1) }
         check(started.netID == air.netID && started.runs[0].points.count == 1 && CircuitModel.distance(started.runs[0].points[0], air.from) < 1e-6, "pista iniziata sulla piazzola, nella sua rete")
         // Changing side at once: a via unless the pad goes through the board.
@@ -189,40 +189,40 @@ struct CircuitTests {
         check(sc.routeCheck?.blocking == [] && sc.routeCheck?.target.kind == .pad, "anteprima confermabile, agganciata alla piazzola (\(sc.routeCheck?.blocking?.first?.message ?? "in corso"))")
         let revisionBefore = sc.document!.revision
         let trackID = sc.route!.runs[0].id
-        sc.routeClick(at: air.to, tolerance: 0.5)
+        await sc.routeClick(at: air.to, tolerance: 0.5)
         await sc.pcbReady()
         let tracks = sc.design!.board.copper?.tracks ?? []
         check(sc.route == nil && tracks.count == 1 && tracks[0].id == trackID && tracks[0].layer == 0, "pista confermata con l'identità dell'anteprima (\(last))")
         check(sc.board!.airwires.count == airwires - 1 && sc.document!.revision == revisionBefore + 1, "collegamento sbrogliato, un solo passo")
         // Width, selection, delete, undo.
-        sc.setWidth(0.5, ofTrack: trackID)
+        await sc.setWidth(0.5, ofTrack: trackID)
         check(sc.track(trackID)?.width == 0.5, "larghezza cambiata")
         await sc.pcbReady()
         let halfway = PCBPoint((air.from.x + air.to.x) / 2, (air.from.y + air.to.y) / 2)
         sc.tool = .select
         check(sc.copperHit(at: tracks[0].points.count > 2 ? tracks[0].points[1] : halfway, tolerance: 0.5)?.item == .track(trackID), "pista trovata sotto il mouse")
-        sc.removeCopper(.track(trackID))
+        await sc.removeCopper(.track(trackID))
         check(sc.design!.board.copper?.tracks.isEmpty ?? true, "pista eliminata")
         sc.undo()
         check(sc.track(trackID) != nil, "annulla la rimette")
         // Layers cannot change under copper; without it, 4 layers.
-        check(!sc.configureCopper(layerCount: 4, rules: sc.copperRules), "strati bloccati con rame presente (\(last))")
+        await check(!sc.configureCopper(layerCount: 4, rules: sc.copperRules), "strati bloccati con rame presente (\(last))")
         // A route with a via: out on top, via, on to R2 underneath or back up, then Invio.
         sc.undo(); sc.undo()
         await sc.pcbReady()
         check(sc.design!.board.copper?.tracks.isEmpty ?? true, "rame tolto")
-        check(sc.configureCopper(layerCount: 4, rules: sc.copperRules) && sc.layerCount == 4, "4 strati (\(last))")
+        await check(sc.configureCopper(layerCount: 4, rules: sc.copperRules) && sc.layerCount == 4, "4 strati (\(last))")
         await sc.pcbReady()
         sc.tool = .route
         sc.activeLayer = 0
-        sc.routeClick(at: air.from, tolerance: 0.5)
-        sc.routeClick(at: PCBPoint(air.from.x + 4, air.from.y + 6), tolerance: 0.5)
+        await sc.routeClick(at: air.from, tolerance: 0.5)
+        await sc.routeClick(at: PCBPoint(air.from.x + 4, air.from.y + 6), tolerance: 0.5)
         sc.switchLayer(to: 3)
         let viaID = sc.route?.vias.first?.id
         check(sc.route?.vias.count == 1 && sc.route?.layer == 3, "via e strato Sotto")
-        sc.routeClick(at: PCBPoint(air.to.x - 4, air.from.y + 6), tolerance: 0.5)
+        await sc.routeClick(at: PCBPoint(air.to.x - 4, air.from.y + 6), tolerance: 0.5)
         sc.switchLayer(to: 0)
-        sc.routeClick(at: air.to, tolerance: 0.5)
+        await sc.routeClick(at: air.to, tolerance: 0.5)
         await sc.pcbReady()
         let copper = sc.design!.board.copper!
         check(sc.route == nil && copper.tracks.count == 3 && copper.vias.count == 2 && copper.vias.contains { $0.id == viaID }, "pista con due via in un passo (\(last))")
@@ -230,15 +230,16 @@ struct CircuitTests {
 
         // CLASSI (T94 rules): the net in «Potenza» routes with the class's sizes; a tighter minimum
         // is checked before Applica (errors on the copper already there), then applied.
-        guard let power = sc.addNetClass(name: "Potenza"), var klass = sc.netClasses.first(where: { $0.id == power }) else {
+        guard let power = await sc.addNetClass(name: "Potenza"), var klass = sc.netClasses.first(where: { $0.id == power }) else {
             print("FALLITO: classe non creata (\(last))"); exit(1)
         }
         klass.routing = PCBRoutingDimensions(trackWidth: 0.5, viaDiameter: 0.8, viaDrill: 0.4)
-        check(sc.updateNetClass(klass) && sc.assign(nets: [air.netID], to: power) && sc.netClass(of: air.netID)?.id == power, "classe con misure e rete assegnata (\(last))")
+        let classUpdated = await sc.updateNetClass(klass), classAssigned = await sc.assign(nets: [air.netID], to: power)
+        check(classUpdated && classAssigned && sc.netClass(of: air.netID)?.id == power, "classe con misure e rete assegnata (\(last))")
         await sc.pcbReady()
         sc.tool = .route
         sc.activeLayer = 0
-        sc.routeClick(at: air.from, tolerance: 0.5)
+        await sc.routeClick(at: air.from, tolerance: 0.5)
         check(sc.route?.width == 0.5 && sc.route?.rules.routing.viaDiameter == 0.8 && sc.route?.rules.className == "Potenza", "pista con le misure della classe")
         sc.switchLayer(to: 3)
         if case let .batch(cmds)? = sc.routeCommand(sc.route!), case let .addVia(v)? = cmds.last { check(v.diameter == 0.8 && v.drill == 0.4, "via della classe") }
@@ -253,18 +254,18 @@ struct CircuitTests {
         await sc.ruleCheckReady()
         check(!(sc.ruleCheck?.newErrors ?? []).isEmpty && sc.ruleCheck?.refusal == nil, "classe più stretta: errori sul rame mostrati prima di applicare")
         let beforeStrict = sc.document!.revision
-        check(sc.updateNetClass(strict, expectedRevision: sc.ruleCheck?.revision) && sc.document!.revision == beforeStrict + 1
+        await check(sc.updateNetClass(strict, expectedRevision: sc.ruleCheck?.revision) && sc.document!.revision == beforeStrict + 1
               && sc.netClass(of: air.netID)?.constraints.minimumTrackWidth == 1.0, "classe applicata, rete ancora nella classe, errori da correggere (\(last))")
         // A class the engine refuses (a negative minimum): nothing changes, the edit can be corrected.
         var broken = strict
         broken.constraints.minimumTrackWidth = -1
         let beforeBroken = sc.document!.revision
-        check(!sc.updateNetClass(broken) && sc.document!.revision == beforeBroken && sc.netClass(of: air.netID)?.constraints.minimumTrackWidth == 1.0,
+        await check(!sc.updateNetClass(broken) && sc.document!.revision == beforeBroken && sc.netClass(of: air.netID)?.constraints.minimumTrackWidth == 1.0,
               "classe non valida rifiutata senza toccare il circuito (\(last))")
         check(last.contains("non riuscito"), "rifiuto nella barra di stato")
         var renamed = strict
         renamed.name = "Potenza 2"
-        check(sc.updateNetClass(renamed) && !last.contains("non riuscito"), "dopo un comando riuscito il vecchio rifiuto sparisce (\(last))")
+        await check(sc.updateNetClass(renamed) && !last.contains("non riuscito"), "dopo un comando riuscito il vecchio rifiuto sparisce (\(last))")
         sc.undo()
         sc.refreshNetRules()
         await sc.netRulesReady()
@@ -280,35 +281,103 @@ struct CircuitTests {
         let centre = PCBPoint((c0.x + c1.x) / 2, (c0.y + c1.y) / 2)
         sc.tool = .keepout
         sc.activeLayer = copper.tracks[0].layer
-        sc.keepoutClick(at: PCBPoint(centre.x - 1, centre.y - 1), tolerance: 0.1)
-        sc.keepoutClick(at: PCBPoint(centre.x + 1, centre.y + 1), tolerance: 0.1)
+        await sc.keepoutClick(at: PCBPoint(centre.x - 1, centre.y - 1), tolerance: 0.1)
+        await sc.keepoutClick(at: PCBPoint(centre.x + 1, centre.y + 1), tolerance: 0.1)
         let draftID = sc.keepoutDraft?.id
         check(sc.keepoutDraft?.outline(with: sc.keepoutDraft?.points.last)?.count == 4
               && sc.keepoutDraft?.outline(with: sc.keepoutDraft?.points.first)?.count == 4, "il mouse sull'ultimo o sul primo punto non cambia il rettangolo")
         await sc.ruleCheckReady()
         check(!(sc.ruleCheck?.newErrors ?? []).isEmpty, "area sopra la pista: conflitto mostrato prima di confermare")
-        check(sc.finishKeepout() && sc.keepouts.count == 1 && sc.keepouts[0].id == draftID && sc.keepoutSelection == draftID,
+        await check(sc.finishKeepout() && sc.keepouts.count == 1 && sc.keepouts[0].id == draftID && sc.keepoutSelection == draftID,
               "area confermata con l'identità dell'anteprima (\(last))")
         await sc.pcbReady()
         check(sc.issues.contains { $0.code == "pcb_keepout" }, "conflitto dell'area nelle VERIFICHE")
         check(sc.keepoutHit(at: centre, tolerance: 0.1)?.id == draftID, "area trovata sotto il mouse")
-        sc.moveKeepout(draftID!, by: PCBPoint(0, 30))
+        await sc.moveKeepout(draftID!, by: PCBPoint(0, 30))
         await sc.pcbReady()
         check(abs(sc.keepouts[0].outline[0].y - (centre.y - 1 + 30)) < 1e-9 && !sc.issues.contains { $0.code == "pcb_keepout" }, "area spostata fuori dal rame")
-        sc.moveKeepout(draftID!, by: PCBPoint(0, -30))
+        await sc.moveKeepout(draftID!, by: PCBPoint(0, -30))
         let beforeInto = sc.document!.revision
         sc.tool = .route
-        sc.routeClick(at: air.from, tolerance: 0.5)
-        sc.routeClick(at: PCBPoint(centre.x, centre.y), tolerance: 0.01)
-        check(!sc.finishRoute() && sc.document!.revision == beforeInto, "pista dentro l'area vietata rifiutata (\(last))")
+        await sc.routeClick(at: air.from, tolerance: 0.5)
+        await sc.routeClick(at: PCBPoint(centre.x, centre.y), tolerance: 0.01)
+        await check(!sc.finishRoute() && sc.document!.revision == beforeInto, "pista dentro l'area vietata rifiutata (\(last))")
         sc.tool = .select
-        sc.removeKeepout(draftID!)
+        await sc.removeKeepout(draftID!)
         check(sc.keepouts.isEmpty, "area eliminata")
         sc.undo(); sc.undo(); sc.undo(); sc.undo()
         check(sc.keepouts.isEmpty, "annulla fino a prima dell'area")
+        // One copper change at a time: a second one while the first runs is refused, not queued.
+        let k1 = PCBKeepout(outline: [PCBPoint(1, 1), PCBPoint(3, 1), PCBPoint(3, 3)], layers: [0])
+        let k2 = PCBKeepout(outline: [PCBPoint(5, 1), PCBPoint(7, 1), PCBPoint(7, 3)], layers: [0])
+        async let first = sc.runPCB(.addKeepout(k1))
+        async let second = sc.runPCB(.addKeepout(k2))
+        let (r1, r2) = await (first, second)
+        check(r1 != r2 && sc.keepouts.count == 1 && !sc.pcbBusy, "un solo comando del rame alla volta (\(r1), \(r2))")
+        sc.undo()
+        await sc.pcbReady()
+
+        // Esc while a copper change runs: cancelled, never installed afterwards, the draft kept.
+        sc.tool = .keepout
+        await sc.keepoutClick(at: PCBPoint(10, 20), tolerance: 0.01)
+        await sc.keepoutClick(at: PCBPoint(14, 24), tolerance: 0.01)
+        let revisionBeforeCancel = sc.document!.revision
+        async let cancelled = sc.finishKeepout()
+        var spins = 0
+        while !sc.pcbBusy && spins < 1000 { await Task.yield(); spins += 1 }
+        sc.cancelPCB()
+        let installed = await cancelled
+        check(!installed && sc.keepouts.isEmpty && sc.document!.revision == revisionBeforeCancel && sc.keepoutDraft != nil && !sc.pcbBusy,
+              "annullato durante il lavoro: niente area, bozza conservata (\(last))")
+        sc.keepoutDraft = nil
+        sc.tool = .select
+
+        // PIANI DI RAME: a VCC plane over the whole top layer, previewed (the engine's fill shown
+        // before confirming), confirmed with its identity, filled around the other net's copper.
+        guard let vcc = sc.design!.nets.first(where: { $0.name == "VCC" })?.id else { print("FALLITO: rete VCC assente"); exit(1) }
+        sc.tool = .zone
+        sc.activeLayer = 0
+        await sc.zoneClick(at: PCBPoint(1, 1), tolerance: 0.01)
+        sc.zoneNet = vcc
+        await sc.zoneClick(at: PCBPoint(49, 29), tolerance: 0.01)
+        let planeID = sc.zoneDraft?.id
+        await sc.ruleCheckReady()
+        check(sc.ruleCheck?.refusal == nil && !(sc.ruleCheck?.fills?.first?.cells.isEmpty ?? true), "anteprima del piano col riempimento del motore (\(sc.ruleCheck?.refusal ?? ""))")
+        await check(sc.finishZone() && sc.zones.count == 1 && sc.zones[0].id == planeID && sc.zoneSelection == planeID, "piano confermato con l'identità dell'anteprima (\(last))")
+        await sc.pcbReady()
+        let fill = sc.zoneFill(planeID!)
+        check(fill != nil && !fill!.cells.isEmpty && fill!.area > 0 && fill!.area < 48 * 28, "piano riempito attorno al rame dell'altra rete (\(fill?.area ?? -1) mm²)")
+        check(sc.zoneHit(at: PCBPoint(25, 25), tolerance: 0.1)?.id == planeID, "piano trovato dal contorno")
+        check(sc.copperHit(at: PCBPoint(25, 25), tolerance: 0.1) == nil, "il rame del piano non si seleziona come pista")
+        // Another net's plane over it on the same layer: refused, said before confirming.
+        await sc.zoneClick(at: PCBPoint(5, 5), tolerance: 0.01)
+        sc.zoneNet = air.netID
+        await sc.zoneClick(at: PCBPoint(20, 20), tolerance: 0.01)
+        await sc.ruleCheckReady()
+        let beforeOverlap = sc.document!.revision
+        let refusedBefore = sc.ruleCheck?.refusal != nil
+        let overlapped = await sc.finishZone()
+        check(refusedBefore && !overlapped && sc.zoneDraft != nil && sc.document!.revision == beforeOverlap,
+              "piani di reti diverse sovrapposti rifiutati, bozza conservata (\(last))")
+        sc.zoneDraft = nil
+        sc.tool = .select
+        // Islands off, moved, deleted, undone.
+        var plane = sc.zone(planeID!)!
+        plane.removeIslands = false
+        await check(sc.updateZone(plane) && sc.zone(planeID!)?.removeIslands == false, "isole mantenute")
+        await sc.moveZone(planeID!, by: PCBPoint(0, 0.5))
+        check(abs(sc.zone(planeID!)!.outline[0].y - 1.5) < 1e-9, "piano spostato")
+        await sc.removeZone(planeID!)
+        check(sc.zones.isEmpty && sc.zoneSelection == nil, "piano eliminato")
+        sc.undo(); sc.undo(); sc.undo()
+        check(sc.zone(planeID!)?.removeIslands == true, "annulla riporta il piano com'era")
+        sc.undo()
+        check(sc.zones.isEmpty, "annulla toglie il piano")
+        await sc.pcbReady()
+
         // A draft made on an older revision is dropped (an undo while drawing).
         sc.tool = .keepout
-        sc.keepoutClick(at: PCBPoint(1, 1), tolerance: 0.1)
+        await sc.keepoutClick(at: PCBPoint(1, 1), tolerance: 0.1)
         sc.undo()
         check(sc.keepoutDraft == nil, "bozza dell'area scartata al cambio di revisione")
         sc.redo()
@@ -317,13 +386,13 @@ struct CircuitTests {
         // A leg over another net's pad is shown as not confirmable, and refused.
         if let other = sc.board!.pads.first(where: { $0.componentID == air.fromComponent && $0.netID != air.netID }) {
             sc.activeLayer = 0
-            sc.routeClick(at: air.from, tolerance: 0.5)
+            await sc.routeClick(at: air.from, tolerance: 0.5)
             sc.previewLeg(to: other.center, tolerance: 0.01)
             await sc.routeCheckReady()
             check(!(sc.routeCheck?.blocking ?? []).isEmpty, "anteprima su un'altra rete non confermabile")
             let before = sc.document!.revision
-            sc.routeClick(at: other.center, tolerance: 0.01)
-            check(!sc.finishRoute() && sc.document!.revision == before, "corto rifiutato dal motore (\(last))")
+            await sc.routeClick(at: other.center, tolerance: 0.01)
+            await check(!sc.finishRoute() && sc.document!.revision == before, "corto rifiutato dal motore (\(last))")
             sc.tool = .select
             check(sc.route == nil, "uscire dallo strumento chiude la pista")
         } else { check(false, "piazzola di un'altra rete non trovata") }
@@ -366,6 +435,6 @@ struct CircuitTests {
         try? FileManager.default.removeItem(at: outS2)
 
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
-        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, annulla, salva e riapri")
+        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, piani di rame, annulla, salva e riapri")
     }
 }

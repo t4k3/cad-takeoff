@@ -23,11 +23,11 @@ extension CircuitModel {
 
     /// A new class («Potenza», «Segnale»…) with the board's rules until changed.
     @discardableResult
-    func addNetClass(name: String) -> UUID? {
+    func addNetClass(name: String) async -> UUID? {
         let clean = name.trimmingCharacters(in: .whitespaces)
         guard !clean.isEmpty else { report("Dai un nome alla classe."); return nil }
         let c = PCBNetClass(name: clean)
-        return run(.pcb(.addNetClass(c))) ? c.id : nil
+        return await runPCB(.addNetClass(c)) ? c.id : nil
     }
 
     /// The class's fields as edited, its nets as the document has them now (assignments are
@@ -41,10 +41,10 @@ extension CircuitModel {
 
     /// Applica: at the revision the change was checked on, when given (else the current one).
     @discardableResult
-    func updateNetClass(_ c: PCBNetClass, expectedRevision: UInt64? = nil) -> Bool {
+    func updateNetClass(_ c: PCBNetClass, expectedRevision: UInt64? = nil) async -> Bool {
         guard let merged = edited(c) else { report("La classe non c'è più."); return false }
         guard netClasses.first(where: { $0.id == c.id }) != merged else { return true }
-        return run(.pcb(.updateNetClass(merged)), expectedRevision: expectedRevision)
+        return await runPCB(.updateNetClass(merged), expectedRevision: expectedRevision)
     }
 
     // MARK: Resolved rules per net
@@ -78,13 +78,13 @@ extension CircuitModel {
     func netRulesReady() async { await netRulesTask?.value }
 
     /// Its nets go back to the board's rules.
-    func removeNetClass(_ id: UUID) { run(.pcb(.removeNetClass(id))) }
+    func removeNetClass(_ id: UUID) async { await runPCB(.removeNetClass(id)) }
 
     /// Moves nets into a class (out of the one they were in); nil: back to the board's rules.
     @discardableResult
-    func assign(nets: [UUID], to classID: UUID?) -> Bool {
+    func assign(nets: [UUID], to classID: UUID?) async -> Bool {
         guard !nets.isEmpty else { return true }
-        return run(.pcb(.assignNetClass(netIDs: nets, classID: classID)))
+        return await runPCB(.assignNetClass(netIDs: nets, classID: classID))
     }
 
     // MARK: Checking a change before confirming it
@@ -96,6 +96,8 @@ extension CircuitModel {
         var revision: UInt64
         var newErrors: [ElectronicsIssue]?
         var refusal: String?
+        /// A plane being drawn, changed or moved: its fill as the engine computes it.
+        var fills: [PCBZoneFill]?
     }
 
     /// Previews `command` in the background: the errors it would add to the existing copper (a
@@ -107,21 +109,28 @@ extension CircuitModel {
         ruleCheckTask?.cancel()
         let before = pcbIsCurrent ? (pcb?.issues ?? []) : []
         ruleCheckTask = Task { [weak self] in
-            let result = await Self.offMain { () -> (errors: [ElectronicsIssue], refusal: String?) in
+            let zone: UUID? = switch command {
+            case .addZone(let z), .updateZone(let z): z.id
+            case .moveZone(let id, _): id
+            default: nil
+            }
+            let result = await Self.offMain { () -> (errors: [ElectronicsIssue], refusal: String?, fills: [PCBZoneFill]?) in
                 do {
                     let preview = try ElectronicsCommands.preview(.pcb(command), document: doc, expectedRevision: doc.revision)
                     let errors = preview.issues.filter { e in
                         e.severity == .error && e.code.hasPrefix("pcb_")
                             && !before.contains { $0.code == e.code && $0.subjectIDs == e.subjectIDs }
                     }
-                    return (errors, nil)
+                    let fills = zone.flatMap { id in (try? preview.pcbSnapshot())?.zones.filter { $0.zone.id == id } }
+                    return (errors, nil, fills)
                 } catch {
-                    return ([], CircuitModel.describe(error))
+                    return ([], CircuitModel.describe(error), nil)
                 }
             }
             guard !Task.isCancelled, let self, self.ruleCheck?.command == command, self.ruleCheck?.revision == doc.revision else { return }
             self.ruleCheck?.newErrors = result.errors
             self.ruleCheck?.refusal = result.refusal
+            self.ruleCheck?.fills = result.fills
         }
     }
 
@@ -153,11 +162,16 @@ extension CircuitModel {
 
     /// Area vietata: a click adds a point (on a keepout's corner or side, else the 0,25 mm grid);
     /// a click on the first point closes it.
-    func keepoutClick(at p: PCBPoint, tolerance: Double) {
+    func keepoutClick(at p: PCBPoint, tolerance: Double) async {
+        guard !pcbBusy else { return }
         let q = keepoutPoint(near: p, tolerance: tolerance)
         var d = keepoutDraft ?? KeepoutDraft(baseRevision: document?.revision ?? 0, name: "Area vietata \(keepouts.count + 1)", layers: [activeLayer])
-        if d.points.count >= 3, Self.distance(q, d.points[0]) <= tolerance { finishKeepout(); return }
-        if let last = d.points.last, Self.distance(last, q) < 1e-6 { return }
+        if d.points.count >= 3, Self.distance(q, d.points[0]) <= tolerance { await finishKeepout(); return }
+        // A second click on the last point (a double click) closes it: two points make the rectangle.
+        if let last = d.points.last, Self.distance(last, q) < 1e-6 {
+            if d.points.count >= 2 { await finishKeepout() }
+            return
+        }
         d.points.append(q)
         keepoutDraft = d
         checkRule(d.area().map { .addKeepout($0) })
@@ -185,14 +199,13 @@ extension CircuitModel {
     /// Invio: the outline as drawn — two points make the rectangle between them — with the
     /// identity it was previewed with, at the revision it was drawn on.
     @discardableResult
-    func finishKeepout() -> Bool {
+    func finishKeepout() async -> Bool {
         guard let d = keepoutDraft, let area = d.area() else {
             report("Area vietata: clicca almeno i due angoli opposti di un rettangolo, o tre punti.")
             return false
         }
-        guard run(.pcb(.addKeepout(area)), expectedRevision: d.baseRevision) else { return false }
-        keepoutDraft = nil
-        ruleCheck = nil
+        guard await runPCB(.addKeepout(area), expectedRevision: d.baseRevision) else { return false }
+        if keepoutDraft?.id == d.id { keepoutDraft = nil; ruleCheck = nil }
         keepoutSelection = area.id
         let where_ = area.layers.count == layerCount ? "tutti gli strati" : area.layers.map(layerName).joined(separator: ", ")
         report("\(area.name) su \(where_): niente piste, via e piazzole")
@@ -213,19 +226,19 @@ extension CircuitModel {
     }
 
     @discardableResult
-    func updateKeepout(_ k: PCBKeepout) -> Bool {
+    func updateKeepout(_ k: PCBKeepout) async -> Bool {
         guard keepout(k.id) != k else { return true }
-        return run(.pcb(.updateKeepout(k)))
+        return await runPCB(.updateKeepout(k))
     }
 
     /// Sposta: previewed while dragging (checkRule), the same command on release.
-    func moveKeepout(_ id: UUID, by offset: PCBPoint) {
+    func moveKeepout(_ id: UUID, by offset: PCBPoint) async {
         guard offset.x != 0 || offset.y != 0 else { return }
-        run(.pcb(.moveKeepout(id: id, offset: offset)))
+        await runPCB(.moveKeepout(id: id, offset: offset))
         ruleCheck = nil
     }
 
-    func removeKeepout(_ id: UUID) {
-        if run(.pcb(.removeKeepout(id))) { keepoutSelection = nil }
+    func removeKeepout(_ id: UUID) async {
+        if await runPCB(.removeKeepout(id)) { keepoutSelection = nil }
     }
 }

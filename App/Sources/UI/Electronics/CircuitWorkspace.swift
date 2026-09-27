@@ -99,8 +99,9 @@ struct CircuitBoardView: View {
     @State private var hoveredPad: PlacedPad?
     /// The track or via under the mouse (not on a pad).
     @State private var hoveredCopper: PCBHit?
-    /// The keepout a click would select (nothing else under the mouse).
+    /// The keepout or plane a click would select (nothing else under the mouse).
     @State private var hoveredKeepout: UUID?
+    @State private var hoveredZone: UUID?
     /// Where the mouse is on the board (placing a component, the Collega rubber band), on the
     /// 0,5 mm grid, and exactly.
     @State private var cursor: PCBPoint?
@@ -109,6 +110,8 @@ struct CircuitBoardView: View {
     @State private var dragging: (component: UUID, from: PCBPoint, delta: PCBPoint)?
     /// A keepout being moved (by the offset shown until release).
     @State private var movingKeepout: (id: UUID, delta: PCBPoint)?
+    /// A plane being moved (its outline shown at the offset; the engine's fill previewed).
+    @State private var movingZone: (id: UUID, delta: PCBPoint)?
     /// The next area on every layer (else on the one being drawn on).
     @State private var keepoutAllLayers = false
     @GestureState private var pinch: CGFloat = 1
@@ -157,30 +160,45 @@ struct CircuitBoardView: View {
                         hoveredCopper = hoveredPad == nil ? circuits.copperHit(at: p, tolerance: tolerance(m)) : nil
                         hoveredKeepout = circuits.tool == .select && hoveredPad == nil && hoveredCopper == nil
                             ? circuits.keepoutHit(at: p, tolerance: tolerance(m))?.id : nil
+                        hoveredZone = circuits.tool == .select && hoveredPad == nil && hoveredCopper == nil && hoveredKeepout == nil
+                            ? circuits.zoneHit(at: p, tolerance: tolerance(m))?.id : nil
                         cursor = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)   // 0,5 mm grid
                         pointer = p
                         if circuits.route != nil { circuits.previewLeg(to: p, tolerance: tolerance(m)) }
                         if circuits.keepoutDraft != nil { circuits.previewKeepout(to: p, tolerance: tolerance(m)) }
+                        if circuits.zoneDraft != nil { circuits.previewZone(to: p, tolerance: tolerance(m)) }
                         placingCursor(true)
-                    } else { hoveredPad = nil; hoveredCopper = nil; hoveredKeepout = nil; cursor = nil; pointer = nil; placingCursor(false) }
+                    } else { hoveredPad = nil; hoveredCopper = nil; hoveredKeepout = nil; hoveredZone = nil; cursor = nil; pointer = nil; placingCursor(false) }
                 }
                 .gesture(
                     DragGesture(minimumDistance: 2)
                         .onChanged { g in
                             if dragging == nil, panStart == nil {
                                 let start = m.board(g.startLocation)
-                                if circuits.tool != .route, circuits.tool != .keepout, let hit = pad(at: start), let place = circuits.placement(of: hit.componentID) {
+                                if circuits.tool == .select || circuits.tool == .connect, let hit = pad(at: start), let place = circuits.placement(of: hit.componentID) {
                                     circuits.selection = hit.componentID
                                     dragging = (hit.componentID, place.position, PCBPoint())
                                 } else if circuits.tool == .select, circuits.copperHit(at: start, tolerance: tolerance(m)) == nil,
                                           let area = circuits.keepoutHit(at: start, tolerance: tolerance(m)) {
-                                    circuits.keepoutSelection = area.id; circuits.selection = nil; circuits.copperSelection = nil
+                                    circuits.keepoutSelection = area.id; circuits.selection = nil; circuits.copperSelection = nil; circuits.zoneSelection = nil
                                     movingKeepout = (area.id, PCBPoint())
+                                } else if circuits.tool == .select, circuits.copperHit(at: start, tolerance: tolerance(m)) == nil,
+                                          let plane = circuits.zoneHit(at: start, tolerance: tolerance(m)) {
+                                    circuits.zoneSelection = plane.id; circuits.selection = nil; circuits.copperSelection = nil; circuits.keepoutSelection = nil
+                                    movingZone = (plane.id, PCBPoint())
                                 } else {
                                     panStart = pan
                                 }
                             }
-                            if var k = movingKeepout {
+                            if var z = movingZone {
+                                let dx = Double(g.translation.width / m.scale), dy = Double(-g.translation.height / m.scale)
+                                let delta = PCBPoint((dx * 4).rounded() / 4, (dy * 4).rounded() / 4)   // 0,25 mm grid
+                                if delta != z.delta {
+                                    z.delta = delta
+                                    movingZone = z
+                                    circuits.checkRule(delta.x == 0 && delta.y == 0 ? nil : .moveZone(id: z.id, offset: delta))
+                                }
+                            } else if var k = movingKeepout {
                                 let dx = Double(g.translation.width / m.scale), dy = Double(-g.translation.height / m.scale)
                                 let delta = PCBPoint((dx * 4).rounded() / 4, (dy * 4).rounded() / 4)   // 0,25 mm grid
                                 if delta != k.delta {
@@ -201,8 +219,9 @@ struct CircuitBoardView: View {
                             if let d = dragging, d.delta.x != 0 || d.delta.y != 0 {
                                 circuits.move(d.component, to: PCBPoint(d.from.x + d.delta.x, d.from.y + d.delta.y))
                             }
-                            if let k = movingKeepout { circuits.moveKeepout(k.id, by: k.delta) }
-                            dragging = nil; movingKeepout = nil; panStart = nil
+                            if let k = movingKeepout { Task { await circuits.moveKeepout(k.id, by: k.delta) } }
+                            if let z = movingZone { Task { await circuits.moveZone(z.id, by: z.delta) } }
+                            dragging = nil; movingKeepout = nil; movingZone = nil; panStart = nil
                         }
                 )
                 .simultaneousGesture(SpatialTapGesture().onEnded { tap in
@@ -223,16 +242,25 @@ struct CircuitBoardView: View {
                     return .handled
                 }
                 .onKeyPress("k") { circuits.tool = circuits.tool == .keepout ? .select : .keepout; return .handled }
+                .onKeyPress("p") { circuits.tool = circuits.tool == .zone ? .select : .zone; return .handled }
                 .onKeyPress(.return) {
-                    if circuits.tool == .keepout { circuits.finishKeepout() } else { circuits.finishRoute() }
+                    Task {
+                        switch circuits.tool {
+                        case .keepout: await circuits.finishKeepout()
+                        case .zone: await circuits.finishZone()
+                        default: await circuits.finishRoute()
+                        }
+                    }
                     return .handled
                 }
                 .onKeyPress(.escape) {
-                    if circuits.route != nil { circuits.route = nil; circuits.routeCheck = nil }
+                    if circuits.pcbBusy { circuits.cancelPCB() }
+                    else if circuits.route != nil { circuits.route = nil; circuits.routeCheck = nil }
                     else if circuits.keepoutDraft != nil { circuits.keepoutDraft = nil; circuits.ruleCheck = nil }
+                    else if circuits.zoneDraft != nil { circuits.zoneDraft = nil; circuits.ruleCheck = nil }
                     else if circuits.connectFrom != nil { circuits.connectFrom = nil }
                     else if circuits.tool != .select { circuits.tool = .select }
-                    else { circuits.selection = nil; circuits.copperSelection = nil; circuits.keepoutSelection = nil; circuits.issueMark = nil }
+                    else { circuits.selection = nil; circuits.copperSelection = nil; circuits.keepoutSelection = nil; circuits.zoneSelection = nil; circuits.issueMark = nil }
                     return .handled
                 }
                 .onKeyPress(.delete) { deleteSelection(); return .handled }
@@ -249,8 +277,10 @@ struct CircuitBoardView: View {
     private func deleteSelection() {
         if circuits.route != nil { circuits.undoLeg() }
         else if circuits.tool == .keepout, circuits.keepoutDraft != nil { circuits.undoKeepoutPoint() }
-        else if let item = circuits.copperSelection { circuits.removeCopper(item) }
-        else if let k = circuits.keepoutSelection { circuits.removeKeepout(k) }
+        else if circuits.tool == .zone, circuits.zoneDraft != nil { circuits.undoZonePoint() }
+        else if let item = circuits.copperSelection { Task { await circuits.removeCopper(item) } }
+        else if let k = circuits.keepoutSelection { Task { await circuits.removeKeepout(k) } }
+        else if let z = circuits.zoneSelection { Task { await circuits.removeZone(z) } }
         else if let c = circuits.selection { circuits.removeComponent(c) }
     }
 
@@ -259,10 +289,14 @@ struct CircuitBoardView: View {
         circuits.issueMark = nil
         switch circuits.tool {
         case .route:
-            circuits.routeClick(at: p, tolerance: tolerance(m))
+            Task { await circuits.routeClick(at: p, tolerance: tolerance(m)) }
+        case .zone:
+            Task { await circuits.zoneClick(at: p, tolerance: tolerance(m)) }
         case .keepout:
-            circuits.keepoutClick(at: p, tolerance: tolerance(m))
-            if keepoutAllLayers, circuits.keepoutDraft?.points.count == 1 { circuits.setDraftLayers(all: true) }
+            Task {
+                await circuits.keepoutClick(at: p, tolerance: tolerance(m))
+                if keepoutAllLayers, circuits.keepoutDraft?.points.count == 1 { circuits.setDraftLayers(all: true) }
+            }
         case let .place(placing):
             // Keeps placing (next identity and reference) until Esc: the model moves the session on.
             let at = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)
@@ -272,7 +306,7 @@ struct CircuitBoardView: View {
         case let .placeExisting(id):
             circuits.placeExistingOnBoard(id, at: PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2))
         case .select:
-            circuits.keepoutSelection = nil
+            circuits.keepoutSelection = nil; circuits.zoneSelection = nil
             if pad(at: p) == nil, let hit = circuits.copperHit(at: p, tolerance: tolerance(m)) {
                 circuits.copperSelection = hit.item; circuits.selection = nil
             } else if let pad = pad(at: p) {
@@ -280,6 +314,7 @@ struct CircuitBoardView: View {
             } else {
                 circuits.selection = nil; circuits.copperSelection = nil
                 circuits.keepoutSelection = circuits.keepoutHit(at: p, tolerance: tolerance(m))?.id
+                if circuits.keepoutSelection == nil { circuits.zoneSelection = circuits.zoneHit(at: p, tolerance: tolerance(m))?.id }
             }
         }
     }
@@ -288,7 +323,7 @@ struct CircuitBoardView: View {
     private func placingCursor(_ inside: Bool) {
         guard inside else { return }
         switch circuits.tool {
-        case .place, .placeExisting, .route, .keepout: NSCursor.crosshair.set()
+        case .place, .placeExisting, .route, .keepout, .zone: NSCursor.crosshair.set()
         default: NSCursor.arrow.set()
         }
     }
@@ -304,6 +339,10 @@ struct CircuitBoardView: View {
         case .keepout:
             circuits.keepoutDraft == nil
                 ? "Area vietata su \(circuits.layerName(circuits.activeLayer)): clicca i punti del contorno · K per uscire"
+                : "Clic per il punto successivo · clic sul primo punto o Invio per chiudere (2 punti: rettangolo) · ⌫ toglie l'ultimo · Esc annulla"
+        case .zone:
+            circuits.zoneDraft == nil
+                ? "Piano di rame su \(circuits.layerName(circuits.activeLayer)): clicca i punti del contorno (il primo su una piazzola ne prende la rete) · P per uscire"
                 : "Clic per il punto successivo · clic sul primo punto o Invio per chiudere (2 punti: rettangolo) · ⌫ toglie l'ultimo · Esc annulla"
         case .select: nil
         }
@@ -328,7 +367,7 @@ struct CircuitBoardView: View {
     /// What an area being drawn or moved would do to the copper already there (allowed: the
     /// errors then show in VERIFICHE), or why the engine refuses it.
     @ViewBuilder private var ruleCheckChip: some View {
-        if let check = circuits.ruleCheck, circuits.tool == .keepout || movingKeepout != nil {
+        if let check = circuits.ruleCheck, circuits.tool == .keepout || circuits.tool == .zone || movingKeepout != nil || movingZone != nil {
             Group {
                 if let refusal = check.refusal {
                     Label("Non confermabile: \(refusal)", systemImage: "xmark.octagon.fill").foregroundStyle(.red)
@@ -356,7 +395,26 @@ struct CircuitBoardView: View {
 
     /// Pista: the width of the next tracks and how the leg bends. Area vietata: its layers.
     @ViewBuilder private var routingBar: some View {
-        if circuits.tool == .keepout {
+        if circuits.tool == .zone {
+            HStack(spacing: 8) {
+                Circle().fill(CopperColors.layer(circuits.activeLayer, of: circuits.layerCount)).frame(width: 9, height: 9)
+                Text(circuits.layerName(circuits.activeLayer)).font(.system(size: 11, weight: .semibold))
+                Divider().frame(height: 14)
+                Menu {
+                    ForEach(circuits.design?.nets ?? [], id: \.id) { net in Button(net.name) { circuits.zoneNet = net.id } }
+                } label: {
+                    Text("Rete: " + (circuits.zoneNet.flatMap { id in circuits.design?.nets.first { $0.id == id }?.name } ?? "scegli")).font(.system(size: 11))
+                }
+                .menuStyle(.borderlessButton).fixedSize()
+                Toggle("Togli le isole", isOn: Binding(get: { circuits.zoneDraft?.removeIslands ?? circuits.zoneRemoveIslands }, set: { circuits.setDraftRemoveIslands($0) }))
+                    .toggleStyle(.checkbox).font(.system(size: 11))
+                    .help("Toglie i pezzi di rame del piano non collegati a nessuna piazzola")
+                Text("Collegamento pieno · termiche e colli minimi non ancora disponibili").font(.system(size: 11)).foregroundStyle(.secondary)
+                draftButtons(open: circuits.zoneDraft != nil, close: { await circuits.finishZone() }, cancel: { circuits.zoneDraft = nil; circuits.ruleCheck = nil })
+            }
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .overlayChip()
+        } else if circuits.tool == .keepout {
             HStack(spacing: 8) {
                 Circle().fill(CopperColors.layer(circuits.activeLayer, of: circuits.layerCount)).frame(width: 9, height: 9)
                 Toggle("Tutti gli strati", isOn: Binding(
@@ -364,7 +422,8 @@ struct CircuitBoardView: View {
                     set: { keepoutAllLayers = $0; circuits.setDraftLayers(all: $0) }))
                 .toggleStyle(.checkbox).font(.system(size: 11))
                 .help("Altrimenti solo sullo strato attivo (\(circuits.layerName(circuits.activeLayer)))")
-                Text("Vieta piste, via e piazzole · cambiabile dopo nel pannello").font(.system(size: 11)).foregroundStyle(.secondary)
+                Text("Vieta piste, via, piazzole e piani · cambiabile dopo nel pannello").font(.system(size: 11)).foregroundStyle(.secondary)
+                draftButtons(open: circuits.keepoutDraft != nil, close: { await circuits.finishKeepout() }, cancel: { circuits.keepoutDraft = nil; circuits.ruleCheck = nil })
             }
             .padding(.horizontal, 10).padding(.vertical, 5)
             .overlayChip()
@@ -398,6 +457,20 @@ struct CircuitBoardView: View {
         }
     }
 
+    /// Chiudi (Invio) and Annulla (Esc) for an outline being drawn; while the engine applies it,
+    /// Annulla stops that.
+    @ViewBuilder private func draftButtons(open: Bool, close: @escaping @MainActor () async -> Bool, cancel: @escaping () -> Void) -> some View {
+        if open || circuits.pcbBusy {
+            Divider().frame(height: 14)
+            Button("Chiudi") { Task { _ = await close() } }
+                .disabled(circuits.pcbBusy).controlSize(.small)
+                .help("Chiude il contorno (Invio o doppio clic sull'ultimo punto; 2 punti fanno un rettangolo)")
+            Button(circuits.pcbBusy ? "Ferma" : "Annulla") { if circuits.pcbBusy { circuits.cancelPCB() } else { cancel() } }
+                .controlSize(.small)
+                .help("Esc")
+        }
+    }
+
     static func mm(_ v: Double) -> String { v.formatted(.number.precision(.fractionLength(0...2))) + " mm" }
 
     private var zoomButtons: some View {
@@ -411,7 +484,13 @@ struct CircuitBoardView: View {
     }
 
     @ViewBuilder private var hoverChip: some View {
-        if hoveredPad == nil, hoveredCopper == nil, let id = hoveredKeepout, let area = circuits.keepout(id) {
+        if hoveredPad == nil, hoveredCopper == nil, hoveredKeepout == nil, let id = hoveredZone, let plane = circuits.zone(id) {
+            let net = circuits.design?.nets.first { $0.id == plane.netID }?.name ?? "?"
+            Text("\(plane.name) · rete \(net) · \(circuits.layerName(plane.layer))")
+                .font(.system(size: 11, weight: .medium))
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .overlayChip()
+        } else if hoveredPad == nil, hoveredCopper == nil, let id = hoveredKeepout, let area = circuits.keepout(id) {
             Text("\(area.name) · \(area.layers.count == circuits.layerCount ? "tutti gli strati" : area.layers.map(circuits.layerName).joined(separator: ", "))")
                 .font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 8).padding(.vertical, 4)
@@ -422,6 +501,7 @@ struct CircuitBoardView: View {
             case .track(let id): circuits.track(id).map { "Pista · rete \(net) · \(circuits.layerName($0.layer)) · \(Self.mm($0.width))" } ?? "Pista"
             case .via(let id): circuits.via(id).map { "Via · rete \(net) · Ø \(Self.mm($0.diameter)), foro \(Self.mm($0.drill))" } ?? "Via"
             case .pad: "rete \(net)"
+            case .zone: "Piano · rete \(net)"
             }
             Text(text).font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 8).padding(.vertical, 4)
@@ -449,6 +529,7 @@ struct CircuitBoardView: View {
         ctx.stroke(outline, with: .color(Color(red: 0.85, green: 0.9, blue: 0.8)), lineWidth: 1.5)
 
         let litNet = hoveredPad?.netID ?? hoveredCopper?.netID ?? circuits.route?.netID
+        drawZones(&ctx, m, litNet: litNet, accent: accent)
         drawKeepouts(&ctx, m)
         drawCopper(&ctx, m, litNet: litNet, accent: accent)
         let selected = circuits.selection
@@ -594,6 +675,49 @@ struct CircuitBoardView: View {
         ring(&ctx, m.screen(r.tip), 4, .white)
     }
 
+    /// Planes: the engine's fill, one surface per plane (its cells filled together: no seams),
+    /// under tracks and pads, dimmer off the layer being drawn on; the outline apart, dashed
+    /// (orange when selected or under the mouse). A plane being drawn, changed or moved shows the
+    /// engine's preview fill instead.
+    private func drawZones(_ ctx: inout GraphicsContext, _ m: Mapping, litNet: UUID?, accent: Color) {
+        let count = circuits.layerCount, active = circuits.activeLayer
+        let previewed = Set(circuits.ruleCheck?.fills?.map(\.zone.id) ?? [])
+        func surface(_ fill: PCBZoneFill) {
+            var path = Path()
+            for cell in fill.cells {
+                for (i, p) in cell.enumerated() { i == 0 ? path.move(to: m.screen(p)) : path.addLine(to: m.screen(p)) }
+                path.closeSubpath()
+            }
+            var colour = CopperColors.layer(fill.zone.layer, of: count)
+            if let n = litNet, fill.zone.netID == n { colour = accent }
+            ctx.fill(path, with: .color(colour.opacity(fill.zone.layer == active ? 0.42 : 0.16)))
+        }
+        func outline(_ pts: [PCBPoint], _ layer: Int, selected: Bool, hovered: Bool) {
+            var path = Path()
+            for (i, p) in pts.enumerated() { i == 0 ? path.move(to: m.screen(p)) : path.addLine(to: m.screen(p)) }
+            path.closeSubpath()
+            let colour = selected || hovered ? accent : CopperColors.layer(layer, of: count).opacity(layer == active ? 0.9 : 0.4)
+            ctx.stroke(path, with: .color(colour), style: StrokeStyle(lineWidth: selected ? 2 : 1.2, dash: selected ? [] : [7, 4]))
+        }
+        let other = (circuits.pcb?.zones ?? []).filter { !previewed.contains($0.zone.id) }
+        for fill in other.sorted(by: { ($0.zone.layer == active ? 1 : 0) < ($1.zone.layer == active ? 1 : 0) }) { surface(fill) }
+        for fill in circuits.ruleCheck?.fills ?? [] { surface(fill) }
+        for fill in circuits.pcb?.zones ?? [] {
+            var pts = fill.zone.outline
+            if let mv = movingZone, mv.id == fill.zone.id { pts = pts.map { PCBPoint($0.x + mv.delta.x, $0.y + mv.delta.y) } }
+            outline(pts, fill.zone.layer, selected: circuits.zoneSelection == fill.zone.id, hovered: hoveredZone == fill.zone.id)
+        }
+        guard circuits.tool == .zone, let draft = circuits.zoneDraft else { return }
+        let next = pointer.map { circuits.keepoutPoint(near: $0, tolerance: tolerance(m)) }
+        if let pts = draft.outline(with: next) { outline(pts, draft.layer, selected: false, hovered: false) }
+        else if let a = draft.points.first, let b = next {
+            var line = Path(); line.move(to: m.screen(a)); line.addLine(to: m.screen(b))
+            ctx.stroke(line, with: .color(CopperColors.layer(draft.layer, of: count)), style: StrokeStyle(lineWidth: 1.2, dash: [7, 4]))
+        }
+        for p in draft.points { ring(&ctx, m.screen(p), 3, CopperColors.layer(draft.layer, of: count)) }
+        if draft.points.count >= 3 { ring(&ctx, m.screen(draft.points[0]), 7, .white) }
+    }
+
     /// Keepouts: red hatching on the layer being drawn on, a dashed outline on the others; the
     /// selected one white; the one being moved at its new place; the one being drawn.
     private func drawKeepouts(_ ctx: inout GraphicsContext, _ m: Mapping) {
@@ -621,7 +745,7 @@ struct CircuitBoardView: View {
                        style: StrokeStyle(lineWidth: selected ? 2.2 : hovered ? 1.8 : 1.4, dash: here || hovered ? [] : [5, 4]))
         }
         // Conflicts the area being drawn or moved would make with the copper already there.
-        if circuits.tool == .keepout || movingKeepout != nil {
+        if circuits.tool == .keepout || circuits.tool == .zone || movingKeepout != nil || movingZone != nil {
             for issue in circuits.ruleCheck?.newErrors ?? [] { if let at = issue.position { ring(&ctx, m.screen(at), 6, .orange) } }
         }
         guard circuits.tool == .keepout, let draft = circuits.keepoutDraft else { return }
@@ -697,6 +821,7 @@ struct CircuitChecksPanel: View {
             }
             if let item = circuits.copperSelection { CopperDetail(item: item) }
             if let id = circuits.keepoutSelection, let area = circuits.keepout(id) { KeepoutDetail(area: area) }
+            if let id = circuits.zoneSelection, let plane = circuits.zone(id) { ZoneDetail(plane: plane) }
             if let id = circuits.selection, let comp = circuits.design?.components.first(where: { $0.id == id }) {
                 Divider()
                 Text("\(comp.reference) · \(comp.value)").font(.callout.weight(.semibold))
@@ -734,7 +859,7 @@ private struct CopperDetail: View {
                     .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
                 Menu {
                     ForEach(CircuitModel.trackWidths(from: circuits.minimumTrackWidth(net: t.netID)), id: \.self) { w in
-                        Button(CircuitBoardView.mm(w)) { circuits.setWidth(w, ofTrack: id) }
+                        Button(CircuitBoardView.mm(w)) { Task { await circuits.setWidth(w, ofTrack: id) } }
                     }
                 } label: { Text("Larghezza \(CircuitBoardView.mm(t.width))") }
                 .fixedSize()
@@ -745,7 +870,7 @@ private struct CopperDetail: View {
                 Text("Ø \(CircuitBoardView.mm(v.diameter)) · foro \(CircuitBoardView.mm(v.drill)) · passante")
                     .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
             }
-        case .pad: EmptyView()
+        case .pad, .zone: EmptyView()
         }
         Text("Canc elimina").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
     }
@@ -757,18 +882,22 @@ private struct KeepoutDetail: View {
     @Environment(CircuitModel.self) private var circuits
     let area: PCBKeepout
     @State private var name = ""
+    @FocusState private var editingName: Bool
 
     var body: some View {
         Divider()
         TextField("Nome", text: $name)
             .textFieldStyle(.roundedBorder).font(.callout.weight(.semibold))
-            .onSubmit { var k = area; k.name = name.trimmingCharacters(in: .whitespaces); if !k.name.isEmpty { circuits.updateKeepout(k) } }
+            .focused($editingName)
+            .onSubmit { var k = area; k.name = name.trimmingCharacters(in: .whitespaces); if !k.name.isEmpty { Task { await circuits.updateKeepout(k) } } }
             .onAppear { name = area.name }
             .onChange(of: area.id) { name = area.name }
+            .onChange(of: area.name) { if !editingName { name = area.name } }
         HStack(spacing: 10) {
             forbid("Piste", \.tracks)
             forbid("Via", \.vias)
             forbid("Piazzole", \.pads)
+            forbid("Piani", \.zones)
         }
         .font(.caption)
         Menu {
@@ -778,7 +907,7 @@ private struct KeepoutDetail: View {
                     set: { on in
                         var k = area
                         k.layers = on ? (k.layers + [layer]).sorted() : k.layers.filter { $0 != layer }
-                        if !k.layers.isEmpty { circuits.updateKeepout(k) }
+                        if !k.layers.isEmpty { Task { await circuits.updateKeepout(k) } }
                     }))
             }
         } label: {
@@ -793,9 +922,58 @@ private struct KeepoutDetail: View {
         Toggle(label, isOn: Binding(get: { area[keyPath: key] }, set: { on in
             var k = area
             k[keyPath: key] = on
-            if k.tracks || k.vias || k.pads { circuits.updateKeepout(k) }
+            if k.tracks || k.vias || k.pads || k.zones { Task { await circuits.updateKeepout(k) } }
         }))
         .toggleStyle(.checkbox)
+    }
+}
+
+/// The plane selected: its net, layer and islands (each change one undo step, the fill
+/// recomputed by the engine), what the fill is now, and what the engine does not do yet.
+private struct ZoneDetail: View {
+    @Environment(CircuitModel.self) private var circuits
+    let plane: PCBZone
+    @State private var name = ""
+    @FocusState private var editingName: Bool
+
+    var body: some View {
+        Divider()
+        TextField("Nome", text: $name)
+            .textFieldStyle(.roundedBorder).font(.callout.weight(.semibold))
+            .focused($editingName)
+            .onSubmit { var z = plane; z.name = name.trimmingCharacters(in: .whitespaces); if !z.name.isEmpty { Task { await circuits.updateZone(z) } } }
+            .onAppear { name = plane.name }
+            .onChange(of: plane.id) { name = plane.name }
+            .onChange(of: plane.name) { if !editingName { name = plane.name } }
+        HStack {
+            Menu {
+                ForEach(circuits.design?.nets ?? [], id: \.id) { net in
+                    Button(net.name) { var z = plane; z.netID = net.id; Task { await circuits.updateZone(z) } }
+                }
+            } label: { Text("Rete: " + (circuits.design?.nets.first { $0.id == plane.netID }?.name ?? "?")) }
+            .fixedSize()
+            Menu {
+                ForEach(0..<circuits.layerCount, id: \.self) { layer in
+                    Button(circuits.layerName(layer)) { var z = plane; z.layer = layer; Task { await circuits.updateZone(z) } }
+                }
+            } label: { Text(circuits.layerName(plane.layer)) }
+            .fixedSize()
+        }
+        Toggle("Togli le isole", isOn: Binding(get: { plane.removeIslands }, set: { var z = plane; z.removeIslands = $0; Task { await circuits.updateZone(z) } }))
+            .toggleStyle(.checkbox).font(.caption)
+        if let fill = circuits.zoneFill(plane.id) {
+            if fill.cells.isEmpty {
+                Label("Vuoto: nessun rame collegato a una piazzola di questa rete qui", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(String(format: "Rame %.1f mm² · %d isol%@", fill.area, fill.islandCount, fill.islandCount == 1 ? "a" : "e")
+                     + (fill.removedIslandCount > 0 ? " · \(fill.removedIslandCount) tolt\(fill.removedIslandCount == 1 ? "a" : "e")" : ""))
+                    .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
+            }
+        }
+        Text("Collegamento pieno alle piazzole. Termiche e larghezza minima dei colli non ancora disponibili.")
+            .font(.caption2).foregroundStyle(Theme.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
+        Text("Trascina per spostare · Canc elimina").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
     }
 }
 
@@ -829,10 +1007,10 @@ struct NetClassesSheet: View {
     /// Applica; refused by the engine, the draft and the panel stay as they are (its reason in
     /// the status bar).
     @discardableResult
-    private func apply() -> Bool {
+    private func apply() async -> Bool {
         guard let draft, let merged else { return false }
         let checked = circuits.ruleCheck.flatMap { $0.command == .updateNetClass(merged) ? $0.revision : nil }
-        guard circuits.updateNetClass(draft, expectedRevision: checked) else { return false }
+        guard await circuits.updateNetClass(draft, expectedRevision: checked) else { return false }
         circuits.checkRule(nil)
         self.draft = circuits.edited(draft)
         return true
@@ -868,7 +1046,11 @@ struct NetClassesSheet: View {
             recheck()
         }
         .confirmationDialog("Le modifiche alla classe non sono applicate", isPresented: Binding(get: { leaving != nil }, set: { if !$0 { leaving = nil } })) {
-            Button("Applica") { if apply(), let to = leaving { go(to) }; leaving = nil }
+            Button("Applica") {
+                let to = leaving
+                leaving = nil
+                Task { if await apply(), let to { go(to) } }
+            }
             Button("Scarta", role: .destructive) { if let to = leaving { go(to) }; leaving = nil }
             Button("Annulla", role: .cancel) { leaving = nil }
         }
@@ -894,7 +1076,7 @@ struct NetClassesSheet: View {
 
     private func add() {
         guard !isDirty else { leaving = .choose(chosen); return }
-        if let id = circuits.addNetClass(name: newName) { newName = ""; go(.choose(id)) }
+        Task { if let id = await circuits.addNetClass(name: newName) { newName = ""; go(.choose(id)) } }
     }
 
     @ViewBuilder private var classEditor: some View {
@@ -924,10 +1106,10 @@ struct NetClassesSheet: View {
             Spacer(minLength: 0)
             HStack {
                 Button("Elimina classe", role: .destructive) {
-                    if let id = draft?.id { circuits.removeNetClass(id); go(.choose(nil)) }
+                    if let id = draft?.id { Task { await circuits.removeNetClass(id); go(.choose(nil)) } }
                 }
                 Spacer()
-                Button("Applica") { apply() }
+                Button("Applica") { Task { await apply() } }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!isDirty || (draft?.name.trimmingCharacters(in: .whitespaces).isEmpty ?? true))
             }
@@ -985,7 +1167,7 @@ struct NetClassesSheet: View {
                         Spacer()
                         Picker("", selection: Binding(
                             get: { circuits.netClass(of: net.id)?.id },
-                            set: { circuits.assign(nets: [net.id], to: $0) })) {
+                            set: { id in Task { await circuits.assign(nets: [net.id], to: id) } })) {
                             Text("Scheda").tag(UUID?.none)
                             ForEach(circuits.netClasses, id: \.id) { Text($0.name).tag(Optional($0.id)) }
                         }
@@ -1162,7 +1344,7 @@ struct BoardSheet: View {
                 Button("OK") {
                     circuits.boardPreview = nil
                     circuits.setBoard(width: width, height: height, thickness: thickness)
-                    circuits.configureCopper(layerCount: layers, rules: rules)
+                    Task { await circuits.configureCopper(layerCount: layers, rules: rules) }
                     circuits.showBoard = false
                 }
                 .keyboardShortcut(.defaultAction)

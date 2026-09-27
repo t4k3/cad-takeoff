@@ -336,6 +336,12 @@ struct Ribbon: View {
             .buttonStyle(RibbonButtonStyle(isActive: circuits.tool == .route, tint: Theme.Palette.accent))
             .disabled(circuits.document == nil)
             .help("Traccia una pista (X): clicca una piazzola, poi i punti di piega; finisce sul rame della stessa rete, con Invio o con un secondo clic sull'ultimo punto")
+            Button { circuits.tool = circuits.tool == .zone ? .select : .zone } label: {
+                Label("Piano", systemImage: "square.fill.on.square.fill")
+            }
+            .buttonStyle(RibbonButtonStyle(isActive: circuits.tool == .zone, tint: Theme.Palette.accent))
+            .disabled(circuits.document == nil)
+            .help("Piano di rame (P): contorno a clic riempito col rame di una rete (GND…), lontano dalle altre reti; collegamento pieno")
             Button { circuits.tool = circuits.tool == .keepout ? .select : .keepout } label: {
                 Label("Area vietata", systemImage: "nosign")
             }
@@ -379,12 +385,13 @@ struct Ribbon: View {
                 .disabled(circuits.selection == nil)
                 .help("Porta il componente sull'altro lato della scheda (F)")
             Button {
-                if let item = circuits.copperSelection { circuits.removeCopper(item) }
-                else if let k = circuits.keepoutSelection { circuits.removeKeepout(k) }
+                if let item = circuits.copperSelection { Task { await circuits.removeCopper(item) } }
+                else if let k = circuits.keepoutSelection { Task { await circuits.removeKeepout(k) } }
+                else if let z = circuits.zoneSelection { Task { await circuits.removeZone(z) } }
                 else if let c = circuits.selection { circuits.removeComponent(c) }
             } label: { Label("Elimina", systemImage: "trash") }
-                .disabled(circuits.selection == nil && circuits.copperSelection == nil && circuits.keepoutSelection == nil)
-                .help("Elimina la pista, la via o l'area vietata selezionata, o il componente con i suoi collegamenti (Canc)")
+                .disabled(circuits.selection == nil && circuits.copperSelection == nil && circuits.keepoutSelection == nil && circuits.zoneSelection == nil)
+                .help("Elimina la pista, la via, l'area vietata o il piano selezionato, o il componente con i suoi collegamenti (Canc)")
         }
         }
         ToolGroup("LIBRERIA") {

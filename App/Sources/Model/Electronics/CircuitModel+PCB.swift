@@ -72,7 +72,7 @@ extension CircuitModel {
         pcbTask?.cancel(); pcb = nil
         routeCheckTask?.cancel(); route = nil; routeCheck = nil
         copperSelection = nil; issueMark = nil; activeLayer = 0
-        keepoutDraft = nil; keepoutSelection = nil; ruleCheckTask?.cancel(); ruleCheck = nil
+        keepoutDraft = nil; keepoutSelection = nil; zoneDraft = nil; zoneSelection = nil; ruleCheckTask?.cancel(); ruleCheck = nil
         netRulesTask?.cancel(); netRules = nil; showNetClasses = false
         schematicTask?.cancel(); schematic = nil
         ghostTask?.cancel(); ghostSession = nil; schematicGhost = []
@@ -102,20 +102,21 @@ extension CircuitModel {
 
     /// A click with Pista: starts on a pad, via or track with a net; then each click adds a
     /// 45°/90° leg, and a click on copper of the same net ends the route there.
-    func routeClick(at p: PCBPoint, tolerance: Double) {
+    func routeClick(at p: PCBPoint, tolerance: Double) async {
+        guard !pcbBusy else { return }
         guard pcbIsCurrent, let snapshot = pcb else { report("Il disegno della scheda si sta aggiornando: riprova."); return }
         guard var r = route else { startRoute(at: p, tolerance: tolerance, in: snapshot); return }
         let target = routeTarget(near: p, tolerance: tolerance)
         let leg = ElectronicsPCB.routePoints(from: r.tip, to: target.position, diagonalFirst: diagonalFirst)
         guard leg.count > 1 else {
             // A click on the tip itself: ends there.
-            if r.hasLegs { finishRoute() }
+            if r.hasLegs { await finishRoute() }
             return
         }
         r.runs[r.runs.count - 1].points += leg.dropFirst()
         route = r
         routeCheck = nil
-        if target.kind != .grid { finishRoute() }
+        if target.kind != .grid { await finishRoute() }
     }
 
     private func startRoute(at p: PCBPoint, tolerance: Double, in snapshot: PCBSnapshot) {
@@ -218,7 +219,7 @@ extension CircuitModel {
     /// Enter or double-click: the route as drawn (tracks and vias in one undo step), if the
     /// engine takes it; refused, it stays to be corrected.
     @discardableResult
-    func finishRoute() -> Bool {
+    func finishRoute() async -> Bool {
         guard let r = route else { return false }
         guard let command = routeCommand(r) else { route = nil; routeCheck = nil; return false }
         guard document?.revision == r.baseRevision else {
@@ -226,8 +227,8 @@ extension CircuitModel {
             report("Il circuito è cambiato mentre tracciavi: ricomincia la pista.")
             return false
         }
-        guard run(.pcb(command), expectedRevision: r.baseRevision) else { return false }
-        route = nil; routeCheck = nil
+        guard await runPCB(command, expectedRevision: r.baseRevision) else { return false }
+        if route?.session == r.session { route = nil; routeCheck = nil }
         let name = design?.nets.first { $0.id == r.netID }?.name ?? "?"
         let length = r.runs.reduce(0.0) { sum, run in sum + zip(run.points, run.points.dropFirst()).reduce(0) { $0 + Self.distance($1.0, $1.1) } }
         report(String(format: "Pista sulla rete %@: %.1f mm", name, length) + (r.vias.isEmpty ? "" : ", \(r.vias.count) via"))
@@ -254,33 +255,35 @@ extension CircuitModel {
     /// The track or via under a point (the layer being drawn on first).
     func copperHit(at p: PCBPoint, tolerance: Double) -> PCBHit? {
         guard pcbIsCurrent, let s = pcb else { return nil }
-        func copper(_ hits: [PCBHit]) -> PCBHit? { hits.first { if case .pad = $0.item { false } else { true } } }
+        // Tracks and vias only (pads select their component, planes by their outline).
+        func copper(_ hits: [PCBHit]) -> PCBHit? { hits.first { switch $0.item { case .track, .via: true; case .pad, .zone: false } } }
         return copper(s.pick(point: p, tolerance: tolerance, layer: activeLayer)) ?? copper(s.pick(point: p, tolerance: tolerance))
     }
 
     func track(_ id: UUID) -> PCBTrack? { design?.board.copper?.tracks.first { $0.id == id } }
     func via(_ id: UUID) -> PCBVia? { design?.board.copper?.vias.first { $0.id == id } }
 
-    func removeCopper(_ item: PCBItem) {
+    func removeCopper(_ item: PCBItem) async {
         let ok = switch item {
-        case .track(let id): run(.pcb(.removeTrack(id)))
-        case .via(let id): run(.pcb(.removeVia(id)))
+        case .track(let id): await runPCB(.removeTrack(id))
+        case .via(let id): await runPCB(.removeVia(id))
+        case .zone(let id): await runPCB(.removeZone(id))
         case .pad: false
         }
         if ok { copperSelection = nil }
     }
 
-    func setWidth(_ width: Double, ofTrack id: UUID) {
+    func setWidth(_ width: Double, ofTrack id: UUID) async {
         guard var t = track(id), t.width != width else { return }
         t.width = width
-        run(.pcb(.updateTrack(t)))
+        await runPCB(.updateTrack(t))
     }
 
     /// Strati e regole (Scheda): the engine refuses a new layer count while there is copper.
     @discardableResult
-    func configureCopper(layerCount: Int, rules: PCBDesignRules) -> Bool {
+    func configureCopper(layerCount: Int, rules: PCBDesignRules) async -> Bool {
         guard layerCount != self.layerCount || rules != copperRules else { return true }
-        return run(.pcb(.configure(layerCount: layerCount, rules: rules)))
+        return await runPCB(.configure(layerCount: layerCount, rules: rules))
     }
 
     /// The track widths offered from a minimum (the net's), the minimum first.
