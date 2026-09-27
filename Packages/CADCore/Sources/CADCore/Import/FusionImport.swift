@@ -56,8 +56,13 @@ public enum FusionImport {
             doc.timeline.append(TimelineItem(.sketch(s.sketch)))
         }
 
-        // Features, in history order.
+        // Features, in history order (and what each made, for repeated components).
+        var madeBy: [String: [UUID]] = [:]
         for f in t.features {
+            let before = Set(doc.features.map(\.id))
+            defer {
+                if let c = f.component { madeBy[c, default: []] += doc.features.map(\.id).filter { !before.contains($0) } }
+            }
             do {
                 switch f.type {
                 case "extrude", "revolve":
@@ -81,6 +86,28 @@ public enum FusionImport {
             }
         }
         for s in t.sketches { useSketch(s.id) }   // sketches no feature used, at the end
+
+        // A component placed several times: its bodies (rebuilt at the first placement) copied
+        // to every other placement, each copy a body of its own as in Fusion.
+        let components = (t.components ?? []).filter { !$0.copies.isEmpty }
+        if !components.isEmpty {
+            let built = DesignEvaluator.evaluate(doc, revision: "fusion-components").bodies
+            for c in components {
+                let mine = Set(madeBy[c.id] ?? [])
+                let sources = built.filter { mine.contains($0.id) }.map(\.id)
+                guard !sources.isEmpty else { continue }
+                var placed = 0
+                for (k, t) in c.copies.enumerated() where t.count == 3 && t.allSatisfy({ $0.count == 4 }) {
+                    for source in sources {
+                        let colour = doc.features.first { $0.id == source }?.color ?? .defaultColor
+                        let spec = PatternSpec(body: source, kind: .rectangular, placements: [t.flatMap { $0 }])
+                        doc.timeline.append(TimelineItem(.feature(Feature(name: "\(c.name):\(k + 2)", kind: .pattern(spec), color: colour))))
+                        placed += 1
+                    }
+                }
+                report.notes.append("\(c.name): \(c.copies.count + 1) volte nell'assieme, ricostruito una volta e copiato (\(placed) copie)")
+            }
+        }
 
         // Check every body against Fusion's; the ones that differ come in as meshes.
         let built = DesignEvaluator.evaluate(doc, revision: "fusion").bodies

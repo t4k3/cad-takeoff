@@ -107,7 +107,10 @@ se differisce, entra la mesh al suo posto: niente si perde e niente è sbagliato
    mantieni strumenti) è ora anche un passo di CAD Takeoff: i corpi si ritrovano per volume e
    ingombro com'erano subito prima. **Serie e specchi di corpi**: ogni copia un corpo a sé al posto
    di Fusion (verificato come gli altri). Restano: sformo, loft/sweep (come mesh).
-3. Componenti usati più volte e giunti dell'assieme; poi riaprire in CAD Takeoff un file già
+3. **Fatto 27/09 (prima parte):** un componente usato più volte si ricostruisce una volta, alla
+   sua prima istanza, e le altre istanze visibili diventano copie ai loro posti (come le mette
+   l'assieme di Fusion, giunti compresi): cambiare una misura del componente cambia tutte le
+   istanze. Restano: i giunti come giunti modificabili; riaprire in CAD Takeoff un file già
    convertito e riesportato da Fusion senza perdere le modifiche fatte qui.
 
 ### Settimana 1 (29 set – 3 ott) — Schizzo parametrico

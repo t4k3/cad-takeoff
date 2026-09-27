@@ -280,3 +280,32 @@ private func bracket(_ extent: F.Extent, lo: Double, hi: Double) -> FusionTimeli
     sheared.placements = [[1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0]]
     #expect((try? sheared.validate()) != nil)
 }
+
+@Test func fusionComponentPlacedThreeTimesIsRebuiltOnceAndCopied() throws {
+    // A «Distanziale» component (10 × 10 × 5 block) placed three times: at the origin, 30 mm
+    // along X, and 60 mm along X turned a quarter about Z around its corner.
+    func square(_ p: String) -> [F.Curve] {
+        (1...4).map { k in F.Curve(type: "line", id: "\(p)l\(k)", start: "\(p)\(k)", end: "\(p)\(k % 4 + 1)") }
+    }
+    let pts = [F.Point(id: "a1", x: 0, y: 0), F.Point(id: "a2", x: 10, y: 0), F.Point(id: "a3", x: 10, y: 10), F.Point(id: "a4", x: 0, y: 10)]
+    let sketch = F.Sketch(id: "S1", name: "Schizzo1", points: pts, curves: square("a"), profiles: [F.Profile(id: "PA", area: 100, min: [0, 0], max: [10, 10])])
+    var extrude = F.Feature(type: "extrude", name: "Estrusione1", operation: "newBody", profiles: ["S1/PA"], extent: F.Extent(type: "distance", distance: 5))
+    extrude.component = "comp-1"
+    var t = FusionTimeline(sketches: [sketch], features: [extrude],
+                           bodies: [F.Body(name: "Distanziale:1 · Corpo1", volume: 500, min: [0, 0, 0], max: [10, 10, 5]),
+                                    F.Body(name: "Distanziale:2 · Corpo1", volume: 500, min: [30, 0, 0], max: [40, 10, 5]),
+                                    F.Body(name: "Distanziale:3 · Corpo1", volume: 500, min: [50, 0, 0], max: [60, 10, 5])])
+    t.components = [F.Component(id: "comp-1", name: "Distanziale", copies: [
+        [[1, 0, 0, 30], [0, 1, 0, 0], [0, 0, 1, 0]],
+        [[0, -1, 0, 60], [1, 0, 0, 0], [0, 0, 1, 0]],
+    ])]
+    let (doc, report) = FusionImport.convert(t, meshes: [])
+    #expect(report.skipped.isEmpty && report.editable.count == 3 && report.meshes.isEmpty, "\(report.summary)")
+    #expect(report.notes.contains { $0.contains("Distanziale: 3 volte") })
+    // Editable once for all: the block 5 → 8 thick in its one extrusion, every copy follows.
+    var thicker = doc
+    let i = try #require(thicker.features.firstIndex { if case .extrude = $0.kind { true } else { false } })
+    if case let .extrude(profile, _) = thicker.features[i].kind { thicker.features[i].kind = .extrude(profile: profile, height: 8) }
+    let bodies = DesignEvaluator.evaluate(thicker, revision: "t").bodies
+    #expect(bodies.count == 3 && bodies.allSatisfy { abs($0.mesh.volume - 800) < 1e-6 && abs(($0.mesh.bounds?.max.z ?? 0) - 8) < 1e-9 })
+}

@@ -10,6 +10,16 @@ public struct FusionTimeline: Codable, Sendable, Equatable {
     public var sketches: [Sketch]
     public var features: [Feature]
     public var bodies: [Body]
+    /// Components placed more than once: rebuilt at their first placement; `copies` are the
+    /// others relative to it (world, 3×4 rotation | translation, mm).
+    public var components: [Component]?
+
+    public struct Component: Codable, Sendable, Equatable {
+        public var id: String
+        public var name: String
+        public var copies: [[[Double]]]
+        public init(id: String, name: String, copies: [[[Double]]]) { self.id = id; self.name = name; self.copies = copies }
+    }
 
     public init(version: Int = 1, parameters: [Parameter] = [], sketches: [Sketch] = [], features: [Feature] = [], bodies: [Body] = []) {
         self.version = version; self.parameters = parameters; self.sketches = sketches; self.features = features; self.bodies = bodies
@@ -182,6 +192,8 @@ public struct FusionTimeline: Codable, Sendable, Equatable {
         public var keepTools: Bool?
         /// Pattern / mirror of bodies: the bodies copied as they were just before it.
         public var inputBodies: [Body]?
+        /// The component the feature belongs to (nil: the root).
+        public var component: String?
 
         public init(type: String, name: String, operation: String? = nil, profiles: [String]? = nil, extent: Extent? = nil, axis: Axis? = nil,
                     angle: Double? = nil, angleExpression: String? = nil, edges: [[[Double]]]? = nil, size: Double? = nil,

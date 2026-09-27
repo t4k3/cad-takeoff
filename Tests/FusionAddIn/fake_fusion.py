@@ -225,3 +225,48 @@ bp = feats[4]
 assert bp["type"] == "pattern" and bp["inputKind"] == "BRepBody" and bp["inputs"] == [], bp
 assert abs(bp["inputBodies"][0]["volume"] - 1000) < 1e-6 and [round(v, 6) for v in bp["transforms"][0][0]] == [1, 0, 0, 30], bp
 print("fake Fusion export:", path)
+
+# --- a component placed three times: rebuilt at the first placement, the others as copies ----
+class M4:
+    """adsk.core.Matrix3D as the history reader uses it (row-major 4×4, cm)."""
+    def __init__(self, rows):
+        self.r = [list(r) for r in rows]
+    def asArray(self):
+        return [c for row in self.r for c in row]
+    def copy(self):
+        return M4(self.r)
+    def invert(self):
+        R = [row[:3] for row in self.r[:3]]
+        t = [self.r[i][3] for i in range(3)]
+        Rt = [[R[j][i] for j in range(3)] for i in range(3)]
+        ti = [-sum(Rt[i][j] * t[j] for j in range(3)) for i in range(3)]
+        self.r = [Rt[i] + [ti[i]] for i in range(3)] + [[0, 0, 0, 1]]
+        return True
+    def transformBy(self, other):   # self = other · self
+        self.r = [[sum(other.r[i][k] * self.r[k][j] for k in range(4)) for j in range(4)] for i in range(4)]
+        return True
+    def getAsCoordinateSystem(self):
+        a = self.r
+        return P3(a[0][3], a[1][3], a[2][3]), P3(a[0][0], a[1][0], a[2][0]), P3(a[0][1], a[1][1], a[2][1]), P3(a[0][2], a[1][2], a[2][2])
+
+def placed(dx, quarter=False):
+    rot = [[0, -1, 0], [1, 0, 0], [0, 0, 1]] if quarter else [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    return M4([rot[0] + [dx], rot[1] + [0], rot[2] + [0], [0, 0, 0, 1]])
+
+history = addin.load_history()
+spacer = types.SimpleNamespace(name="Distanziale", entityToken="comp-spacer")
+occurrences = Coll([types.SimpleNamespace(transform2=placed(1.0), isLightBulbOn=True),
+                    types.SimpleNamespace(transform2=placed(4.0), isLightBulbOn=True),
+                    types.SimpleNamespace(transform2=placed(7.0, quarter=True), isLightBulbOn=True),
+                    types.SimpleNamespace(transform2=placed(9.0), isLightBulbOn=False)])
+root.allOccurrencesByComponent = lambda c: occurrences if c is spacer else Coll([])
+reader = history.HistoryReader(design, False)
+frame = reader.frame_of(spacer)
+assert [round(v, 6) for v in frame.point(P3(0, 0, 0))] == [10, 0, 0], "first placement"
+copies = reader.repeated["comp-spacer"]["copies"]
+assert len(copies) == 2, copies          # the hidden fourth placement left out
+# From the first placement (x 10 mm) to the second (x 40): 30 mm along X; to the third: turned a
+# quarter about Z at x 70, i.e. p → R·(p − 10) + 70.
+assert [[round(v, 6) for v in row] for row in copies[0]] == [[1, 0, 0, 30], [0, 1, 0, 0], [0, 0, 1, 0]], copies[0]
+assert [[round(v, 6) for v in row] for row in copies[1]] == [[0, -1, 0, 70], [1, 0, 0, -10], [0, 0, 1, 0]], copies[1]
+print("fake Fusion repeated component: copies relative to the first placement")

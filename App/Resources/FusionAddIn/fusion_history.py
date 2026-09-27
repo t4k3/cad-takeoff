@@ -255,24 +255,46 @@ class HistoryReader:
         self.design, self.y_up = design, y_up
         self.sketch_ids = {}
         self.sketches, self.features, self.notes = [], [], []
+        # Components placed more than once: rebuilt at the first placement, the others copied.
+        self.repeated = {}
 
     def frame_of(self, component):
-        """World placement of a component: identity for the root, its occurrence's transform when
-        it is placed once (several copies: not rebuilt, their meshes stand in)."""
+        """World placement of a component: identity for the root, its first occurrence's
+        transform; a component placed several times is noted with where its other (visible)
+        placements are relative to the first, to be copied there."""
         root = self.design.rootComponent
         if component is None or token(component) == token(root):
             return Frame(None, self.y_up)
         occurrences = root.allOccurrencesByComponent(component)
-        if occurrences.count != 1:
+        if occurrences.count < 1:
             return None
-        occ = occurrences.item(0)
-        matrix = getattr(occ, "transform2", None) or occ.transform
-        return Frame(matrix, self.y_up)
+        first = occurrences.item(0)
+        matrix = getattr(first, "transform2", None) or first.transform
+        frame = Frame(matrix, self.y_up)
+        key = token(component)
+        if occurrences.count > 1 and key not in self.repeated:
+            copies = []
+            try:
+                inverse = matrix.copy()
+                inverse.invert()
+                for i in range(1, occurrences.count):
+                    occ = occurrences.item(i)
+                    if not getattr(occ, "isLightBulbOn", True):
+                        continue
+                    m = (getattr(occ, "transform2", None) or occ.transform).copy()
+                    m.transformBy(inverse)          # first⁻¹ · this: from the first placement to this one
+                    copies.append(world_transform(frame, m))
+                self.repeated[key] = {"id": key, "name": getattr(component, "name", "Componente"), "copies": copies}
+            except Exception:
+                self.notes.append("%s: posizioni delle copie non lette" % getattr(component, "name", "?"))
+                self.repeated[key] = {"id": key, "name": getattr(component, "name", "Componente"), "copies": []}
+        return frame
 
     def read(self):
         timeline = self.design.timeline
         for i in range(timeline.count):
             item = timeline.item(i)
+            count, entity = len(self.features), None
             try:
                 if getattr(item, "isSuppressed", False) or getattr(item, "isRolledBack", False):
                     continue
@@ -308,6 +330,14 @@ class HistoryReader:
                     self.features.append({"type": k, "name": getattr(entity, "name", k)})
             except Exception:
                 self.notes.append("%s: %s" % (getattr(item, "name", "?"), traceback.format_exc().splitlines()[-1]))
+            # Which component each feature belongs to (for the copies of repeated components).
+            try:
+                owner = entity.parentComponent if entity is not None else None
+                if owner is not None and token(owner) != token(self.design.rootComponent):
+                    for entry in self.features[count:]:
+                        entry["component"] = token(owner)
+            except Exception:
+                pass
         return self.sketches, self.features
 
     def read_sketch(self, sketch):
@@ -759,4 +789,4 @@ def history(design, y_up, body_entries):
     world = Frame(None, y_up)
     bodies = [b for b in (bodies_info(body, name, world, i) for body, name, i in body_entries) if b]
     return {"version": 1, "parameters": parameters(design), "sketches": sketches, "features": features,
-            "bodies": bodies, "notes": reader.notes}
+            "bodies": bodies, "notes": reader.notes, "components": list(reader.repeated.values())}
