@@ -467,11 +467,33 @@ struct ViewportContainer: View {
                     }
                 }
                 if edges.count == 1, let e = edges.first {
-                    Text("Spigolo").font(.system(size: 11, weight: .semibold))
+                    if let c = Measure.circle(of: e) {
+                        Text("Bordo tondo").font(.system(size: 11, weight: .semibold))
+                        Text("Ø \(fmt(c.diameter)) mm · R \(fmt(c.diameter / 2)) mm")
+                        Text("Centro \(fmt(c.centre.x)) · \(fmt(c.centre.y)) · \(fmt(c.centre.z))")
+                    } else {
+                        Text("Spigolo").font(.system(size: 11, weight: .semibold))
+                    }
                     Text("Lunghezza \(fmt(e.length)) mm")
                 } else if edges.count > 1 {
                     Text("\(edges.count) spigoli").font(.system(size: 11, weight: .semibold))
                     Text("Lunghezza totale \(fmt(edges.reduce(0) { $0 + $1.length })) mm")
+                }
+                // Two picks (faces or edges, also on different bodies): the shortest distance.
+                if workspace.geoSelection.count == 2 {
+                    let shapes = workspace.geoSelection.compactMap { ref -> Measure.Shape? in
+                        guard let body = viewport.body(ref.feature) else { return nil }
+                        switch ref.kind {
+                        case let .face(id): return Measure.shape(face: id, in: body.snapshot)
+                        case let .edge(id): return body.snapshot.edges.first { $0.id == id }.map(Measure.shape(edge:))
+                        default: return nil
+                        }
+                    }
+                    if shapes.count == 2, let d = Measure.distance(shapes[0], shapes[1]) {
+                        let delta = d.to - d.from
+                        Text("Distanza minima \(fmt(d.distance)) mm").font(.system(size: 11, weight: .semibold))
+                        Text("ΔX \(fmt(abs(delta.x))) · ΔY \(fmt(abs(delta.y))) · ΔZ \(fmt(abs(delta.z)))")
+                    }
                 }
                 Text("⇧/⌘ clic: aggiungi · Esc: deseleziona").foregroundStyle(Theme.Palette.textSecondary)
             }

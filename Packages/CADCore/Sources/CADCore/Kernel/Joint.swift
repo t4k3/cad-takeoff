@@ -139,8 +139,8 @@ extension JointSpec {
 public enum JointFrame {
     /// A round edge: its centre and axis; a straight one: its middle and direction.
     public static func from(edge e: EdgeInfo) -> (origin: Vec3, axis: Vec3)? {
-        let p = e.polyline
-        guard p.count >= 2 else { return nil }
+        guard e.polyline.count >= 2 else { return nil }
+        let p = corners(e.polyline)
         if p.count >= 4 {
             var n = Vec3.zero
             for i in p.indices { let a = p[i], b = p[(i + 1) % p.count]; n = n + Vec3((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)) }
@@ -158,6 +158,21 @@ public enum JointFrame {
         let a = p.first!, b = p.last!
         guard (b - a).length > 1e-9 else { return nil }
         return ((a + b) * 0.5, (b - a).normalized)
+    }
+
+    /// The polyline without points on the straight piece between their neighbours (the booleans
+    /// add such points on a round edge's chords; they are off the circle).
+    static func corners(_ q: [Vec3]) -> [Vec3] {
+        var kept = q
+        let closed = q.count > 3 && (q.first! - q.last!).length < 1e-9
+        if closed { kept.removeLast() }
+        var i = closed ? 0 : 1
+        while i < (closed ? kept.count : kept.count - 1), kept.count > 3 {
+            let a = kept[(i + kept.count - 1) % kept.count], b = kept[(i + 1) % kept.count], c = kept[i]
+            let d = b - a, l = d.length
+            if l > 1e-12, ((c - a) - d * ((c - a).dot(d) / (l * l))).length < 1e-7 * max(1, l) { kept.remove(at: i) } else { i += 1 }
+        }
+        return kept
     }
 
     /// A plane: its middle and normal; a cylinder or cone: the point of its axis level with the
