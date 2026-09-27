@@ -629,3 +629,43 @@ extension Sketch {
         return copies.map(\.id)
     }
 }
+
+extension Sketch {
+    /// Tangencies the new shape was drawn with (Fusion's auto constraints): an arc leaving the end
+    /// of a line along it, or a line leaving an arc's end along its tangent (within 3°).
+    public func tangentAutoConstraints(for new: SketchShape) -> [SketchConstraint] {
+        let limit = sin(3 * Double.pi / 180), eps = 1e-6
+        var out: [SketchConstraint] = []
+        func tangentAt(_ p: Vec2, circle c: (center: Vec2, radius: Double), segment s: (Vec2, Vec2)) -> Bool {
+            let d = s.1 - s.0, r = p - c.center
+            guard d.length > eps, r.length > eps else { return false }
+            return abs(d.normalized.dot(r.normalized)) < limit
+        }
+        // Segments of a shape ending at p (the first or last one), with their index.
+        func segments(of s: SketchShape, endingAt p: Vec2) -> [Int] {
+            (0..<s.segmentCount).filter { k in
+                guard let (a, b) = s.segment(k) else { return false }
+                return (a - p).length < eps || (b - p).length < eps
+            }
+        }
+        for other in shapes where other.id != new.id {
+            if case .arc = new.kind, let c = new.circle(0) {
+                for i in [1, 2] {
+                    guard let p = new.point(i) else { continue }
+                    for k in segments(of: other, endingAt: p) where tangentAt(p, circle: c, segment: other.segment(k)!) {
+                        out.append(.init(.tangent(.segment(other.id, k), .circle(new.id, 0))))
+                    }
+                }
+            }
+            if case .arc = other.kind, let c = other.circle(0) {
+                for i in [1, 2] {
+                    guard let p = other.point(i) else { continue }
+                    for k in segments(of: new, endingAt: p) where tangentAt(p, circle: c, segment: new.segment(k)!) {
+                        out.append(.init(.tangent(.segment(new.id, k), .circle(other.id, 0))))
+                    }
+                }
+            }
+        }
+        return out
+    }
+}

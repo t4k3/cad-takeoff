@@ -183,6 +183,8 @@ extension SketchSession {
                 }
             }
         }
+        // Arcs and lines drawn on from each other's ends along the same direction: tangent.
+        out += sketch.tangentAutoConstraints(for: new)
         return out
     }
 

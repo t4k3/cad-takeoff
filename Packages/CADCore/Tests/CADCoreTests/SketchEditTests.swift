@@ -168,3 +168,18 @@ private func line(_ a: Vec2, _ b: Vec2) -> SketchShape { SketchShape(kind: .poly
     let copy = try m.mirror([open.id], about: .segment(axis.id, 0))
     #expect((m.shapes.first { $0.id == copy[0] }!.point(0)! - Vec2(-20, 0)).length < 1e-9)
 }
+
+@Test func arcsDrawnAlongALineBecomeTangent() {
+    let line = SketchShape(kind: .polyline([Vec2(0, 0), Vec2(20, 0)], closed: false))
+    // An arc from the line's end, leaving along +X (centre straight above the end).
+    let along = SketchShape(kind: .arc(center: Vec2(20, 10), radius: 10, start: -.pi / 2, end: 0))
+    let sketch = Sketch(name: "S", shapes: [line])
+    #expect(sketch.tangentAutoConstraints(for: along).count == 1)
+    // Across it (centre off to the side): no tangency.
+    let across = SketchShape(kind: .arc(center: Vec2(30, 0), radius: 10, start: .pi / 2, end: .pi))
+    #expect(sketch.tangentAutoConstraints(for: across).isEmpty)
+    // A line drawn on from the arc's end, along its tangent.
+    let s2 = Sketch(name: "S", shapes: [line, along])
+    let next = SketchShape(kind: .polyline([Vec2(30, 10), Vec2(30, 40)], closed: false))
+    #expect(s2.tangentAutoConstraints(for: next).count == 1)
+}
