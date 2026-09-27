@@ -6,6 +6,41 @@ import SwiftUI
 /// travel. The first part moves; live preview; one undo step.
 @MainActor
 enum JointCommand {
+    /// Drag handle for the joint's value, at its axis on the fixed part: an arrow along the axis
+    /// for the travel (sliding), or across it, a little off the axis, for the angle (1° = the
+    /// arc length at that radius).
+    static func manipulator(kind: JointSpec.Kind, origin: Vec3, axis: Vec3, angle: Double, offset: Double,
+                            reach: Double, session: @escaping () -> CommandSession?) -> DistanceManipulator {
+        let k = axis.normalized
+        if kind == .slider {
+            let m = DistanceManipulator(origin: origin, inward: k, factor: 1, value: offset, range: -10_000...10_000, label: "Corsa")
+            m.pointsAlong = true
+            m.onChange = { v in session()?.update("offset") { $0.value = .number(v) } }
+            return m
+        }
+        let helper = abs(k.z) < 0.9 ? Vec3(0, 0, 1) : Vec3(1, 0, 0)
+        let radial = helper.cross(k).normalized, r = max(reach, 5)
+        let m = DistanceManipulator(origin: origin + radial * r, inward: k.cross(radial), factor: r * .pi / 180, value: angle,
+                                    range: -360...360, label: "Angolo")
+        m.pointsAlong = true
+        m.onChange = { v in session()?.update("angle") { $0.value = .number((v * 10).rounded() / 10) } }
+        return m
+    }
+
+    /// Where the joint turns or slides now, in the world: the fixed part's grip.
+    static func frame(_ spec: JointSpec, bodies: [DesignEvaluator.Body]) -> (origin: Vec3, axis: Vec3) {
+        let fixed = spec.fixed.flatMap { id in bodies.first { $0.id == id }?.placement }
+        let o = fixed.map { $0.point(spec.fixedOrigin) } ?? spec.fixedOrigin
+        let a = (fixed.map { $0.direction(spec.fixedAxis) } ?? spec.fixedAxis).normalized
+        return (o, spec.flip ? -a : a)
+    }
+
+    /// Size of a part, for the angle handle's radius.
+    static func reach(_ id: UUID, bodies: [DesignEvaluator.Body]) -> Double {
+        guard let b = bodies.first(where: { $0.id == id })?.mesh.bounds else { return 20 }
+        return max((b.max - b.min).length / 3, 8)
+    }
+
     static func start(workspace: WorkspaceState, model: DesignModel) -> CommandSession {
         workspace.selectionFilter = .edge
         workspace.geoSelection = []
@@ -51,14 +86,28 @@ enum JointCommand {
                 default: "«\(names[0])» → «\(names[1])»"
                 }
             }
-            guard let joint = feature(f) else { workspace.requestPreview(nil); return }
+            guard let joint = feature(f), case let .joint(spec) = joint.kind else {
+                workspace.manipulator = nil
+                workspace.requestPreview(nil); return
+            }
             var doc = model.document
             doc.features.append(joint)
             workspace.requestPreview(doc)
+            // The drag handle for the value, on the fixed part.
+            let bodies = model.evaluation().bodies
+            let at = frame(spec, bodies: bodies)
+            let slides = spec.kind == .slider
+            if let m = workspace.manipulator, m.label == (slides ? "Corsa" : "Angolo") {
+                if !m.isDragging { m.value = slides ? spec.offset : spec.angle }
+            } else {
+                workspace.manipulator = manipulator(kind: spec.kind, origin: at.origin, axis: at.axis, angle: spec.angle, offset: spec.offset,
+                                                    reach: reach(spec.moving, bodies: bodies), session: { session })
+            }
         }
         func finish() {
             workspace.onGeoSelectionChange = nil
             workspace.edgePicking = false
+            workspace.manipulator = nil
             workspace.requestPreview(nil)
         }
         let created = CommandSession(
@@ -86,8 +135,20 @@ enum JointCommand {
     }
 
     /// An existing joint: its type, angle, travel and side (the grips stay).
-    static func edit(_ original: Feature, model: DesignModel) -> CommandSession? {
+    static func edit(_ original: Feature, model: DesignModel, workspace: WorkspaceState) -> CommandSession? {
         guard case let .joint(spec) = original.kind else { return nil }
+        weak var session: CommandSession?
+        func handle(_ s: JointSpec) {
+            let slides = s.kind == .slider
+            if let m = workspace.manipulator, m.label == (slides ? "Corsa" : "Angolo") {
+                if !m.isDragging { m.value = slides ? s.offset : s.angle }
+                return
+            }
+            let bodies = model.evaluation().bodies
+            let at = frame(s, bodies: bodies)
+            workspace.manipulator = manipulator(kind: s.kind, origin: at.origin, axis: at.axis, angle: s.angle, offset: s.offset,
+                                                reach: reach(s.moving, bodies: bodies), session: { session })
+        }
         func apply(_ f: [CommandField]) {
             guard let i = model.document.features.firstIndex(where: { $0.id == original.id }) else { return }
             var s = spec
@@ -96,16 +157,21 @@ enum JointCommand {
             s.offset = f.first { $0.id == "offset" }?.number ?? s.offset
             if case let .flag(b)? = f.first(where: { $0.id == "flip" })?.value { s.flip = b }
             model.document.features[i].kind = .joint(s)
+            handle(s)
         }
-        return CommandSession(
+        let created = CommandSession(
             title: "Modifica \(original.name)", symbol: "link",
             fields: [.init(id: "kind", label: "Tipo", kind: .choice(JointSpec.Kind.allCases.map(\.label)), value: .index(JointSpec.Kind.allCases.firstIndex(of: spec.kind) ?? 1)),
                      .init(id: "angle", label: "Angolo", kind: .angle(-360...360), value: .number(spec.angle)),
                      .init(id: "offset", label: "Corsa", kind: .length(-10_000...10_000), value: .number(spec.offset)),
                      .init(id: "flip", label: "Inverti verso", kind: .toggle, value: .flag(spec.flip))],
-            onPreview: apply, onCommit: apply,
+            onPreview: apply, onCommit: { f in apply(f); workspace.manipulator = nil },
             onCancel: {
+                workspace.manipulator = nil
                 if let i = model.document.features.firstIndex(where: { $0.id == original.id }) { model.document.features[i] = original }
             })
+        session = created
+        handle(spec)
+        return created
     }
 }

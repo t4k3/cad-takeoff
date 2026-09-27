@@ -289,7 +289,7 @@ final class WorkspaceState {
             return
         }
         if let f = model.document.features.first(where: { $0.id == id }), case .joint = f.kind {
-            command = JointCommand.edit(f, model: model)
+            command = JointCommand.edit(f, model: model, workspace: self)
             return
         }
         if let f = model.document.features.first(where: { $0.id == id }), case .move = f.kind {
