@@ -304,6 +304,7 @@ final class WorkspaceState {
         }
         enterSketch(editing: target)
         sketchCameraRequest = false          // the view stays where it is, as in Fusion
+        tab = .solid                         // and the SOLIDO tools stay in the bar
         guard let session = sketch, let created = SketchCommands.extrude(sketch: session, model: model, workspace: self) else {
             model.statusMessage = "«\(target.name)» non ha profili chiusi da estrudere."
             exitSketch()
