@@ -293,6 +293,10 @@ struct ViewportContainer: View {
                 if multi {
                     if let i = workspace.geoSelection.firstIndex(of: ref) { workspace.geoSelection.remove(at: i) }
                     else { workspace.geoSelection.append(ref) }
+                } else if workspace.geoSelection == [ref] {
+                    // The selected face (or edge) clicked again: deselected.
+                    workspace.geoSelection = []
+                    model.selection = nil
                 } else { workspace.geoSelection = [ref] }
             } else if !multi {
                 workspace.geoSelection = []
@@ -639,7 +643,7 @@ struct ViewportContainer: View {
                         Text("ΔX \(fmt(abs(delta.x))) · ΔY \(fmt(abs(delta.y))) · ΔZ \(fmt(abs(delta.z)))")
                     }
                 }
-                Text("⇧/⌘ clic: aggiungi · Esc: deseleziona").foregroundStyle(Theme.Palette.textSecondary)
+                Text("Clic: un'altra faccia · di nuovo: deseleziona · ⇧/⌘ clic: aggiungi · Esc").foregroundStyle(Theme.Palette.textSecondary)
             }
             .font(.system(size: 11).monospacedDigit())
             .padding(.horizontal, 8).padding(.vertical, 6)
