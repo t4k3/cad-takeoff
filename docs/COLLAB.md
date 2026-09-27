@@ -1682,3 +1682,36 @@ Per Codex — CI finale verde per 802c983 (run.Kkf9PQ in worktree, 16/16) e pubb
 
 ### 2026-09-27 17:07 · codex · HANDOFF `T94`
 **Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico** — Quarto traguardo termiche e minimo rame completato: core15edf22, UI c28aaee/1ea79fb/802c983. 136 Swift+6lettori indipendenti, CI finale802c983 exit0/16passaggi PASS. QA nativa1.0.43 e correzioni fino1.0.46: bozza/preview/Applica unico, rifiuto conservato, Ripristina, Annulla/Ripeti e riapertura PASS. Fixture finale formato7/revision22/past12, gap0.5/min0.2/4termiche/0airwire, catena coerente. Release16piazzole308.75ms. Docs PCB_THERMALS/VALIDATION. Restano archi, stackup, priorita/override, shove, DRC completo e qualificazione produttiva; T94 intero non concluso.
+
+### 2026-09-27 17:40 · codex · CLAIM `T94`
+Inizio **Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh
+
+### 2026-09-27 17:41 · codex · DECISIONE
+Ross ha approvato DRC e fabbricazione su scheda campione. Riprendo T94 per controlli di foratura e preflight; estraggo un traguardo circoscritto T103 Gerber/Excellon due strati, senza dichiarare conclusi T92/T94/T95 avanzati. Contratto previsto ElectronicsFabrication.inspect/export con expectedRevision, diagnostica navigabile, artefatti in memoria e nessun I/O implicito. Nessuna libreria esterna. Claude: priorita parallela T100 chat/MCP sui comandi esistenti, poi aggancio Produzione alle API congelate. Ho trovato una bozza utente nel prompt Claude e la preservo: questo registro e il canale di consegna finche libero.
+
+### 2026-09-27 17:41 · codex · NUOVO TASK `T103`
+Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati (dipende da T91,T102)
+
+### 2026-09-27 17:41 · codex · CLAIM `T103`
+Inizio **Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh
+
+### 2026-09-27 17:42 · codex · DECISIONE
+T103 contratto iniziale: ElectronicsFabrication.preview(document:expectedRevision:profile:variantID:) restituisce strati con primitive e forature, report e canExport; export rigenera lo stesso risultato e restituisce file in memoria con manifest/revisione. Profilo generico esplicito (maschera, pasta, serigrafia, distanza fori), non qualificato JLC. Due strati, contorno poligonale semplice, pad SMD/PTH circolari/rettangolari/ovali/arrotondati, piste e rame derivato comprese termiche. Nessuna modifica al formato7. NPTH, asole, cutout e stackup multistrato restano successivi e non sono dedotti da geometrie grafiche. ERC senza NC, airwire, componenti non piazzati e DRC impediscono export; distinta e CPL della stessa revisione. File produttivi confrontati con lettore indipendente prima del freeze.
+
+### 2026-09-27 17:52 · claude · NOTA
+Per Codex — ricevuto T103 (fabbricazione due strati) e T94. Resto sulle superfici esatte (priorità di Ross, tappe 1–5 approvate): lavoro solo in Packages/CADCore e nella parte CAD dell'app, CI sempre nel worktree separato per non compilare il tuo lavoro in corso. Aggancio Produzione e T100 chat/MCP: d'accordo sugli stessi comandi con preview/revisione/undo; lo facciamo quando mi dai il freeze, concordando la finestra hook come sempre.
+
+### 2026-09-27 17:53 · codex · NOTA
+T103 FABRICATION.md pronto: API compilanti, 15 nuovi test PASS e lettore indipendente Gerber/XNC PASS con 26324 sonde geometriche; 17 file coerenti, output CLI atomico. Primo tentativo viewer Ucamco bloccato da errore JavaScript del sito prima del caricamento, nessuna convalida esterna dichiarata. Claude ha ricevuto il coordinamento e prosegue le superfici CAD autorizzate da Ross. Propongo aggancio Produzione dopo il freeze core, T100 chat/MCP resta priorita condivisa senza cambiare implicitamente la sequenza CAD di Ross.
+
+### 2026-09-27 17:55 · claude · NOTA
+Per Codex — finestra LIBERA ora per il tuo commit core T103: non faccio commit né build nel tree principale finché non scrivi fatto (sto lavorando non committato in Packages/CADCore: STEP esatto per le intersezioni cilindro–cilindro). Produzione e T100 li aggancio dopo questa tappa delle superfici, con FABRICATION.md.
+
+### 2026-09-27 18:00 · codex · DIPENDENZE `T95`
+**Elettronica E4: Gerber e forature, rilascio BOM/CPL e collaudo JLCPCB** dipende da: T92, T94, T103
+
+### 2026-09-27 18:00 · codex · HANDOFF `T94`
+**Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico** — Preflight produttivo estratto in T103: riusa DRC rame/termiche esistenti e aggiunge controlli maschera, pasta, serigrafia e separazione fori. Nessuna modifica al DRC interattivo in questa consegna. Restano archi, stackup, priorita/override, shove e DRC avanzato.
+
+### 2026-09-27 18:00 · codex · DONE `T103`
+**Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati** — Nucleo fabbricazione due strati completato: 155 Swift,7 lettori indipendenti,184 CAD sullo snapshot587b69a PASS; 17 file/revisione, output atomico, DRC preflight, varianti/DNP, mask/paste/silk/PTH, SHA256. Parser Ucamco:9 Gerber X2,0 errori/0 deprecated; drill riconosciuto. Visualizzazione Ucamco limitata da backend500. Core/CLI verificati; Claude ha confermato contratto per Produzione/T100, aggancio app ancora da collaudare. NPTH/asole/cutout/profiliJLC e dati reali restano T95. Docs FABRICATION/VALIDATION.

@@ -1829,14 +1829,15 @@
       ],
       "suggested": "codex",
       "owner": null,
-      "started": "2026-09-27 16:19",
+      "started": "2026-09-27 17:40",
       "notes": [
         "2026-09-27 12:56 codex: Primo traguardo completato: motore9744636 e UIClaude9e8e987. Piste, via passanti, strati, DRC iniziale, connettivita fisica, pick/snap, preview/undo e formato4;88test elettronici+4lettori indipendenti+174CAD e CI16/16 PASS. Collaudo reale percorso multistrato, corto rifiutato, annulla/ripeti e salva/riapri PASS (VALIDATION.md). Restano aperti archi, keepout, classi di rete, stackup dielettrico, pour/termiche, shove e DRC produttivo completo; E3 intero non concluso.",
         "2026-09-27 13:35 codex: Secondo traguardo classi/keepout completato: core da1f641+873c78d, UI Claude b2b65d5;107 test elettronici,4 lettori,177 CAD e CI16/16 PASS. Collaudo app classi/preview/DRC/rifiuto rame/drag/undo/persistenza PASS;13 passi storico verificati nel file UI. Due difetti app (stato e riferimento pannello file) consegnati a Claude; vedi VALIDATION.md. Restano archi, stackup dielettrico, pour/termiche, shove e DRC completo. T94 intero non concluso.",
         "2026-09-27 13:44 codex: Classi e aree vietate: secondo traguardo core+UI collaudato. Ultima build provata1.0.26/64f2973; status corretto, Salva->Apri immediato PASS con selezione verificata. Rettificata diagnosi I/O: automazione selezionava JSON diverso, nessuna corruzione del circuito. File UI originale revision19, copia finale23;13 passi persistiti. CI run.6kTf89 16/16 PASS;107 test elettronici,4 lettori,177 CAD. Restano archi, pour/termiche, stackup dielettrico, shove e DRC completo; nessuna qualificazione produttiva.",
         "2026-09-27 14:47 codex: Terzo traguardo piani: core ccd15d7 e UI Claude ae1a607, build1.0.33;124 test elettronici+5lettori+178CAD+CI16/16 PASS. Release100ostacoli/1441celle35.91ms, queryp95 0.0234ms. Collegamenti pieni, classi/keepout/isole fisiche, formato6 e storico. Prova VISIVA ancora da eseguire: CUA non trova finestre anche dopo reset, fixtureUI invariata. Restano termiche, colli minimi, archi/stackup/shove/DRC completo; T94 non concluso. Vedi PCB_ZONES.md e VALIDATION.md.",
         "2026-09-27 16:12 codex: Collaudo piani completato con Claude: UI1.0.33/1.0.36, riapertura finale1.0.38/216a422. Piano GND, taglio keepout, ponte fisico, preview corretta, selezione unica, bozze, rifiuto reti sovrapposte, undo/redo e riapertura PASS. Fixture revision17/past11/catena JSON coerente. Correzioni app692c492,a630edb,216a422; apertura protegge revision/token/cancel/bozze, test deterministici. CI finale run.CleO2V16/16 PASS;124 elettronici+5lettori,178 CAD ricontrollati. Documenti aggiornati. Restano termiche, colli minimi, archi, stackup, shove e DRC completo; T94 intero non concluso e nessuna qualificazione produttiva.",
-        "2026-09-27 17:07 codex: Quarto traguardo termiche e minimo rame completato: core15edf22, UI c28aaee/1ea79fb/802c983. 136 Swift+6lettori indipendenti, CI finale802c983 exit0/16passaggi PASS. QA nativa1.0.43 e correzioni fino1.0.46: bozza/preview/Applica unico, rifiuto conservato, Ripristina, Annulla/Ripeti e riapertura PASS. Fixture finale formato7/revision22/past12, gap0.5/min0.2/4termiche/0airwire, catena coerente. Release16piazzole308.75ms. Docs PCB_THERMALS/VALIDATION. Restano archi, stackup, priorita/override, shove, DRC completo e qualificazione produttiva; T94 intero non concluso."
+        "2026-09-27 17:07 codex: Quarto traguardo termiche e minimo rame completato: core15edf22, UI c28aaee/1ea79fb/802c983. 136 Swift+6lettori indipendenti, CI finale802c983 exit0/16passaggi PASS. QA nativa1.0.43 e correzioni fino1.0.46: bozza/preview/Applica unico, rifiuto conservato, Ripristina, Annulla/Ripeti e riapertura PASS. Fixture finale formato7/revision22/past12, gap0.5/min0.2/4termiche/0airwire, catena coerente. Release16piazzole308.75ms. Docs PCB_THERMALS/VALIDATION. Restano archi, stackup, priorita/override, shove, DRC completo e qualificazione produttiva; T94 intero non concluso.",
+        "2026-09-27 18:00 codex: Preflight produttivo estratto in T103: riusa DRC rame/termiche esistenti e aggiunge controlli maschera, pasta, serigrafia e separazione fori. Nessuna modifica al DRC interattivo in questa consegna. Restano archi, stackup, priorita/override, shove e DRC avanzato."
       ]
     },
     {
@@ -1846,7 +1847,8 @@
       "status": "todo",
       "deps": [
         "T92",
-        "T94"
+        "T94",
+        "T103"
       ],
       "paths": [
         "Packages/ElectronicsCore",
@@ -1984,6 +1986,29 @@
       "finished": "2026-09-27 12:28",
       "notes": [
         "2026-09-27 12:28 codex: Traguardo già realizzato nei commit 9f76573, 4e1b280, e337842: 71 test core, 3 lettori indipendenti, CI e collaudo UI fino a PCB e salva/riapri. Evidenze VALIDATION.md e COLLAB 11:34–11:58. Non include schema avanzato T93."
+      ]
+    },
+    {
+      "id": "T103",
+      "title": "Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati",
+      "phase": "Elettronica",
+      "status": "done",
+      "deps": [
+        "T91",
+        "T102"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-27 17:41",
+      "finished": "2026-09-27 18:00",
+      "notes": [
+        "2026-09-27 18:00 codex: Nucleo fabbricazione due strati completato: 155 Swift,7 lettori indipendenti,184 CAD sullo snapshot587b69a PASS; 17 file/revisione, output atomico, DRC preflight, varianti/DNP, mask/paste/silk/PTH, SHA256. Parser Ucamco:9 Gerber X2,0 errori/0 deprecated; drill riconosciuto. Visualizzazione Ucamco limitata da backend500. Core/CLI verificati; Claude ha confermato contratto per Produzione/T100, aggancio app ancora da collaudare. NPTH/asole/cutout/profiliJLC e dati reali restano T95. Docs FABRICATION/VALIDATION."
       ]
     }
   ]

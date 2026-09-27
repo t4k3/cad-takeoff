@@ -109,3 +109,17 @@ Aggancio UI e collaudo reale registrati in [VALIDATION.md](VALIDATION.md).
 
 Restano priorità avanzate, override per pad, archi, stackup dielettrico, shove e DRC completo.
 T94 resta aperto; questo traguardo non abilita un rilascio produttivo Gerber/JLCPCB.
+
+## Primo nucleo E4 / T103 — fabbricazione due strati, 27/09/2026
+
+[Contratto FABRICATION](FABRICATION.md): preflight completo rispetto al sottoinsieme
+attuale, anteprima per strato e foratura, export atomico in memoria, CLI senza
+sovrascritture. Gerber X2, PTH XNC/Excellon decimale, job, maschera/pasta/serigrafia,
+BOM/CPL e componenti della stessa revisione; manifest SHA-256. Formato7 invariato.
+155 test elettronici, sette lettori indipendenti e sintassi dei nove Gerber verificata
+nel parser ufficiale Ucamco; limiti ed evidenze in [VALIDATION.md](VALIDATION.md).
+
+T103 e il nucleo verificato per il primo pacchetto. T95 resta aperto: NPTH, asole,
+ritagli, profili JLC qualificati e corpus reale non sono completati. La fixture resta
+sintetica; produzione e montaggio fisico non provati. Claude ha ricevuto le API per
+Produzione e T100; interfaccia/chat ancora da agganciare e collaudare.

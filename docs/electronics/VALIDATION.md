@@ -1,5 +1,54 @@
 # Elettronica — prove del motore e dell’app
 
+## T103 — preflight e fabbricazione a due strati, 27/09/2026
+
+Contratto: [FABRICATION.md](FABRICATION.md). **155 test ElectronicsCore PASS**, inclusi
+19 nuovi casi (15 iniziali + 4 limiti); **sette lettori Python indipendenti PASS**.
+Comando `bash scripts/test-electronics.sh`, exit **0**, log
+`/tmp/ftk-fabrication-final.log`, corpus `build/electronics/run.iPJHnT`.
+`swift test --package-path Packages/CADCore --scratch-path build/codex-cad-fabrication-check`
+exit **0**, **184 test CAD PASS** sullo snapshot della tappa 2 di Claude
+(`587b69a`); modifiche CAD successive di Claude sono un'altra verifica.
+
+La fixture di regressione contiene connettore PTH, resistenza top, diodo sintetico
+bottom ruotato di 30°, quattro famiglie di piazzole, via, tre reti, origine spostata
+(10,5 mm), coordinate negative nell'export e serigrafia. Non sono componenti qualificati.
+Il pacchetto ha 17 file: nove Gerber, drill, job, BOM/CPL, elenco componenti,
+preflight, README e manifest SHA-256. Nessun package runtime esterno.
+
+- Rifiuti: corti, airwire, rame flottante, componenti non piazzati, ERC senza NC,
+  componenti JLC senza codice o rotazione del lato; nessuna directory parziale.
+- Mask/paste/silk: intervalli minimi, grafica sugli strati sbagliati, serigrafia sulle
+  aperture o fuori bordo, pasta annullata, via coperti/aperti, PTH aperti da un solo
+  lato e flip bottom, grafica piena con contorno, regioni degeneri in quantizzazione.
+- Storico/revisione: preview ed export non mutano, versione7 invariata, revisione vecchia
+  rifiutata dopo edit/undo, round-trip, varianti e DNP senza cambiare rame/fori/maschera.
+- Lettore indipendente: **26.324 sonde** per ciascun export, forma dei flash confrontata
+  col documento di input, piste/profilo/fori/origine e orientamenti, manifest e CSV.
+  Secondo export con termiche: **407 regioni**, vuoto diagonale e quattro ponticelli
+  realmente presenti nel Gerber; non basta contare le primitive.
+- CLI: una directory già esistente resta byte per byte intatta; una scheda non
+  sbrogliata non produce output. File di nomi fissi, senza nomi progetto usati come path.
+- Release: build exit0; CLI completa (avvio processo, preflight, geometria, hash e I/O)
+  **722,28 ms primo avvio**, poi **14,27 e 16,34 ms** sulla fixture piccola. Non è una
+  misura di grandi schede o della reattività dell'app.
+
+**Controllo esterno Ucamco:** nel Reference Gerber Viewer v2026-06, tramite Chrome,
+caricati esclusivamente i nove Gerber e il drill della fixture sintetica. Tutti i nove
+Gerber riconosciuti X2 e controllo sintattico **0 invalid / 0 deprecated** per ciascuno;
+forature riconosciute NC drill. La visualizzazione completa non è qualificata: il
+backend del sito ha restituito errore500 getstackup/No image server configured.
+Il tentativo precedente nel browser integrato era fallito prima del caricamento.
+Questo esito prova la sintassi ufficiale e il riconoscimento dei file; non prova
+accettazione JLCPCB, correttezza dei componenti o produzione fisica.
+
+**App/chat:** API congelate consegnate a Claude, che ha confermato il contratto e
+la cooperazione. Aggancio Produzione e T100 ancora da collaudare; questo traguardo
+riguarda motore, CLI e dati. Non dichiarare un nuovo pulsante disponibile nell'app.
+Restano NPTH/asole/ritagli, multilayer, profili produttivi qualificati, dati reali e
+collaudo della scheda scelta con Ross. T94/T95 avanzati restano aperti.
+
+
 ## 27/09/2026 — T94: termiche e minimo del piano
 
 - **136 test Swift PASS**, 12 nuovi; **sei lettori Python indipendenti PASS**. Esecuzione

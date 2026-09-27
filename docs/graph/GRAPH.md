@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-27 17:07. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-27 18:00. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -161,6 +161,7 @@ flowchart LR
     T99["T99 · Aggancio ElectronicsCore nell'app: package nel progetto Xcode, ponte Model/Electronics, documento elettronico nel progetto/Home, test elettronica nella CI<br/><i>claude</i>"]:::done
     T100["T100 · Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI)<br/><i>claude</i>"]:::todo
     T101["T101 · Elettronica: adattatore CAD della scheda (PCB e modelli nell'assieme, interferenze) sopra i dati E5<br/><i>claude</i>"]:::todo
+    T103["T103 · Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati<br/><i>codex</i>"]:::done
   end
   subgraph P27["E2"]
     T102["T102 · Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico<br/><i>codex</i>"]:::done
@@ -350,6 +351,7 @@ flowchart LR
   T102 --> T94
   T92 --> T95
   T94 --> T95
+  T103 --> T95
   T91 --> T96
   T92 --> T96
   T91 --> T97
@@ -366,6 +368,8 @@ flowchart LR
   T96 --> T101
   T99 --> T101
   T91 --> T102
+  T91 --> T103
+  T102 --> T103
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -481,7 +485,7 @@ flowchart LR
 | T92 | Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB | todo | codex | T91 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T93 | Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente | todo | codex | T91 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T94 | Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico | todo | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
-| T95 | Elettronica E4: Gerber e forature, rilascio BOM/CPL e collaudo JLCPCB | todo | codex | T92, T94 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics |
+| T95 | Elettronica E4: Gerber e forature, rilascio BOM/CPL e collaudo JLCPCB | todo | codex | T92, T94, T103 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics |
 | T96 | Elettronica E5: collegamento PCB-assieme, modelli componenti e interferenze 3D | todo | codex | T91, T92 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics |
 | T97 | Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude) | in_progress | claude | T91, T99 | App/Sources/UI/Electronics<br>App/Sources/Model/Electronics<br>App/Sources/UI/Workspace/Ribbon.swift |
 | T98 | Elettronica E6: strumenti MCP equivalenti alla UI e accettazione scheda reale | todo | codex | T93, T94, T95, T96, T97, T100 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics |
@@ -489,3 +493,4 @@ flowchart LR
 | T100 | Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI) | todo | claude | T102, T99 | App/Sources/Model/Tools |
 | T101 | Elettronica: adattatore CAD della scheda (PCB e modelli nell'assieme, interferenze) sopra i dati E5 | todo | claude | T96, T99 | App/Sources/Model/Electronics<br>Packages/CADCore |
 | T102 | Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico | done | codex | T91 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
+| T103 | Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati | done | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |

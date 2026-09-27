@@ -1,0 +1,683 @@
+{
+  "formatVersion": 7,
+  "revision": 0,
+  "design": {
+    "id": "FAB00000-0000-0000-0000-000000009999",
+    "name": "Two-layer fabrication regression - NOT QUALIFIED FOR MANUFACTURE",
+    "library": {
+      "symbols": [
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000100",
+            "revision": 1
+          },
+          "name": "Connector",
+          "pins": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000101",
+              "name": "1",
+              "number": "1",
+              "electricalType": "passive"
+            },
+            {
+              "id": "FAB00000-0000-0000-0000-000000000102",
+              "name": "2",
+              "number": "2",
+              "electricalType": "passive"
+            }
+          ],
+          "source": {
+            "reference": "Project-authored fabrication regression fixture; not a qualified component",
+            "license": "Project test data",
+            "sourceRevision": "1"
+          }
+        },
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000200",
+            "revision": 1
+          },
+          "name": "Resistor",
+          "pins": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000201",
+              "name": "1",
+              "number": "1",
+              "electricalType": "passive"
+            },
+            {
+              "id": "FAB00000-0000-0000-0000-000000000202",
+              "name": "2",
+              "number": "2",
+              "electricalType": "passive"
+            }
+          ],
+          "source": {
+            "reference": "Project-authored fabrication regression fixture; not a qualified component",
+            "license": "Project test data",
+            "sourceRevision": "1"
+          }
+        },
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000300",
+            "revision": 1
+          },
+          "name": "Polarized diode",
+          "pins": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000301",
+              "name": "1",
+              "number": "1",
+              "electricalType": "passive"
+            },
+            {
+              "id": "FAB00000-0000-0000-0000-000000000302",
+              "name": "2",
+              "number": "2",
+              "electricalType": "passive"
+            }
+          ],
+          "source": {
+            "reference": "Project-authored fabrication regression fixture; not a qualified component",
+            "license": "Project test data",
+            "sourceRevision": "1"
+          }
+        }
+      ],
+      "footprints": [
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000110",
+            "revision": 1
+          },
+          "name": "Connector_TEST",
+          "pads": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000111",
+              "number": "1",
+              "center": {
+                "x": 0,
+                "y": 0
+              },
+              "size": {
+                "x": 1.7,
+                "y": 1.7
+              },
+              "shape": "rectangle",
+              "rotationDegrees": 0,
+              "sourceLayers": [
+                "*.Cu",
+                "*.Mask"
+              ],
+              "drillDiameter": 1.0
+            },
+            {
+              "id": "FAB00000-0000-0000-0000-000000000112",
+              "number": "2",
+              "center": {
+                "x": 0,
+                "y": -2.54
+              },
+              "size": {
+                "x": 1.7,
+                "y": 1.7
+              },
+              "shape": "circle",
+              "rotationDegrees": 0,
+              "sourceLayers": [
+                "*.Cu",
+                "*.Mask"
+              ],
+              "drillDiameter": 1.0
+            }
+          ],
+          "assemblyCentroid": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "reference": "Project-authored fabrication regression fixture; not a qualified component",
+            "license": "Project test data",
+            "sourceRevision": "1"
+          },
+          "graphics": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000130",
+              "kind": "rectangle",
+              "points": [
+                {
+                  "x": -1.4,
+                  "y": 1.4
+                },
+                {
+                  "x": 1.4,
+                  "y": -3.94
+                }
+              ],
+              "layer": "F.SilkS",
+              "strokeWidth": 0.18,
+              "filled": false
+            }
+          ],
+          "properties": {
+            "qualification": "generic-unverified"
+          }
+        },
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000210",
+            "revision": 1
+          },
+          "name": "Resistor_TEST",
+          "pads": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000211",
+              "number": "1",
+              "center": {
+                "x": -1.5,
+                "y": 0
+              },
+              "size": {
+                "x": 1,
+                "y": 1.2
+              },
+              "shape": "roundedRectangle",
+              "rotationDegrees": 0,
+              "sourceLayers": [
+                "F.Cu",
+                "F.Mask",
+                "F.Paste"
+              ],
+              "cornerRadius": 0.2
+            },
+            {
+              "id": "FAB00000-0000-0000-0000-000000000212",
+              "number": "2",
+              "center": {
+                "x": 1.5,
+                "y": 0
+              },
+              "size": {
+                "x": 1,
+                "y": 1.2
+              },
+              "shape": "roundedRectangle",
+              "rotationDegrees": 0,
+              "sourceLayers": [
+                "F.Cu",
+                "F.Mask",
+                "F.Paste"
+              ],
+              "cornerRadius": 0.2
+            }
+          ],
+          "assemblyCentroid": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "reference": "Project-authored fabrication regression fixture; not a qualified component",
+            "license": "Project test data",
+            "sourceRevision": "1"
+          },
+          "graphics": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000230",
+              "kind": "rectangle",
+              "points": [
+                {
+                  "x": -2.5,
+                  "y": -1.5
+                },
+                {
+                  "x": 2.5,
+                  "y": 1.5
+                }
+              ],
+              "layer": "F.SilkS",
+              "strokeWidth": 0.18,
+              "filled": false
+            }
+          ],
+          "properties": {
+            "qualification": "generic-unverified"
+          }
+        },
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000310",
+            "revision": 1
+          },
+          "name": "Polarized diode_TEST",
+          "pads": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000311",
+              "number": "1",
+              "center": {
+                "x": -1.5,
+                "y": 0
+              },
+              "size": {
+                "x": 1,
+                "y": 1.2
+              },
+              "shape": "oval",
+              "rotationDegrees": 0,
+              "sourceLayers": [
+                "F.Cu",
+                "F.Mask",
+                "F.Paste"
+              ]
+            },
+            {
+              "id": "FAB00000-0000-0000-0000-000000000312",
+              "number": "2",
+              "center": {
+                "x": 1.5,
+                "y": 0
+              },
+              "size": {
+                "x": 1,
+                "y": 1.2
+              },
+              "shape": "rectangle",
+              "rotationDegrees": 0,
+              "sourceLayers": [
+                "F.Cu",
+                "F.Mask",
+                "F.Paste"
+              ]
+            }
+          ],
+          "assemblyCentroid": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "reference": "Project-authored fabrication regression fixture; not a qualified component",
+            "license": "Project test data",
+            "sourceRevision": "1"
+          },
+          "graphics": [
+            {
+              "id": "FAB00000-0000-0000-0000-000000000330",
+              "kind": "rectangle",
+              "points": [
+                {
+                  "x": -2.5,
+                  "y": -1.5
+                },
+                {
+                  "x": 2.5,
+                  "y": 1.5
+                }
+              ],
+              "layer": "F.SilkS",
+              "strokeWidth": 0.18,
+              "filled": false
+            },
+            {
+              "id": "FAB00000-0000-0000-0000-000000000331",
+              "kind": "line",
+              "points": [
+                {
+                  "x": 2.25,
+                  "y": -1.3
+                },
+                {
+                  "x": 2.25,
+                  "y": 1.3
+                }
+              ],
+              "layer": "F.SilkS",
+              "strokeWidth": 0.18,
+              "filled": false
+            }
+          ],
+          "properties": {
+            "qualification": "generic-unverified"
+          }
+        }
+      ],
+      "devices": [
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000120",
+            "revision": 1
+          },
+          "manufacturer": "Synthetic",
+          "manufacturerPartNumber": "Connector_TEST",
+          "symbol": {
+            "id": "FAB00000-0000-0000-0000-000000000100",
+            "revision": 1
+          },
+          "footprint": {
+            "id": "FAB00000-0000-0000-0000-000000000110",
+            "revision": 1
+          },
+          "pinMap": [
+            {
+              "pinID": "FAB00000-0000-0000-0000-000000000101",
+              "padID": "FAB00000-0000-0000-0000-000000000111"
+            },
+            {
+              "pinID": "FAB00000-0000-0000-0000-000000000102",
+              "padID": "FAB00000-0000-0000-0000-000000000112"
+            }
+          ]
+        },
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000220",
+            "revision": 1
+          },
+          "manufacturer": "Synthetic",
+          "manufacturerPartNumber": "Resistor_TEST",
+          "symbol": {
+            "id": "FAB00000-0000-0000-0000-000000000200",
+            "revision": 1
+          },
+          "footprint": {
+            "id": "FAB00000-0000-0000-0000-000000000210",
+            "revision": 1
+          },
+          "pinMap": [
+            {
+              "pinID": "FAB00000-0000-0000-0000-000000000201",
+              "padID": "FAB00000-0000-0000-0000-000000000211"
+            },
+            {
+              "pinID": "FAB00000-0000-0000-0000-000000000202",
+              "padID": "FAB00000-0000-0000-0000-000000000212"
+            }
+          ]
+        },
+        {
+          "key": {
+            "id": "FAB00000-0000-0000-0000-000000000320",
+            "revision": 1
+          },
+          "manufacturer": "Synthetic",
+          "manufacturerPartNumber": "Polarized diode_TEST",
+          "symbol": {
+            "id": "FAB00000-0000-0000-0000-000000000300",
+            "revision": 1
+          },
+          "footprint": {
+            "id": "FAB00000-0000-0000-0000-000000000310",
+            "revision": 1
+          },
+          "pinMap": [
+            {
+              "pinID": "FAB00000-0000-0000-0000-000000000301",
+              "padID": "FAB00000-0000-0000-0000-000000000311"
+            },
+            {
+              "pinID": "FAB00000-0000-0000-0000-000000000302",
+              "padID": "FAB00000-0000-0000-0000-000000000312"
+            }
+          ]
+        }
+      ]
+    },
+    "components": [
+      {
+        "id": "FAB00000-0000-0000-0000-000000000001",
+        "reference": "J1",
+        "value": "Connector",
+        "device": {
+          "id": "FAB00000-0000-0000-0000-000000000120",
+          "revision": 1
+        },
+        "assembly": "manual"
+      },
+      {
+        "id": "FAB00000-0000-0000-0000-000000000002",
+        "reference": "R1",
+        "value": "Resistor",
+        "device": {
+          "id": "FAB00000-0000-0000-0000-000000000220",
+          "revision": 1
+        },
+        "assembly": "manual"
+      },
+      {
+        "id": "FAB00000-0000-0000-0000-000000000003",
+        "reference": "D1",
+        "value": "Polarized diode",
+        "device": {
+          "id": "FAB00000-0000-0000-0000-000000000320",
+          "revision": 1
+        },
+        "assembly": "manual"
+      }
+    ],
+    "nets": [
+      {
+        "id": "FAB00000-0000-0000-0000-000000000901",
+        "name": "SUPPLY"
+      },
+      {
+        "id": "FAB00000-0000-0000-0000-000000000902",
+        "name": "LED"
+      },
+      {
+        "id": "FAB00000-0000-0000-0000-000000000903",
+        "name": "RETURN"
+      }
+    ],
+    "connections": [
+      {
+        "pin": {
+          "componentID": "FAB00000-0000-0000-0000-000000000001",
+          "pinID": "FAB00000-0000-0000-0000-000000000101"
+        },
+        "netID": "FAB00000-0000-0000-0000-000000000901"
+      },
+      {
+        "pin": {
+          "componentID": "FAB00000-0000-0000-0000-000000000001",
+          "pinID": "FAB00000-0000-0000-0000-000000000102"
+        },
+        "netID": "FAB00000-0000-0000-0000-000000000903"
+      },
+      {
+        "pin": {
+          "componentID": "FAB00000-0000-0000-0000-000000000002",
+          "pinID": "FAB00000-0000-0000-0000-000000000201"
+        },
+        "netID": "FAB00000-0000-0000-0000-000000000901"
+      },
+      {
+        "pin": {
+          "componentID": "FAB00000-0000-0000-0000-000000000002",
+          "pinID": "FAB00000-0000-0000-0000-000000000202"
+        },
+        "netID": "FAB00000-0000-0000-0000-000000000902"
+      },
+      {
+        "pin": {
+          "componentID": "FAB00000-0000-0000-0000-000000000003",
+          "pinID": "FAB00000-0000-0000-0000-000000000301"
+        },
+        "netID": "FAB00000-0000-0000-0000-000000000902"
+      },
+      {
+        "pin": {
+          "componentID": "FAB00000-0000-0000-0000-000000000003",
+          "pinID": "FAB00000-0000-0000-0000-000000000302"
+        },
+        "netID": "FAB00000-0000-0000-0000-000000000903"
+      }
+    ],
+    "board": {
+      "outline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 40,
+          "y": 0
+        },
+        {
+          "x": 40,
+          "y": 30
+        },
+        {
+          "x": 0,
+          "y": 30
+        }
+      ],
+      "thickness": 1.6,
+      "assemblyOrigin": {
+        "x": 10,
+        "y": 5
+      },
+      "placements": [
+        {
+          "componentID": "FAB00000-0000-0000-0000-000000000001",
+          "position": {
+            "x": 5,
+            "y": 15
+          },
+          "side": "top",
+          "rotationDegrees": 0
+        },
+        {
+          "componentID": "FAB00000-0000-0000-0000-000000000002",
+          "position": {
+            "x": 15,
+            "y": 15
+          },
+          "side": "top",
+          "rotationDegrees": 0
+        },
+        {
+          "componentID": "FAB00000-0000-0000-0000-000000000003",
+          "position": {
+            "x": 28,
+            "y": 15
+          },
+          "side": "bottom",
+          "rotationDegrees": 30
+        }
+      ],
+      "copper": {
+        "layerCount": 2,
+        "rules": {
+          "clearance": 0.2,
+          "edgeClearance": 0.25,
+          "minimumTrackWidth": 0.2,
+          "minimumDrill": 0.3,
+          "minimumAnnularRing": 0.15
+        },
+        "tracks": [
+          {
+            "id": "FAB00000-0000-0000-0000-000000001001",
+            "netID": "FAB00000-0000-0000-0000-000000000901",
+            "layer": 0,
+            "width": 0.3,
+            "points": [
+              {
+                "x": 5,
+                "y": 15
+              },
+              {
+                "x": 13.5,
+                "y": 15
+              }
+            ]
+          },
+          {
+            "id": "FAB00000-0000-0000-0000-000000001002",
+            "netID": "FAB00000-0000-0000-0000-000000000902",
+            "layer": 0,
+            "width": 0.3,
+            "points": [
+              {
+                "x": 16.5,
+                "y": 15
+              },
+              {
+                "x": 18,
+                "y": 19
+              },
+              {
+                "x": 22,
+                "y": 19
+              }
+            ]
+          },
+          {
+            "id": "FAB00000-0000-0000-0000-000000001003",
+            "netID": "FAB00000-0000-0000-0000-000000000902",
+            "layer": 1,
+            "width": 0.3,
+            "points": [
+              {
+                "x": 22,
+                "y": 19
+              },
+              {
+                "x": 31,
+                "y": 19
+              },
+              {
+                "x": 31,
+                "y": 15.75
+              },
+              {
+                "x": 29.299038105676658,
+                "y": 15.75
+              }
+            ]
+          },
+          {
+            "id": "FAB00000-0000-0000-0000-000000001004",
+            "netID": "FAB00000-0000-0000-0000-000000000903",
+            "layer": 1,
+            "width": 0.3,
+            "points": [
+              {
+                "x": 26.700961894323342,
+                "y": 14.25
+              },
+              {
+                "x": 26.700961894323342,
+                "y": 7
+              },
+              {
+                "x": 5,
+                "y": 7
+              },
+              {
+                "x": 5,
+                "y": 12.46
+              }
+            ]
+          }
+        ],
+        "vias": [
+          {
+            "id": "FAB00000-0000-0000-0000-000000001100",
+            "netID": "FAB00000-0000-0000-0000-000000000902",
+            "position": {
+              "x": 22,
+              "y": 19
+            },
+            "diameter": 0.8,
+            "drill": 0.4
+          }
+        ],
+        "netClasses": [],
+        "keepouts": [],
+        "zones": []
+      }
+    },
+    "variants": []
+  },
+  "past": [],
+  "future": []
+}
