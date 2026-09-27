@@ -22,7 +22,8 @@ final class DistanceManipulator {
     /// material (chamfer/round).
     var pointsAlong = false
     /// Unit direction of the drawn arrow.
-    var arrowDirection: Vec3 { pointsAlong ? inward.normalized : -inward.normalized }
+    /// Pulled through zero (an extrusion the other way), it turns round.
+    var arrowDirection: Vec3 { pointsAlong ? (value < 0 ? -inward : inward).normalized : -inward.normalized }
     func tip(length: Double) -> Vec3 { handle + arrowDirection * length }
     private(set) var isDragging = false
     @ObservationIgnored var onChange: (Double) -> Void = { _ in }

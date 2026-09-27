@@ -31,7 +31,7 @@ enum SketchCommands {
             return false
         }
         func reversed(_ f: [CommandField]) -> Bool {
-            if case let .index(i)? = f.first(where: { $0.id == "dir" })?.value { return onFace && i == 1 }
+            if case let .index(i)? = f.first(where: { $0.id == "dir" })?.value { return i == 1 }
             return false
         }
         var lastOp = BooleanOperation.newBody
@@ -47,11 +47,17 @@ enum SketchCommands {
         func areasLabel() -> CommandField.Value {
             .references(sketch.pickedAreas.map { "\($0.seed)" })
         }
-        let arrow = DistanceManipulator(origin: arrowOrigin(), inward: normal, factor: 1, value: 10, range: 0.1...10_000, label: "H")
+        // Dragged through zero, as in Fusion, the extrusion goes the other way (the value stays
+        // positive, the direction flips).
+        let arrow = DistanceManipulator(origin: arrowOrigin(), inward: normal, factor: 1, value: 10, range: -10_000...10_000, label: "H")
         arrow.pointsAlong = true
         arrow.onChange = { v in
             guard let i = session?.fields.firstIndex(where: { $0.id == "h" }) else { return }
-            session?.fields[i].value = .number(v)
+            session?.fields[i].value = .number(max(abs(v), 0.1))
+            let flip = v < 0 ? 1 : 0
+            if case let .index(now)? = session?.fields.first(where: { $0.id == "dir" })?.value, now != flip {
+                session?.update("dir") { $0.value = .index(flip) }
+            }
         }
         workspace.manipulator = arrow
         // Seen from above the arrow points at the camera: turn to a 3/4 view, as Fusion does.
@@ -81,8 +87,8 @@ enum SketchCommands {
                            help: "Angolo delle pareti: positivo le stringe allontanandosi dallo schizzo (sformo per stampi), negativo le allarga"),
                      .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
                            help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca"),
-                     .init(id: "dir", label: "Direzione", kind: .choice(["Fuori dalla faccia", "Dentro il pezzo"]), value: .index(0),
-                           help: "Su una faccia: un taglio va dentro il pezzo, un'unione verso l'esterno", isHidden: !onFace)],
+                     .init(id: "dir", label: "Direzione", kind: .choice(onFace ? ["Fuori dalla faccia", "Dentro il pezzo"] : ["Lato del piano", "Lato opposto"]), value: .index(0),
+                           help: onFace ? "Su una faccia: un taglio va dentro il pezzo, un'unione verso l'esterno" : "Da che parte del piano dello schizzo (anche trascinando la freccia oltre lo zero)")],
             onPreview: { f in
                 let op = operation(f)
                 // Switching to «Taglia» on a face flips the direction into the part (once).
@@ -103,10 +109,9 @@ enum SketchCommands {
                 sketch.previewTaper = f.first { $0.id == "taper" }?.number ?? 0
                 sketch.previewIsCut = op == .cut
                 sketch.previewReversed = reversed(f)
-                // Drag arrow on the profile, along the extrusion.
-                if let m = workspace.manipulator {
-                    m.inward = normal * (reversed(f) ? -1 : 1)
-                    if !m.isDragging, let h = f.first(where: { $0.id == "h" })?.number { m.value = h }
+                // Drag arrow on the profile, along the extrusion (the other way: a negative value).
+                if let m = workspace.manipulator, !m.isDragging, let h = f.first(where: { $0.id == "h" })?.number {
+                    m.value = reversed(f) ? -h : h
                 }
             },
             onCommit: { f in
@@ -117,7 +122,7 @@ enum SketchCommands {
                 let areas = sketch.pickedAreas
                 finish()
                 guard !areas.isEmpty else { model.statusMessage = "Clicca almeno un'area da estrudere."; return }
-                let placement = onFace ? FeaturePlacement(plane: sketch.sketch.plane, reversed: reversed(f)) : nil
+                let placement = onFace || reversed(f) ? FeaturePlacement(plane: sketch.sketch.plane, reversed: reversed(f)) : nil
                 // One solid per area (disjoint areas are separate bodies, as in Fusion).
                 var features: [Feature] = []
                 for area in areas {

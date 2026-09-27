@@ -302,8 +302,14 @@ final class WorkspaceState {
     func startExtrude(model: DesignModel, sketch chosen: Sketch? = nil) {
         if chosen == nil, case .face? = geoSelection.first?.kind { startPressPull(model: model); return }
         guard let target = chosen ?? Self.extrudableSketches(model).last else {
-            model.statusMessage = "Nessun profilo chiuso da estrudere: disegna uno schizzo (scegli il piano), poi Estrudi."
-            startSketch()
+            if !model.evaluation().bodies.isEmpty {
+                // No sketch areas: the faces of the part (clicked by the user).
+                model.statusMessage = "Estrudi: clicca una faccia piana del pezzo."
+                startPressPull(model: model)
+            } else {
+                model.statusMessage = "Nessun profilo chiuso da estrudere: disegna uno schizzo (scegli il piano), poi Estrudi."
+                startSketch()
+            }
             return
         }
         enterSketch(editing: target)
@@ -325,6 +331,11 @@ final class WorkspaceState {
             self.exitSketch()
         }
         created.update("areas") { $0.kind = .reference(prompt: "Clicca le aree di uno schizzo o una faccia del pezzo", maxCount: 500) }
+        // Nothing chosen beforehand: the user picks (unless a sketch was chosen from the menu).
+        if chosen == nil {
+            session.selectedSeeds = []
+            session.onRegionsChange()
+        }
         extrudeTakesFaces = true
         command = created
     }
