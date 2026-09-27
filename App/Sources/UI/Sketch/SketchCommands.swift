@@ -35,6 +35,7 @@ enum SketchCommands {
             return false
         }
         var lastOp = BooleanOperation.newBody
+        var toFace: FaceID?
         weak var session: CommandSession?
         // Arrow at the first area's centre, pointing out along the plane's normal.
         let plane = sketch.sketch.plane, normal = plane.normal
@@ -57,6 +58,7 @@ enum SketchCommands {
         workspace.viewRequest = .home
         func finish() {
             sketch.previewHeight = nil
+            sketch.onFacePick = nil
             sketch.previewSymmetric = false
             sketch.previewTaper = 0
             sketch.pickingRegions = false
@@ -71,8 +73,10 @@ enum SketchCommands {
                      .init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
                            help: (onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z") + " · anche un'espressione dei Parametri",
                            acceptsExpression: true),
-                     .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica", "Passante"]), value: .index(0),
-                           help: "Simmetrica: metà distanza da ogni parte del piano dello schizzo. Passante: attraversa tutti i corpi (anche se poi crescono)"),
+                     .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica", "Passante", "Fino a faccia"]), value: .index(0),
+                           help: "Simmetrica: metà distanza da ogni parte del piano dello schizzo. Passante: attraversa tutti i corpi (anche se poi crescono). Fino a faccia: arriva al piano di una faccia del pezzo"),
+                     .init(id: "toFace", label: "Faccia", kind: .reference(prompt: "Clicca la faccia", maxCount: 1), value: .references([]),
+                           help: "La faccia piana a cui arriva l'estrusione (la segue se il pezzo cambia)", isHidden: true),
                      .init(id: "taper", label: "Sformo", kind: .angle(-60...60), value: .number(0),
                            help: "Angolo delle pareti: positivo le stringe allontanandosi dallo schizzo (sformo per stampi), negativo le allarga"),
                      .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
@@ -89,6 +93,12 @@ enum SketchCommands {
                 }
                 lastOp = op
                 sketch.previewHeight = f.first { $0.id == "h" }?.number
+                // «Fino a faccia»: the face field appears and takes the clicks.
+                let wantsFace: Bool = if case .index(3)? = f.first(where: { $0.id == "extent" })?.value { true } else { false }
+                if session?.fields.first(where: { $0.id == "toFace" })?.isHidden == wantsFace {
+                    session?.update("toFace") { $0.isHidden = !wantsFace }
+                    session?.activeReference = wantsFace && toFace == nil ? "toFace" : (wantsFace ? nil : session?.activeReference)
+                }
                 sketch.previewSymmetric = symmetric(f)
                 sketch.previewTaper = f.first { $0.id == "taper" }?.number ?? 0
                 sketch.previewIsCut = op == .cut
@@ -117,6 +127,7 @@ enum SketchCommands {
                     if let heightExpression { feature.expressions["height"] = heightExpression }
                     feature.symmetric = symmetric(f)
                     if case .index(2)? = f.first(where: { $0.id == "extent" })?.value { feature.throughAll = true }
+                    if case .index(3)? = f.first(where: { $0.id == "extent" })?.value, let face = toFace { feature.untilFace = face }
                     feature.taper = f.first { $0.id == "taper" }?.number ?? 0
                     do {
                         try CADToolValidation.feature(feature)
@@ -144,6 +155,19 @@ enum SketchCommands {
             },
             onCancel: { finish() })
         created.parameterValues = sketch.parameterValues
+        sketch.onFacePick = { [weak created] id in
+            guard let created else { return }
+            toFace = id
+            created.update("toFace") { $0.value = .references([id.rawValue]) }
+            created.activeReference = nil
+            // The height the face gives, shown in the distance field.
+            let plane = sketch.sketch.plane
+            if let body = model.evaluation().bodies.first(where: { $0.snapshot.faces.contains { $0.id == id } }),
+               case let .plane(o, _)? = body.snapshot.faces.first(where: { $0.id == id })?.surface {
+                let d = (o - plane.origin).dot(plane.normal)
+                if abs(d) > 1e-6 { created.update("h") { $0.value = .number(abs(d)) } }
+            }
+        }
         session = created
         // Picking an area updates the count, the arrow's place and the preview.
         sketch.onRegionsChange = { [weak created] in

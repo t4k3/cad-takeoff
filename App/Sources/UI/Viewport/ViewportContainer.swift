@@ -234,6 +234,11 @@ struct ViewportContainer: View {
             return
         }
         if let sketch = workspace.sketch {
+            if let pick = sketch.onFacePick, workspace.command?.activeReference == "toFace" {
+                if let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind { pick(id) }
+                else { model.statusMessage = "Clicca una faccia piana del pezzo." }
+                return
+            }
             if let pick = sketch.onAxisPick, workspace.command?.activeReference == "axis", let p = sketch.intersect(ray) {
                 sketch.vertexSnap = 8 * viewport.mmPerPoint
                 if let ref = sketch.pickRef(sketch.local(p), kinds: [.segment]) { pick(ref) } else { model.statusMessage = "Clicca una linea dello schizzo come asse." }

@@ -79,3 +79,17 @@ private func square(_ s: Double) -> Profile2D { Profile2D.rectangle(width: s, he
     #expect(abs(r.bodies[0].mesh.volume - (60 * 40 - 100) * 12) < 1e-6)
     #expect(try CADDocument.decode(CADDocument(features: [pocket]).encoded()).features[0].throughAll)
 }
+
+@Test func extrudeUpToAFaceFollowsIt() throws {
+    for top in [30.0, 45.0] {
+        let wall = Feature(name: "Muro", kind: .box(width: 10, depth: 10, height: top), position: Vec3(40, 0, 0))
+        let topFace = DesignEvaluator.evaluate(CADDocument(features: [wall]), revision: "w").bodies[0].snapshot.faces
+            .first { if case let .plane(_, n) = $0.surface { n.z > 0.99 } else { false } }!.id
+        var post = Feature(name: "Colonna", kind: .extrude(profile: .rectangle(width: 6, height: 6), height: 5))
+        post.untilFace = topFace
+        let r = DesignEvaluator.evaluate(CADDocument(features: [wall, post]), revision: "p\(top)")
+        let m = r.bodies.first { $0.id == post.id }!.mesh
+        #expect(abs(m.vertices.map(\.z).max()! - top) < 1e-9)
+        #expect(try CADDocument.decode(CADDocument(features: [post]).encoded()).features[0].untilFace == topFace)
+    }
+}

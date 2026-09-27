@@ -131,6 +131,8 @@ final class SketchSession {
     var mirrorAxis: SketchRef?
     /// Rivoluzione: the axis pick while the command's «Asse» field is active, and the preview.
     @ObservationIgnored var onAxisPick: ((SketchRef) -> Void)?
+    /// Estrudi «Fino a faccia»: a face of the part picked while the «Faccia» field is active.
+    @ObservationIgnored var onFacePick: ((FaceID) -> Void)?
     struct RevolvePreview: Equatable { var axisStart: Vec2, axisEnd: Vec2, angle: Double, reversed: Bool, isCut: Bool }
     var revolvePreview: RevolvePreview?
     var polygonCircumscribed = false

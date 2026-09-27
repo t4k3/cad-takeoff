@@ -413,10 +413,21 @@ public enum DesignEvaluator {
         /// An extrusion «through all»: its height reaches 1 mm past every body before it, along the
         /// extrusion (both ways when symmetric).
         func throughAll(_ f: Feature, bodies: [Work]) -> Feature {
-            guard f.throughAll, case let .extrude(profile, height) = f.kind else { return f }
+            guard f.throughAll || f.untilFace != nil, case let .extrude(profile, height) = f.kind else { return f }
             let base: Vec3, dir: Vec3
             if let p = f.placement { base = p.plane.origin + f.position; dir = p.reversed ? -p.plane.normal : p.plane.normal }
             else { base = f.position; dir = Vec3(0, 0, 1) }
+            // Up to a face: the distance from the sketch plane to that plane, along the extrusion.
+            if let target = f.untilFace {
+                for b in bodies {
+                    guard let face = b.snapshot.faces.first(where: { $0.id == target }), case let .plane(o, _) = face.surface else { continue }
+                    let d = (o - base).dot(dir)
+                    var g = f
+                    if d > 1e-6 { g.kind = .extrude(profile: profile, height: d) }
+                    return g
+                }
+                return f
+            }
             var reach = 0.0
             for box in bodies.compactMap({ bounds($0.snapshot) }) {
                 for x in [box.min.x, box.max.x] { for y in [box.min.y, box.max.y] { for z in [box.min.z, box.max.z] {
