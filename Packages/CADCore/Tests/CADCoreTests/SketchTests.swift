@@ -86,3 +86,15 @@ import Testing
     #expect(raised.origin == Vec3(0, 0, 15) && !raised.isXY)
     #expect(SketchPlane.xz.offset(by: 10).origin == Vec3(0, -10, 0))
 }
+
+@Test func inclinedConstructionPlanes() {
+    let p = SketchPlane.xy.tilted(by: 90)
+    #expect((p.yAxis - Vec3(0, 0, 1)).length < 1e-12 && (p.xAxis - Vec3(1, 0, 0)).length < 1e-12)
+    let q = SketchPlane.xy.tilted(by: 30, aboutX: false).offset(by: 10)
+    #expect(abs(q.normal.dot(Vec3(0, 0, 1)) - cos(30 * Double.pi / 180)) < 1e-12)
+    #expect(abs(q.origin.dot(q.normal) - 10) < 1e-12)
+    // An extrusion on it stands square to the inclined plane.
+    let f = Feature(name: "E", kind: .extrude(profile: .rectangle(width: 10, height: 10), height: 5), placement: FeaturePlacement(plane: q))
+    let m = try! PrimitiveKernel.build(f).mesh
+    #expect(abs(m.volume - 500) < 1e-9)
+}

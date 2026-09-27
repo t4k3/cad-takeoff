@@ -35,6 +35,15 @@ public struct SketchPlane: Codable, Sendable, Equatable {
         SketchPlane(origin: origin + normal * distance, xAxis: xAxis, yAxis: yAxis)
     }
 
+    /// The plane turned by `degrees` about its own X axis (`aboutX`) or Y axis, through its origin
+    /// (inclined construction plane). Positive turns the far side up, by the right-hand rule.
+    public func tilted(by degrees: Double, aboutX: Bool = true) -> SketchPlane {
+        let t = degrees * .pi / 180
+        let k = (aboutX ? xAxis : yAxis).normalized
+        func rotate(_ v: Vec3) -> Vec3 { v * cos(t) + k.cross(v) * sin(t) + k * (k.dot(v) * (1 - cos(t))) }
+        return SketchPlane(origin: origin, xAxis: rotate(xAxis), yAxis: rotate(yAxis))
+    }
+
     /// Plane of a planar face (sketch on face): origin = the world origin projected onto it, so
     /// on a horizontal face the coordinates are the world X/Y; on a vertical face X runs
     /// horizontally and Y up.

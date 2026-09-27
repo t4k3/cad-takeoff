@@ -593,6 +593,16 @@ struct ViewportContainer: View {
             .frame(width: 54).multilineTextAlignment(.trailing).font(.system(size: 11).monospacedDigit())
             .help("Piano di costruzione: sposta il piano scelto lungo la sua normale (mm)")
         Text("mm").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+        Text("Inclina").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+        TextField("0", value: Binding(get: { workspace.sketchPlaneTilt }, set: { workspace.sketchPlaneTilt = max(-180, min(180, $0)) }),
+                  format: .number.precision(.fractionLength(0...2)))
+            .frame(width: 46).multilineTextAlignment(.trailing).font(.system(size: 11).monospacedDigit())
+            .help("Piano inclinato: ruota il piano scelto di questi gradi attorno al suo asse X o Y (poi lo sfalsa)")
+        Picker("", selection: Binding(get: { workspace.sketchPlaneTiltAboutX }, set: { workspace.sketchPlaneTiltAboutX = $0 })) {
+            Text("° su X").tag(true)
+            Text("° su Y").tag(false)
+        }
+        .labelsHidden().pickerStyle(.segmented).controlSize(.small).frame(width: 110)
         Button("Annulla") { workspace.pickingSketchPlane = false }.controlSize(.small)
     }
 

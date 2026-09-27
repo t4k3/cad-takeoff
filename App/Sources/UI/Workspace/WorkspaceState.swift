@@ -157,6 +157,9 @@ final class WorkspaceState {
     var pickingSketchPlane = false
     /// Construction plane: the chosen face or base plane moved along its normal (mm).
     var sketchPlaneOffset = 0.0
+    /// Inclined construction plane: degrees about the chosen plane's X (or Y) axis.
+    var sketchPlaneTilt = 0.0
+    var sketchPlaneTiltAboutX = true
     /// Point the sketch camera centres on (the clicked face).
     var sketchFocus: Vec3?
 
@@ -175,7 +178,11 @@ final class WorkspaceState {
     /// New sketch (on `plane`), or edit an existing saved one.
     func enterSketch(editing existing: Sketch? = nil, plane chosen: SketchPlane = .xy, focus: Vec3? = nil) {
         command?.onCancel(); command = nil
-        let plane = existing == nil && pickingSketchPlane && sketchPlaneOffset != 0 ? chosen.offset(by: sketchPlaneOffset) : chosen
+        var plane = chosen
+        if existing == nil, pickingSketchPlane {
+            if sketchPlaneTilt != 0 { plane = plane.tilted(by: sketchPlaneTilt, aboutX: sketchPlaneTiltAboutX) }
+            if sketchPlaneOffset != 0 { plane = plane.offset(by: sketchPlaneOffset) }
+        }
         pickingSketchPlane = false
         if sketch != nil { exitSketch() }
         let session = SketchSession(sketch: existing ?? Sketch(name: sketchStore?.nextName ?? "Schizzo 1", plane: plane))
