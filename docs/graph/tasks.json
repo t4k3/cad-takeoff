@@ -2038,6 +2038,27 @@
       "notes": [
         "2026-09-27 18:59 codex: Integrazione Produzione e assistente v1 collaudata con Claude:4 export GUI17file, lettore indipendente e nessun overwrite;155 test Electronics+7lettori,187CAD PASS. MCP reale81chiamate via bridge firmato: tipi/campi,preview,stale,corto,routing,componenti,connessioni/NC,undo/redo. Chat Apple naturale: preflight,rinomina e undo GUI verificati; test live rinomina+collegamento exit0. App ad1977d/2cd6312 CI16/16 exit0. Docs ASSISTANT/APP_ACCEPTANCE/VALIDATION aggiornate; nessuna modifica motore/API,nessun progetto reale salvato. Restano T94/T95/T98 avanzati,provider remoti reali e qualificazione produttiva."
       ]
+    },
+    {
+      "id": "T105",
+      "title": "Circuiti: collaudo provider remoti e prerequisiti dei connettori Claude/ChatGPT",
+      "phase": "E6",
+      "status": "done",
+      "deps": [
+        "T100",
+        "T104"
+      ],
+      "paths": [
+        "Tests/Electronics",
+        "docs/electronics"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-27 19:15",
+      "finished": "2026-09-27 19:20",
+      "notes": [
+        "2026-09-27 19:20 codex: Collaudo protocolli e prerequisiti concluso:23/23 provider reali su SSE offline e193test CAD PASS. Riprodotti difetti stream Claude, corretti dal proprietario in dede339/b0f01bb: EOF/blocchi/fine/ID/reset, sigillo dopo message_stop. Test e procedura live in Tests/Electronics/RemoteProviders e REMOTE_PROVIDERS.md. Chiavi API assenti; tunnel-client/runtime assenti; config Claude MCP presente ma caricamento non provato. QA autenticato resta T55/T98. Claude aggancia04b alla CI dopo questo commit."
+      ]
     }
   ]
 }

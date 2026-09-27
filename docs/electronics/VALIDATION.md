@@ -1,5 +1,35 @@
 # Elettronica — prove del motore e dell’app
 
+## T105 — integrità dei provider remoti, 27/09/2026
+
+Procedura e prerequisiti: [REMOTE_PROVIDERS.md](REMOTE_PROVIDERS.md).
+Il test compila i provider reali dell'app con trasporto SSE simulato e Portachiavi
+fittizio: nessuna API remota chiamata, nessuna geometria o credenziale reale toccata.
+
+Il controllo iniziale riproduceva nove errori su 21 casi: Claude poteva consegnare
+`circuit_apply` dopo EOF incompleto o reset della conversazione, accettare ID
+duplicati e un motivo di fine incoerente. Le correzioni di Claude `dede339` e
+`b0f01bb` verificano inizio/fine messaggio, chiusura blocchi, motivo di fine,
+unicità delle chiamate e identità della conversazione. Il messaggio resta sigillato
+dopo `message_stop`; due ulteriori casi verificano che eventi tardivi non possano
+completarlo retroattivamente. Le risposte complete e quelle testuali restano valide;
+limite di token e rifiuto non consegnano strumenti eseguibili.
+
+`bash Tests/Electronics/RemoteProviders/run.sh`: **23/23 PASS, exit 0**
+sul sorgente `b0f01bb`, log `/tmp/ftk-t105-final.log`. Baseline del difetto:
+`/tmp/ftk-t105-before.log`; review intermedia: `/tmp/ftk-t105-review.log`.
+La stessa suite attraversa anche `OpenAIProvider` con gli equivalenti casi di
+risposta completa/incompleta, duplicati, reset ed errori. Il test positivo verifica
+nome e argomenti della chiamata, senza eseguirla sul modello del circuito.
+`swift test --package-path Packages/CADCore --scratch-path build/codex-cad-fabrication-check`:
+**193 test PASS, exit 0**, log `/tmp/ftk-t105-cad.log`.
+
+Configurazione osservata nella UI 1.0.58: chiavi API Claude/OpenAI assenti.
+`connect-chatgpt.py check`: bridge disponibile, client tunnel e chiave runtime
+assenti nell'ambiente controllato. Claude Desktop ha una configurazione MCP con
+eseguibile esistente, ma il caricamento nel client non è stato dimostrato.
+Il collaudo autenticato esterno resta aperto in T55/T98: questi risultati non lo sostituiscono.
+
 ## T104 — Produzione nell'app e strumenti Circuiti, 27/09/2026
 
 Procedura ripetibile: [APP_ACCEPTANCE.md](APP_ACCEPTANCE.md). Il nucleo T103 rimane
