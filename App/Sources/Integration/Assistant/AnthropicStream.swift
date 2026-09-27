@@ -28,6 +28,11 @@ struct AnthropicStreamAssembler {
     /// Feeds one `data:` JSON payload; returns the UI events it produces.
     mutating func consume(_ payload: JSONValue) -> [AssistantEvent] {
         guard let type = payload["type"]?.string else { return [] }
+        // After message_stop the message is sealed: nothing may change or complete it any more.
+        if finished, type != "ping" {
+            violation = violation ?? "evento «\(type)» dopo message_stop"
+            return []
+        }
         switch type {
         case "message_start":
             if started { violation = violation ?? "due message_start" }
@@ -93,7 +98,10 @@ struct AnthropicStreamAssembler {
             }
             return []
         case "message_stop":
-            if !started || finished { violation = violation ?? "message_stop fuori posto" }
+            // Judged as it is now: blocks still open or no stop reason are final defects.
+            if !started { violation = violation ?? "message_stop fuori posto" }
+            if !open.isEmpty { violation = violation ?? "blocchi non chiusi a message_stop" }
+            if stopReason == nil { violation = violation ?? "motivo di fine mancante a message_stop" }
             finished = true
             return []
         case "error":
