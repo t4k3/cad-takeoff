@@ -147,6 +147,14 @@ extension TechnicalDrawing {
                 let placed = PlacedDimension(view: v, a: lo, b: hi, side: side, value: d.value, prefix: d.prefix)
                 if out.contains(where: { $0.view == v && $0.round == nil && abs($0.value - d.value) < 1e-9
                     && ($0.a - placed.a).length + ($0.b - placed.b).length < 1e-6 }) { continue }
+                // At most six rows a side (the shortest, nearest the view): past that the views
+                // would shrink for dimensions the hole table and the others already give.
+                if side != .aligned, out.filter({ $0.view == v && $0.side == side }).count >= 6 {
+                    let row = out.indices.filter { out[$0].view == v && out[$0].side == side }
+                    guard let longest = row.max(by: { out[$0].span < out[$1].span }), out[longest].span > placed.span else { continue }
+                    out[longest] = placed
+                    continue
+                }
                 out.append(placed)
             case let .radius(c, _, at), let .diameter(c, _, at):
                 let isDiameter: Bool = { if case .diameter = d.kind { true } else { false } }()

@@ -132,3 +132,24 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     // Ø20 is the overall width seen from the front: no plain 20 there (the side view keeps its own).
     #expect(texts.filter { $0 == "20" }.count == 1)
 }
+
+@Test func manySketchDimensionsStayOnTheSheet() throws {
+    let plate = Feature(name: "Piastra", kind: .box(width: 100, depth: 60, height: 5))
+    var shapes = [SketchShape(kind: .rectangle(corner: Vec2(-50, -30), width: 100, height: 60))]
+    var constraints: [SketchConstraint] = []
+    for k in 0..<11 {
+        let c = SketchShape(kind: .circle(center: Vec2(-45 + 9 * Double(k), -20 + 4 * Double(k)), radius: 1.5))
+        shapes.append(c)
+        constraints.append(SketchConstraint(.horizontalDistance(.point(shapes[0].id, 0), .point(c.id, 0), 5 + 9 * Double(k))))
+        constraints.append(SketchConstraint(.verticalDistance(.point(shapes[0].id, 0), .point(c.id, 0), 10 + 4 * Double(k))))
+    }
+    let dims = Sketch(name: "S", shapes: shapes, constraints: constraints).drawingDimensions
+    let bodies = DesignEvaluator.evaluate(CADDocument(features: [plate]), revision: "d").bodies.map { (mesh: $0.mesh, snapshot: $0.snapshot) }
+    let s = try TechnicalDrawing.make(bodies, info: .init(title: "Piastra"), dimensions: dims)
+    #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
+    // Six a side, the shortest kept: 5 … 50 horizontally, 10 … 30 vertically.
+    let texts = s.texts.map(\.text)
+    #expect(texts.contains("5") && texts.contains("50") && !texts.contains("95"))
+    #expect(texts.contains("10") && texts.contains("30") && !texts.contains("50,0"))
+    #expect(texts.contains("1:1") || texts.contains("1:2"))
+}
