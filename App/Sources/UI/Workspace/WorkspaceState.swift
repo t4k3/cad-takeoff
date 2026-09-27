@@ -99,6 +99,7 @@ final class WorkspaceState {
     var showComponentPicker = false
     var showBOM = false
     var showParameters = false
+    var showInterference = false
 
     /// LAMIERA tab: show sheet-metal parts developed flat (with bend lines) instead of folded.
     var showFlat = false

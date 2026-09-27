@@ -49,6 +49,7 @@ struct WorkspaceView: View {
         .sheet(isPresented: $workspace.showComponentPicker) { ComponentPickerSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showBOM) { BOMSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showParameters) { ParametersSheet().environment(workspace) }
+        .sheet(isPresented: $workspace.showInterference) { InterferenceSheet().environment(workspace) }
         .environment(workspace)
         .onAppear {
             workspace.sketchStore = sketches; workspace.model = model

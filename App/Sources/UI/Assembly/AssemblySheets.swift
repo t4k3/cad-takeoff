@@ -93,3 +93,52 @@ struct BOMSheet: View {
         .frame(width: 640, height: 400)
     }
 }
+
+/// «Interferenze»: the bodies and components that overlap (not the ones that only touch), with
+/// the volume in common; a row selects the first part.
+struct InterferenceSheet: View {
+    @Environment(DesignModel.self) private var model
+    @Environment(WorkspaceState.self) private var workspace
+    @State private var clashes: [Interference.Clash]?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Interferenze", systemImage: "exclamationmark.triangle").font(.headline)
+            if let clashes {
+                if clashes.isEmpty {
+                    Label("Nessuna interferenza: i corpi si toccano al massimo, senza compenetrarsi.", systemImage: "checkmark.seal")
+                        .foregroundStyle(.green)
+                } else {
+                    Text("\(clashes.count) \(clashes.count == 1 ? "coppia si compenetra" : "coppie si compenetrano"):")
+                        .foregroundStyle(Theme.Palette.textSecondary)
+                    List(clashes) { c in
+                        HStack {
+                            Text(name(c.a)).bold()
+                            Image(systemName: "arrow.left.and.right")
+                            Text(name(c.b)).bold()
+                            Spacer()
+                            Text(String(format: "%.1f mm³", c.volume)).font(Theme.Typeface.mono)
+                            Button("Seleziona") { model.selection = c.a; workspace.showInterference = false }
+                                .controlSize(.small)
+                        }
+                    }
+                    .frame(minHeight: 180)
+                }
+            } else {
+                ProgressView("Controllo dei corpi…")
+            }
+            HStack {
+                Spacer()
+                Button("Chiudi") { workspace.showInterference = false }.keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(16)
+        .frame(width: 560, height: 360)
+        .task {
+            let bodies = model.evaluation().bodies.filter(\.isVisible)
+            clashes = await Task.detached { Interference.check(bodies) }.value
+        }
+    }
+
+    private func name(_ id: UUID) -> String { model.document.features.first { $0.id == id }?.name ?? "?" }
+}
