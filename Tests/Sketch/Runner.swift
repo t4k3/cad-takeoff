@@ -61,6 +61,15 @@ struct SketchTests {
         s.hover(at(-20.3, -70.6), screen: nil)
         check(s.snapped == nil && near(s.cursor, -20, -71), "altrove, la griglia")
 
+        // Sketching on a face: the edge of the part is split in pieces by a cut (points at 10 and
+        // 25 along it); its midpoint snap is still the middle of the whole 60 mm edge.
+        let face = SketchSession(sketch: Sketch(name: "Faccia"))
+        face.vertexSnap = 1
+        face.references = [SketchSession.straightened([Vec2(0, 0), Vec2(10, 0), Vec2(25, 0), Vec2(60, 0)])]
+        face.tool = .line
+        face.hover(at(30.4, 0.3), screen: nil)
+        check(face.snapped?.kind == .midpoint && near(face.cursor, 30, 0), "punto medio del bordo intero della faccia")
+
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
         print("OK: schizzo — agganci e fine linea")
     }

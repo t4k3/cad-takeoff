@@ -205,8 +205,23 @@ final class SketchSession {
         let pl = sketch.plane
         references = bodies.flatMap { b in
             b.edges.filter { e in e.polyline.allSatisfy { abs(($0 - pl.origin).dot(pl.normal)) < 1e-4 } }
-                .map { $0.polyline.map { pl.local($0) } }
+                .map { Self.straightened($0.polyline.map { pl.local($0) }) }
         }
+    }
+
+    /// Drops the in-line points the booleans leave on a straight edge, so its midpoint snap is
+    /// the middle of the whole edge (not of a piece of it). Round edges keep all their points.
+    static func straightened(_ line: [Vec2]) -> [Vec2] {
+        guard line.count > 2 else { return line }
+        var out = [line[0]]
+        for i in 1..<(line.count - 1) {
+            let a = out.last!, b = line[i], c = line[i + 1]
+            let ab = b - a, bc = c - b
+            let straight = abs(ab.cross(bc)) <= 1e-7 * max(ab.length * bc.length, 1e-12) && ab.dot(bc) > 0
+            if !straight { out.append(b) }
+        }
+        out.append(line[line.count - 1])
+        return out
     }
 
     private func record(_ old: Sketch) {
