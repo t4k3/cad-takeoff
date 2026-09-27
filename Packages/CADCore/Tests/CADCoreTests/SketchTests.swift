@@ -146,3 +146,31 @@ import Testing
                                 maximumSurfaceDeviation: 0)
     #expect(bareSide.flatPlane(of: side.id) == nil)
 }
+
+@Test func sideKeysFollowTheSketchNotTheNumbers() throws {
+    // A slot-ended plate: a rectangle's sides and an arc, the outline read from different starts.
+    let rect = SketchShape(kind: .rectangle(corner: Vec2(0, 0), width: 40, height: 20))
+    let sketch = Sketch(name: "S", shapes: [rect])
+    let outline = [Vec2(0, 0), Vec2(40, 0), Vec2(40, 20), Vec2(0, 20)]
+    let keys = sketch.sideKeys(for: outline)
+    #expect(Set(keys).count == 4 && keys.allSatisfy { $0.hasPrefix(rect.id.uuidString) })
+    let turned = sketch.sideKeys(for: Array(outline[2...] + outline[..<2]))
+    #expect(turned == Array(keys[2...] + keys[..<2]))
+    // Wider: the same names.
+    let wide = Sketch(name: "S", shapes: [SketchShape(id: rect.id, kind: .rectangle(corner: Vec2(0, 0), width: 70, height: 20))])
+    #expect(wide.sideKeys(for: [Vec2(0, 0), Vec2(70, 0), Vec2(70, 20), Vec2(0, 20)]) == keys)
+    // A circle's facets: one name per facet, the same wherever the outline starts.
+    let circle = SketchShape(kind: .circle(center: Vec2(0, 0), radius: 5))
+    let round = Sketch(name: "C", shapes: [circle])
+    let ring = circle.outline
+    let a = round.sideKeys(for: ring), b = round.sideKeys(for: Array(ring[10...] + ring[..<10]))
+    #expect(Set(a).count == ring.count && b == Array(a[10...] + a[..<10]))
+    // Extruded with them: faces named after the curves, the same after a dimension change.
+    var f = Feature(name: "E", kind: .extrude(profile: Profile2D(points: outline), height: 5))
+    f.keyProfile(from: sketch)
+    var g = f
+    g.kind = .extrude(profile: Profile2D(points: [Vec2(0, 0), Vec2(70, 0), Vec2(70, 20), Vec2(0, 20)]), height: 5)
+    g.keyProfile(from: wide)
+    let ids = { (x: Feature) in try PrimitiveKernel.build(x).snapshot(revision: "k").faces.map(\.id) }
+    #expect(try ids(f) == ids(g))
+}

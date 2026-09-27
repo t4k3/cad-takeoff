@@ -256,6 +256,10 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     /// Extrusions: up to this planar face of a body before it (Fusion's «To object»), the height
     /// worked out at every evaluation.
     public var untilFace: FaceID?
+    /// Extrusions from a sketch: one stable name per profile side, from the sketch curve it lies
+    /// on (`Sketch.sideKeys`). The side faces and edges are named after them, so a dimension
+    /// change keeps the rounds, chamfers and shells made on them (as in Fusion).
+    public var profileKeys: [String]?
 
     public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true,
                 color: PartColor = .defaultColor, operation: BooleanOperation = .newBody, placement: FeaturePlacement? = nil,
@@ -264,7 +268,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         self.color = color; self.operation = operation; self.placement = placement; self.holes = holes
     }
 
-    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes, expressions, symmetric, taper, throughAll, untilFace }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes, expressions, symmetric, taper, throughAll, untilFace, profileKeys }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -283,6 +287,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         taper = try c.decodeIfPresent(Double.self, forKey: .taper) ?? 0
         throughAll = try c.decodeIfPresent(Bool.self, forKey: .throughAll) ?? false
         untilFace = try c.decodeIfPresent(FaceID.self, forKey: .untilFace)
+        profileKeys = try c.decodeIfPresent([String].self, forKey: .profileKeys)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -297,6 +302,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         if taper != 0 { try c.encode(taper, forKey: .taper) }
         if throughAll { try c.encode(throughAll, forKey: .throughAll) }
         try c.encodeIfPresent(untilFace, forKey: .untilFace)
+        try c.encodeIfPresent(profileKeys, forKey: .profileKeys)
     }
 
     public func buildMesh() -> Mesh {
@@ -372,6 +378,8 @@ public struct CADDocument: Codable, Sendable, Equatable {
     public var sketchLinks: [SketchLink] = []
     /// User parameters (Fusion's «Parametri»), used by dimension and size expressions.
     public var parameters: [UserParameter] = []
+    /// What an import did (e.g. how much of a Fusion design came in editable); not saved.
+    public var importReport: String?
 
     public init(features: [Feature] = [], sketches: [Sketch] = [], sketchLinks: [SketchLink] = []) {
         timeline = Self.orderedV1(features: features, sketches: sketches, links: sketchLinks)
@@ -495,7 +503,21 @@ public struct CADDocument: Codable, Sendable, Equatable {
         return try enc.encode(self)
     }
 
+    /// A file written by the Fusion add-in also carries the design's history (`fusion`): it is
+    /// rebuilt as editable steps, with the bodies' meshes only for what cannot be rebuilt.
     public static func decode(_ data: Data) throws -> CADDocument {
-        try JSONDecoder().decode(CADDocument.self, from: data)
+        var doc = try JSONDecoder().decode(CADDocument.self, from: data)
+        struct Envelope: Decodable { let fusion: FusionTimeline? }
+        if let timeline = (try? JSONDecoder().decode(Envelope.self, from: data))?.fusion {
+            let meshes = doc.features.filter { if case .importedMesh = $0.kind { true } else { false } }
+            var (converted, report) = FusionImport.convert(timeline, meshes: meshes)
+            if report.editable.isEmpty {
+                doc.importReport = report.summary
+            } else {
+                converted.importReport = report.summary
+                doc = converted
+            }
+        }
+        return doc
     }
 }

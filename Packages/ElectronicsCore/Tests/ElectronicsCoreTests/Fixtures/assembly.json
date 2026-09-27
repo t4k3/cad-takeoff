@@ -1,0 +1,416 @@
+{
+  "formatVersion": 1,
+  "revision": 0,
+  "design": {
+    "id": "00000000-0000-0000-0000-000000001000",
+    "name": "E0 synthetic assembly test \u2014 NOT FOR MANUFACTURE",
+    "library": {
+      "symbols": [
+        {
+          "key": {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "revision": 1
+          },
+          "name": "Resistor test",
+          "pins": [
+            {
+              "id": "00000000-0000-0000-0000-000000000011",
+              "name": "A",
+              "electricalType": "passive"
+            },
+            {
+              "id": "00000000-0000-0000-0000-000000000012",
+              "name": "B",
+              "electricalType": "passive"
+            }
+          ],
+          "source": {
+            "reference": "FTK synthetic test fixture; not a purchasable part",
+            "license": "Project-authored test data",
+            "sourceRevision": "1"
+          }
+        }
+      ],
+      "footprints": [
+        {
+          "key": {
+            "id": "00000000-0000-0000-0000-000000000002",
+            "revision": 1
+          },
+          "name": "R_0603_TEST",
+          "pads": [
+            {
+              "id": "00000000-0000-0000-0000-000000000021",
+              "number": "1",
+              "center": {
+                "x": -0.8,
+                "y": 0
+              },
+              "size": {
+                "x": 1,
+                "y": 0.9
+              },
+              "shape": "rectangle",
+              "rotationDegrees": 0
+            },
+            {
+              "id": "00000000-0000-0000-0000-000000000022",
+              "number": "2",
+              "center": {
+                "x": 0.8,
+                "y": 0
+              },
+              "size": {
+                "x": 1,
+                "y": 0.9
+              },
+              "shape": "rectangle",
+              "rotationDegrees": 0
+            }
+          ],
+          "assemblyCentroid": {
+            "x": 0.2,
+            "y": -0.1
+          },
+          "model3D": {
+            "relativePath": "models/synthetic-resistor.step",
+            "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "offset": {
+              "x": 0.1,
+              "y": 0.2,
+              "z": 0.3
+            }
+          },
+          "source": {
+            "reference": "FTK synthetic test fixture; not a purchasable part",
+            "license": "Project-authored test data",
+            "sourceRevision": "1"
+          }
+        }
+      ],
+      "devices": [
+        {
+          "key": {
+            "id": "00000000-0000-0000-0000-000000000003",
+            "revision": 1
+          },
+          "manufacturer": "FTK Test Only",
+          "manufacturerPartNumber": "TEST-3",
+          "symbol": {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "revision": 1
+          },
+          "footprint": {
+            "id": "00000000-0000-0000-0000-000000000002",
+            "revision": 1
+          },
+          "pinMap": [
+            {
+              "pinID": "00000000-0000-0000-0000-000000000011",
+              "padID": "00000000-0000-0000-0000-000000000021"
+            },
+            {
+              "pinID": "00000000-0000-0000-0000-000000000012",
+              "padID": "00000000-0000-0000-0000-000000000022"
+            }
+          ],
+          "jlc": {
+            "partNumber": "C000000101",
+            "catalogReference": "Synthetic test identifier; do not order",
+            "topRotation": {
+              "direction": "same",
+              "offsetDegrees": 90,
+              "evidence": "Synthetic golden fixture, not a supplier validation"
+            },
+            "bottomRotation": {
+              "direction": "negated",
+              "offsetDegrees": 180,
+              "evidence": "Synthetic golden fixture, not a supplier validation"
+            }
+          }
+        },
+        {
+          "key": {
+            "id": "00000000-0000-0000-0000-000000000004",
+            "revision": 1
+          },
+          "manufacturer": "FTK Test Only",
+          "manufacturerPartNumber": "TEST-4",
+          "symbol": {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "revision": 1
+          },
+          "footprint": {
+            "id": "00000000-0000-0000-0000-000000000002",
+            "revision": 1
+          },
+          "pinMap": [
+            {
+              "pinID": "00000000-0000-0000-0000-000000000011",
+              "padID": "00000000-0000-0000-0000-000000000021"
+            },
+            {
+              "pinID": "00000000-0000-0000-0000-000000000012",
+              "padID": "00000000-0000-0000-0000-000000000022"
+            }
+          ],
+          "jlc": {
+            "partNumber": "C000000102",
+            "catalogReference": "Synthetic test identifier; do not order",
+            "topRotation": {
+              "direction": "same",
+              "offsetDegrees": 90,
+              "evidence": "Synthetic golden fixture, not a supplier validation"
+            },
+            "bottomRotation": {
+              "direction": "negated",
+              "offsetDegrees": 180,
+              "evidence": "Synthetic golden fixture, not a supplier validation"
+            }
+          }
+        }
+      ]
+    },
+    "components": [
+      {
+        "id": "00000000-0000-0000-0000-000000000101",
+        "reference": "R1",
+        "value": "10k, 1% \"thin\"",
+        "device": {
+          "id": "00000000-0000-0000-0000-000000000003",
+          "revision": 1
+        },
+        "assembly": "jlcpcb"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000102",
+        "reference": "R2",
+        "value": "10k, 1% \"thin\"",
+        "device": {
+          "id": "00000000-0000-0000-0000-000000000003",
+          "revision": 1
+        },
+        "assembly": "jlcpcb"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000103",
+        "reference": "R3",
+        "value": "10k, 1% \"thin\"",
+        "device": {
+          "id": "00000000-0000-0000-0000-000000000003",
+          "revision": 1
+        },
+        "assembly": "doNotPopulate"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000104",
+        "reference": "R4",
+        "value": "10k, 1% \"thin\"",
+        "device": {
+          "id": "00000000-0000-0000-0000-000000000003",
+          "revision": 1
+        },
+        "assembly": "manual"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000105",
+        "reference": "R5",
+        "value": "10k, 1% \"thin\"",
+        "device": {
+          "id": "00000000-0000-0000-0000-000000000003",
+          "revision": 1
+        },
+        "assembly": "jlcpcb"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000106",
+        "reference": "R6",
+        "value": "10k, 1% \"thin\"",
+        "device": {
+          "id": "00000000-0000-0000-0000-000000000004",
+          "revision": 1
+        },
+        "assembly": "jlcpcb"
+      }
+    ],
+    "nets": [
+      {
+        "id": "00000000-0000-0000-0000-000000000201",
+        "name": "A"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000202",
+        "name": "B"
+      }
+    ],
+    "connections": [
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000101",
+          "pinID": "00000000-0000-0000-0000-000000000011"
+        },
+        "netID": "00000000-0000-0000-0000-000000000201"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000101",
+          "pinID": "00000000-0000-0000-0000-000000000012"
+        },
+        "netID": "00000000-0000-0000-0000-000000000202"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000102",
+          "pinID": "00000000-0000-0000-0000-000000000011"
+        },
+        "netID": "00000000-0000-0000-0000-000000000201"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000102",
+          "pinID": "00000000-0000-0000-0000-000000000012"
+        },
+        "netID": "00000000-0000-0000-0000-000000000202"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000103",
+          "pinID": "00000000-0000-0000-0000-000000000011"
+        },
+        "netID": "00000000-0000-0000-0000-000000000201"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000103",
+          "pinID": "00000000-0000-0000-0000-000000000012"
+        },
+        "netID": "00000000-0000-0000-0000-000000000202"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000104",
+          "pinID": "00000000-0000-0000-0000-000000000011"
+        },
+        "netID": "00000000-0000-0000-0000-000000000201"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000104",
+          "pinID": "00000000-0000-0000-0000-000000000012"
+        },
+        "netID": "00000000-0000-0000-0000-000000000202"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000105",
+          "pinID": "00000000-0000-0000-0000-000000000011"
+        },
+        "netID": "00000000-0000-0000-0000-000000000201"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000105",
+          "pinID": "00000000-0000-0000-0000-000000000012"
+        },
+        "netID": "00000000-0000-0000-0000-000000000202"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000106",
+          "pinID": "00000000-0000-0000-0000-000000000011"
+        },
+        "netID": "00000000-0000-0000-0000-000000000201"
+      },
+      {
+        "pin": {
+          "componentID": "00000000-0000-0000-0000-000000000106",
+          "pinID": "00000000-0000-0000-0000-000000000012"
+        },
+        "netID": "00000000-0000-0000-0000-000000000202"
+      }
+    ],
+    "board": {
+      "outline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 60,
+          "y": 0
+        },
+        {
+          "x": 60,
+          "y": 40
+        },
+        {
+          "x": 0,
+          "y": 40
+        }
+      ],
+      "thickness": 1.6,
+      "assemblyOrigin": {
+        "x": 1,
+        "y": 2
+      },
+      "placements": [
+        {
+          "componentID": "00000000-0000-0000-0000-000000000101",
+          "position": {
+            "x": 11,
+            "y": 22
+          },
+          "rotationDegrees": 90,
+          "side": "top"
+        },
+        {
+          "componentID": "00000000-0000-0000-0000-000000000102",
+          "position": {
+            "x": 31,
+            "y": 22
+          },
+          "rotationDegrees": 90,
+          "side": "bottom"
+        },
+        {
+          "componentID": "00000000-0000-0000-0000-000000000104",
+          "position": {
+            "x": 15,
+            "y": 10
+          },
+          "rotationDegrees": 0,
+          "side": "top"
+        },
+        {
+          "componentID": "00000000-0000-0000-0000-000000000105",
+          "position": {
+            "x": 35,
+            "y": 10
+          },
+          "rotationDegrees": -90,
+          "side": "top"
+        },
+        {
+          "componentID": "00000000-0000-0000-0000-000000000106",
+          "position": {
+            "x": 45,
+            "y": 10
+          },
+          "rotationDegrees": 450,
+          "side": "top"
+        }
+      ]
+    },
+    "variants": [
+      {
+        "id": "00000000-0000-0000-0000-000000000301",
+        "name": "Top only",
+        "excludedComponents": [
+          "00000000-0000-0000-0000-000000000102"
+        ]
+      }
+    ]
+  },
+  "past": [],
+  "future": []
+}

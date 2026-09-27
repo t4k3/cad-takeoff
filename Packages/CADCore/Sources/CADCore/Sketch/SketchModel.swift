@@ -413,6 +413,7 @@ extension CADDocument {
                 switch features[i].kind {
                 case let .extrude(_, height):
                     features[i].kind = .extrude(profile: Profile2D(points: area.outline), height: height)
+                    features[i].keyProfile(from: sketch)
                 case var .revolve(spec):
                     spec.profile = Profile2D(points: area.outline)
                     // The axis line follows the sketch too.
@@ -430,6 +431,7 @@ extension CADDocument {
                   let i = features.firstIndex(where: { $0.id == link.featureID }),
                   case let .extrude(_, height) = features[i].kind else { continue }
             features[i].kind = .extrude(profile: profile, height: height)
+            features[i].keyProfile(from: sketch)
             // Holes follow their shapes; a deleted or opened one stops being a hole.
             features[i].holes = link.holeShapeIDs.compactMap { id in sketch.shapes.first { $0.id == id }?.profile }
         }

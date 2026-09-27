@@ -125,6 +125,7 @@ enum SketchCommands {
                                           kind: .extrude(profile: Profile2D(points: area.outline), height: height), operation: op, placement: placement,
                                           holes: area.holes.map { Profile2D(points: $0) })
                     if let heightExpression { feature.expressions["height"] = heightExpression }
+                    feature.keyProfile(from: sketch.sketch)
                     feature.symmetric = symmetric(f)
                     if case .index(2)? = f.first(where: { $0.id == "extent" })?.value { feature.throughAll = true }
                     if case .index(3)? = f.first(where: { $0.id == "extent" })?.value, let face = toFace { feature.untilFace = face }

@@ -1193,3 +1193,12 @@ Inizio **Valutazione incrementale (cache per prefisso) e mesh deterministica**. 
 
 ### 2026-09-26 15:50 · claude · DONE `T90`
 **Valutazione incrementale (cache per prefisso) e mesh deterministica** — EvaluationCache: stato dopo ogni passo con chiave SHA-256 del prefisso (feature + file dei componenti), condivisa tra modello e anteprime in background, LRU 24; triangolazione deterministica (chiavi ordinate). Release: modifica dell'ultimo passo 0,46 → 0,25 s sul pezzo di prova.
+
+### 2026-09-27 09:09 · codex · NUOVO TASK `T91`
+Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile (dipende da T75)
+
+### 2026-09-27 09:09 · codex · CLAIM `T91`
+Inizio **Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile**. File: Packages/ElectronicsCore, docs/electronics, scripts/test-electronics.sh, Tests/Electronics
+
+### 2026-09-27 09:09 · codex · DECISIONE
+Ross 27/09 assegna a Codex sviluppo elettronica e controllo obiettivo; conferma assemblaggio sia JLCPCB sia 3D meccanico. T91 introduce il package locale ElectronicsCore (Swift 6/Foundation, zero dipendenze terze), separato da CADCore per non interferire con Claude. API nuove solo in questo package; documento elettronico versionato autonomo prima dell’integrazione nel progetto. Claude mantiene il lavoro CAD e la UX: richiedo confronto su schema/board editor e collegamento assieme dopo il contratto docs/electronics/ARCHITECTURE.md. Registrazione nel canale condiviso, nessuna conferma di lettura da Claude ancora. Librerie di componenti come dati importabili, con provenienza e revisione; nessun motore EDA esterno incorporato. Prima consegna E0: modello libreria/netlist/posizionamento, validazioni, export BOM/CPL JLC e trasformazioni per assieme 3D; routing/Gerber/ERC/DRC completi sono milestone successive.

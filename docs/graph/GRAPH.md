@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-26 15:50. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-27 09:09. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -148,6 +148,9 @@ flowchart LR
   end
   subgraph P25["Fase 3d"]
     T86["T86 · Raccordo (fillet) a raggio costante su spigoli selezionati<br/><i>claude</i>"]:::done
+  end
+  subgraph P26["Elettronica"]
+    T91["T91 · Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile<br/><i>codex</i>"]:::in_progress
   end
   T00 --> T02
   T00 --> T03
@@ -327,6 +330,7 @@ flowchart LR
   T84 --> T88
   T84 --> T89
   T84 --> T90
+  T75 --> T91
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -434,3 +438,4 @@ flowchart LR
 | T88 | Serie rettangolare/circolare e specchio di corpi | done | claude | T84 | Packages/CADCore<br>App/Sources |
 | T89 | Dividi corpo con piano | done | claude | T84 | Packages/CADCore<br>App/Sources |
 | T90 | Valutazione incrementale (cache per prefisso) e mesh deterministica | done | claude | T84 | Packages/CADCore<br>App/Sources |
+| T91 | Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile | in_progress | codex | T75 | Packages/ElectronicsCore<br>docs/electronics<br>scripts/test-electronics.sh<br>Tests/Electronics |

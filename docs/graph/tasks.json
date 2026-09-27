@@ -1744,6 +1744,24 @@
       "notes": [
         "2026-09-26 15:50 claude: EvaluationCache: stato dopo ogni passo con chiave SHA-256 del prefisso (feature + file dei componenti), condivisa tra modello e anteprime in background, LRU 24; triangolazione deterministica (chiavi ordinate). Release: modifica dell'ultimo passo 0,46 → 0,25 s sul pezzo di prova."
       ]
+    },
+    {
+      "id": "T91",
+      "title": "Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile",
+      "phase": "Elettronica",
+      "status": "in_progress",
+      "deps": [
+        "T75"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "scripts/test-electronics.sh",
+        "Tests/Electronics"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-27 09:09"
     }
   ]
 }

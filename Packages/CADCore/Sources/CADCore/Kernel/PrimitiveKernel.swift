@@ -63,7 +63,8 @@ public enum PrimitiveKernel {
               [feature.position.x, feature.position.y, feature.position.z].allSatisfy({ abs($0) <= 100_000 }) else {
             throw KernelError.invalidParameter("posizione oltre ±100000 mm o non finita")
         }
-        let points: [Vec2], height: Double, family: String, profileKey: String
+        let points: [Vec2], height: Double, family: String
+        var profileKey: String
         let radius: Double?
         switch feature.kind {
         case let .box(width, depth, h):
@@ -128,6 +129,17 @@ public enum PrimitiveKernel {
             throw KernelError.invalidProfile("triangolazione incompleta")
         }
         let n = points.count, prefix = feature.id.uuidString.lowercased() + "/"
+        // Sides named after their sketch curves (stable through dimension changes), else by index
+        // under a key of the exact profile (any edit renames them rather than rebind wrongly).
+        let keyed = family == "extrude" && feature.profileKeys?.count == n
+        if keyed { profileKey = "extrude/k" }
+        func side(_ i: Int) -> String { keyed ? feature.profileKeys![i] : "\(i)" }
+        /// An arc's wall and rims: after its curve (the side key without the facet number).
+        func arcName(_ i: Int, _ arc: ProfileArc) -> String {
+            guard keyed else { return "\(arc.index)" }
+            let k = feature.profileKeys![i]
+            return k.split(separator: "#").first.map(String.init) ?? k
+        }
         // Sides of an extruded profile that approximate an arc (sketch circles, slot ends) make one
         // cylindrical wall with one rim edge top and bottom, like the cylinder primitive: fillets,
         // chamfers and selection take the whole arc, and the wall renders smooth.
@@ -164,7 +176,7 @@ public enum PrimitiveKernel {
         let positions = onArcs.map { Vec3($0.x, $0.y, 0) + feature.position }
             + top.map { Vec3($0.x, $0.y, height) + feature.position }
         let vertices = positions.enumerated().map { i, p in
-            BRepVertex(id: VertexID(rawValue: prefix + profileKey + "/\(i < n ? "bottom" : "top")/vertex/\(i % n)"), position: p)
+            BRepVertex(id: VertexID(rawValue: prefix + profileKey + "/\(i < n ? "bottom" : "top")/vertex/\(side(i % n))"), position: p)
         }
         let bottomID = faceID(family + "/bottom"), topID = faceID(family + "/top")
         var loops = [Array((0..<n).reversed()), Array(n..<(2 * n))]
@@ -180,14 +192,14 @@ public enum PrimitiveKernel {
         for i in 0..<n {
             let j = (i + 1) % n
             loops.append([i, j, j + n, i + n])
-            let sideID = faceID(profileKey + "/side/\(i)")
+            let sideID = faceID(profileKey + "/side/\(side(i))")
             ids.append(sideID)
             let normal = (positions[j] - positions[i]).cross(positions[i + n] - positions[i]).normalized
             if let radius {
                 selectionIDs.append(faceID("cylinder/wall"))
                 surfaces.append(.cylinder(axisOrigin: feature.position, axisDirection: Vec3(0, 0, 1), radius: radius))
             } else if let arc = arcs[i] {
-                selectionIDs.append(faceID(profileKey + "/arc/\(arc.index)/wall"))
+                selectionIDs.append(faceID(profileKey + "/arc/\(arcName(i, arc))/wall"))
                 let axis = Vec3(arc.center.x, arc.center.y, 0) + feature.position
                 if inset == 0 {
                     surfaces.append(.cylinder(axisOrigin: axis, axisDirection: Vec3(0, 0, 1), radius: arc.radius))
@@ -220,13 +232,13 @@ public enum PrimitiveKernel {
                 let j = (i + 1) % n
                 let pair = level == 0 ? (i, j) : level == 1 ? (i + n, j + n) : (i, i + n)
                 let role = ["bottom", "top", "vertical"][level]
-                let id = edgeID(profileKey + "/edge/\(role)/\(i)")
+                let id = edgeID(profileKey + "/edge/\(role)/\(side(i))")
                 edgeLookup[EdgeKey(pair.0, pair.1)] = endpoints.count
                 endpoints.append(pair); edgeIDs.append(id)
                 if radius != nil {
                     selectedEdges.append(level == 2 ? nil : edgeID("cylinder/rim/\(role)"))
                 } else if level < 2, let arc = arcs[i] {
-                    selectedEdges.append(edgeID(profileKey + "/arc/\(arc.index)/rim/\(role)"))
+                    selectedEdges.append(edgeID(profileKey + "/arc/\(arcName(i, arc))/rim/\(role)"))
                 } else if level == 2, smoothJoint((i + n - 1) % n, points, arcs) {
                     selectedEdges.append(nil)   // inside an arc or where it runs tangent into a line
                 } else {
