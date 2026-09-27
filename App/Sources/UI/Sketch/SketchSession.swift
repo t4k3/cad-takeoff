@@ -11,10 +11,10 @@ final class SketchSession {
     enum Tool: String, CaseIterable, Identifiable {
         case select = "Seleziona", line = "Linea", rectangle = "Rettangolo", circle = "Cerchio",
              polygon = "Poligono", slot = "Asola", arc = "Arco", spline = "Spline", fillet = "Raccordo", chamfer = "Smusso", trim = "Taglia", extend = "Estendi",
-             offset = "Offset", mirror = "Specchio", dimension = "Quota"
+             offset = "Offset", mirror = "Specchio", dimension = "Quota", point = "Punto"
         var id: String { rawValue }
         /// The drawing tools (Quota lives with the constraints, the editing tools under MODIFICA).
-        static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc, .spline] }
+        static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc, .spline, .point] }
         static var modify: [Tool] { [.fillet, .chamfer, .trim, .extend, .offset, .mirror] }
         var symbol: String {
             switch self {
@@ -33,6 +33,7 @@ final class SketchSession {
             case .offset: "square.on.square.dashed"
             case .mirror: "arrow.left.and.right.righttriangle.left.righttriangle.right"
             case .dimension: "ruler"
+            case .point: "smallcircle.filled.circle"
             }
         }
         var hint: String {
@@ -52,13 +53,14 @@ final class SketchSession {
             case .offset: "Clicca una forma (con le linee e gli archi uniti a lei), poi il lato dove creare la copia alla distanza impostata."
             case .mirror: "Clicca la linea d'asse, poi le forme da specchiare: le copie restano simmetriche all'originale."
             case .dimension: "Clicca una linea (lunghezza), un cerchio (diametro), due punti (distanza) o due linee (angolo), poi scrivi il valore."
+            case .point: "Clicca per mettere un punto: riferimento per vincoli e quote, e centro per i fori."
             }
         }
         var key: String? {
             switch self {
             case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .arc: "a"
             case .trim: "t"; case .offset: "o"; case .spline: "b"
-            case .select, .fillet, .chamfer, .extend, .mirror: nil
+            case .select, .fillet, .chamfer, .extend, .mirror, .point: nil
             }
         }
     }
@@ -327,6 +329,9 @@ final class SketchSession {
         case .select:
             selectedConstraint = nil
             selection = pick(raw)
+        case .point:
+            // A lone point: a reference for constraints, dimensions and hole centres (never a profile).
+            commit(.polyline([p], closed: false))
         case .spline:
             if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
                 commit(.spline(points: pending, closed: true))
@@ -420,6 +425,11 @@ final class SketchSession {
         var best: (SketchShape.ID, Double)?
         for s in shapes.reversed() {
             let o = s.outline
+            if o.count == 1 {
+                let d = dist(p, o[0])
+                if d < (best?.1 ?? .infinity) { best = (s.id, d) }
+                continue
+            }
             guard o.count >= 2 else { continue }
             for i in 0..<(s.isClosed ? o.count : o.count - 1) {
                 let d = distanceToSegment(p, o[i], o[(i + 1) % o.count])
@@ -686,6 +696,7 @@ final class SketchSession {
         case .fillet: return "R \(fmt(filletRadius)) mm"
         case .chamfer: return "Smusso \(fmt(chamferDistance)) mm"
         case .offset: return offsetSource == nil ? nil : "Offset \(fmt(offsetDistance)) mm"
+        case .point: return xy
         case .select, .dimension, .trim, .extend, .mirror: return nil
         }
     }
@@ -740,6 +751,11 @@ final class SketchSession {
             switch s.kind {
             case let .circle(c, _): out += cross(c, size: vertexSnap * 0.35, color: color)
             case let .slot(a, b, _): out += cross(a, size: vertexSnap * 0.35, color: color) + cross(b, size: vertexSnap * 0.35, color: color)
+            case let .polyline(pts, _) where pts.count == 1:
+                // A sketch point: a bigger cross in a small square.
+                let q = pts[0], r = vertexSnap * 0.35
+                out += cross(q, size: vertexSnap * 0.55, color: color)
+                ring([Vec2(q.x - r, q.y - r), Vec2(q.x + r, q.y - r), Vec2(q.x + r, q.y + r), Vec2(q.x - r, q.y + r)], closed: true, color)
             case .polyline, .rectangle, .polygon: for p in s.outline { out += cross(p, size: vertexSnap * 0.3, color: color) }
             case .arc: out += cross(s.point(0)!, size: vertexSnap * 0.35, color: color * SIMD4(1, 1, 1, 0.6))
                 for i in [1, 2] { out += cross(s.point(i)!, size: vertexSnap * 0.3, color: color) }

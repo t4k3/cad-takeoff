@@ -142,6 +142,8 @@ final class HolePlacement {
     private static func keyPoints(_ shape: SketchShape) -> [(Vec2, String)] {
         func mid(_ a: Vec2, _ b: Vec2) -> Vec2 { Vec2((a.x + b.x) / 2, (a.y + b.y) / 2) }
         switch shape.kind {
+        case let .polyline(p, _) where p.count == 1:
+            return [(p[0], "Punto schizzo")]
         case let .polyline(p, closed):
             let segs = closed ? Array(zip(p, p.dropFirst() + p.prefix(1))) : Array(zip(p, p.dropFirst()))
             return p.map { ($0, "Estremità schizzo") } + segs.map { (mid($0, $1), "Punto medio schizzo") }
