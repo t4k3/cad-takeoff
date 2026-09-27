@@ -136,9 +136,6 @@ public struct HoleSpec: Codable, Sendable, Equatable {
         for (i, a) in centers.enumerated() where centers[..<i].contains(where: { ($0 - a).length < 1e-3 }) {
             throw KernelError.invalidParameter("foro: centro \(i + 1) ripetuto")
         }
-        guard fit != .modeledThread else {
-            throw KernelError.invalidParameter("filetto modellato non ancora disponibile: usa «Filettatura indicata» (preforo per maschio) o «Inserto a caldo»")
-        }
     }
 
     private func fmt(_ v: Double) -> String { String(format: v == v.rounded() ? "%.0f" : "%.2f", v) }
@@ -261,8 +258,8 @@ public enum HoleGeometry {
                 }
             } else {
                 if threadFace == nil {
-                    threadFace = face("thread", .cylinder(axisOrigin: center, axisDirection: axis,
-                                                          radius: (spec.screw?.diameter ?? spec.boreDiameter) / 2))
+                    // A helical surface, not a cylinder: exported as its facets (STEP keeps the thread).
+                    threadFace = face("thread", .freeform)
                 }
                 f = threadFace!
             }

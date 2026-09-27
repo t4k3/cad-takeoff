@@ -215,7 +215,7 @@ final class HolePlacement {
 @MainActor
 enum HoleCommand {
     static let styles = HoleSpec.Style.allCases
-    static let fits: [HoleSpec.Fit] = [.clearance, .tapped, .heatInsert, .manual]   // modelled thread: not yet
+    static let fits: [HoleSpec.Fit] = [.clearance, .tapped, .modeledThread, .heatInsert, .manual]
     static let sizes = MetricScrew.all.map(\.name)
 
     /// Opens the Hole panel: new hole, or edit of an existing one.
@@ -236,7 +236,7 @@ enum HoleCommand {
             [
                 .init(id: "style", label: "Tipo", kind: .choice(styles.map(\.label)), value: .index(styles.firstIndex(of: s.style) ?? 0)),
                 .init(id: "fit", label: "Uso", kind: .choice(fits.map(\.label)), value: .index(fits.firstIndex(of: s.fit) ?? 0),
-                      help: "Passaggio vite: la vite scorre. Filettatura indicata: preforo per maschiare o autofilettante. Inserto a caldo: foro per inserti filettati (verifica il produttore)."),
+                      help: "Passaggio vite: la vite scorre. Filettatura indicata: preforo per maschiare o autofilettante. Filetto modellato: il filetto ISO vero, visibile e stampabile (in FDM affidabile da M6; la compensazione allarga il filetto). Inserto a caldo: foro per inserti filettati (verifica il produttore)."),
                 // A free diameter has no screw size; a screw size has no free diameter.
                 .init(id: "size", label: "Vite", kind: .choice(sizes), value: .index(sizes.firstIndex(of: s.size ?? "M3") ?? 2),
                       isHidden: s.fit == .manual),

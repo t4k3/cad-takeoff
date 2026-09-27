@@ -614,7 +614,6 @@ extension DesignModel: CADToolProvider {
             return v
         }
         let fit: HoleSpec.Fit = try pick("fit", .clearance)
-        guard fit != .modeledThread else { throw CADToolFailure("Filetto modellato non ancora disponibile: usa tapped o heatInsert.") }
         return HoleSpec(centers: centers, direction: dir, style: try pick("style", .simple), fit: fit,
                         size: fit == .manual ? nil : (args["size"] == nil ? "M3" : try string(args, "size")),
                         diameter: args["diameter"] == nil ? 3 : try number(args, "diameter"),

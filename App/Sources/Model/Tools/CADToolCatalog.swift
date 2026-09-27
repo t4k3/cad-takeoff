@@ -40,7 +40,7 @@ enum CADToolCatalog {
                  ["centers": ["type": "array", "minItems": 1, "maxItems": 200, "items": position],
                   "direction": position,
                   "style": ["type": "string", "enum": ["simple", "counterbore", "countersink"]],
-                  "fit": ["type": "string", "enum": ["clearance", "tapped", "heatInsert", "manual"]],
+                  "fit": ["type": "string", "enum": ["clearance", "tapped", "heatInsert", "modeledThread", "manual"]],
                   "size": ["type": "string", "enum": .array(MetricScrew.all.map { .string($0.name) })],
                   "diameter": number, "depth": number,
                   "print_allowance": ["type": "number", "minimum": 0, "maximum": 2],

@@ -54,9 +54,21 @@ private func drilled(_ spec: HoleSpec) -> (Mesh, [DesignEvaluator.Issue], BodySn
     #expect(abs(mesh.volume - (16000 - ngon(3) * 15)) < 1e-3)
 }
 
-@Test func modeledThreadIsReportedAsNotYetAvailable() {
-    let (_, issues, _) = drilled(HoleSpec(centers: [Vec3(0, 0, 10)], fit: .modeledThread, size: "M6", depth: 8))
-    #expect(issues.count == 1 && issues[0].message.contains("non ancora disponibile"))
+@Test func modeledThreadM6IsARealPrintableThread() {
+    // M6 × 1, 8 deep: between the minor bore (Ø4.92) and the major diameter (Ø6) of material
+    // removed, the ISO 60° teeth on the 1 mm pitch in between; the part closed for printing.
+    let spec = HoleSpec(centers: [Vec3(0, 0, 10)], fit: .modeledThread, size: "M6", depth: 8)
+    let (mesh, issues, snap) = drilled(spec)
+    #expect(issues.isEmpty, "\(issues)")
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    let removed = 16000 - mesh.volume
+    let minor = Double.pi * pow(spec.boreDiameter / 2, 2) * 8, major = Double.pi * pow(6.0 / 2 + spec.printAllowance / 2, 2) * 8
+    #expect(removed > minor && removed < major, "\(removed) between \(minor) and \(major)")
+    // The thread's wall is its own (freeform) face: not a smooth cylinder in STEP.
+    #expect(snap?.faces.contains { $0.id.rawValue.contains("/thread") && $0.surface == .freeform } == true)
+    // The helix: points of the wall at different radii around the same height.
+    let radii = mesh.vertices.filter { abs($0.z - 6) < 0.05 && hypot($0.x, $0.y) < 3.5 }.map { hypot($0.x, $0.y) }
+    #expect((radii.max() ?? 0) - (radii.min() ?? 0) > 0.4)
 }
 
 @Test func throughHoleOnTallPartStaysClosed() {

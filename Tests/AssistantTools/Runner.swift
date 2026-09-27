@@ -158,8 +158,10 @@ struct AssistantToolsTests {
         expect(!holes.isError && holeInfo.structured?["body_count"]?.number == 1, "holes modify the plate")
         expect(abs((holeInfo.structured?["mesh_volume_mm3"]?.number ?? 0) - expectedHoles) < 1e-2, "counterbore volumes removed")
         expect(holeInfo.structured?["edge_closed"]?.bool == true, "drilled plate closed")
-        let thread = await edit("add_hole", ["centers": .array([["x": 0, "y": 0, "z": 5]]), "fit": "modeledThread", "size": "M6"])
-        expect(thread.isError, "modelled thread not offered yet")
+        let thread = await edit("add_hole", ["centers": .array([["x": 0, "y": 0, "z": 5]]), "fit": "modeledThread", "size": "M6", "depth": 4])
+        expect(!thread.isError, "modelled thread: \(thread.text)")
+        let threaded = await m.call("scene_info", arguments: [:])
+        expect(threaded.structured?["edge_closed"]?.bool == true, "threaded part closed")
         // Chamfer tool: 1 mm on the top edges of a plate.
         m.newDesign()
         let plateID = (await edit("add_box", ["width": 40, "depth": 30, "height": 5, "name": "Piastra"])).structured?["feature_id"]?.string ?? ""
