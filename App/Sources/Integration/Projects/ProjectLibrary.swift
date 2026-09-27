@@ -16,12 +16,17 @@ final class ProjectLibrary {
         let modified: Date
         var id: URL { url }
         var name: String { isFolder ? url.lastPathComponent : url.deletingPathExtension().lastPathComponent }
+        /// A circuit (CIRCUITI, .ftkc) rather than a part.
+        var isCircuit: Bool { !isFolder && url.pathExtension == "ftkc" }
         var thumbnailURL: URL {
             url.deletingLastPathComponent().appendingPathComponent(".thumbnails/\(url.lastPathComponent).png")
         }
     }
 
     static let designExtension = "ftk"
+    static let circuitExtension = "ftkc"
+    /// Parts and circuits: what the Home lists.
+    static func isDocument(_ url: URL) -> Bool { [designExtension, circuitExtension].contains(url.pathExtension) }
     private static let bookmarkKey = "projects.rootBookmark"
     private static let recentsKey = "projects.recents"
 
@@ -116,7 +121,7 @@ final class ProjectLibrary {
         return urls.compactMap { url -> Item? in
             let v = try? url.resourceValues(forKeys: Set(keys))
             let isFolder = v?.isDirectory ?? false
-            guard isFolder || url.pathExtension == Self.designExtension else { return nil }
+            guard isFolder || Self.isDocument(url) else { return nil }
             return Item(url: url, isFolder: isFolder, modified: v?.contentModificationDate ?? .distantPast)
         }
         .sorted { ($0.isFolder ? 0 : 1, $0.name.localizedLowercase) < ($1.isFolder ? 0 : 1, $1.name.localizedLowercase) }
@@ -129,7 +134,7 @@ final class ProjectLibrary {
               let e = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.contentModificationDateKey],
                                                      options: [.skipsHiddenFiles]) else { return [] }
         return e.compactMap { $0 as? URL }
-            .filter { $0.pathExtension == Self.designExtension && $0.deletingPathExtension().lastPathComponent.localizedCaseInsensitiveContains(text) }
+            .filter { Self.isDocument($0) && $0.deletingPathExtension().lastPathComponent.localizedCaseInsensitiveContains(text) }
             .map { Item(url: $0, isFolder: false,
                         modified: (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) }
             .sorted { $0.modified > $1.modified }
@@ -164,7 +169,7 @@ final class ProjectLibrary {
     func rename(_ item: Item, to newName: String) {
         run {
             let dest = item.url.deletingLastPathComponent()
-                .appendingPathComponent(clean(newName) + (item.isFolder ? "" : ".\(Self.designExtension)"))
+                .appendingPathComponent(clean(newName) + (item.isFolder ? "" : ".\(item.url.pathExtension)"))
             guard dest != item.url else { return }
             guard !FileManager.default.fileExists(atPath: dest.path) else { throw LibraryError.exists(dest.lastPathComponent) }
             try FileManager.default.moveItem(at: item.url, to: dest)
@@ -181,7 +186,7 @@ final class ProjectLibrary {
     func duplicate(_ item: Item) {
         run {
             let dest = uniqueURL(item.url.deletingLastPathComponent().appendingPathComponent(
-                item.name + " copia" + (item.isFolder ? "" : ".\(Self.designExtension)")))
+                item.name + " copia" + (item.isFolder ? "" : ".\(item.url.pathExtension)")))
             try FileManager.default.copyItem(at: item.url, to: dest)
             if !item.isFolder, FileManager.default.fileExists(atPath: item.thumbnailURL.path) {
                 try? FileManager.default.copyItem(at: item.thumbnailURL, to: Item(url: dest, isFolder: false, modified: .now).thumbnailURL)
@@ -314,6 +319,44 @@ final class ProjectLibrary {
             markSaved(url, model: model)
             showHome = false
         }
+    }
+
+    /// New empty circuit saved right away in `folder`, then shown in CIRCUITI.
+    func newCircuit(in folder: URL, circuits: CircuitModel) {
+        guard circuits.confirmDiscard() else { return }
+        run {
+            let url = uniqueURL(folder.appendingPathComponent("Nuovo circuito.\(Self.circuitExtension)"))
+            try circuits.newCircuit(name: url.deletingPathExtension().lastPathComponent)
+            try circuits.save(to: url)
+            noteRecent(url)
+            showHome = false
+        }
+    }
+
+    /// A circuit of the library opened in CIRCUITI (the one open asked to be saved first).
+    func openCircuit(_ url: URL, circuits: CircuitModel, then show: @escaping () -> Void) {
+        guard circuits.url != url else { showHome = false; show(); return }
+        guard circuits.confirmDiscard() else { return }
+        Task { [weak self] in
+            do {
+                try await circuits.open(url)
+                self?.noteRecent(url)
+                self?.showHome = false
+                show()
+            } catch let e as CircuitEditError where e.isSuperseded {
+            } catch {
+                self?.lastError = "Circuito non aperto: \(CircuitModel.describe(error))"
+            }
+        }
+    }
+
+    /// In «Recenti» (parts do it when they become the current design).
+    func noteRecent(_ url: URL) {
+        var r = UserDefaults.standard.stringArray(forKey: Self.recentsKey) ?? []
+        r.removeAll { $0 == url.path }
+        r.insert(url.path, at: 0)
+        UserDefaults.standard.set(Array(r.prefix(12)), forKey: Self.recentsKey)
+        touch()
     }
 
     func open(_ url: URL, model: DesignModel) {

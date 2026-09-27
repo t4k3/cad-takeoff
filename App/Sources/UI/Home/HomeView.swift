@@ -5,6 +5,8 @@ import SwiftUI
 struct HomeView: View {
     @Environment(ProjectLibrary.self) private var library
     @Environment(DesignModel.self) private var model
+    @Environment(CircuitModel.self) private var circuits
+    @Environment(WorkspaceState.self) private var workspace
     @State private var project: URL?
     @State private var path: [URL] = []           // folders below the project
     @State private var query = ""
@@ -116,13 +118,21 @@ struct HomeView: View {
         HStack(spacing: 10) {
             breadcrumb
             Spacer()
-            TextField("Cerca disegni", text: $query).textFieldStyle(.roundedBorder).frame(width: 200)
+            TextField("Cerca pezzi e circuiti", text: $query).textFieldStyle(.roundedBorder).frame(width: 200)
             Button { newName = "Nuova cartella"; creatingFolder = true } label: { Label("Nuova cartella", systemImage: "folder.badge.plus") }
                 .disabled(folder == nil)
-            Button { if let f = folder { library.newDesign(in: f, model: model) } } label: { Label("Nuovo disegno", systemImage: "plus.square") }
-                .buttonStyle(.borderedProminent)
-                .disabled(folder == nil)
-                .help(folder == nil ? "Scegli prima un progetto" : "Crea un disegno in questa cartella")
+            // Nuovo: a part or a circuit, chosen here (circuits no longer go through a part).
+            Menu {
+                Button { newPart() } label: { Label("Pezzo 3D", systemImage: "cube") }
+                Button { newCircuit() } label: { Label("Circuito", systemImage: "cpu") }
+            } label: {
+                Label("Nuovo", systemImage: "plus.square")
+            } primaryAction: { newPart() }
+            .menuStyle(.button)
+            .buttonStyle(.borderedProminent)
+            .fixedSize()
+            .disabled(folder == nil)
+            .help(folder == nil ? "Scegli prima un progetto" : "Crea in questa cartella un pezzo 3D (clic) o, dal menu, un circuito")
             if library.currentURL != nil || !model.document.features.isEmpty {
                 Button { library.showHome = false } label: { Label("Torna a «\(library.currentName)»", systemImage: "cube") }
                     .keyboardShortcut(.cancelAction)
@@ -167,7 +177,10 @@ struct HomeView: View {
                         Button("Crea il primo progetto") { newName = "Il mio progetto"; creatingProject = true }
                             .buttonStyle(.borderedProminent)
                     } else if folder != nil {
-                        Button("Nuovo disegno") { if let f = folder { library.newDesign(in: f, model: model) } }
+                        HStack {
+                            Button("Nuovo pezzo 3D") { newPart() }
+                            Button("Nuovo circuito") { newCircuit() }
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -175,7 +188,7 @@ struct HomeView: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 180, maximum: 230), spacing: 16)], spacing: 16) {
                         ForEach(items) { item in
-                            ItemCard(item: item, isCurrent: item.url == library.currentURL,
+                            ItemCard(item: item, isCurrent: item.url == library.currentURL || item.url == circuits.url,
                                      subtitle: project == nil ? library.project(of: item.url) : nil)
                                 .onTapGesture(count: 2) { open(item) }
                                 .contextMenu { itemMenu(item) }
@@ -230,9 +243,24 @@ struct HomeView: View {
         if item.isFolder {
             if project == nil || !(item.url.path.hasPrefix(project!.path)) { project = item.url; path = [] }
             else if item.url != project { path.append(item.url) }
+        } else if item.isCircuit {
+            library.openCircuit(item.url, circuits: circuits) { [workspace] in workspace.tab = .circuits }
         } else {
             library.open(item.url, model: model)
+            if workspace.tab == .circuits { workspace.tab = .solid }
         }
+    }
+
+    private func newPart() {
+        guard let f = folder else { return }
+        library.newDesign(in: f, model: model)
+        if workspace.tab == .circuits { workspace.tab = .solid }
+    }
+
+    private func newCircuit() {
+        guard let f = folder else { return }
+        library.newCircuit(in: f, circuits: circuits)
+        if !library.showHome { workspace.tab = .circuits }
     }
 }
 
@@ -253,6 +281,8 @@ private struct ItemCard: View {
                 Theme.Palette.panelRaised
                 if item.isFolder {
                     Image(systemName: "folder.fill").font(.system(size: 54)).foregroundStyle(Theme.Palette.sketch.opacity(0.8))
+                } else if item.isCircuit {
+                    Image(systemName: "cpu").font(.system(size: 48)).foregroundStyle(Theme.Palette.accent.opacity(0.8))
                 } else if let img = NSImage(contentsOf: item.thumbnailURL) {
                     Image(nsImage: img).resizable().scaledToFit().padding(8)
                 } else {
@@ -278,6 +308,6 @@ private struct ItemCard: View {
         .shadow(color: .black.opacity(hovering ? 0.18 : 0.06), radius: hovering ? 8 : 3, y: 2)
         .onHover { hovering = $0 }
         .contentShape(Rectangle())
-        .help(item.isFolder ? "Doppio clic per aprire la cartella" : "Doppio clic per aprire il disegno")
+        .help(item.isFolder ? "Doppio clic per aprire la cartella" : item.isCircuit ? "Doppio clic per aprire il circuito in CIRCUITI" : "Doppio clic per aprire il disegno")
     }
 }
