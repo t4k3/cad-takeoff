@@ -1,0 +1,111 @@
+import CADCore
+import SwiftUI
+
+/// «Giunto» (Fusion's Joint): click where the moving part grips (the rim of its hole or shaft, a
+/// face), then where it goes on the other part; choose rigid, rotation or sliding and the angle or
+/// travel. The first part moves; live preview; one undo step.
+@MainActor
+enum JointCommand {
+    static func start(workspace: WorkspaceState, model: DesignModel) -> CommandSession {
+        workspace.selectionFilter = .edge
+        workspace.geoSelection = []
+        workspace.edgePicking = true
+        weak var session: CommandSession?
+
+        /// The two grips: body and world frame, from the picked edges or faces (two bodies).
+        func grips() -> [(body: DesignEvaluator.Body, origin: Vec3, axis: Vec3)] {
+            let bodies = model.evaluation().bodies
+            var out: [(DesignEvaluator.Body, Vec3, Vec3)] = []
+            for ref in workspace.geoSelection {
+                guard let b = bodies.first(where: { $0.id == ref.feature }), !out.contains(where: { $0.0.id == b.id }) else { continue }
+                let frame: (origin: Vec3, axis: Vec3)?
+                switch ref.kind {
+                case let .edge(id): frame = b.snapshot.edges.first { $0.id == id }.flatMap(JointFrame.from(edge:))
+                case let .face(id): frame = JointFrame.from(face: id, in: b.snapshot)
+                default: frame = nil
+                }
+                if let frame { out.append((b, frame.origin, frame.axis)) }
+                if out.count == 2 { break }
+            }
+            return out
+        }
+        func feature(_ f: [CommandField]) -> Feature? {
+            let g = grips()
+            guard g.count == 2 else { return nil }
+            let kind: JointSpec.Kind = if case let .index(i)? = f.first(where: { $0.id == "kind" })?.value { JointSpec.Kind.allCases[i] } else { .revolute }
+            let flip = if case let .flag(b)? = f.first(where: { $0.id == "flip" })?.value { b } else { false }
+            // Points and axes in each part's own coordinates, so the joint follows the parts.
+            let m = g[0].body.placement.inverse, x = g[1].body.placement.inverse
+            let spec = JointSpec(kind: kind, moving: g[0].body.id, movingOrigin: m.point(g[0].origin), movingAxis: m.direction(g[0].axis),
+                                 fixed: g[1].body.id, fixedOrigin: x.point(g[1].origin), fixedAxis: x.direction(g[1].axis),
+                                 angle: f.first { $0.id == "angle" }?.number ?? 0, offset: f.first { $0.id == "offset" }?.number ?? 0, flip: flip)
+            return Feature(name: "Giunto \(model.document.features.count + 1)", kind: .joint(spec))
+        }
+        func preview(_ f: [CommandField]) {
+            let g = grips()
+            let names = g.map { $0.body.source.name }
+            session?.update("what") {
+                $0.label = switch g.count {
+                case 0: "Clicca dove si aggancia il pezzo che si muove (il bordo del foro o dell'albero, o una faccia)."
+                case 1: "«\(names[0])» si muove: ora clicca dove va, sull'altro pezzo."
+                default: "«\(names[0])» → «\(names[1])»"
+                }
+            }
+            guard let joint = feature(f) else { workspace.requestPreview(nil); return }
+            var doc = model.document
+            doc.features.append(joint)
+            workspace.requestPreview(doc)
+        }
+        func finish() {
+            workspace.onGeoSelectionChange = nil
+            workspace.edgePicking = false
+            workspace.requestPreview(nil)
+        }
+        let created = CommandSession(
+            title: "Giunto", symbol: "link",
+            fields: [
+                .init(id: "what", label: "", kind: .note(warning: false), value: .flag(false)),
+                .init(id: "kind", label: "Tipo", kind: .choice(JointSpec.Kind.allCases.map(\.label)), value: .index(1),
+                      help: "Rigido: fermo. Rotazione: gira attorno all'asse. Scorrimento: scorre lungo l'asse. Cilindrico: tutte e due"),
+                .init(id: "angle", label: "Angolo", kind: .angle(-360...360), value: .number(0)),
+                .init(id: "offset", label: "Corsa", kind: .length(-10_000...10_000), value: .number(0), help: "Per scorrimento e cilindrico"),
+                .init(id: "flip", label: "Inverti verso", kind: .toggle, value: .flag(false), help: "Il pezzo dall'altra parte dell'asse"),
+            ],
+            onPreview: preview,
+            onCommit: { f in
+                defer { finish() }
+                guard let joint = feature(f) else { model.statusMessage = "Clicca due punti su due pezzi diversi."; return }
+                model.edit("Giunto", selected: .some(joint.id), changed: [joint.id]) { $0.features.append(joint) }
+                workspace.geoSelection = []
+            },
+            onCancel: { finish() })
+        session = created
+        workspace.onGeoSelectionChange = { preview(created.fields) }
+        preview(created.fields)
+        return created
+    }
+
+    /// An existing joint: its type, angle, travel and side (the grips stay).
+    static func edit(_ original: Feature, model: DesignModel) -> CommandSession? {
+        guard case let .joint(spec) = original.kind else { return nil }
+        func apply(_ f: [CommandField]) {
+            guard let i = model.document.features.firstIndex(where: { $0.id == original.id }) else { return }
+            var s = spec
+            if case let .index(k)? = f.first(where: { $0.id == "kind" })?.value { s.kind = JointSpec.Kind.allCases[k] }
+            s.angle = f.first { $0.id == "angle" }?.number ?? s.angle
+            s.offset = f.first { $0.id == "offset" }?.number ?? s.offset
+            if case let .flag(b)? = f.first(where: { $0.id == "flip" })?.value { s.flip = b }
+            model.document.features[i].kind = .joint(s)
+        }
+        return CommandSession(
+            title: "Modifica \(original.name)", symbol: "link",
+            fields: [.init(id: "kind", label: "Tipo", kind: .choice(JointSpec.Kind.allCases.map(\.label)), value: .index(JointSpec.Kind.allCases.firstIndex(of: spec.kind) ?? 1)),
+                     .init(id: "angle", label: "Angolo", kind: .angle(-360...360), value: .number(spec.angle)),
+                     .init(id: "offset", label: "Corsa", kind: .length(-10_000...10_000), value: .number(spec.offset)),
+                     .init(id: "flip", label: "Inverti verso", kind: .toggle, value: .flag(spec.flip))],
+            onPreview: apply, onCommit: apply,
+            onCancel: {
+                if let i = model.document.features.firstIndex(where: { $0.id == original.id }) { model.document.features[i] = original }
+            })
+    }
+}

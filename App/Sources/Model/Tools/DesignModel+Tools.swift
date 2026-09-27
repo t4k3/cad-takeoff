@@ -170,6 +170,11 @@ extension DesignModel: CADToolProvider {
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
                 case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
+                case var .joint(spec):
+                    legal = ["angle", "offset"]
+                    spec.angle = try optionalNumber(args, "angle", spec.angle)
+                    if args["offset"] != nil { spec.offset = args["offset"]?.number ?? spec.offset }
+                    f.kind = .joint(spec)
                 case var .move(spec):
                     legal = ["angle"]
                     spec.angle = try optionalNumber(args, "angle", spec.angle)
@@ -395,6 +400,13 @@ extension DesignModel: CADToolProvider {
                 value["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
                 value["warnings"] = .array(build.warnings.map { .string($0) })
             }
+        case let .joint(j):
+            value["kind"] = "joint"
+            value["joint_type"] = .string(j.kind.rawValue)
+            value["moving_feature_id"] = .string(j.moving.uuidString)
+            value["fixed_feature_id"] = j.fixed.map { .string($0.uuidString) } ?? .null
+            value["angle"] = .number(j.angle)
+            value["offset"] = .number(j.offset)
         case let .move(m):
             value["kind"] = "move"
             value["translation"] = vector(m.translation)
@@ -594,7 +606,7 @@ extension Feature.Kind {
     /// Features that change or copy bodies made earlier (no mesh of their own to validate).
     var actsOnBodies: Bool {
         switch self {
-        case .pattern, .split, .component, .shell, .move: true
+        case .pattern, .split, .component, .shell, .move, .joint: true
         default: false
         }
     }

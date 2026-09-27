@@ -98,6 +98,9 @@ public enum PrimitiveKernel {
         case let .revolve(spec):
             try spec.validate(holes: feature.holes)
             throw KernelError.invalidParameter("la rivoluzione viene calcolata dal valutatore")
+        case let .joint(spec):
+            try spec.validate()
+            throw KernelError.invalidParameter("il giunto posiziona un pezzo: viene calcolato dal valutatore")
         case let .move(spec):
             try spec.validate()
             throw KernelError.invalidParameter("lo spostamento agisce sui corpi: viene calcolato dal valutatore")

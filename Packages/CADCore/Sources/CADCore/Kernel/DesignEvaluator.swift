@@ -13,6 +13,9 @@ public enum DesignEvaluator {
         public let modifiedBy: [UUID]
         public let mesh: Mesh
         public let snapshot: BodySnapshot
+        /// Where the body's own coordinates are in the design (its placement, then any Sposta or
+        /// joint): joints store their points in own coordinates through its inverse.
+        public var placement: RigidMotion = .identity
         public var isVisible: Bool { source.isVisible }
     }
 
@@ -34,7 +37,12 @@ public enum DesignEvaluator {
     }
 
     /// A body while the history runs.
-    struct Work: Sendable { var source: Feature; var snapshot: BodySnapshot; var solid: CSGSolid?; var mesh: Mesh; var modifiedBy: [UUID] }
+    struct Work: Sendable {
+        var source: Feature; var snapshot: BodySnapshot; var solid: CSGSolid?; var mesh: Mesh; var modifiedBy: [UUID]
+        /// Rigid motion applied after the source placed it (Sposta, giunti): where its own
+        /// coordinates are now is `motion` after the source's placement.
+        var motion: RigidMotion = .identity
+    }
 
     private static func evaluate(_ doc: CADDocument, revision: String, components: ComponentResolver?, depth: Int,
                                  cache: EvaluationCache? = nil,
@@ -148,12 +156,29 @@ public enum DesignEvaluator {
                                 max: Vec3(Swift.max(a.max.x, b.max.x), Swift.max(a.max.y, b.max.y), Swift.max(a.max.z, b.max.z)))
                 }.center
                 let (point, direction) = spec.transform(pivot: centre)
-                for i in targets {
-                    let w = bodies[i]
-                    let m = merged([Placed(mesh: w.mesh, snapshot: w.snapshot, prefix: "", point: point, direction: direction, reflect: false)],
-                                   bodyID: w.source.id, revision: revision)
-                    bodies[i] = Work(source: w.source, snapshot: m.snapshot, solid: nil, mesh: m.mesh, modifiedBy: w.modifiedBy + [feature.id])
+                let motion = RigidMotion(c0: direction(Vec3(1, 0, 0)), c1: direction(Vec3(0, 1, 0)), c2: direction(Vec3(0, 0, 1)), t: point(.zero))
+                for i in targets { bodies[i] = moved(bodies[i], by: motion, feature: feature.id, revision: revision) }
+                continue
+            }
+            if case let .joint(spec) = feature.kind {
+                do { try spec.validate() } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
                 }
+                guard let b = bodies.firstIndex(where: { $0.source.id == spec.moving }) else {
+                    issues.append(.init(featureID: feature.id, message: "Giunto: il pezzo da unire non esiste (deve venire prima nella timeline)."))
+                    continue
+                }
+                var fixedNow: RigidMotion?
+                if let fixed = spec.fixed {
+                    guard let f = bodies.first(where: { $0.source.id == fixed }) else {
+                        issues.append(.init(featureID: feature.id, message: "Giunto: il pezzo di riferimento non esiste (deve venire prima nella timeline)."))
+                        continue
+                    }
+                    fixedNow = f.motion.after(f.source.placementMotion)
+                }
+                let w = bodies[b]
+                let motion = spec.motion(movingNow: w.motion.after(w.source.placementMotion), fixedNow: fixedNow)
+                bodies[b] = moved(w, by: motion, feature: feature.id, revision: revision)
                 continue
             }
             if case let .shell(spec) = feature.kind {
@@ -380,7 +405,8 @@ public enum DesignEvaluator {
         }
         // Bodies reused from the cache carry the revision they were computed at: stamp the current one.
         let out = bodies.map { Body(id: $0.source.id, source: $0.source, modifiedBy: $0.modifiedBy, mesh: $0.mesh,
-                                    snapshot: $0.snapshot.revision == revision ? $0.snapshot : $0.snapshot.stamped(revision)) }
+                                    snapshot: $0.snapshot.revision == revision ? $0.snapshot : $0.snapshot.stamped(revision),
+                                    placement: $0.motion.after($0.source.placementMotion)) }
         return (out, issues)
 
         func solidOf(_ w: Work) -> CSGSolid { w.solid ?? CSGSolid(w.snapshot) }
@@ -422,10 +448,16 @@ public enum DesignEvaluator {
             if !f.holes.isEmpty { return try? PrimitiveKernel.solidWithHoles(f, revision: revision) }
             return (try? PrimitiveKernel.build(f)).map { CSGSolid($0.snapshot(revision: revision)) }
         }
+        /// The body moved rigidly (IDs kept); its motion remembered for later joints.
+        func moved(_ w: Work, by motion: RigidMotion, feature id: UUID, revision: String) -> Work {
+            let m = merged([Placed(mesh: w.mesh, snapshot: w.snapshot, prefix: "", point: motion.point, direction: motion.direction, reflect: false)],
+                           bodyID: w.source.id, revision: revision)
+            return Work(source: w.source, snapshot: m.snapshot, solid: nil, mesh: m.mesh, modifiedBy: w.modifiedBy + [id], motion: motion.after(w.motion))
+        }
         func rebuilt(_ w: Work, _ solid: CSGSolid, by id: UUID, revision: String) -> Work {
             let (mesh, triFace) = solid.triangulated()
             return Work(source: w.source, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: w.source.id, revision: revision),
-                        solid: solid, mesh: mesh, modifiedBy: w.modifiedBy + [id])
+                        solid: solid, mesh: mesh, modifiedBy: w.modifiedBy + [id], motion: w.motion)
         }
     }
 

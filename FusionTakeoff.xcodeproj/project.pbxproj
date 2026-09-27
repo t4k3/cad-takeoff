@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00F4B54DB5EC90153C2FA6BE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */; };
+		05AF0F631125314979E5EABA /* JointCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54EE962FA7CFBEA7427A80E8 /* JointCommand.swift */; };
 		05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */; };
 		0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */; };
 		0E767B03A5E12FC1C9C65E1E /* AssistantSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA831E610F555E8A4BC81923 /* AssistantSession.swift */; };
@@ -137,6 +138,7 @@
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
 		5018C0134761E9A7DB53FF11 /* SketchSession+Edit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SketchSession+Edit.swift"; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
+		54EE962FA7CFBEA7427A80E8 /* JointCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JointCommand.swift; sourceTree = "<group>"; };
 		55A384B92C6A6894EA9A5831 /* SketchSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchSession.swift; sourceTree = "<group>"; };
 		56D04A4DB715945B73E88E2B /* PartColorPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartColorPicker.swift; sourceTree = "<group>"; };
 		57A3CFA4BA9DB66DB41AE96B /* FeatureCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureCommands.swift; sourceTree = "<group>"; };
@@ -343,6 +345,7 @@
 				F565E8DD894590B674296FD8 /* ChamferCommand.swift */,
 				14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
+				54EE962FA7CFBEA7427A80E8 /* JointCommand.swift */,
 				D067A2E9C4BB917828D77F92 /* MoveCommand.swift */,
 				63320AFB5B8D43EF4528E264 /* PatternCommand.swift */,
 				ADF9849BD6F001008766D793 /* PressPullCommand.swift */,
@@ -703,6 +706,7 @@
 				FE2BFC396A55BAC42977CD69 /* HoleCommand.swift in Sources */,
 				6391BD7137C19D938C85F761 /* HomeView.swift in Sources */,
 				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
+				05AF0F631125314979E5EABA /* JointCommand.swift in Sources */,
 				BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */,
 				5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */,
 				9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */,
@@ -837,7 +841,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.127;
+				MARKETING_VERSION = 0.1.128;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -900,7 +904,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.127;
+				MARKETING_VERSION = 0.1.128;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

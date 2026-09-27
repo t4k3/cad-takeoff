@@ -80,6 +80,9 @@ struct Ribbon: View {
                 .help("Inserisci un altro disegno del progetto come componente (si aggiorna quando il pezzo cambia)")
             Button { workspace.showBOM = true } label: { Label("Distinta", systemImage: "list.number") }
                 .help("Distinta base dell'assieme: pezzi, quantità, materiali, volumi")
+            Button { workspace.startJoint(model: model) } label: { Label("Giunto", systemImage: "link") }
+                .disabled(model.document.features.count < 2)
+                .help("Unisci due pezzi: clicca il bordo del foro o dell'albero sul pezzo che si muove, poi dove va; rigido, rotazione o scorrimento")
             Button { workspace.showInterference = true } label: { Label("Interferenze", systemImage: "exclamationmark.triangle") }
                 .disabled(model.document.features.count < 2)
                 .help("Controlla quali corpi e componenti si compenetrano, e di quanto")

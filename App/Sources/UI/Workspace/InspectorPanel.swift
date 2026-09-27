@@ -142,6 +142,15 @@ struct InspectorPanel: View {
                 if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
             }
             .controlSize(.small)
+        case let .joint(spec):
+            info("Tipo", spec.kind.label)
+            info("Pezzi", [spec.moving, spec.fixed].compactMap { id in id.flatMap { i in model.document.features.first { $0.id == i }?.name } }.joined(separator: " → "))
+            if spec.kind != .slider {
+                DimensionField(title: "Angolo", value: Binding(get: { spec.angle }, set: { var j = spec; j.angle = $0; kind.wrappedValue = .joint(j) }), unit: "°")
+            }
+            if spec.kind == .slider || spec.kind == .cylindrical {
+                DimensionField(title: "Corsa", value: Binding(get: { spec.offset }, set: { var j = spec; j.offset = $0; kind.wrappedValue = .joint(j) }))
+            }
         case let .move(spec):
             info("Corpi", spec.bodies.compactMap { id in model.document.features.first { $0.id == id }?.name }.joined(separator: ", ").ifEmpty("—"))
             info("Spostamento", String(format: "%.2f · %.2f · %.2f mm", spec.translation.x, spec.translation.y, spec.translation.z))

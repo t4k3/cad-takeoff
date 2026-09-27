@@ -228,6 +228,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case shell(ShellSpec)
         /// Bodies moved and turned (Sposta).
         case move(MoveSpec)
+        /// A part placed against another by a joint (Giunto).
+        case joint(JointSpec)
     }
 
     public var id: UUID
@@ -313,7 +315,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case .pattern: return Mesh(vertices: [], indices: [])   // copies of another body
         case .split: return Mesh(vertices: [], indices: [])     // acts on another body
         case .revolve: return Mesh()                            // built above
-        case .shell, .move: return Mesh()                       // act on other bodies
+        case .shell, .move, .joint: return Mesh()               // act on other bodies
         }
         return local.translated(by: position)
     }
