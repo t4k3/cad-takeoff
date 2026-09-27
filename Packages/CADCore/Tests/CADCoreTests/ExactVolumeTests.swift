@@ -21,4 +21,12 @@ import Testing
     let v = DesignEvaluator.exactVolumes(CADDocument(features: [cyl, box]), revision: "c")
     #expect(abs(v[cyl.id]! - .pi * 49 * 12) / (.pi * 49 * 12) < 1e-6)
     #expect(abs(v[box.id]! - 6000) < 1e-9)
+    // Face areas: the cylinder's wall 2π·7·12, its top π·49; the box's sides exact.
+    let m = DesignEvaluator.exactMeasures(CADDocument(features: [cyl, box]), revision: "a")
+    let faces = DesignEvaluator.evaluate(CADDocument(features: [cyl]), revision: "f").bodies[0].snapshot.faces
+    let wall = try #require(faces.first { if case .cylinder = $0.surface { true } else { false } })
+    let top = try #require(faces.first { if case let .plane(_, n) = $0.surface { n.z > 0.5 } else { false } })
+    #expect(abs(m.faceAreas[cyl.id]![wall.id]! - 2 * .pi * 7 * 12) / (2 * .pi * 84) < 1e-6)
+    #expect(abs(m.faceAreas[cyl.id]![top.id]! - .pi * 49) / (.pi * 49) < 1e-6)
+    #expect(abs(wall.area - 2 * .pi * 7 * 12) / (2 * .pi * 84) > 1e-4)
 }

@@ -92,8 +92,9 @@ final class DesignModel {
     /// edges (the same names), so selection and commands do not notice.
     private(set) var screenSnapshot: (revision: String, factor: Int, snapshot: DesignSnapshot)?
     @ObservationIgnored private var screenTask: Task<Void, Never>?
-    /// Volumes on the true surfaces (CADCore ExactVolume), per revision, computed in the background.
-    private(set) var exactVolumes: (revision: String, volumes: [UUID: Double])?
+    /// Volumes and face areas on the true surfaces (CADCore ExactVolume), per revision, computed in
+    /// the background.
+    private(set) var exactMeasures: (revision: String, measures: DesignEvaluator.ExactMeasures)?
     @ObservationIgnored private var exactTask: Task<Void, Never>?
     @ObservationIgnored private var screenWanted = 1
     private let screenCache = EvaluationCache(capacity: 6)
@@ -109,22 +110,28 @@ final class DesignModel {
 
     /// The body's volume on its true surfaces, once computed for this revision (nil meanwhile).
     func exactVolume(of body: UUID) -> Double? {
-        guard let e = exactVolumes, e.revision == designRevision else { return nil }
-        return e.volumes[body]
+        guard let e = exactMeasures, e.revision == designRevision else { return nil }
+        return e.measures.volumes[body]
+    }
+
+    /// A face's area on its true surface, once computed for this revision.
+    func exactArea(of face: FaceID, in body: UUID) -> Double? {
+        guard let e = exactMeasures, e.revision == designRevision else { return nil }
+        return e.measures.faceAreas[body]?[face]
     }
 
     /// Computes the exact volumes of this revision off the main thread (the design evaluated
     /// once more, twice as fine).
     func requestExactVolumes() {
-        if exactVolumes?.revision == designRevision { return }
+        if exactMeasures?.revision == designRevision { return }
         exactTask?.cancel()
         let doc = document, revision = designRevision, components = componentResolver, coarse = evaluation().bodies, cache = screenCache
         exactTask = Task { [weak self] in
-            let volumes = await Task.detached(priority: .utility) {
-                DesignEvaluator.exactVolumes(doc, revision: revision, components: components, coarse: coarse, cache: cache)
+            let measures = await Task.detached(priority: .utility) {
+                DesignEvaluator.exactMeasures(doc, revision: revision, components: components, coarse: coarse, cache: cache)
             }.value
             guard !Task.isCancelled, let self, self.designRevision == revision else { return }
-            self.exactVolumes = (revision, volumes)
+            self.exactMeasures = (revision, measures)
         }
     }
 

@@ -94,7 +94,9 @@ lo cancellano, (4·V₂ₙ − Vₙ)/3: albero forato 2·10⁻⁷ relativo alla 
 da sole 1,6·10⁻³), entro 10⁻⁶ a ogni risoluzione. Il pannello Proprietà mostra il volume esatto,
 calcolato in background per revisione (≈ quello delle faccette nel frattempo). Misure: i bordi
 tondi danno Ø, centro e asse dal cerchio esatto e la lunghezza sull'arco vero (2πr per un cerchio
-intero, prima il 64-gono); gli spigoli dritti da capo a capo. Da fare: aree esatte delle facce.
+intero, prima il 64-gono); gli spigoli dritti da capo a capo. Le aree delle facce si estrapolano
+come i volumi (i nomi delle facce sono gli stessi a ogni risoluzione): parete e coperchio di un
+cilindro entro 10⁻⁶; il riquadro delle misure le mostra appena pronte (≈ prima). **Tappa 3 chiusa.**
 
 Intersezione faccia–faccia analitica dove esiste in forma chiusa (piano con piano, cilindro,
 cono, sfera, toro; cilindri coassiali o paralleli), numerica con tolleranza per le altre coppie

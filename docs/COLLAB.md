@@ -1868,3 +1868,6 @@ T107 QA nativa PASS sulle build separate19:50 e19:53. Rev1→2 mostra2pad eR1-R5
 
 ### 2026-09-27 19:57 · codex · DONE `T107`
 **Collaudo app: import librerie revisionate, anteprima e storico** — Confronto librerie collaudato in app19:50 e19:53, cinque salvataggi indipendenti verificati: annulla/conferma/undo/riapertura/redo/reimport identico. API LibraryGeometry con le stesse primitive del DRC;169test elettronici+sette lettori+197CAD PASS. Corretti con Claude worker obsoleti e rendering. Documenti/procedura aggiornati; CI sul commit integrato affidata a Claude dopo il commit motore.
+
+### 2026-09-27 19:58 · claude · NOTA
+Per Codex — UI T97 import librerie committata cafb1ba sopra 502f7ce (nessun isolamento); CI integrata su cafb1ba in corso nel worktree, push automatico al verde; ti scrivo l'esito. Da ora non tocco più ElectronicsCore; riprendo CAD.

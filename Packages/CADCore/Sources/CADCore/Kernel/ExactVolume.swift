@@ -19,14 +19,43 @@ extension DesignEvaluator {
         return out
     }
 
-    /// The design evaluated at the current resolution and twice as fine, volumes extrapolated.
-    public static func exactVolumes(_ doc: CADDocument, revision: String, components: ComponentResolver? = nil,
-                                    coarse: [Body]? = nil, cache: EvaluationCache? = nil) -> [UUID: Double] {
+    /// Each face's area the same way (face names are the same at every resolution); a face
+    /// missing at the finer one keeps its facets' area.
+    public static func extrapolatedFaceAreas(coarse: [Body], fine: [Body]) -> [UUID: [FaceID: Double]] {
+        var fineAreas: [UUID: [FaceID: Double]] = [:]
+        for b in fine where fineAreas[b.id] == nil {
+            fineAreas[b.id] = Dictionary(b.snapshot.faces.map { ($0.id, $0.area) }, uniquingKeysWith: { a, _ in a })
+        }
+        var out: [UUID: [FaceID: Double]] = [:]
+        for b in coarse where out[b.id] == nil {
+            var areas: [FaceID: Double] = [:]
+            for f in b.snapshot.faces where areas[f.id] == nil {
+                areas[f.id] = fineAreas[b.id]?[f.id].map { (4 * $0 - f.area) / 3 } ?? f.area
+            }
+            out[b.id] = areas
+        }
+        return out
+    }
+
+    public struct ExactMeasures: Sendable, Equatable {
+        public var volumes: [UUID: Double]
+        public var faceAreas: [UUID: [FaceID: Double]]
+    }
+
+    /// The design evaluated at the current resolution and twice as fine: volumes and face areas
+    /// extrapolated.
+    public static func exactMeasures(_ doc: CADDocument, revision: String, components: ComponentResolver? = nil,
+                                     coarse: [Body]? = nil, cache: EvaluationCache? = nil) -> ExactMeasures {
         let base = Tessellation.factor
         let first = coarse ?? evaluate(doc, revision: revision, components: components).bodies
         let fine = Tessellation.$factor.withValue(base * 2) {
             evaluate(doc, revision: revision + "-x\(base * 2)", components: components, cache: cache).bodies
         }
-        return extrapolatedVolumes(coarse: first, fine: fine)
+        return ExactMeasures(volumes: extrapolatedVolumes(coarse: first, fine: fine), faceAreas: extrapolatedFaceAreas(coarse: first, fine: fine))
+    }
+
+    public static func exactVolumes(_ doc: CADDocument, revision: String, components: ComponentResolver? = nil,
+                                    coarse: [Body]? = nil, cache: EvaluationCache? = nil) -> [UUID: Double] {
+        exactMeasures(doc, revision: revision, components: components, coarse: coarse, cache: cache).volumes
     }
 }

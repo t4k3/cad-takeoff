@@ -560,6 +560,13 @@ struct ViewportContainer: View {
             let faces = workspace.geoSelection.compactMap { ref -> FaceInfo? in
                 if case let .face(id) = ref.kind { viewport.body(ref.feature)?.face(id) } else { nil }
             }
+            // Areas on the true surfaces once computed for this revision (≈ the facets' meanwhile).
+            let exactAreas = workspace.geoSelection.compactMap { ref -> Double? in
+                if case let .face(id) = ref.kind { model.exactArea(of: id, in: ref.feature) } else { nil }
+            }
+            let exact = exactAreas.count == faces.count
+            let areas = exact ? exactAreas : faces.map(\.area)
+            let areaText = { (a: Double) in (exact ? "" : "≈ ") + "\(fmt(a)) mm²" }
             let edges = workspace.geoSelection.compactMap { ref -> EdgeInfo? in
                 if case let .edge(id) = ref.kind { viewport.body(ref.feature)?.edge(id) } else { nil }
             }
@@ -568,32 +575,32 @@ struct ViewportContainer: View {
                     switch face.surface {
                     case let .plane(_, n):
                         Text("Faccia piana").font(.system(size: 11, weight: .semibold))
-                        Text("Area \(fmt(face.area)) mm²")
+                        Text("Area \(areaText(areas[0]))")
                         Text("Normale \(fmt(n.x)) · \(fmt(n.y)) · \(fmt(n.z))")
                     case let .cone(_, _, half):
                         Text("Faccia conica (svasatura)").font(.system(size: 11, weight: .semibold))
                         Text("Angolo \(fmt(2 * half * 180 / .pi))°")
-                        Text("Area \(fmt(face.area)) mm²")
+                        Text("Area \(areaText(areas[0]))")
                     case .freeform:
                         Text("Superficie importata").font(.system(size: 11, weight: .semibold))
-                        Text("Area \(fmt(face.area)) mm²")
+                        Text("Area \(areaText(areas[0]))")
                     case let .sphere(_, r):
                         Text("Faccia sferica (angolo raccordato)").font(.system(size: 11, weight: .semibold))
                         Text("Raggio \(fmt(r)) mm")
-                        Text("Area \(fmt(face.area)) mm²")
+                        Text("Area \(areaText(areas[0]))")
                     case let .torus(_, _, _, minor):
                         Text("Faccia tonda (raccordo)").font(.system(size: 11, weight: .semibold))
                         Text("Raggio \(fmt(minor)) mm")
-                        Text("Area \(fmt(face.area)) mm²")
+                        Text("Area \(areaText(areas[0]))")
                     case let .cylinder(_, axis, r):
                         Text("Faccia cilindrica").font(.system(size: 11, weight: .semibold))
                         Text("Ø \(fmt(2 * r)) mm · R \(fmt(r)) mm")
                         Text("Asse \(fmt(axis.x)) · \(fmt(axis.y)) · \(fmt(axis.z))")
-                        Text("Area \(fmt(face.area)) mm²")
+                        Text("Area \(areaText(areas[0]))")
                     }
                 } else if faces.count > 1 {
                     Text("\(faces.count) facce").font(.system(size: 11, weight: .semibold))
-                    Text("Area totale \(fmt(faces.reduce(0) { $0 + $1.area })) mm²")
+                    Text("Area totale \(areaText(areas.reduce(0, +)))")
                     if faces.count == 2, case let .plane(o1, n1) = faces[0].surface, case let .plane(o2, n2) = faces[1].surface {
                         let ang = acos(max(-1, min(1, n1.dot(n2)))) * 180 / .pi
                         Text("Angolo tra le facce \(fmt(ang))°")
@@ -636,6 +643,7 @@ struct ViewportContainer: View {
             .font(.system(size: 11).monospacedDigit())
             .padding(.horizontal, 8).padding(.vertical, 6)
             .overlayChip()
+            .task(id: "\(model.designRevision)/\(faces.isEmpty)") { if !faces.isEmpty { model.requestExactVolumes() } }
         }
     }
 
