@@ -21,6 +21,9 @@ struct CircuitWorkspace: View {
             }
             .sheet(isPresented: $c.showAddComponent) { AddComponentSheet() }
             .sheet(isPresented: $c.showBoard) { BoardSheet() }
+            .sheet(isPresented: $c.showCreateDevice) { CreateDeviceSheet() }
+            .sheet(isPresented: Binding(get: { circuits.importProposal != nil }, set: { if !$0 { circuits.importProposal = nil } })) { ImportPreviewSheet() }
+            .sheet(isPresented: Binding(get: { circuits.symbolChoice != nil }, set: { if !$0 { circuits.symbolChoice = nil } })) { SymbolChoiceSheet() }
         }
     }
 
@@ -511,6 +514,145 @@ struct BoardSheet: View {
             Text(label)
             TextField("", value: value, format: .number.precision(.fractionLength(0...2))).frame(width: 90)
             Text(unit).foregroundStyle(Theme.Palette.textSecondary)
+        }
+    }
+}
+
+
+/// LIBRERIA › Importa, step 1 for a KiCad symbol library: which symbol.
+struct SymbolChoiceSheet: View {
+    @Environment(CircuitModel.self) private var circuits
+    @State private var name: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Quale simbolo?", systemImage: "list.bullet").font(.headline)
+            if let choice = circuits.symbolChoice {
+                Text(choice.url.lastPathComponent).font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                List(choice.names, id: \.self, selection: $name) { Text($0).tag($0) }.frame(height: 220)
+            }
+            HStack {
+                Spacer()
+                Button("Annulla") { circuits.symbolChoice = nil }.keyboardShortcut(.cancelAction)
+                Button("Anteprima") {
+                    guard let choice = circuits.symbolChoice, let name else { return }
+                    circuits.symbolChoice = nil
+                    circuits.prepareImport(choice.url, symbol: name)
+                }
+                .keyboardShortcut(.defaultAction).disabled(name == nil)
+            }
+        }
+        .padding(16).frame(width: 380, height: 340)
+    }
+}
+
+/// LIBRERIA › Importa, step 2: what comes into the circuit's library and the warnings; nothing
+/// changes until «Importa» (one undo step).
+struct ImportPreviewSheet: View {
+    @Environment(CircuitModel.self) private var circuits
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let p = circuits.importProposal {
+                Label("Importa \(p.fileName)", systemImage: "square.and.arrow.down.on.square").font(.headline)
+                ForEach(p.symbols, id: \.key) { s in
+                    Label("Simbolo \(s.name) · \(s.pins.count) pin", systemImage: "function")
+                }
+                ForEach(p.footprints, id: \.key) { f in
+                    Label("Impronta \(f.name) · \(f.pads.count) piazzole", systemImage: "square.grid.2x2")
+                }
+                if !p.preview.issues.isEmpty {
+                    Text("Da controllare").font(.caption.weight(.semibold)).padding(.top, 4)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(Array(p.preview.issues.enumerated()), id: \.offset) { _, issue in
+                                Label(issue.message, systemImage: issue.severity == .error ? "xmark.octagon" : "exclamationmark.triangle")
+                                    .font(.caption).foregroundStyle(issue.severity == .error ? Color.red : Color.orange)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 140)
+                }
+                Text("Poi LIBRERIA › Nuovo tipo unisce simbolo e impronta in un componente da posare.")
+                    .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+            }
+            Spacer(minLength: 0)
+            HStack {
+                Spacer()
+                Button("Annulla") { circuits.importProposal = nil }.keyboardShortcut(.cancelAction)
+                Button("Importa") { circuits.confirmImport() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(16).frame(width: 460, height: 360)
+    }
+}
+
+/// LIBRERIA › Nuovo tipo: a symbol and a footprint of the circuit's library joined into a
+/// component to place, with the pin ↔ pad pairing the engine suggests (to check on the datasheet).
+struct CreateDeviceSheet: View {
+    @Environment(CircuitModel.self) private var circuits
+    @State private var symbol: LibraryRevision?
+    @State private var footprint: LibraryRevision?
+    @State private var manufacturer = ""
+    @State private var partNumber = ""
+
+    var body: some View {
+        let library = circuits.design?.library
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Nuovo tipo di componente", systemImage: "puzzlepiece.extension").font(.headline)
+            if (library?.symbols.isEmpty ?? true) || (library?.footprints.isEmpty ?? true) {
+                Text("Servono almeno un simbolo e un'impronta nella libreria del circuito: importali con LIBRERIA › Importa.")
+                    .font(.callout).foregroundStyle(Theme.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
+            } else if let library {
+                Picker("Simbolo", selection: $symbol) {
+                    Text("—").tag(LibraryRevision?.none)
+                    ForEach(library.symbols, id: \.key) { s in Text("\(s.name) (\(s.pins.count) pin)").tag(Optional(s.key)) }
+                }
+                Picker("Impronta", selection: $footprint) {
+                    Text("—").tag(LibraryRevision?.none)
+                    ForEach(library.footprints, id: \.key) { f in Text("\(f.name) (\(f.pads.count) piazzole)").tag(Optional(f.key)) }
+                }
+                TextField("Produttore (vuoto = Generico)", text: $manufacturer).textFieldStyle(.roundedBorder)
+                TextField("Codice produttore / MPN (vuoto = simbolo · impronta)", text: $partNumber).textFieldStyle(.roundedBorder)
+                pairing(library)
+            }
+            Spacer(minLength: 0)
+            HStack {
+                Spacer()
+                Button("Annulla") { circuits.showCreateDevice = false }.keyboardShortcut(.cancelAction)
+                Button("Crea") {
+                    guard let symbol, let footprint, case let .success(map) = circuits.suggestedPinMap(symbol: symbol, footprint: footprint) else { return }
+                    if circuits.createDevice(symbol: symbol, footprint: footprint, manufacturer: manufacturer, partNumber: partNumber, pinMap: map) {
+                        circuits.showCreateDevice = false
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled({ if let symbol, let footprint, case .success = circuits.suggestedPinMap(symbol: symbol, footprint: footprint) { false } else { true } }())
+            }
+        }
+        .padding(16).frame(width: 460, height: 420)
+    }
+
+    @ViewBuilder private func pairing(_ library: ElectronicsLibrary) -> some View {
+        if let symbol, let footprint {
+            switch circuits.suggestedPinMap(symbol: symbol, footprint: footprint) {
+            case let .success(map):
+                let s = library.symbols.first { $0.key == symbol }, f = library.footprints.first { $0.key == footprint }
+                Text("Pin ↔ piazzole (per numero: verificare sul datasheet)").font(.caption.weight(.semibold))
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(Array(map.enumerated()), id: \.offset) { _, m in
+                            let pin = s?.pins.first { $0.id == m.pinID }, pad = f?.pads.first { $0.id == m.padID }
+                            Text("\(pin?.name ?? "?") (\(pin?.number ?? "?")) → piazzola \(pad?.number ?? "?")")
+                                .font(.caption.monospacedDigit())
+                        }
+                    }
+                }
+                .frame(maxHeight: 110)
+            case let .failure(error):
+                Text(CircuitModel.describe(error)).font(.caption).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }

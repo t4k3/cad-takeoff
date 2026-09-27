@@ -302,6 +302,14 @@ struct Ribbon: View {
                 .disabled(circuits.document == nil)
                 .help("Misure e spessore della scheda, con anteprima")
         }
+        ToolGroup("LIBRERIA") {
+            Button { circuits.tool = .select; circuits.importWithPanel() } label: { Label("Importa", systemImage: "square.and.arrow.down.on.square") }
+                .disabled(circuits.document == nil)
+                .help("Importa un'impronta o un simbolo KiCad, o un'impronta EasyEDA Standard: anteprima e avvisi prima di confermare")
+            Button { circuits.tool = .select; circuits.showCreateDevice = true } label: { Label("Nuovo tipo", systemImage: "puzzlepiece.extension") }
+                .disabled(circuits.document == nil)
+                .help("Unisci un simbolo e un'impronta della libreria in un componente da posare (pin ↔ piazzole proposti, da verificare sul datasheet)")
+        }
         ToolGroup("COMPONENTE") {
             Button { if let c = circuits.selection { circuits.rotate(c) } } label: { Label("Ruota", systemImage: "rotate.right") }
                 .disabled(circuits.selection == nil)

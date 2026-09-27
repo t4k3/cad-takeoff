@@ -82,6 +82,34 @@ struct CircuitTests {
         check(d.design == c.design && d.canUndo, "salvato e riaperto uguale, con lo storico")
         try? FileManager.default.removeItem(at: out)
 
+        // LIBRERIA: a KiCad resistor symbol and its 0603 footprint (Codex's redistributable
+        // samples) imported with preview, joined into a new type, placed.
+        let lib = URL(fileURLWithPath: CommandLine.arguments[2])
+        let symURL = lib.appendingPathComponent("Device_R.kicad_sym"), fpURL = lib.appendingPathComponent("R_0603_1608Metric.kicad_mod")
+        let names = CircuitModel.kicadSymbolNames(try Data(contentsOf: symURL))
+        check(names.contains("R"), "simboli del file KiCad elencati (\(names))")
+        let rev0 = c.document!.revision
+        c.prepareImport(symURL, symbol: "R")
+        check(c.importProposal?.symbols.first?.name == "R" && c.document!.revision == rev0, "anteprima del simbolo, nessuna modifica (\(last))")
+        c.confirmImport()
+        c.prepareImport(fpURL)
+        check((c.importProposal?.footprints.count ?? 0) == 1, "anteprima dell'impronta (\(last))")
+        c.confirmImport()
+        let lib1 = c.design!.library
+        check(lib1.symbols.contains { $0.name == "R" } && lib1.footprints.contains { $0.name.contains("0603") }, "importati simbolo e impronta")
+        // The same file again: nothing new.
+        c.prepareImport(fpURL); c.confirmImport()
+        check(c.design!.library.footprints.count == lib1.footprints.count, "reimport identico senza doppioni")
+        let sym = lib1.symbols.first { $0.name == "R" }!.key, fp = lib1.footprints.first { $0.name.contains("0603") && $0.source.reference.hasSuffix(".kicad_mod") }!.key
+        guard case let .success(map) = c.suggestedPinMap(symbol: sym, footprint: fp) else { print("FALLITO: nessuna piedinatura proposta (\(last))"); exit(1) }
+        check(map.count == 2 && c.createDevice(symbol: sym, footprint: fp, manufacturer: "", partNumber: "", pinMap: map), "nuovo tipo creato (\(last))")
+        guard let kind = c.deviceChoices.first(where: { $0.starterID == nil && $0.key.id != device.key.id && $0.name == "R" }) else {
+            print("FALLITO: il nuovo tipo non è fra i componenti da posare"); exit(1)
+        }
+        c.startPlacing(kind, reference: c.nextReference(prefix: kind.prefix), value: "4k7")
+        if case let .place(s) = c.tool { check(c.addComponent(s, at: PCBPoint(40, 20)) != nil, "tipo importato posato (\(last))") }
+        c.tool = .select
+
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
         print("OK: circuiti — da nuovo: componenti generici, collegamento, scheda, annulla, salva e riapri")
     }

@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import ElectronicsCore
 import Foundation
 import Observation
@@ -331,6 +332,168 @@ final class CircuitModel {
         run(.setBoard(outline: outline, thickness: thickness, assemblyOrigin: design?.board.assemblyOrigin ?? PCBPoint()))
     }
 
+    // MARK: Libraries (docs/electronics/LIBRARIES.md)
+
+    /// An import waiting for OK: the engine's proposal and its preview (what the circuit's library
+    /// would become, and the warnings). OK applies it at the revision it was previewed on.
+    struct ImportProposal {
+        var fileName: String
+        var command: ElectronicsLibraryCommand
+        var preview: LibraryCommandPreview
+        var symbols: [SymbolDefinition]
+        var footprints: [FootprintDefinition]
+    }
+    var importProposal: ImportProposal?
+    var showCreateDevice = false
+    /// A KiCad symbol library with several symbols: which one to import.
+    var symbolChoice: (url: URL, names: [String])?
+
+    /// LIBRERIA › Importa: a KiCad footprint (.kicad_mod) or symbol library (.kicad_sym), or an
+    /// EasyEDA Standard footprint (.json); then the preview panel.
+    func importWithPanel() {
+        guard document != nil else { return }
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = ["kicad_mod", "kicad_sym", "json"].compactMap { UTType(filenameExtension: $0) }
+        panel.message = "Importa un'impronta KiCad (.kicad_mod), un simbolo KiCad (.kicad_sym) o un'impronta EasyEDA Standard (.json)"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard Self.libraryFile(url) == .kicadSymbols else { prepareImport(url); return }
+        let names = (try? Data(contentsOf: url)).map(Self.kicadSymbolNames) ?? []
+        if names.count == 1 { prepareImport(url, symbol: names[0]) }
+        else if names.isEmpty { report("Nessun simbolo trovato in \(url.lastPathComponent)") }
+        else { symbolChoice = (url, names) }
+    }
+
+    enum LibraryFile { case kicadFootprint, kicadSymbols, easyedaFootprint }
+
+    static func libraryFile(_ url: URL) -> LibraryFile? {
+        switch url.pathExtension.lowercased() {
+        case "kicad_mod": .kicadFootprint
+        case "kicad_sym": .kicadSymbols
+        case "json": .easyedaFootprint
+        default: nil
+        }
+    }
+
+    /// The symbols of a KiCad symbol library, to choose one (top-level names; the engine checks
+    /// the chosen one). TODO: the engine's own listing when it offers one (RICHIESTA-API).
+    static func kicadSymbolNames(_ data: Data) -> [String] {
+        let text = String(decoding: data, as: UTF8.self)
+        var names: [String] = []
+        var depth = 0, i = text.startIndex
+        while i < text.endIndex {
+            let ch = text[i]
+            if ch == "(" {
+                depth += 1
+                if depth == 2, text[i...].hasPrefix("(symbol \""),
+                   let open = text[i...].firstIndex(of: "\""), let close = text[text.index(after: open)...].firstIndex(of: "\"") {
+                    names.append(String(text[text.index(after: open)..<close]))
+                }
+            } else if ch == ")" {
+                depth -= 1
+            } else if ch == "\"" {
+                // Skip quoted strings (they may hold parentheses).
+                var j = text.index(after: i)
+                while j < text.endIndex, text[j] != "\"" { if text[j] == "\\" { j = text.index(after: j) }; if j < text.endIndex { j = text.index(after: j) } }
+                i = j
+            }
+            if i < text.endIndex { i = text.index(after: i) }
+        }
+        return names
+    }
+
+    /// Reads a library file and prepares its import (nothing changes until `confirmImport`).
+    func prepareImport(_ url: URL, symbol: String? = nil) {
+        guard let doc = document, let kind = Self.libraryFile(url) else { return }
+        do {
+            let data = try Data(contentsOf: url)
+            let name = symbol ?? url.deletingPathExtension().lastPathComponent
+            let key = libraryKey(for: url.lastPathComponent + "|" + name, data: data)
+            let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+                .map { ISO8601DateFormatter().string(from: $0) } ?? ""
+            let context = LibraryImportContext(key: key, source: LibrarySource(reference: url.path, license: "da verificare", sourceRevision: modified))
+            let result: LibraryImportResult = switch kind {
+            case .kicadFootprint: try KiCadLibraryImporter.footprint(data, context: context)
+            case .kicadSymbols: try KiCadLibraryImporter.symbol(data, name: name, context: context)
+            case .easyedaFootprint: try EasyEDAStandardImporter.footprint(data, name: name, context: context)
+            }
+            let command = ElectronicsLibraryCommand.importLibrary(result)
+            let preview = try ElectronicsLibraryCommands.preview(command, document: doc, expectedRevision: doc.revision)
+            importProposal = ImportProposal(fileName: url.lastPathComponent, command: command, preview: preview,
+                                            symbols: result.library.symbols, footprints: result.library.footprints)
+        } catch {
+            report("Import di \(url.lastPathComponent) non riuscito: \(Self.describe(error))")
+        }
+    }
+
+    func confirmImport() {
+        guard let p = importProposal, var doc = document else { return }
+        importProposal = nil
+        do {
+            try ElectronicsLibraryCommands.apply(p.command, to: &doc, expectedRevision: p.preview.baseRevision)
+            document = doc; isDirty = true
+            refresh()
+            let what = (p.symbols.map { "simbolo \($0.name)" } + p.footprints.map { "impronta \($0.name)" }).joined(separator: ", ")
+            report("Importato \(what)" + (p.preview.issues.isEmpty ? "" : " · \(p.preview.issues.count) avvisi da controllare"))
+        } catch {
+            report("Import non riuscito: \(Self.describe(error))")
+        }
+    }
+
+    /// The library identity of a file's content: the same file keeps its UUID; changed content
+    /// gets the next revision, identical content the one it already has (a no-op re-import).
+    private func libraryKey(for name: String, data: Data) -> LibraryRevision {
+        let id = Self.stableUUID(name)
+        let digest = Self.sha256(data)
+        let library = design?.library
+        let existing: [(Int, String?)] = (library?.symbols.filter { $0.key.id == id }.map { ($0.key.revision, $0.source.contentSHA256) } ?? [])
+            + (library?.footprints.filter { $0.key.id == id }.map { ($0.key.revision, $0.source.contentSHA256) } ?? [])
+        if let same = existing.first(where: { $0.1 == digest }) { return LibraryRevision(id: id, revision: same.0) }
+        return LibraryRevision(id: id, revision: (existing.map(\.0).max() ?? 0) + 1)
+    }
+
+    private static func sha256(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func stableUUID(_ text: String) -> UUID {
+        var bytes = Array(SHA256.hash(data: Data(text.utf8)).prefix(16))
+        bytes[6] = (bytes[6] & 0x0F) | 0x50; bytes[8] = (bytes[8] & 0x3F) | 0x80   // version 5 style
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
+    }
+
+    /// Crea componente: the pin ↔ pad pairing the engine suggests for a symbol and a footprint
+    /// (by pin and pad numbers; to check on the datasheet), or why it cannot.
+    func suggestedPinMap(symbol: LibraryRevision, footprint: LibraryRevision) -> Result<[PinPadMapping], Error> {
+        guard let lib = design?.library, let s = lib.symbols.first(where: { $0.key == symbol }),
+              let f = lib.footprints.first(where: { $0.key == footprint }) else { return .failure(CircuitEditError("Scegli un simbolo e un'impronta.")) }
+        return Result { try ElectronicsLibraryCommands.suggestedPinMap(symbol: s, footprint: f) }
+    }
+
+    @discardableResult
+    func createDevice(symbol: LibraryRevision, footprint: LibraryRevision, manufacturer: String, partNumber: String,
+                      pinMap: [PinPadMapping]) -> Bool {
+        guard var doc = document else { return false }
+        // Left empty: a generic type, named after what it joins (not a part to buy).
+        let lib = doc.design.library
+        let described = [lib.symbols.first { $0.key == symbol }?.name, lib.footprints.first { $0.key == footprint }?.name]
+            .compactMap { $0 }.joined(separator: " · ")
+        let maker = manufacturer.trimmingCharacters(in: .whitespaces), code = partNumber.trimmingCharacters(in: .whitespaces)
+        let device = DeviceDefinition(manufacturer: maker.isEmpty ? "Generico" : maker, manufacturerPartNumber: code.isEmpty ? described : code,
+                                      symbol: symbol, footprint: footprint, pinMap: pinMap)
+        do {
+            let preview = try ElectronicsLibraryCommands.preview(.createDevice(device), document: doc, expectedRevision: doc.revision)
+            try ElectronicsLibraryCommands.apply(.createDevice(device), to: &doc, expectedRevision: preview.baseRevision)
+            document = doc; isDirty = true
+            refresh()
+            report("Componente pronto da posare: CREA › Componente")
+            return true
+        } catch {
+            report("Componente non creato: \(Self.describe(error))")
+            return false
+        }
+    }
+
     // MARK: Manufacturing
 
     /// JLCPCB BOM and pick-and-place files (CSV) into a chosen folder. The engine refuses when
@@ -375,7 +538,9 @@ final class CircuitModel {
 
     static func describe(_ error: Error) -> String {
         if let e = error as? CircuitEditError { return e.message }
-        if let f = error as? ElectronicsFailure { return f.issues.map { "\($0.subject): \($0.message)" }.joined(separator: " · ") }
+        if let f = error as? ElectronicsFailure {
+            return f.issues.map { $0.subject.isEmpty ? $0.message : "\($0.subject): \($0.message)" }.joined(separator: " · ")
+        }
         return error.localizedDescription
     }
 }

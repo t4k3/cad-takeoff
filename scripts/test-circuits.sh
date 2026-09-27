@@ -11,4 +11,4 @@ xcrun swiftc -swift-version 6 -emit-library -emit-module -module-name Electronic
 xcrun swiftc -swift-version 6 -parse-as-library -I "$test_dir" -L "$test_dir" -lElectronicsCore \
     -Xlinker -rpath -Xlinker "$test_dir" \
     App/Sources/Model/Electronics/*.swift Tests/Circuits/Stubs.swift Tests/Circuits/Runner.swift -o "$test_dir/circuit-tests"
-"$test_dir/circuit-tests" "App/Resources/Circuiti/Esempio circuito.ftkc"
+"$test_dir/circuit-tests" "App/Resources/Circuiti/Esempio circuito.ftkc" "Packages/ElectronicsCore/Tests/ElectronicsCoreTests/Fixtures/Library"
