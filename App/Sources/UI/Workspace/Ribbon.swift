@@ -6,6 +6,8 @@ struct Ribbon: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
     @Environment(ProjectLibrary.self) private var library
+    /// The sketch constraints' list (VINCOLI › Vincoli).
+    @State private var showConstraints = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -182,21 +184,33 @@ struct Ribbon: View {
                     .help(SketchSession.Tool.dimension.hint + " (D)")
                 Button { workspace.showParameters = true } label: { Label("Parametri", systemImage: "function") }
                     .help("Valori con un nome: nelle quote scrivi «larghezza / 2» e la quota li segue")
-                Grid(horizontalSpacing: 2, verticalSpacing: 2) {
-                    ForEach(0..<2, id: \.self) { row in
-                        GridRow {
-                            ForEach(Array(ConstraintTool.allCases.enumerated()).filter { $0.offset / 5 == row }, id: \.element) { _, c in
-                                Button { sketch.constraintTool = sketch.constraintTool == c ? nil : c } label: {
-                                    Image(systemName: c.symbol).font(.system(size: 12)).frame(width: 24, height: 22)
-                                }
-                                .buttonStyle(.plain)
-                                .background(RoundedRectangle(cornerRadius: 5).fill(sketch.constraintTool == c ? Theme.Palette.sketch.opacity(0.35) : Color.white.opacity(0.06)))
-                                .help("\(c.rawValue): \(c.hint)")
+                // Used now and then: behind one button, the list opens below it (fits a 13" screen).
+                Button { showConstraints.toggle() } label: {
+                    Label("Vincoli", systemImage: sketch.constraintTool?.symbol ?? "link")
+                }
+                .buttonStyle(RibbonButtonStyle(isActive: sketch.constraintTool != nil, tint: Theme.Palette.sketch))
+                .help(sketch.constraintTool.map { "\($0.rawValue): \($0.hint)" } ?? "Vincoli geometrici: orizzontale/verticale, coincidente, parallelo, tangente…")
+                .popover(isPresented: $showConstraints, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        ForEach(ConstraintTool.allCases) { c in
+                            Button {
+                                sketch.constraintTool = sketch.constraintTool == c ? nil : c
+                                showConstraints = false
+                            } label: {
+                                Label(c.rawValue, systemImage: c.symbol)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 8).padding(.vertical, 4)
+                                    .background(RoundedRectangle(cornerRadius: 5)
+                                        .fill(sketch.constraintTool == c ? Theme.Palette.sketch.opacity(0.3) : Color.clear))
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .help(c.hint)
                         }
                     }
+                    .padding(6)
+                    .frame(width: 190)
                 }
-                .frame(height: 50)
             }
             ToolGroup("OPZIONI") {
                 VStack(alignment: .leading, spacing: 4) {
