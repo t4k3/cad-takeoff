@@ -38,9 +38,10 @@ final class WorkspaceState {
     }
     /// A command is collecting edges: a plain click adds or removes one (no ⇧ needed).
     var edgePicking = false
-    /// Estrudi started from SOLIDO: a click off the sketch's areas, on a planar face of a body,
-    /// extrudes that face instead (as Fusion's Extrude takes profiles or faces).
-    var extrudeFromSolid = false
+    /// Estrudi running (from SOLIDO or from the sketch): a click off the sketch's areas, on a
+    /// planar face of a body, extrudes that face instead (as Fusion's Extrude takes profiles or
+    /// faces).
+    var extrudeTakesFaces = false
     @ObservationIgnored var onGeoSelectionChange: (() -> Void)?
 
     /// Drag arrow of the open command (chamfer distance/radius), if any.
@@ -318,13 +319,13 @@ final class WorkspaceState {
             created?.onCancel = cancel
             cancel()
             guard let self else { return }
-            self.extrudeFromSolid = false
+            self.extrudeTakesFaces = false
             guard self.sketch != nil else { return }
             self.command = nil
             self.exitSketch()
         }
         created.update("areas") { $0.kind = .reference(prompt: "Clicca le aree dello schizzo o una faccia del pezzo", maxCount: 500) }
-        extrudeFromSolid = true
+        extrudeTakesFaces = true
         command = created
     }
 
@@ -334,7 +335,7 @@ final class WorkspaceState {
         command?.onCancel()
         command = nil
         if sketch != nil { exitSketch() }
-        extrudeFromSolid = false
+        extrudeTakesFaces = false
         geoSelection = [ref]
         model.selection = ref.feature
         startPressPull(model: model)
@@ -348,7 +349,13 @@ final class WorkspaceState {
     func extrudeSketch(model: DesignModel) {
         guard let sketch else { return }
         command?.onCancel()
-        command = SketchCommands.extrude(sketch: sketch, model: model, workspace: self)
+        guard let created = SketchCommands.extrude(sketch: sketch, model: model, workspace: self) else { command = nil; return }
+        // The same Estrudi as from SOLIDO: areas of this sketch or a face of the part.
+        let cancel = created.onCancel
+        created.onCancel = { [weak self] in cancel(); self?.extrudeTakesFaces = false }
+        created.update("areas") { $0.kind = .reference(prompt: "Clicca le aree dello schizzo o una faccia del pezzo", maxCount: 500) }
+        extrudeTakesFaces = true
+        command = created
     }
 
     /// Opens the edit panel for a feature, cancelling any command already running.

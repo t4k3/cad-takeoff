@@ -277,8 +277,8 @@ struct ViewportContainer: View {
                 return
             }
             if sketch.pickingRegions, let p = sketch.intersect(ray) {
-                // Estrudi from SOLIDO: off the sketch's areas, a planar face of a body is extruded.
-                if workspace.extrudeFromSolid, !sketch.hasRegion(at: p),
+                // Estrudi: off the sketch's areas, a planar face of a body is extruded.
+                if workspace.extrudeTakesFaces, !sketch.hasRegion(at: p),
                    let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind,
                    model.evaluation().bodies.first(where: { $0.id == ref.feature })?.snapshot.flatPlane(of: id) != nil {
                     workspace.extrudeFace(ref, model: model)
