@@ -267,3 +267,20 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     #expect(dxf.components(separatedBy: "LWPOLYLINE").count - 1 == 3 && dxf.contains("CIRCLE"))
     #expect(MeshValidator.validate(SheetMetalGeometry.flatMesh(flat)).isWatertight)
 }
+
+@Test func notchesAtTheEdgeComeOutOfTheBlank() throws {
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 100, depth: 40,
+                              flanges: [.front: SheetFlange(length: 30), .back: SheetFlange(length: 30)])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID(), folded: false)
+    // 10 × 5 bite out of the plate's right edge (no flange there), and out of the front wall's top.
+    let plateNotch = SheetCutout(outline: [Vec3(45, -5, 2), Vec3(55, -5, 2), Vec3(55, 5, 2), Vec3(45, 5, 2)], axis: Vec3(0, 0, -1))
+    let wallNotch = SheetCutout(outline: [Vec3(-5, -20, 25), Vec3(5, -20, 25), Vec3(5, -20, 35), Vec3(-5, -20, 35)], axis: Vec3(0, 1, 0))
+    // Running off the plate's front edge would cut the bend: skipped.
+    let intoBend = SheetCutout(outline: [Vec3(-5, -15, 2), Vec3(5, -15, 2), Vec3(5, -25, 2), Vec3(-5, -25, 2)], axis: Vec3(0, 0, -1))
+    let (flat, skipped) = build.flat(adding: [], cutouts: [plateNotch, wallNotch, intoBend])
+    #expect(skipped == 1 && flat.cutouts.isEmpty)
+    #expect(flat.outline.count == build.flat.outline.count + 8)
+    #expect(abs(flat.area - (build.flat.area - 50 - 50)) < 1e-9)
+    #expect(Profile2D(points: flat.outline).area > 0)
+    #expect(flat.outline.contains(Vec2(45, 5)) && flat.outline.contains(Vec2(45, -5)))
+}

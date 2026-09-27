@@ -197,8 +197,9 @@ public struct SheetFlatPattern: Equatable, Sendable {
         public let diameter: Double
     }
 
-    /// Counter-clockwise outline (closed, first point not repeated).
-    public let outline: [Vec2]
+    /// Counter-clockwise outline (closed, first point not repeated); notches cut at the edge
+    /// are taken out of it.
+    public internal(set) var outline: [Vec2]
     public let bends: [Bend]
     /// Round holes to cut, unfolded from the holes drilled in the folded part.
     public internal(set) var holes: [Hole] = []
@@ -244,19 +245,30 @@ public struct SheetMetalBuild: Sendable {
         for cut in cutouts {
             let axis = cut.axis.normalized
             let mapped = cut.outline.map { layout.region(of: $0, axis: axis) }
-            guard cut.outline.count >= 3, let first = mapped.first??.region,
-                  mapped.allSatisfy({ $0?.region == first }) else { skipped += 1; continue }
-            let pts = mapped.map { $0!.point }
-            // A sketch circle (a polygon on one circle): a hole, as the laser wants it.
-            if pts.count >= 16, let fit = PrimitiveKernel.fit(pts), pts.allSatisfy({ abs(($0 - fit.c).length - fit.r) < 1e-3 * max(1, fit.r) }) {
-                out.holes.append(.init(center: fit.c, diameter: 2 * fit.r))
-            } else {
-                out.cutouts.append(pts)
+            let regions = Set(mapped.compactMap { $0?.region })
+            guard cut.outline.count >= 3, regions.count == 1, let region = regions.first else { skipped += 1; continue }
+            guard mapped.contains(where: { $0 == nil }) else {
+                let pts = mapped.map { $0!.point }
+                // A sketch circle (a polygon on one circle): a hole, as the laser wants it.
+                if pts.count >= 16, let fit = PrimitiveKernel.fit(pts), pts.allSatisfy({ abs(($0 - fit.c).length - fit.r) < 1e-3 * max(1, fit.r) }) {
+                    out.holes.append(.init(center: fit.c, diameter: 2 * fit.r))
+                } else {
+                    out.cutouts.append(pts)
+                }
+                continue
             }
+            // Part of it off the region: a notch, if those points fall off the blank (not on a
+            // bend or another wall). The blank's outline loses it.
+            let pts = cut.outline.compactMap { layout.region(of: $0, axis: axis, only: region)?.point }
+            guard pts.count == cut.outline.count,
+                  zip(mapped, pts).allSatisfy({ m, p in m != nil || !SketchArrangement.inside(p, out.outline) }),
+                  let notched = SheetMetalGeometry.subtract(pts, from: out.outline) else { skipped += 1; continue }
+            out.outline = notched
         }
         return (out, skipped)
     }
 }
+
 
 /// A cut through the folded sheet (a sketch cut): its outline where it meets the sheet, in world
 /// coordinates, and the cutting direction.
@@ -298,13 +310,15 @@ struct SheetLayout: Sendable {
     /// Flat-pattern point of a point cut along `axis` and the flat region it falls on (0 = plate,
     /// k = the k-th flange's straight part). `inSheet`: the point itself must lie within the
     /// sheet's thickness (a hole centre); otherwise the cut's line along the axis is followed.
-    func region(of world: Vec3, axis: Vec3, inSheet: Bool = false) -> (point: Vec2, region: Int)? {
+    /// `only`: that region's mapping carried on past its bounds (a notch running off the edge).
+    func region(of world: Vec3, axis: Vec3, inSheet: Bool = false, only: Int? = nil) -> (point: Vec2, region: Int)? {
         let q = world - position
         let e = 1e-4
-        if abs(axis.z) > 0.999, q.x >= x0 - e, q.x <= x1 + e, q.y >= y0 - e, q.y <= y1 + e, !inSheet || (q.z >= -e && q.z <= t + e) {
+        if only == 0 { return abs(axis.z) > 0.999 ? (Vec2(q.x, q.y), 0) : nil }
+        if only == nil, abs(axis.z) > 0.999, q.x >= x0 - e, q.x <= x1 + e, q.y >= y0 - e, q.y <= y1 + e, !inSheet || (q.z >= -e && q.z <= t + e) {
             return (Vec2(q.x, q.y), 0)
         }
-        for (k, b) in flanges.enumerated() {
+        for (k, b) in flanges.enumerated() where only == nil || only == k + 1 {
             let (origin, out, along, span): (Vec2, Vec2, Vec2, Double) = switch b.edge {
             case .front: (Vec2(x0, y0), Vec2(0, -1), Vec2(1, 0), x1 - x0)
             case .back: (Vec2(x0, y1), Vec2(0, 1), Vec2(1, 0), x1 - x0)
@@ -325,6 +339,11 @@ struct SheetLayout: Sendable {
             // The flange's normal in world: perpendicular to d in the (out, z) plane.
             let normal = Vec3(out.x * -d.y, out.y * -d.y, d.x)
             let inBend = along2 < e
+            if only != nil {
+                guard abs(normal.dot(axis)) > 0.999 else { return nil }
+                let reach = b.allowance + along2
+                return (Vec2(origin.x + along.x * s + out.x * reach, origin.y + along.y * s + out.y * reach), k + 1)
+            }
             guard s >= -e - (inBend ? 0 : b.extStart), s <= span + e + (inBend ? 0 : b.extEnd), along2 >= -e, along2 <= b.straight + e,
                   !inSheet || across <= t / 2 + e, abs(normal.dot(axis)) > 0.999 else { continue }
             let reach = b.allowance + along2
@@ -715,6 +734,18 @@ public enum SheetMetalGeometry {
             fixed[i].surface = .plane(origin: p.vertices[0], normal: p.normal)
         }
         return CSGSolid(polygons: out, faces: fixed)
+    }
+
+    /// `outline` minus `cut` as one outline, when the cut takes a bite out of its edge (nil when
+    /// it splits the blank or leaves it unchanged).
+    static func subtract(_ cut: [Vec2], from outline: [Vec2]) -> [Vec2]? {
+        let curves: [(points: [Vec2], closed: Bool)] = [(outline, true), (cut, true)]
+        let kept = SketchArrangement.faces(curves).filter { SketchArrangement.inside($0.seed, outline) && !SketchArrangement.inside($0.seed, cut) }
+        let merged = SketchArrangement.merged([], seeds: kept.map(\.seed), curves: curves)
+        guard merged.count == 1, merged[0].holes.isEmpty,
+              abs(Profile2D(points: merged[0].outline).area.magnitude - Profile2D(points: outline).area.magnitude) > 1e-9 else { return nil }
+        let result = simplified(merged[0].outline)
+        return Profile2D(points: result).area < 0 ? result.reversed() : result
     }
 
     /// Drops repeated and collinear points (sides without a flange).
