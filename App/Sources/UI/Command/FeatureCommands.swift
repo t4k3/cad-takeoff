@@ -21,7 +21,8 @@ enum FeatureCommands {
                       .init(id: "h", label: "Altezza", kind: .length(length), value: .number(h))]
         case let .extrude(_, h):
             fields = [.init(id: "h", label: "Distanza", kind: .length(length), value: .number(h)),
-                      .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica"]), value: .index(original.symmetric ? 1 : 0)),
+                      .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica", "Passante"]),
+                            value: .index(original.throughAll ? 2 : (original.symmetric ? 1 : 0))),
                       .init(id: "taper", label: "Sformo", kind: .angle(-60...60), value: .number(original.taper),
                             help: "Positivo stringe le pareti allontanandosi dallo schizzo, negativo le allarga")]
         case let .revolve(spec):
@@ -56,7 +57,7 @@ enum FeatureCommands {
             case .cylinder: f.kind = .cylinder(radius: v("r"), height: v("h"))
             case let .extrude(p, _):
                 f.kind = .extrude(profile: p, height: v("h"))
-                if case let .index(e)? = fields.first(where: { $0.id == "extent" })?.value { f.symmetric = e == 1 }
+                if case let .index(e)? = fields.first(where: { $0.id == "extent" })?.value { f.symmetric = e == 1; f.throughAll = e == 2 }
                 f.taper = v("taper")
             case .hole, .chamfer, .sheetMetal, .component, .pattern, .split, .shell, .move: break
             case var .revolve(spec):

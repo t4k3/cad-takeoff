@@ -71,8 +71,8 @@ enum SketchCommands {
                      .init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
                            help: (onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z") + " · anche un'espressione dei Parametri",
                            acceptsExpression: true),
-                     .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica"]), value: .index(0),
-                           help: "Simmetrica: metà distanza da ogni parte del piano dello schizzo"),
+                     .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica", "Passante"]), value: .index(0),
+                           help: "Simmetrica: metà distanza da ogni parte del piano dello schizzo. Passante: attraversa tutti i corpi (anche se poi crescono)"),
                      .init(id: "taper", label: "Sformo", kind: .angle(-60...60), value: .number(0),
                            help: "Angolo delle pareti: positivo le stringe allontanandosi dallo schizzo (sformo per stampi), negativo le allarga"),
                      .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
@@ -116,6 +116,7 @@ enum SketchCommands {
                                           holes: area.holes.map { Profile2D(points: $0) })
                     if let heightExpression { feature.expressions["height"] = heightExpression }
                     feature.symmetric = symmetric(f)
+                    if case .index(2)? = f.first(where: { $0.id == "extent" })?.value { feature.throughAll = true }
                     feature.taper = f.first { $0.id == "taper" }?.number ?? 0
                     do {
                         try CADToolValidation.feature(feature)

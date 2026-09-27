@@ -248,6 +248,9 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
     public var symmetric = false
     /// Extrusions: draft angle of the sides in degrees; positive narrows away from the sketch.
     public var taper = 0.0
+    /// Extrusions: through all the bodies before it (Fusion's «All»), the height worked out at
+    /// every evaluation so a cut keeps going through when the part grows.
+    public var throughAll = false
 
     public init(id: UUID = UUID(), name: String, kind: Kind, position: Vec3 = .zero, isVisible: Bool = true,
                 color: PartColor = .defaultColor, operation: BooleanOperation = .newBody, placement: FeaturePlacement? = nil,
@@ -256,7 +259,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         self.color = color; self.operation = operation; self.placement = placement; self.holes = holes
     }
 
-    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes, expressions, symmetric, taper }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, position, isVisible, color, operation, placement, holes, expressions, symmetric, taper, throughAll }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -273,6 +276,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         expressions = try c.decodeIfPresent([String: String].self, forKey: .expressions) ?? [:]
         symmetric = try c.decodeIfPresent(Bool.self, forKey: .symmetric) ?? false
         taper = try c.decodeIfPresent(Double.self, forKey: .taper) ?? 0
+        throughAll = try c.decodeIfPresent(Bool.self, forKey: .throughAll) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -285,6 +289,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         if !expressions.isEmpty { try c.encode(expressions, forKey: .expressions) }
         if symmetric { try c.encode(symmetric, forKey: .symmetric) }
         if taper != 0 { try c.encode(taper, forKey: .taper) }
+        if throughAll { try c.encode(throughAll, forKey: .throughAll) }
     }
 
     public func buildMesh() -> Mesh {

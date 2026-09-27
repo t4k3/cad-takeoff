@@ -56,3 +56,26 @@ private func square(_ s: Double) -> Profile2D { Profile2D.rectangle(width: s, he
     #expect(abs(m.volume - (outer - hole)) < 0.5)
     #expect(m.vertices.map(\.z).min()! > -1e-9 && m.vertices.map(\.z).max()! < 10 + 1e-9)
 }
+
+@Test func throughAllCutsKeepGoingThroughWhenThePartGrows() throws {
+    for thickness in [10.0, 25.0] {
+        let plate = Feature(name: "P", kind: .box(width: 60, depth: 40, height: thickness), position: Vec3(0, 0, -5))
+        // A 10×10 cut drawn on the XY plane, 1 mm high, through all: down and up both matter here,
+        // so it is symmetric.
+        var cut = Feature(name: "T", kind: .extrude(profile: .rectangle(width: 10, height: 10), height: 1), operation: .cut)
+        cut.throughAll = true
+        cut.symmetric = true
+        let r = DesignEvaluator.evaluate(CADDocument(features: [plate, cut]), revision: "t\(thickness)")
+        #expect(r.issues.isEmpty)
+        #expect(abs(r.bodies[0].mesh.volume - (60 * 40 - 100) * thickness) < 1e-6)
+        #expect(MeshValidator.validate(r.bodies[0].mesh).isWatertight)
+    }
+    // One way, from the top face down into the part (placed, reversed).
+    let plate = Feature(name: "P", kind: .box(width: 60, depth: 40, height: 12))
+    var pocket = Feature(name: "T", kind: .extrude(profile: .rectangle(width: 10, height: 10), height: 2), operation: .cut,
+                         placement: FeaturePlacement(plane: SketchPlane.xy.offset(by: 12), reversed: true))
+    pocket.throughAll = true
+    let r = DesignEvaluator.evaluate(CADDocument(features: [plate, pocket]), revision: "u")
+    #expect(abs(r.bodies[0].mesh.volume - (60 * 40 - 100) * 12) < 1e-6)
+    #expect(try CADDocument.decode(CADDocument(features: [pocket]).encoded()).features[0].throughAll)
+}

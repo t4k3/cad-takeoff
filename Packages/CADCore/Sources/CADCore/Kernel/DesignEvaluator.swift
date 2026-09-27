@@ -53,8 +53,9 @@ public enum DesignEvaluator {
         if cacheable, let cache, let (k, state) = cache.longestPrefix(keys) {
             bodies = state.bodies; issues = state.issues; reported = state.reported; start = k + 1
         }
-        for (k, feature) in features.enumerated() where k >= start {
+        for (k, original) in features.enumerated() where k >= start {
             progress?(k, features.count)
+            let feature = throughAll(original, bodies: bodies)
             defer { if let cache, k < keys.count { cache.store(keys[k], .init(bodies: bodies, issues: issues, reported: reported)) } }
             guard counts[feature.id] == 1 else {
                 if reported.insert(feature.id).inserted {
@@ -383,6 +384,24 @@ public enum DesignEvaluator {
         return (out, issues)
 
         func solidOf(_ w: Work) -> CSGSolid { w.solid ?? CSGSolid(w.snapshot) }
+        /// An extrusion «through all»: its height reaches 1 mm past every body before it, along the
+        /// extrusion (both ways when symmetric).
+        func throughAll(_ f: Feature, bodies: [Work]) -> Feature {
+            guard f.throughAll, case let .extrude(profile, height) = f.kind else { return f }
+            let base: Vec3, dir: Vec3
+            if let p = f.placement { base = p.plane.origin + f.position; dir = p.reversed ? -p.plane.normal : p.plane.normal }
+            else { base = f.position; dir = Vec3(0, 0, 1) }
+            var reach = 0.0
+            for box in bodies.compactMap({ bounds($0.snapshot) }) {
+                for x in [box.min.x, box.max.x] { for y in [box.min.y, box.max.y] { for z in [box.min.z, box.max.z] {
+                    let d = (Vec3(x, y, z) - base).dot(dir)
+                    reach = max(reach, f.symmetric ? 2 * abs(d) : d)
+                } } }
+            }
+            var g = f
+            g.kind = .extrude(profile: profile, height: reach > 0 ? reach + (f.symmetric ? 2 : 1) : height)
+            return g
+        }
         /// The solid a feature adds or removes (for patterns of features): holes through the
         /// bodies there are now, other features as built.
         func toolSolid(of f: Feature, bodies: [Work], revision: String) -> CSGSolid? {
