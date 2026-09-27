@@ -277,12 +277,24 @@ struct ViewportContainer: View {
                 return
             }
             if sketch.pickingRegions, let p = sketch.intersect(ray) {
-                // Estrudi: off the sketch's areas, a planar face of a body is extruded.
-                if workspace.extrudeTakesFaces, !sketch.hasRegion(at: p),
-                   let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind,
-                   model.evaluation().bodies.first(where: { $0.id == ref.feature })?.snapshot.flatPlane(of: id) != nil {
-                    workspace.extrudeFace(ref, model: model)
-                    return
+                // Estrudi from SOLIDO: off this sketch's areas, an area of another visible sketch
+                // (the nearest along the view) or a planar face of a body.
+                if workspace.extrudeTakesFaces, !sketch.hasRegion(at: p) {
+                    let eye = ray.origin
+                    let others = model.document.sketches.filter { $0.id != sketch.sketch.id && $0.isVisible }.compactMap { other -> (Sketch, SIMD3<Float>, Float)? in
+                        let s = SketchSession(sketch: other)
+                        guard let q = s.intersect(ray), s.hasRegion(at: q) else { return nil }
+                        return (other, q, simd_length(q - eye))
+                    }
+                    if let (other, q, _) = others.min(by: { $0.2 < $1.2 }) {
+                        workspace.extrudeOtherSketch(other, at: q, model: model)
+                        return
+                    }
+                    if let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind,
+                       model.evaluation().bodies.first(where: { $0.id == ref.feature })?.snapshot.flatPlane(of: id) != nil {
+                        workspace.extrudeFace(ref, model: model)
+                        return
+                    }
                 }
                 sketch.toggleRegion(at: p)
                 return
