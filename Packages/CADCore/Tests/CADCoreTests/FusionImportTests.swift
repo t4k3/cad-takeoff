@@ -216,3 +216,34 @@ private func bracket(_ extent: F.Extent, lo: Double, hi: Double) -> FusionTimeli
     b.features[1].inputKind = "BRepBody"
     #expect(FusionImport.convert(b, meshes: []).1.skipped.contains { $0.contains("corpi") })
 }
+
+@Test func fusionCombineFindsItsBodiesAndJoinsOrCuts() throws {
+    // Two 20 × 20 × 10 blocks overlapping by half in X, from two sketches; «Combina»: the second
+    // cut from the first (Fusion gives both bodies as they were just before it).
+    func square(_ p: String) -> [F.Curve] {
+        (1...4).map { k in F.Curve(type: "line", id: "\(p)l\(k)", start: "\(p)\(k)", end: "\(p)\(k % 4 + 1)") }
+    }
+    let pts = [F.Point(id: "a1", x: 0, y: 0), F.Point(id: "a2", x: 20, y: 0), F.Point(id: "a3", x: 20, y: 20), F.Point(id: "a4", x: 0, y: 20)]
+    let sketch = F.Sketch(id: "S1", name: "Schizzo1", points: pts, curves: square("a"), profiles: [F.Profile(id: "PA", area: 400, min: [0, 0], max: [20, 20])])
+    let pts2 = [F.Point(id: "c1", x: 10, y: 0), F.Point(id: "c2", x: 30, y: 0), F.Point(id: "c3", x: 30, y: 20), F.Point(id: "c4", x: 10, y: 20)]
+    let sketch2 = F.Sketch(id: "S2", name: "Schizzo2", points: pts2, curves: square("c"), profiles: [F.Profile(id: "PC", area: 400, min: [10, 0], max: [30, 20])])
+    let a = F.Body(name: "Corpo1", volume: 4000, min: [0, 0, 0], max: [20, 20, 10])
+    let c = F.Body(name: "Corpo2", volume: 4000, min: [10, 0, 0], max: [30, 20, 10])
+    var combine = F.Feature(type: "combine", name: "Combina1", operation: "cut")
+    combine.targetBody = a
+    combine.toolBodies = [c]
+    let t = FusionTimeline(sketches: [sketch, sketch2],
+                           features: [F.Feature(type: "extrude", name: "Estrusione1", operation: "newBody", profiles: ["S1/PA"], extent: F.Extent(type: "distance", distance: 10)),
+                                      F.Feature(type: "extrude", name: "Estrusione2", operation: "newBody", profiles: ["S2/PC"], extent: F.Extent(type: "distance", distance: 10)),
+                                      combine],
+                           bodies: [F.Body(name: "Corpo1", volume: 2000, min: [0, 0, 0], max: [10, 20, 10])])
+    let (doc, report) = FusionImport.convert(t, meshes: [])
+    #expect(report.skipped.isEmpty && report.editable == ["Corpo1"], "\(report.summary)")
+    let spec = try #require(doc.features.compactMap { if case let .combine(s) = $0.kind { s } else { nil } }.first)
+    #expect(spec.operation == .cut && spec.tools.count == 1 && !spec.keepTools)
+    // A combine whose bodies are not among ours: said, not guessed.
+    var lost = t
+    lost.features[2].toolBodies = [F.Body(name: "Altro", volume: 999, min: [100, 0, 0], max: [110, 10, 10])]
+    let (_, r2) = FusionImport.convert(lost, meshes: [])
+    #expect(r2.skipped.contains { $0.contains("Combina1") && $0.contains("Altro") })
+}

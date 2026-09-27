@@ -350,6 +350,7 @@ extension Feature.Kind {
         case .shell: "cube.transparent"
         case .move: "arrow.up.and.down.and.arrow.left.and.right"
         case .joint: "link"
+        case .combine: "square.on.square.intersection.dashed"
         }
     }
 
@@ -369,6 +370,7 @@ extension Feature.Kind {
         case .shell: "Guscio"
         case .move: "Sposta"
         case .joint: "Giunto"
+        case .combine: "Combina"
         }
     }
 }

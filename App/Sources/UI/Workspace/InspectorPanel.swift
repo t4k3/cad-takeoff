@@ -151,6 +151,11 @@ struct InspectorPanel: View {
             if spec.kind == .slider || spec.kind == .cylindrical {
                 DimensionField(title: "Corsa", value: Binding(get: { spec.offset }, set: { var j = spec; j.offset = $0; kind.wrappedValue = .joint(j) }))
             }
+        case let .combine(spec):
+            info("Operazione", spec.operation.label)
+            info("Obiettivo", model.document.features.first { $0.id == spec.target }?.name ?? "—")
+            info("Strumenti", spec.tools.compactMap { id in model.document.features.first { $0.id == id }?.name }.joined(separator: ", ").ifEmpty("—"))
+            info("Strumenti mantenuti", spec.keepTools ? "sì" : "no")
         case let .move(spec):
             info("Corpi", spec.bodies.compactMap { id in model.document.features.first { $0.id == id }?.name }.joined(separator: ", ").ifEmpty("—"))
             info("Spostamento", String(format: "%.2f · %.2f · %.2f mm", spec.translation.x, spec.translation.y, spec.translation.z))

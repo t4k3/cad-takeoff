@@ -181,6 +181,39 @@ public enum DesignEvaluator {
                 bodies[b] = moved(w, by: motion, feature: feature.id, revision: revision)
                 continue
             }
+            if case let .combine(spec) = feature.kind {
+                do { try spec.validate() } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                guard let target = bodies.firstIndex(where: { $0.source.id == spec.target }) else {
+                    issues.append(.init(featureID: feature.id, message: "Combina: il corpo obiettivo non esiste (deve venire prima nella timeline)."))
+                    continue
+                }
+                let tools = bodies.indices.filter { spec.tools.contains(bodies[$0].source.id) }
+                guard !tools.isEmpty else {
+                    issues.append(.init(featureID: feature.id, message: "Combina: i corpi strumento non esistono (devono venire prima nella timeline)."))
+                    continue
+                }
+                if tools.count < spec.tools.count {
+                    issues.append(.init(featureID: feature.id, message: "Combina: \(spec.tools.count - tools.count) corpi strumento non esistono più."))
+                }
+                var solid = solidOf(bodies[target])
+                for i in tools {
+                    let tool = solidOf(bodies[i])
+                    switch spec.operation {
+                    case .join: solid = solid.union(tool)
+                    case .cut: solid = solid.subtracting(tool)
+                    case .intersect: solid = solid.intersecting(tool)
+                    }
+                }
+                let result = rebuilt(bodies[target], solid, by: feature.id, revision: revision)
+                let empty = solid.isEmpty
+                let removed = (spec.keepTools ? [] : tools) + (empty ? [target] : [])
+                if !empty { bodies[target] = result }
+                for i in removed.sorted(by: >) { bodies.remove(at: i) }
+                if empty { issues.append(.init(featureID: feature.id, message: "Combina: non resta niente del corpo obiettivo.")) }
+                continue
+            }
             if case let .shell(spec) = feature.kind {
                 // The body with the open faces (they keep their IDs through booleans), else the named one.
                 let i = spec.openFaces.first.flatMap { face in bodies.firstIndex { $0.snapshot.faces.contains { $0.id == face } } }

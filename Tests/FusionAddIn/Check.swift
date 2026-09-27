@@ -23,7 +23,8 @@ import Foundation
         // The Base cube came with its history: rebuilt as a dimensioned sketch and an extrusion
         // (editable, «lato» a parameter); the component's body, without history, as its mesh.
         expect(doc.importReport?.hasPrefix("Da Fusion: 1 corpo modificabile, 1 come mesh") == true
-               && doc.importReport?.contains("Serie1: 1 copie") == true, "report: \(doc.importReport ?? "none")")
+               && doc.importReport?.contains("Serie1: 1 copie") == true
+               && doc.importReport?.contains("Combina1: corpo") == true, "report: \(doc.importReport ?? "none")")
         // The hole and its pattern copy: counterbored, sizes from Fusion's parameters.
         let holeSpecs = doc.features.compactMap { f -> HoleSpec? in if case let .hole(s) = f.kind { s } else { nil } }
         expect(holeSpecs.count == 2 && holeSpecs.allSatisfy { $0.style == .counterbore && $0.headDiameter == 8 && $0.counterboreDepth == 2 },

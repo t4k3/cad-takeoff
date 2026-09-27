@@ -161,6 +161,12 @@ base = Body("Base", cube(0, 0, 0, 2), Colour(200, 30, 30))
 import math
 base.physicalProperties = types.SimpleNamespace(volume=8.0 - 2 * math.pi * (0.225 ** 2 * 1.8 + 0.4 ** 2 * 0.2))
 base.boundingBox = types.SimpleNamespace(minPoint=P3(0, 0, 0), maxPoint=P3(2, 2, 2))
+# «Combina»: a 1 cm cube cut from the base, the tool kept (read rolled back: bodies as they were).
+tool = Body("Utensile", cube(0, 0, 0, 1), Colour(0, 0, 0))
+tool.physicalProperties = types.SimpleNamespace(volume=1.0)
+tool.boundingBox = types.SimpleNamespace(minPoint=P3(0, 0, 0), maxPoint=P3(1, 1, 1))
+combine = Obj("CombineFeature", name="Combina1", targetBody=base, toolBodies=Coll([tool]), operation=1, isKeepToolBodies=True)
+timeline.append(types.SimpleNamespace(entity=combine, isSuppressed=False, isRolledBack=False))
 root = types.SimpleNamespace(
     bRepBodies=[base, Body("Nascosto", cube(9, 9, 9, 1), Colour(0, 0, 0), visible=False)],
     allOccurrences=[types.SimpleNamespace(name="Perno:1", isLightBulbOn=True,
@@ -172,6 +178,7 @@ sketch.parentComponent = root
 extrude.parentComponent = root
 hole.parentComponent = root
 pattern.parentComponent = root
+combine.parentComponent = root
 fusion.Design = types.SimpleNamespace(cast=lambda p: p)
 app = types.SimpleNamespace(
     activeProduct=design, activeDocument=types.SimpleNamespace(name="Staffa v3"),
@@ -201,4 +208,9 @@ assert [round(c, 6) for c in h["centers"][0]] == [6.0, -20.0, 10.0] and [round(c
 sp = feats[2]
 assert sp["type"] == "pattern" and sp["inputs"] == ["Foro1"] and len(sp["transforms"]) == 1, sp
 assert [round(v, 6) for v in sp["transforms"][0][0]] == [1, 0, 0, 9], sp
+# The combine: operation, kept tools, and both bodies measured in mm (Y-up turned Z-up).
+cb = feats[3]
+assert cb["type"] == "combine" and cb["operation"] == "cut" and cb["keepTools"] is True, cb
+assert abs(cb["toolBodies"][0]["volume"] - 1000) < 1e-6 and cb["targetBody"]["name"] == "Base", cb
+assert [round(v, 6) for v in cb["toolBodies"][0]["max"]] == [10, 0, 10], cb
 print("fake Fusion export:", path)

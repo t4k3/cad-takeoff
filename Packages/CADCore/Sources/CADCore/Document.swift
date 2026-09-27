@@ -230,6 +230,8 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case move(MoveSpec)
         /// A part placed against another by a joint (Giunto).
         case joint(JointSpec)
+        /// Tool bodies joined to, cut from or intersected with a target body (Combina).
+        case combine(CombineSpec)
     }
 
     public var id: UUID
@@ -326,7 +328,7 @@ public struct Feature: Identifiable, Codable, Sendable, Equatable {
         case .pattern: return Mesh(vertices: [], indices: [])   // copies of another body
         case .split: return Mesh(vertices: [], indices: [])     // acts on another body
         case .revolve: return Mesh()                            // built above
-        case .shell, .move, .joint: return Mesh()               // act on other bodies
+        case .shell, .move, .joint, .combine: return Mesh()     // act on other bodies
         }
         return local.translated(by: position)
     }

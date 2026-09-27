@@ -168,7 +168,7 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split:
+                case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split, .combine:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
                 case var .joint(spec):
                     legal = ["angle", "offset"]
@@ -409,6 +409,12 @@ extension DesignModel: CADToolProvider {
                 value["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
                 value["warnings"] = .array(build.warnings.map { .string($0) })
             }
+        case let .combine(c):
+            value["kind"] = "combine"
+            value["operation"] = .string(c.operation.rawValue)
+            value["target_feature_id"] = .string(c.target.uuidString)
+            value["tool_feature_ids"] = .array(c.tools.map { .string($0.uuidString) })
+            value["keep_tools"] = .bool(c.keepTools)
         case let .joint(j):
             value["kind"] = "joint"
             value["joint_type"] = .string(j.kind.rawValue)
@@ -642,7 +648,7 @@ extension Feature.Kind {
     /// Features that change or copy bodies made earlier (no mesh of their own to validate).
     var actsOnBodies: Bool {
         switch self {
-        case .pattern, .split, .component, .shell, .move, .joint: true
+        case .pattern, .split, .component, .shell, .move, .joint, .combine: true
         default: false
         }
     }

@@ -175,6 +175,11 @@ public struct FusionTimeline: Codable, Sendable, Equatable {
         public var inputs: [String]?
         public var inputKind: String?
         public var transforms: [[[Double]]]?
+        /// Combine: the target and tool bodies as they were just before it (volume and extent, to
+        /// find them among the rebuilt ones), and whether the tools stay.
+        public var targetBody: Body?
+        public var toolBodies: [Body]?
+        public var keepTools: Bool?
 
         public init(type: String, name: String, operation: String? = nil, profiles: [String]? = nil, extent: Extent? = nil, axis: Axis? = nil,
                     angle: Double? = nil, angleExpression: String? = nil, edges: [[[Double]]]? = nil, size: Double? = nil,

@@ -28,7 +28,7 @@ enum FeatureCommands {
         case let .revolve(spec):
             fields = [.init(id: "angle", label: "Angolo", kind: .angle(0.1...360), value: .number(spec.angle)),
                       .init(id: "rev", label: "Verso opposto", kind: .toggle, value: .flag(spec.reversed))]
-        case .hole, .chamfer, .sheetMetal, .pattern, .split, .shell, .move, .joint:
+        case .hole, .chamfer, .sheetMetal, .pattern, .split, .shell, .move, .joint, .combine:
             return nil   // own panels (HoleCommand, ChamferCommand, SheetMetalCommand, PatternCommand)
         case let .component(ref):
             return component(id, ref: ref, original: original, model: model)
@@ -62,7 +62,7 @@ enum FeatureCommands {
                     if e != 3 { f.untilFace = nil }
                 }
                 f.taper = v("taper")
-            case .hole, .chamfer, .sheetMetal, .component, .pattern, .split, .shell, .move, .joint: break
+            case .hole, .chamfer, .sheetMetal, .component, .pattern, .split, .shell, .move, .joint, .combine: break
             case var .revolve(spec):
                 spec.angle = v("angle")
                 if case let .flag(b)? = fields.first(where: { $0.id == "rev" })?.value { spec.reversed = b }

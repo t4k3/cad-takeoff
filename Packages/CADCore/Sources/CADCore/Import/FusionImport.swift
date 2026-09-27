@@ -71,6 +71,7 @@ public enum FusionImport {
                 case "hole": try addHole(f, doc: &doc, expression: expression)
                 case "pattern", "mirror": try addCopies(f, doc: &doc, notes: &report.notes)
                 case "shell": try addShell(f, doc: &doc)
+                case "combine": try addCombine(f, doc: &doc)
                 default: throw Skip("tipo \(f.type) non ancora convertito")
                 }
             } catch let skip as Skip {
@@ -530,6 +531,34 @@ public enum FusionImport {
         }
         guard let target = body ?? bodies.last?.id else { throw Skip("corpo da svuotare non trovato") }
         doc.timeline.append(TimelineItem(.feature(Feature(name: f.name, kind: .shell(ShellSpec(body: target, thickness: t, openFaces: open))))))
+    }
+
+    /// Combina: the target and tool bodies found among the ones rebuilt so far by their volume
+    /// and extent just before the combine (as the finished bodies are checked).
+    static func addCombine(_ f: FusionTimeline.Feature, doc: inout CADDocument) throws {
+        guard let target = f.targetBody, let tools = f.toolBodies, !tools.isEmpty else { throw Skip("corpi di combina non letti") }
+        let operation: CombineSpec.Operation
+        switch f.operation {
+        case "join": operation = .join
+        case "cut": operation = .cut
+        case "intersect": operation = .intersect
+        default: throw Skip("operazione di combina «\(f.operation ?? "?")» non convertita")
+        }
+        let built = DesignEvaluator.evaluate(doc, revision: "fusion-combine").bodies
+        var used = Set<UUID>()
+        func find(_ b: FusionTimeline.Body) -> UUID? {
+            guard let hit = built.first(where: { !used.contains($0.id) && same(b, $0.mesh) }) else { return nil }
+            used.insert(hit.id)
+            return hit.id
+        }
+        guard let targetID = find(target) else { throw Skip("corpo obiettivo «\(target.name)» non ritrovato") }
+        var toolIDs: [UUID] = []
+        for b in tools {
+            guard let id = find(b) else { throw Skip("corpo strumento «\(b.name)» non ritrovato") }
+            toolIDs.append(id)
+        }
+        doc.timeline.append(TimelineItem(.feature(Feature(name: f.name, kind: .combine(CombineSpec(target: targetID, tools: toolIDs, operation: operation,
+                                                                                                   keepTools: f.keepTools ?? false))))))
     }
 
     // MARK: Geometry

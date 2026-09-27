@@ -280,7 +280,7 @@ class HistoryReader:
                 k = kind(entity)
                 if k == "Sketch":
                     self.read_sketch(entity)
-                elif k in ("FilletFeature", "ChamferFeature", "ShellFeature"):
+                elif k in ("FilletFeature", "ChamferFeature", "ShellFeature", "CombineFeature"):
                     # Their input edges and faces exist only before them: the timeline is rolled
                     # back to just before the feature to read them, then forward again.
                     rolled = False
@@ -413,6 +413,24 @@ class HistoryReader:
             entry.update(edges=edges, size=size)
         elif k == "HoleFeature":
             self.read_hole(f, frame, entry)
+        elif k == "CombineFeature":
+            # Rolled back to just before it: the target and tools as they were, to be found among
+            # the rebuilt bodies by volume and extent.
+            target = bodies_info(f.targetBody, f.targetBody.name, frame, None)
+            tools = []
+            ents = f.toolBodies
+            for i in range(ents.count):
+                b = ents.item(i)
+                info = bodies_info(b, b.name, frame, None)
+                if info is None:
+                    self.features.append({"type": "combina con corpi non misurabili", "name": f.name})
+                    return
+                tools.append(info)
+            if target is None:
+                self.features.append({"type": "combina con corpi non misurabili", "name": f.name})
+                return
+            entry.update(type="combine", operation=self.operation(f), targetBody=target, toolBodies=tools,
+                         keepTools=bool(getattr(f, "isKeepToolBodies", False)))
         elif k == "ShellFeature":
             faces = []
             ents = f.inputEntities
