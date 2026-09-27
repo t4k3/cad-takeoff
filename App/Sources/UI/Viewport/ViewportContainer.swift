@@ -276,7 +276,17 @@ struct ViewportContainer: View {
                 if let ref = sketch.pickRef(sketch.local(p), kinds: [.segment]) { pick(ref) } else { model.statusMessage = "Clicca una linea dello schizzo come asse." }
                 return
             }
-            if sketch.pickingRegions, let p = sketch.intersect(ray) { sketch.toggleRegion(at: p); return }
+            if sketch.pickingRegions, let p = sketch.intersect(ray) {
+                // Estrudi from SOLIDO: off the sketch's areas, a planar face of a body is extruded.
+                if workspace.extrudeFromSolid, !sketch.hasRegion(at: p),
+                   let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind,
+                   model.evaluation().bodies.first(where: { $0.id == ref.feature })?.snapshot.flatPlane(of: id) != nil {
+                    workspace.extrudeFace(ref, model: model)
+                    return
+                }
+                sketch.toggleRegion(at: p)
+                return
+            }
             guard workspace.command == nil, let p = sketch.intersect(ray) else { return }
             sketch.vertexSnap = 11 * viewport.mmPerPoint
             sketch.click(p)

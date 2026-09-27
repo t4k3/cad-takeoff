@@ -172,6 +172,11 @@ final class SketchSession {
     var pickedAreas: [SketchFace] { selectedSeeds.isEmpty ? [] : sketch.areas(seeds: selectedSeeds) }
     @ObservationIgnored var onRegionsChange: () -> Void = {}
 
+    /// There is a closed region of the sketch under a point of the plane.
+    func hasRegion(at world: SIMD3<Float>) -> Bool {
+        sketch.face(at: local(world), in: faces) != nil
+    }
+
     /// Adds or removes the region under a point of the plane.
     func toggleRegion(at world: SIMD3<Float>) {
         let p = local(world)

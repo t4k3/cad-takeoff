@@ -38,6 +38,9 @@ final class WorkspaceState {
     }
     /// A command is collecting edges: a plain click adds or removes one (no ⇧ needed).
     var edgePicking = false
+    /// Estrudi started from SOLIDO: a click off the sketch's areas, on a planar face of a body,
+    /// extrudes that face instead (as Fusion's Extrude takes profiles or faces).
+    var extrudeFromSolid = false
     @ObservationIgnored var onGeoSelectionChange: (() -> Void)?
 
     /// Drag arrow of the open command (chamfer distance/radius), if any.
@@ -314,11 +317,27 @@ final class WorkspaceState {
         created.onCancel = { [weak self, weak created] in
             created?.onCancel = cancel
             cancel()
-            guard let self, self.sketch != nil else { return }
+            guard let self else { return }
+            self.extrudeFromSolid = false
+            guard self.sketch != nil else { return }
             self.command = nil
             self.exitSketch()
         }
+        created.update("areas") { $0.kind = .reference(prompt: "Clicca le aree dello schizzo o una faccia del pezzo", maxCount: 500) }
+        extrudeFromSolid = true
         command = created
+    }
+
+    /// Estrudi from SOLIDO, a planar face of a body clicked: the sketch closes and the face is
+    /// extruded (Premi/Tira on it).
+    func extrudeFace(_ ref: GeoRef, model: DesignModel) {
+        command?.onCancel()
+        command = nil
+        if sketch != nil { exitSketch() }
+        extrudeFromSolid = false
+        geoSelection = [ref]
+        model.selection = ref.feature
+        startPressPull(model: model)
     }
 
     /// Sketches with at least one closed profile, in history order.
