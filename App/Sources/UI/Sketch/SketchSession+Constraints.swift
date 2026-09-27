@@ -158,6 +158,7 @@ extension SketchSession {
         // Defining points only (a rectangle's corners, a circle's centre…), never derived ones.
         let ownPoints: [Int] = switch new.kind {
         case let .polyline(p, _): Array(p.indices)
+        case let .spline(p, _): Array(p.indices)
         case .rectangle: [0, 1, 2, 3]
         case .circle, .polygon: [0]
         case .slot: [0, 1]

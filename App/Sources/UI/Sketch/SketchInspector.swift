@@ -64,6 +64,7 @@ struct SketchInspector: View {
         case .polygon: "hexagon"
         case .slot: "capsule"
         case .arc: "circle.bottomhalf.filled"
+        case .spline: "scribble.variable"
         }
     }
 
@@ -75,6 +76,7 @@ struct SketchInspector: View {
         case let .polygon(_, r, _, _, _): "R\(fmt(r))"
         case let .slot(a, b, w): "\(fmt(hypot(b.x - a.x, b.y - a.y)))×\(fmt(w))"
         case let .arc(_, r, _, _): "R\(fmt(r))"
+        case let .spline(p, _): "\(p.count) punti"
         }
     }
 
@@ -132,6 +134,12 @@ private struct ShapeParameters: View {
                 field("Angolo", ang * 180 / .pi, unit: "°") { set(.slot(start: a, end: endFrom(a, len, $0 * .pi / 180), width: wdt)) }
                 field("Larghezza", wdt, positive: true) { set(.slot(start: a, end: b, width: $0)) }
                 info("Lunghezza totale", "\(fmt(len + wdt)) mm")
+            case let .spline(p, closed):
+                ForEach(p.indices, id: \.self) { i in
+                    field("Punto \(i + 1) X", p[i].x) { var q = p; q[i].x = $0; set(.spline(points: q, closed: closed)) }
+                    field("Punto \(i + 1) Y", p[i].y) { var q = p; q[i].y = $0; set(.spline(points: q, closed: closed)) }
+                }
+                info("Lunghezza", "\(fmt(shape.length)) mm")
             case let .arc(c, r, a0, a1):
                 field("Centro X", c.x) { set(.arc(center: Vec2($0, c.y), radius: r, start: a0, end: a1)) }
                 field("Centro Y", c.y) { set(.arc(center: Vec2(c.x, $0), radius: r, start: a0, end: a1)) }

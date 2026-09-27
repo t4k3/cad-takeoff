@@ -70,6 +70,8 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
         /// Circular arc, counter-clockwise from `start` to `end` (radians). Open: it bounds profiles
         /// together with the lines it meets (fillets, rounded outlines).
         case arc(center: Vec2, radius: Double, start: Double, end: Double)
+        /// Smooth curve through the points (centripetal Catmull–Rom), open or closed.
+        case spline(points: [Vec2], closed: Bool)
     }
 
     public var id: UUID
@@ -87,6 +89,7 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
     public var isClosed: Bool {
         if case let .polyline(_, closed) = kind { return closed }
         if case .arc = kind { return false }
+        if case let .spline(_, closed) = kind { return closed }
         return true
     }
 
@@ -141,7 +144,42 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
                 let t = a0 + sweep * Double(i) / Double(n)
                 return Vec2(c.x + r * cos(t), c.y + r * sin(t))
             }
+        case let .spline(p, closed):
+            return Self.spline(p, closed: closed)
         }
+    }
+
+    /// Points along a centripetal Catmull–Rom curve through `p` (16 per span); closed curves
+    /// without the repeated first point.
+    public static func spline(_ p: [Vec2], closed: Bool, perSpan: Int = 16) -> [Vec2] {
+        guard p.count >= 2 else { return p }
+        guard p.count >= 3 || closed else { return p }
+        let n = p.count
+        func at(_ i: Int) -> Vec2 {
+            if closed { return p[((i % n) + n) % n] }
+            // Open ends: mirror the neighbour so the curve starts along its first chord.
+            if i < 0 { return p[0] + (p[0] - p[1]) }
+            if i >= n { return p[n - 1] + (p[n - 1] - p[n - 2]) }
+            return p[i]
+        }
+        var out: [Vec2] = []
+        let spans = closed ? n : n - 1
+        for i in 0..<spans {
+            let p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2)
+            func knot(_ a: Vec2, _ b: Vec2) -> Double { max(pow((b - a).length, 0.5), 1e-9) }
+            let t1 = knot(p0, p1), t2 = t1 + knot(p1, p2), t3 = t2 + knot(p2, p3)
+            for k in 0..<perSpan {
+                let t = t1 + (t2 - t1) * Double(k) / Double(perSpan)
+                let a1 = p0 * ((t1 - t) / t1) + p1 * (t / t1)
+                let a2 = p1 * ((t2 - t) / (t2 - t1)) + p2 * ((t - t1) / (t2 - t1))
+                let a3 = p2 * ((t3 - t) / (t3 - t2)) + p3 * ((t - t2) / (t3 - t2))
+                let b1 = a1 * ((t2 - t) / t2) + a2 * (t / t2)
+                let b2 = a2 * ((t3 - t) / (t3 - t1)) + a3 * ((t - t1) / (t3 - t1))
+                out.append(b1 * ((t2 - t) / (t2 - t1)) + b2 * ((t - t1) / (t2 - t1)))
+            }
+        }
+        if !closed { out.append(p[n - 1]) }
+        return out
     }
 
     /// Profile for extrusion (nil for open or construction shapes).
@@ -190,6 +228,7 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
         case let .polygon(_, _, n, _, _): "Poligono (\(n) lati)"
         case .slot: "Asola"
         case .arc: "Arco"
+        case .spline: "Spline"
         }
     }
 }

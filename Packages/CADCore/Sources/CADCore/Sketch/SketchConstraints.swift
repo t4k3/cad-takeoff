@@ -167,6 +167,7 @@ extension SketchShape {
         case let .polygon(c, r, _, rot, _): [c.x, c.y, r, rot]
         case let .slot(a, b, w): [a.x, a.y, b.x, b.y, w]
         case let .arc(c, r, a0, a1): [c.x, c.y, r, a0, a1]
+        case let .spline(p, _): p.flatMap { [$0.x, $0.y] }
         }
     }
 
@@ -181,6 +182,8 @@ extension SketchShape {
         case let .polygon(_, _, n, _, circ): s.kind = .polygon(center: Vec2(v[0], v[1]), radius: v[2], sides: n, rotation: v[3], circumscribed: circ)
         case .slot: s.kind = .slot(start: Vec2(v[0], v[1]), end: Vec2(v[2], v[3]), width: v[4])
         case .arc: s.kind = .arc(center: Vec2(v[0], v[1]), radius: v[2], start: v[3], end: v[4])
+        case let .spline(_, closed):
+            s.kind = .spline(points: stride(from: 0, to: v.count - 1, by: 2).map { Vec2(v[$0], v[$0 + 1]) }, closed: closed)
         }
         return s
     }
@@ -199,6 +202,7 @@ extension SketchShape {
             let t = rot + Double(i - 1) / Double(max(3, n)) * 2 * .pi
             return Vec2(c.x + vr * cos(t), c.y + vr * sin(t))
         case let .slot(a, b, _): return i == 0 ? a : (i == 1 ? b : nil)
+        case let .spline(p, _): return p.indices.contains(i) ? p[i] : nil
         case let .arc(c, r, a0, a1):
             switch i {
             case 0: return c
@@ -217,6 +221,7 @@ extension SketchShape {
         case let .polygon(_, _, n, _, _): max(3, n) + 1
         case .slot: 2
         case .arc: 3
+        case let .spline(p, _): p.count
         }
     }
 
@@ -238,7 +243,7 @@ extension SketchShape {
             let d = Vec2(b.x - a.x, b.y - a.y), l = max((d.x * d.x + d.y * d.y).squareRoot(), 1e-12)
             let n = Vec2(-d.y / l * w / 2, d.x / l * w / 2)
             return i == 0 ? (Vec2(a.x - n.x, a.y - n.y), Vec2(b.x - n.x, b.y - n.y)) : (Vec2(b.x + n.x, b.y + n.y), Vec2(a.x + n.x, a.y + n.y))
-        case .circle, .arc: return nil
+        case .circle, .arc, .spline: return nil
         }
     }
 
@@ -248,7 +253,7 @@ extension SketchShape {
         case .rectangle: 4
         case let .polygon(_, _, n, _, _): max(3, n)
         case .slot: 2
-        case .circle, .arc: 0
+        case .circle, .arc, .spline: 0
         }
     }
 

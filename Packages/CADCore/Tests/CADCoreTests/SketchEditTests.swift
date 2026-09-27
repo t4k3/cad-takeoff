@@ -142,3 +142,29 @@ private func line(_ a: Vec2, _ b: Vec2) -> SketchShape { SketchShape(kind: .poly
     #expect(near((o.point(1)! - o.point(0)!).length, 40, 1e-6))
     #expect(throws: SketchEditError.self) { try sketch.mirror([l.id], about: .point(l.id, 0)) }
 }
+
+@Test func splinesPassThroughTheirPointsAndMakeProfiles() throws {
+    let pts = [Vec2(0, 0), Vec2(20, 10), Vec2(40, 0), Vec2(60, 15)]
+    let open = SketchShape(kind: .spline(points: pts, closed: false))
+    let curve = open.outline
+    // Through every point, smooth in between (no point far off the chords' band).
+    for p in pts { #expect(curve.contains { ($0 - p).length < 1e-9 }) }
+    #expect(curve.count == 3 * 16 + 1 && !open.isClosed && open.profile == nil)
+    // Closed: a region to extrude, bulging past its control polygon.
+    let blob = SketchShape(kind: .spline(points: [Vec2(0, 0), Vec2(30, 0), Vec2(30, 20), Vec2(0, 20)], closed: true))
+    var sketch = Sketch(name: "S", shapes: [blob])
+    let faces = sketch.faces
+    #expect(faces.count == 1 && faces[0].area > 600)
+    let body = try PrimitiveKernel.build(Feature(name: "E", kind: .extrude(profile: Profile2D(points: faces[0].outline), height: 5)))
+    #expect(abs(body.mesh.volume - faces[0].area * 5) < 1e-6)
+    // Its points take constraints like a polyline's vertices.
+    sketch.constraints = [.init(.fix(.point(blob.id, 0), Vec2(0, 0))), .init(.distance(.point(blob.id, 0), .point(blob.id, 1), 50))]
+    let ok = sketch.solve()
+    #expect(ok)
+    #expect(abs((sketch.shapes[0].point(1)! - sketch.shapes[0].point(0)!).length - 50) < 1e-6)
+    // Mirrored copies follow.
+    let axis = SketchShape(kind: .polyline([Vec2(-10, -50), Vec2(-10, 50)], closed: false), isConstruction: true)
+    var m = Sketch(name: "M", shapes: [axis, open])
+    let copy = try m.mirror([open.id], about: .segment(axis.id, 0))
+    #expect((m.shapes.first { $0.id == copy[0] }!.point(0)! - Vec2(-20, 0)).length < 1e-9)
+}

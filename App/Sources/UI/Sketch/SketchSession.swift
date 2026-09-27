@@ -10,11 +10,11 @@ import simd
 final class SketchSession {
     enum Tool: String, CaseIterable, Identifiable {
         case select = "Seleziona", line = "Linea", rectangle = "Rettangolo", circle = "Cerchio",
-             polygon = "Poligono", slot = "Asola", arc = "Arco", fillet = "Raccordo", chamfer = "Smusso", trim = "Taglia", extend = "Estendi",
+             polygon = "Poligono", slot = "Asola", arc = "Arco", spline = "Spline", fillet = "Raccordo", chamfer = "Smusso", trim = "Taglia", extend = "Estendi",
              offset = "Offset", mirror = "Specchio", dimension = "Quota"
         var id: String { rawValue }
         /// The drawing tools (Quota lives with the constraints, the editing tools under MODIFICA).
-        static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc] }
+        static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc, .spline] }
         static var modify: [Tool] { [.fillet, .chamfer, .trim, .extend, .offset, .mirror] }
         var symbol: String {
             switch self {
@@ -25,6 +25,7 @@ final class SketchSession {
             case .polygon: "hexagon"
             case .slot: "capsule"
             case .arc: "circle.bottomhalf.filled"
+            case .spline: "scribble.variable"
             case .fillet: "arrow.turn.up.right"
             case .chamfer: "triangle.bottomhalf.filled"
             case .trim: "scissors"
@@ -43,6 +44,7 @@ final class SketchSession {
             case .polygon: "Clicca il centro, poi un vertice (o il punto medio di un lato se circoscritto)."
             case .slot: "Clicca il primo centro, il secondo centro, poi la larghezza."
             case .arc: "Clicca l'inizio, la fine, poi un punto dell'arco."
+            case .spline: "Clicca i punti della curva. Clicca sul primo punto per chiuderla · Invio termina · Esc annulla."
             case .fillet: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato."
             case .chamfer: "Clicca l'angolo tra due linee: lo taglia una linea alla distanza impostata su entrambi i lati."
             case .trim: "Clicca il pezzo da togliere: si taglia fino alle linee che lo incrociano (in rosso sotto il cursore)."
@@ -55,7 +57,7 @@ final class SketchSession {
         var key: String? {
             switch self {
             case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .arc: "a"
-            case .trim: "t"; case .offset: "o"
+            case .trim: "t"; case .offset: "o"; case .spline: "b"
             case .select, .fillet, .chamfer, .extend, .mirror: nil
             }
         }
@@ -296,6 +298,12 @@ final class SketchSession {
         case .select:
             selectedConstraint = nil
             selection = pick(raw)
+        case .spline:
+            if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
+                commit(.spline(points: pending, closed: true))
+            } else if pending.last.map({ dist($0, p) > 1e-6 }) ?? true {
+                pending.append(p)
+            }
         case .line:
             if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
                 commit(.polyline(pending, closed: true))
@@ -326,8 +334,9 @@ final class SketchSession {
     }
 
     func finish() {
-        guard tool == .line, pending.count >= 2 else { return }
-        commit(.polyline(pending, closed: false))
+        guard pending.count >= 2 else { return }
+        if tool == .line { commit(.polyline(pending, closed: false)) }
+        if tool == .spline { commit(.spline(points: pending, closed: false)) }
     }
 
     func cancel() -> Bool {
@@ -401,7 +410,7 @@ final class SketchSession {
         var out: [(Vec2, Vec2)] = []
         for s in shapes {
             switch s.kind {
-            case .circle, .slot, .arc: continue
+            case .circle, .slot, .arc, .spline: continue
             default:
                 let o = s.outline
                 guard o.count >= 2 else { continue }
@@ -438,6 +447,8 @@ final class SketchSession {
                 out += [.init(point: s.point(0)!, kind: .center), .init(point: s.point(1)!, kind: .vertex), .init(point: s.point(2)!, kind: .vertex)]
                 let o = s.outline
                 if !o.isEmpty { out.append(.init(point: o[o.count / 2], kind: .midpoint)) }
+            case let .spline(p, _):
+                out += p.map { .init(point: $0, kind: .vertex) }
             }
         }
         out += segments.map { .init(point: mid($0.0, $0.1), kind: .midpoint) }
@@ -507,6 +518,9 @@ final class SketchSession {
         case .line:
             guard let last = pending.last else { return xy }
             return "\(fmt(dist(last, c))) mm · \(fmt(atan2(c.y - last.y, c.x - last.x) * 180 / .pi))°"
+        case .spline:
+            guard !pending.isEmpty else { return xy }
+            return "\(pending.count + 1) punti · \(fmt(SketchShape(kind: .spline(points: pending + [c], closed: false)).length)) mm"
         case .rectangle:
             guard let a = pending.first else { return xy }
             return "\(fmt(abs(c.x - a.x))) × \(fmt(abs(c.y - a.y))) mm"
@@ -590,6 +604,7 @@ final class SketchSession {
             case .polyline, .rectangle, .polygon: for p in s.outline { out += cross(p, size: vertexSnap * 0.3, color: color) }
             case .arc: out += cross(s.point(0)!, size: vertexSnap * 0.35, color: color * SIMD4(1, 1, 1, 0.6))
                 for i in [1, 2] { out += cross(s.point(i)!, size: vertexSnap * 0.3, color: color) }
+            case let .spline(p, _): for q in p { out += cross(q, size: vertexSnap * 0.3, color: color) }
             }
         }
         // Extrusion preview of the picked areas: outlines and holes at the top, side lines at corners.
@@ -636,6 +651,7 @@ final class SketchSession {
             default: nil
             }
             if tool == .line || (tool == .arc && pending.count == 1) { ring(pending + [c], closed: false, rubber) }
+            if tool == .spline { ring(SketchShape.spline(pending + [c], closed: false), closed: false, rubber) }
             if tool == .arc, pending.count == 2, let kind = arcKind(pending[0], pending[1], through: c) {
                 ring(SketchShape(kind: kind).outline, closed: false, rubber)
             }

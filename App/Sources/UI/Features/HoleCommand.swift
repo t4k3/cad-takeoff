@@ -158,6 +158,8 @@ final class HolePlacement {
             return [(a, "Centro schizzo"), (b, "Centro schizzo"), (mid(a, b), "Punto medio schizzo")]
         case .arc:
             return [(shape.point(0)!, "Centro schizzo"), (shape.point(1)!, "Estremità schizzo"), (shape.point(2)!, "Estremità schizzo")]
+        case let .spline(p, _):
+            return p.map { ($0, "Punto spline") }
         }
     }
 

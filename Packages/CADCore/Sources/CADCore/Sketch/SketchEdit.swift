@@ -115,6 +115,11 @@ extension SketchShape {
         switch kind {
         case .polyline, .rectangle, .polygon:
             return (0..<segmentCount).compactMap { segment($0).map { SketchPrim.line($0.0, $0.1) } }
+        case .spline:
+            // Its sampled curve (others trim and extend against it; it is not trimmed itself).
+            let o = outline
+            let count = isClosed ? o.count : o.count - 1
+            return (0..<max(0, count)).map { SketchPrim.line(o[$0], o[($0 + 1) % o.count]) }
         case let .circle(c, r):
             return [.arc(center: c, radius: r, start: 0, sweep: 2 * .pi)]
         case let .arc(c, r, a0, a1):
@@ -386,6 +391,7 @@ extension Sketch {
         func ends(_ s: SketchShape) -> (Vec2, Vec2)? {
             switch s.kind {
             case let .polyline(p, false): return p.count >= 2 ? (p[0], p[p.count - 1]) : nil
+            case let .spline(p, false): return p.count >= 2 ? (p[0], p[p.count - 1]) : nil
             case .arc: return (s.point(1)!, s.point(2)!)
             default: return nil
             }
@@ -449,6 +455,11 @@ extension Sketch {
                 // Counter-clockwise outline: its inside is on the left.
                 let ccw = Profile2D.signedArea(p) > 0
                 n.kind = .polyline(Self.offsetPolyline(p, closed: true, left: ccw ? -δ : δ), closed: true)
+            case .spline:
+                // A spline's offset follows its curve as a polyline.
+                let p = s.outline
+                let ccw = Profile2D.signedArea(p) > 0
+                n.kind = .polyline(Self.offsetPolyline(p, closed: true, left: ccw ? -δ : δ), closed: true)
             default:
                 throw SketchEditError.invalid("forma non gestita")
             }
@@ -480,6 +491,8 @@ extension Sketch {
                 switch s.kind {
                 case let .polyline(p, closed):
                     n.kind = .polyline(Self.offsetPolyline(p, closed: closed, left: δ), closed: closed)
+                case let .spline(_, closed):
+                    n.kind = .polyline(Self.offsetPolyline(s.outline, closed: closed, left: δ), closed: closed)
                 case let .arc(c, r, a0, a1):
                     guard r - δ > 1e-9 else { throw SketchEditError.invalid("distanza più grande del raggio") }
                     n.kind = .arc(center: c, radius: r - δ, start: a0, end: a1)
@@ -603,6 +616,9 @@ extension Sketch {
                 m.kind = .slot(start: reflect(a), end: reflect(b), width: w)
                 pairs = [(0, 0), (1, 1)]
                 added.append(.init(.equal(.circle(s.id, 0), .circle(m.id, 0))))
+            case let .spline(p, closed):
+                m.kind = .spline(points: p.map(reflect), closed: closed)
+                pairs = p.indices.map { ($0, $0) }
             }
             added += pairs.map { .init(.symmetric(.point(s.id, $0.0), .point(m.id, $0.1), axis)) }
             copies.append(m)
