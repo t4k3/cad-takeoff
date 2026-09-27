@@ -322,10 +322,14 @@ struct CircuitTests {
         await sc.keepoutClick(at: PCBPoint(10, 20), tolerance: 0.01)
         await sc.keepoutClick(at: PCBPoint(14, 24), tolerance: 0.01)
         let revisionBeforeCancel = sc.document!.revision
+        // The copper worker held at its start: cancelled while it certainly runs.
+        let workGate = ReadGate(), workKey = URL(fileURLWithPath: "/pcb-work")
+        sc.pcbWorkGate = { await workGate.wait(workKey) }
         async let cancelled = sc.finishKeepout()
-        var spins = 0
-        while !sc.pcbBusy && spins < 1000 { await Task.yield(); spins += 1 }
+        await workGate.arrived(workKey)
         sc.cancelPCB()
+        await workGate.release(workKey)
+        sc.pcbWorkGate = nil
         let installed = await cancelled
         check(!installed && sc.keepouts.isEmpty && sc.document!.revision == revisionBeforeCancel && sc.keepoutDraft != nil && !sc.pcbBusy,
               "annullato durante il lavoro: niente area, bozza conservata (\(last))")
@@ -527,8 +531,82 @@ struct CircuitTests {
         check(two.pcbIsCurrent && two.design == sc.design && two.design!.board.copper?.tracks.count == 3, "riaperto col suo rame")
         try? FileManager.default.removeItem(at: outS2)
 
+        // PRODUZIONE: the check follows the circuit, profile and variant; closing forgets it.
+        let fab = CircuitModel()
+        var fabMessage = ""
+        fab.report = { fabMessage = $0 }
+        // The engine's own fabrication fixture: a routed two-layer board that can be exported.
+        let fabFixture = URL(fileURLWithPath: CommandLine.arguments[2]).deletingLastPathComponent().appendingPathComponent("fabrication.json")
+        try await fab.open(fabFixture)
+        fab.openFabrication()
+        await fab.fabricationReady()
+        let firstCheck = fab.currentFabrication
+        check(firstCheck?.preview?.designID == fab.design?.id && firstCheck?.preview?.revision == fab.document?.revision,
+              "verifica di produzione del circuito aperto (\(firstCheck?.failure ?? "-"))")
+        fab.closeFabrication()
+        check(fab.fabrication == nil && fab.fabricationTask == nil, "chiusa: verifica dimenticata")
+        fab.openFabrication()
+        check(fab.fabricationTask != nil, "riaperta sulla stessa chiave: verifica rifatta, non in attesa")
+        await fab.fabricationReady()
+        check(fab.currentFabrication?.preview != nil, "riaperta: verifica pronta")
+        fab.fabricationProfile.solderMaskExpansion = 0.1
+        check(fab.currentFabrication == nil || fab.currentFabrication?.preview == nil, "profilo cambiato: verifica vecchia non mostrata")
+        await fab.fabricationReady()
+        check(fab.currentFabrication?.preview?.profile.solderMaskExpansion == 0.1, "verifica col profilo nuovo")
+        fab.fabricationProfile.minimumMaskWeb = 0
+        await fab.fabricationReady()
+        check(fab.currentFabrication?.failure != nil && !fab.canExportFabrication, "profilo non valido: motivo, niente export")
+        fab.fabricationProfile = FabricationProfile()
+        await fab.fabricationReady()
+
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent("produzione-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        func published() -> [String] { ((try? FileManager.default.contentsOfDirectory(atPath: parent.path)) ?? []).sorted() }
+        if fab.canExportFabrication {
+            let docBefore = fab.document
+            let folder = await fab.exportFabrication(into: parent, name: "Scheda")
+            check(folder?.lastPathComponent == "Scheda" && fab.document == docBefore && !fab.canUndo && !fab.isDirty,
+                  "export in una cartella nuova, circuito intatto, nessun passo di annulla (\(fabMessage))")
+            let files = (try? FileManager.default.contentsOfDirectory(atPath: folder?.path ?? "")) ?? []
+            check(files.contains("board-F_Cu.gbr") && files.contains("board-PTH.drl") && files.count == 17 && !files.contains { $0.hasPrefix(".") },
+                  "Gerber, forature e montaggio scritti, niente temporanei (\(files.count))")
+            let again = await fab.exportFabrication(into: parent, name: "Scheda")
+            check(fab.fabricationOutcome?.folder == again && fab.fabricationOutcome?.message.contains("Scheda 2") == true, "esito dell'export nel pannello")
+            check(again?.lastPathComponent == "Scheda 2" && published() == ["Scheda", "Scheda 2"], "la cartella esistente non si tocca: «Scheda 2» (\(published()))")
+
+            // Suspended while staging: a change, an open of the same circuit, or a cancel → nothing published.
+            let stageGate = ReadGate()
+            let stagingKey = parent.appendingPathComponent("staging")
+            fab.stageFabrication = { files, parent in
+                let temp = try CircuitModel.stageFiles(files, in: parent)
+                await stageGate.wait(stagingKey)
+                return temp
+            }
+            let saved = FileManager.default.temporaryDirectory.appendingPathComponent("produzione-\(UUID().uuidString).ftkc")
+            try fab.save(to: saved)
+            for change in ["revisione", "stesso circuito riaperto", "annullato"] {
+                await fab.fabricationReady()
+                let exporting = Task { await fab.exportFabrication(into: parent, name: "Cambiata") }
+                await stageGate.arrived(stagingKey)
+                switch change {
+                case "revisione": fab.setBoard(width: 41, height: 30, thickness: 1.6)
+                case "annullato": exporting.cancel()
+                default: try await fab.open(saved)
+                }
+                await stageGate.release(stagingKey)
+                let result = await exporting.value
+                check(result == nil && published() == ["Scheda", "Scheda 2"], "export sospeso, \(change): nessuna cartella pubblicata (\(published()))")
+            }
+            try? FileManager.default.removeItem(at: saved)
+        } else {
+            check(false, "scheda di prova non esportabile: \(fab.currentFabrication?.preview?.issues.map(\.message) ?? [])")
+        }
+        try? FileManager.default.removeItem(at: parent)
+
+        try await circuitToolTests(fixture: fabFixture, check: check)
+
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
-        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, piani di rame, annulla, salva e riapri")
+        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, piani di rame, produzione, strumenti circuit_* dell'assistente, annulla, salva e riapri")
     }
 }
 

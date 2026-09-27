@@ -18,6 +18,10 @@ final class AppleIntelligenceProvider: AssistantProvider {
     /// Runs a CAD tool for the model (set by the session: shows the call and returns its result).
     @ObservationIgnored var executor: (@MainActor (String, JSONValue) async -> ToolResult)?
     @ObservationIgnored private var session: LanguageModelSession?
+    /// The tools (and workspace) the session was made with: another catalogue needs a new session.
+    @ObservationIgnored private var sessionKey: [String] = []
+    /// Where the user is (set by the session before each turn): CAD or CIRCUITI.
+    @ObservationIgnored var focus: AssistantFocus = .cad
     @ObservationIgnored private var pending = ""
 
     var isConfigured: Bool { SystemLanguageModel.default.isAvailable }
@@ -32,7 +36,7 @@ final class AppleIntelligenceProvider: AssistantProvider {
         }
     }
 
-    func reset() { session = nil; pending = "" }
+    func reset() { session = nil; sessionKey = []; pending = "" }
 
     func addUserMessage(_ text: String) { pending = text }
 
@@ -49,17 +53,27 @@ final class AppleIntelligenceProvider: AssistantProvider {
     frase cosa hai fatto e le misure. Se nessuno strumento fa ciò che serve, dillo.
     """
 
+    static let circuitInstructions = """
+    Sei l'assistente dei circuiti di CAD Takeoff su Mac. Rispondi in italiano, breve. Millimetri, scheda \
+    vista dall'alto. Leggi prima con circuit_info (e circuit_library o circuit_pins se servono). Ogni \
+    modifica: circuit_preview, poi circuit_apply con il preview_id ricevuto; se can_apply è false spiega \
+    il motivo e non insistere. Pin come «R1.2». Dopo una modifica di' in una frase cosa hai fatto.
+    """
+
     func runTurn(system: String, tools: [ToolSpec], onEvent: @escaping (AssistantEvent) -> Void) async throws -> AssistantStop {
         guard isConfigured else { throw AssistantError(message: setupHint) }
-        if session == nil {
-            let model = SystemLanguageModel.default
-            let chosen = Self.select(tools, contextSize: model.contextSize)
+        let model = SystemLanguageModel.default
+        let chosen = Self.select(tools, contextSize: model.contextSize, focus: focus)
+        let key = [focus == .circuits ? "circuiti" : "cad"] + chosen.map(\.name)
+        // Another workspace or catalogue: a new session with its own tools and instructions.
+        if session == nil || key != sessionKey {
+            sessionKey = key
             let runner: @Sendable (String, JSONValue) async -> ToolResult = { [weak self] name, args in
                 await self?.run(name, args) ?? .error("Assistente chiuso.")
             }
             let compact = model.contextSize < 16_000
             let fmTools: [any Tool] = chosen.compactMap { try? CADTool(spec: $0, compact: compact, run: runner) }
-            session = LanguageModelSession(model: model, tools: fmTools, instructions: Self.instructions)
+            session = LanguageModelSession(model: model, tools: fmTools, instructions: focus == .circuits ? Self.circuitInstructions : Self.instructions)
         }
         guard let session else { return .done }
         let prompt = pending
@@ -83,7 +97,7 @@ final class AppleIntelligenceProvider: AssistantProvider {
         } catch {
             switch Self.kind(of: error) {
             case .contextFull:
-                self.session = nil
+                self.session = nil; sessionKey = []
                 throw AssistantError(message: "La conversazione è troppo lunga per il modello sul Mac: comincia una nuova conversazione.")
             case .refused:
                 return .refused(nil)
@@ -111,10 +125,13 @@ final class AppleIntelligenceProvider: AssistantProvider {
         return await executor(name, arguments)
     }
 
-    /// The tools that fit: all of them in a large window, else the everyday ones.
-    static func select(_ tools: [ToolSpec], contextSize: Int) -> [ToolSpec] {
+    /// The tools that fit: all of them in a large window, else the everyday ones of the workspace
+    /// the user is in (the circuit's whole preview → apply cycle in CIRCUITI).
+    static func select(_ tools: [ToolSpec], contextSize: Int, focus: AssistantFocus = .cad) -> [ToolSpec] {
         guard contextSize < 16_000 else { return tools }
-        let everyday = ["list_features", "add_box", "add_cylinder", "update_feature", "delete_feature", "undo"]
+        let everyday = focus == .circuits
+            ? ["circuit_info", "circuit_library", "circuit_pins", "circuit_preview", "circuit_apply", "circuit_undo", "circuit_redo", "circuit_fabrication_check"]
+            : ["list_features", "add_box", "add_cylinder", "update_feature", "delete_feature", "undo"]
         return everyday.compactMap { name in tools.first { $0.name == name } }
     }
 }
@@ -134,10 +151,17 @@ struct CADTool: Tool {
     /// required arguments plus name and position (defaults do the rest).
     init(spec: ToolSpec, compact: Bool = false, run: @escaping @Sendable (String, JSONValue) async -> ToolResult) throws {
         name = spec.name
-        let first = spec.description.split(separator: ".", maxSplits: 1).first.map(String.init) ?? spec.description
-        description = String((spec.title + ": " + first).prefix(200))
         var schema = CADToolSchema.withoutRevision(spec.inputSchema)
-        if compact { schema = CADToolSchema.essentials(schema, keeping: ["name", "position"]) }
+        if spec.name.hasPrefix("circuit_") {
+            // A circuit change is chosen by its action and fields: keep every field (short
+            // descriptions) and the list of actions, which is the description's first part.
+            description = String((spec.title + ": " + spec.description).prefix(900))
+            if compact, case let .object(p)? = schema["properties"] { schema = CADToolSchema.essentials(schema, keeping: Set(p.keys)) }
+        } else {
+            let first = spec.description.split(separator: ".", maxSplits: 1).first.map(String.init) ?? spec.description
+            description = String((spec.title + ": " + first).prefix(200))
+            if compact { schema = CADToolSchema.essentials(schema, keeping: ["name", "position"]) }
+        }
         parameters = try GenerationSchema(root: CADToolSchema.dynamic(schema, name: spec.name), dependencies: [])
         self.run = run
     }
@@ -145,10 +169,31 @@ struct CADTool: Tool {
     func call(arguments: GeneratedContent) async throws -> String {
         let json = (try? JSONValue.parse(Data(arguments.jsonString.utf8))) ?? .object([:])
         let result = await run(name, json)
+        if name.hasPrefix("circuit_") { return Self.compactCircuitResult(result) }
         var text = result.text
         if let s = result.structured { text += "\n" + s.jsonString }
         // Short: every word of a result takes room in the small context.
         return String((result.isError ? "Errore: " + text : text).prefix(1200))
+    }
+
+    /// A circuit result in little room: what the next call needs (revision, preview_id,
+    /// can_apply…) always whole and first; the diagnostic lists shortened, the rest cut to fit.
+    static func compactCircuitResult(_ result: ToolResult, limit: Int = 1500) -> String {
+        let operational = ["error", "revision", "preview_id", "can_apply", "changed", "title", "can_undo", "can_redo", "copper_check", "can_export"]
+        var head = (result.isError ? "Errore: " : "") + result.text
+        guard case let .object(fields)? = result.structured else { return String(head.prefix(limit)) }
+        var essential: [String: JSONValue] = [:]
+        for key in operational { if let v = fields[key] { essential[key] = v } }
+        head += "\n" + JSONValue.object(essential).jsonString
+        var rest: [String: JSONValue] = [:]
+        for (key, value) in fields where essential[key] == nil {
+            if case let .array(items) = value, items.count > 5 {
+                rest[key] = .array(Array(items.prefix(5)) + [.string("… altri \(items.count - 5)")])
+            } else { rest[key] = value }
+        }
+        guard !rest.isEmpty else { return head }
+        let room = max(0, limit - head.count - 1)
+        return head + "\n" + String(JSONValue.object(rest).jsonString.prefix(room))
     }
 }
 

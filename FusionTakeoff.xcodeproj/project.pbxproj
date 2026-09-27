@@ -20,6 +20,7 @@
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
 		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
 		276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D04A4DB715945B73E88E2B /* PartColorPicker.swift */; };
+		29E3C72A4DD983975A5B94B1 /* CircuitModel+Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A69F83B72EF950E07F08E816 /* CircuitModel+Tools.swift */; };
 		2A7139A4FF0DB4587EE1B107 /* SketchInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */; };
 		2E9E1A85449505E8EE29A665 /* SketchSession+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */; };
 		2F1583AA3117428454D4F36B /* UndoRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E853D121D28F163F7809FD /* UndoRouter.swift */; };
@@ -57,6 +58,7 @@
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
 		7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */; };
 		7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F28DA722F5CEA29D56B8C6 /* DesignTabs.swift */; };
+		80A196158C024C5AD959E030 /* CircuitModel+Fabrication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6817EF5D8EFE4F1E0BA17D10 /* CircuitModel+Fabrication.swift */; };
 		829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */ = {isa = PBXBuildFile; fileRef = 2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */; };
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
 		871A00C58DD6D28ADF201C37 /* CADTakeoffImportProject.manifest in Resources */ = {isa = PBXBuildFile; fileRef = BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */; };
@@ -73,6 +75,7 @@
 		A41E5678F91219F1D8B237CE /* CommandPanelPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */; };
 		A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */; };
 		AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AE2553C670B5E2BE5C6306 /* FusionAddInInstaller.swift */; };
+		AEF37A7CA87910F091905025 /* FabricationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85701B6094A1266E30BAB2C6 /* FabricationSheet.swift */; };
 		B1A5529266ECF311788CD40F /* ShellCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388E65A3410FB91CB09F5B4C /* ShellCommand.swift */; };
 		B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */; };
 		B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */; };
@@ -94,6 +97,7 @@
 		E6AEE10EBD192FD2B549A582 /* MCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2872A72642BACF8A561EBB /* MCPServer.swift */; };
 		E91C000FA839F7AAD962F2CD /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */; };
 		EA013203E3D46F7BFF6E1748 /* SketchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */; };
+		EB93176B42E913F0D0905F0B /* ToolRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F1938525A46708F9F642CA /* ToolRouter.swift */; };
 		EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */; };
 		F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
@@ -171,11 +175,13 @@
 		63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectLibrary.swift; sourceTree = "<group>"; };
 		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
+		6817EF5D8EFE4F1E0BA17D10 /* CircuitModel+Fabrication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CircuitModel+Fabrication.swift"; sourceTree = "<group>"; };
 		6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchStore.swift; sourceTree = "<group>"; };
 		6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
 		757F7069AB30F77F4CFBE67F /* ElectronicsCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ElectronicsCore; path = Packages/ElectronicsCore; sourceTree = SOURCE_ROOT; };
 		7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanelPreviews.swift; sourceTree = "<group>"; };
 		82A81CD8EBB1FFBE3F89DC77 /* CircuitSchematicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircuitSchematicView.swift; sourceTree = "<group>"; };
+		85701B6094A1266E30BAB2C6 /* FabricationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FabricationSheet.swift; sourceTree = "<group>"; };
 		86A604770FA67CFFA12BACDB /* ViewCube.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCube.swift; sourceTree = "<group>"; };
 		891E4E944492E6539912AE18 /* MCPHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHost.swift; sourceTree = "<group>"; };
 		8A79D033E48D1FC6B0898162 /* CADCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CADCore; path = Packages/CADCore; sourceTree = SOURCE_ROOT; };
@@ -187,6 +193,7 @@
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
 		9B0BB7CA7969F5BD659BC413 /* JointDrag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JointDrag.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		A69F83B72EF950E07F08E816 /* CircuitModel+Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CircuitModel+Tools.swift"; sourceTree = "<group>"; };
 		ADF9849BD6F001008766D793 /* PressPullCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressPullCommand.swift; sourceTree = "<group>"; };
 		B072E2898F0A20B8861C13F8 /* GeoSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoSelection.swift; sourceTree = "<group>"; };
 		B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SketchSession+Constraints.swift"; sourceTree = "<group>"; };
@@ -196,6 +203,7 @@
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
 		BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaderSource.swift; sourceTree = "<group>"; };
 		BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FusionTakeoff.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C4F1938525A46708F9F642CA /* ToolRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRouter.swift; sourceTree = "<group>"; };
 		C69E2616D246AEA66F7ECC38 /* AppleIntelligenceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligenceProvider.swift; sourceTree = "<group>"; };
 		C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Files.swift"; sourceTree = "<group>"; };
 		CA251AD54A99FF5A9A16C764 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -309,6 +317,7 @@
 			children = (
 				82A81CD8EBB1FFBE3F89DC77 /* CircuitSchematicView.swift */,
 				0431B3B1382987169BEB697A /* CircuitWorkspace.swift */,
+				85701B6094A1266E30BAB2C6 /* FabricationSheet.swift */,
 			);
 			path = Electronics;
 			sourceTree = "<group>";
@@ -393,9 +402,11 @@
 			isa = PBXGroup;
 			children = (
 				F1A5F02CE2EF0AEDD8D86251 /* CircuitModel.swift */,
+				6817EF5D8EFE4F1E0BA17D10 /* CircuitModel+Fabrication.swift */,
 				1910760B5F8D7EDB7F9D1502 /* CircuitModel+PCB.swift */,
 				0D7E4062145A9A8EA45189EC /* CircuitModel+Rules.swift */,
 				4A22EDDA6CFE7BB109C9224B /* CircuitModel+Schematic.swift */,
+				A69F83B72EF950E07F08E816 /* CircuitModel+Tools.swift */,
 				4DD2A927FBE8EEC2336A952B /* CircuitModel+Zones.swift */,
 			);
 			path = Electronics;
@@ -477,6 +488,7 @@
 			isa = PBXGroup;
 			children = (
 				916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */,
+				C4F1938525A46708F9F642CA /* ToolRouter.swift */,
 				D28CC5D85A0D89C8D43C4863 /* Assistant */,
 				011445657638D0CB7399DB23 /* ChatGPT */,
 				D3F0123D6FED862F64A44184 /* MCP */,
@@ -768,9 +780,11 @@
 				9E390BBDAE0C6659CE5ECBC6 /* ChamferCommand.swift in Sources */,
 				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
 				B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */,
+				80A196158C024C5AD959E030 /* CircuitModel+Fabrication.swift in Sources */,
 				99BD3748892C2F30C9DCB2D8 /* CircuitModel+PCB.swift in Sources */,
 				31399CA1BDEC34626648EB0E /* CircuitModel+Rules.swift in Sources */,
 				5A5FE040EE1622D222CE7B85 /* CircuitModel+Schematic.swift in Sources */,
+				29E3C72A4DD983975A5B94B1 /* CircuitModel+Tools.swift in Sources */,
 				53B22475BB354319FB475D97 /* CircuitModel+Zones.swift in Sources */,
 				373A61520DDA32DF06C8685D /* CircuitModel.swift in Sources */,
 				6B565AFFC0F914F50DE7ED6C /* CircuitSchematicView.swift in Sources */,
@@ -788,6 +802,7 @@
 				F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */,
 				304D04CD63C2FE7DF6E093BD /* DrawingWindow.swift in Sources */,
 				3F353536F6FC56921AE033E2 /* ExplodeCommand.swift in Sources */,
+				AEF37A7CA87910F091905025 /* FabricationSheet.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
@@ -829,6 +844,7 @@
 				363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */,
 				383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */,
 				EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */,
+				EB93176B42E913F0D0905F0B /* ToolRouter.swift in Sources */,
 				2F1583AA3117428454D4F36B /* UndoRouter.swift in Sources */,
 				CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */,
 				CEAC8DC83C593F07FCDEF964 /* ViewportContainer.swift in Sources */,
@@ -932,7 +948,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.55;
+				MARKETING_VERSION = 1.0.56;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -996,7 +1012,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.55;
+				MARKETING_VERSION = 1.0.56;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

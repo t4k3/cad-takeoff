@@ -14,7 +14,17 @@ import UniformTypeIdentifiers
 final class CircuitModel {
     static let fileType = UTType(exportedAs: "com.takeoff.fusiontakeoff.circuit", conformingTo: .json)
 
-    private(set) var document: ElectronicsDocument?
+    private(set) var document: ElectronicsDocument? {
+        didSet {
+            // Any new step (workspace, copper worker, assistant) starts a new branch: the assistant
+            // no longer owns anything from its position on, even a step identical to its own.
+            // Undo and redo only move steps (`movingHistory`) and keep what it owns.
+            guard !movingHistory, document?.revision != oldValue?.revision else { return }
+            let from = oldValue?.past.count ?? 0
+            assistantSteps.removeAll { $0.position >= from }
+        }
+    }
+    @ObservationIgnored var movingHistory = false
     private(set) var url: URL?
     /// Pads where they are on the board, with their nets, and the connections still to route
     /// (from the copper drawing `pcb`, built off the main thread: the last one until the new is ready).
@@ -80,6 +90,31 @@ final class CircuitModel {
     var zoneDraft: ZoneDraft? { didSet { if zoneDraft != nil, zoneDraft != oldValue { yieldOpen() } } }
     var zoneSelection: UUID?
     @ObservationIgnored var lastZoneNet: UUID?
+    /// PRODUZIONE (docs/electronics/FABRICATION.md): the fabrication check of the circuit as it is,
+    /// its profile and assembly variant, the export in progress and the panel.
+    var fabrication: FabricationState?
+    @ObservationIgnored var fabricationTask: Task<Void, Never>?
+    @ObservationIgnored var fabricationToken = 0
+    var fabricationProfile = FabricationProfile() { didSet { if fabricationProfile != oldValue { refreshFabrication() } } }
+    var fabricationVariant: UUID? { didSet { if fabricationVariant != oldValue { refreshFabrication() } } }
+    var fabricationExporting = false
+    /// The last export's outcome, shown in the PRODUZIONE panel (the status bar is under the sheet).
+    var fabricationOutcome: FabricationOutcome?
+    @ObservationIgnored var fabricationExport: Task<URL?, Never>?
+    var showFabrication = false
+    /// The assistant's tools (chat and MCP, docs T100): previews waiting for their confirmation,
+    /// and the states its own changes and undos left (it undoes only those).
+    @ObservationIgnored var toolPreviews: [String: ToolPreview] = [:]
+    @ObservationIgnored var assistantSteps: [AssistantStep] = []
+    /// Tests only: the copper worker waits here before computing.
+    @ObservationIgnored var pcbWorkGate: (@Sendable () async -> Void)?
+    /// Tells this app run's tokens from another's (the epoch restarts at every launch).
+    @ObservationIgnored let toolSession = String(UUID().uuidString.prefix(8))
+    /// How the package files are staged in a hidden folder (off the main thread; tests hold it).
+    @ObservationIgnored var stageFabrication: @Sendable ([FabricationFile], URL) async throws -> URL = { files, parent in
+        try await Task.detached(priority: .userInitiated) { try CircuitModel.stageFiles(files, in: parent) }.value
+    }
+
     /// The latest open request (only it may install its circuit), and how files are read (tests
     /// read with a delay they control).
     @ObservationIgnored var openRequest: UUID?
@@ -289,18 +324,24 @@ final class CircuitModel {
     /// refused whole with the engine's reason.
     @discardableResult
     func run(_ command: ElectronicsCommand, expectedRevision: UInt64? = nil) -> Bool {
-        guard var doc = document else { return false }
+        guard document != nil else { return false }
         do {
-            try ElectronicsCommands.apply(command, to: &doc, expectedRevision: expectedRevision ?? doc.revision)
-            document = doc; isDirty = true
-            refresh()
-            // Done: its name replaces an older refusal in the status bar.
-            report(command.title)
+            try apply(command, expectedRevision: expectedRevision)
             return true
         } catch {
             report("\(command.title) non riuscito: \(Self.describe(error))")
             return false
         }
+    }
+
+    /// `run` for callers that need the engine's refusal (the assistant's tools).
+    func apply(_ command: ElectronicsCommand, expectedRevision: UInt64? = nil) throws {
+        guard var doc = document else { throw CircuitEditError("Nessun circuito aperto.") }
+        try ElectronicsCommands.apply(command, to: &doc, expectedRevision: expectedRevision ?? doc.revision)
+        document = doc; isDirty = true
+        refresh()
+        // Done: its name replaces an older refusal in the status bar.
+        report(command.title)
     }
 
     /// A copper change (tracks, vias, rules, keepouts, planes): the engine re-checks the copper
@@ -317,8 +358,9 @@ final class CircuitModel {
         pcbOperation = token
         pcbBusy = true
         defer { if pcbOperation == token { pcbOperation = nil; pcbBusy = false; pcbWork = nil } }
-        let epoch = documentEpoch, base = expectedRevision ?? doc.revision
-        let work = Task.detached(priority: .userInitiated) { () -> Result<ElectronicsDocument, any Error> in
+        let epoch = documentEpoch, base = expectedRevision ?? doc.revision, gate = pcbWorkGate
+        let work = Task.detached(priority: .userInitiated) { () async -> Result<ElectronicsDocument, any Error> in
+            await gate?()
             var d = doc
             do { try ElectronicsCommands.apply(.pcb(command), to: &d, expectedRevision: base); return .success(d) }
             catch { return .failure(error) }
@@ -355,12 +397,20 @@ final class CircuitModel {
 
     func undo() {
         guard var doc = document else { return }
-        do { try doc.undo(expectedRevision: doc.revision); document = doc; isDirty = true; refresh() } catch { report(Self.describe(error)) }
+        do {
+            try doc.undo(expectedRevision: doc.revision)
+            movingHistory = true; document = doc; movingHistory = false
+            isDirty = true; refresh()
+        } catch { report(Self.describe(error)) }
     }
 
     func redo() {
         guard var doc = document else { return }
-        do { try doc.redo(expectedRevision: doc.revision); document = doc; isDirty = true; refresh() } catch { report(Self.describe(error)) }
+        do {
+            try doc.redo(expectedRevision: doc.revision)
+            movingHistory = true; document = doc; movingHistory = false
+            isDirty = true; refresh()
+        } catch { report(Self.describe(error)) }
     }
 
     // MARK: Building a circuit (T97, on the engine's commands of docs/electronics/EDITING.md)
@@ -787,6 +837,7 @@ final class CircuitModel {
         if let c = ruleCheck, c.revision != document?.revision { ruleCheckTask?.cancel(); ruleCheck = nil }
         refreshSchematic()
         refreshPCB()
+        refreshFabrication()
         guard let d = design else { baseIssues = []; return }
         baseIssues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
     }

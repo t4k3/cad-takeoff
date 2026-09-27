@@ -8,6 +8,7 @@ struct FusionTakeoffApp: App {
     @State private var library = ProjectLibrary()
     @State private var sketches = SketchStore()
     @State private var circuits = CircuitModel()
+    @State private var tools: ToolRouter?
     @State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider(), AppleIntelligenceProvider()])
 
     var body: some Scene {
@@ -22,10 +23,12 @@ struct FusionTakeoffApp: App {
                 .navigationTitle(library.currentName + (library.isDirty(model) ? " — modificato" : ""))
                 .navigationSubtitle(library.currentURL.flatMap { library.project(of: $0) } ?? "")
                 .task {
-                    // The Model is the single CAD tool provider (T48) for MCP clients and the in-app chat.
-                    let tools = (model as AnyObject) as? CADToolProvider
-                    mcp.attach(tools)
-                    assistant.tools = tools
+                    // One provider for MCP clients and the in-app chat: the CAD design's tools (T48)
+                    // and CIRCUITI's circuit_* tools (T100), kept alive here (both hold it weakly).
+                    let router = ToolRouter(cad: model, circuits: circuits)
+                    tools = router
+                    mcp.attach(router)
+                    assistant.tools = router
                     mcp.start()
                     sketches.model = model
                     model.componentResolver = library.componentResolver

@@ -8,6 +8,7 @@ struct WorkspaceView: View {
     @Environment(ProjectLibrary.self) private var library
     @Environment(SketchStore.self) private var sketches
     @Environment(CircuitModel.self) private var circuits
+    @Environment(AssistantSession.self) private var assistant
     @State private var workspace = WorkspaceState()
     @State private var viewport = ViewportState()
 
@@ -31,6 +32,10 @@ struct WorkspaceView: View {
                 if workspace.showInspector, workspace.tab != .circuits {
                     Divider()
                     SidePanel().frame(width: Theme.Metrics.inspectorWidth + 60)
+                } else if workspace.tab == .circuits, workspace.showInspector, workspace.sideTab == .assistant {
+                    // CIRCUITI has no parameters panel; the assistant (⌘L) works on the circuit too.
+                    Divider()
+                    AssistantPanel().frame(width: Theme.Metrics.inspectorWidth + 60)
                 }
             }
             if workspace.tab != .circuits {
@@ -62,6 +67,7 @@ struct WorkspaceView: View {
         .environment(workspace)
         // ⌘Z in CIRCUITI undoes the circuit's steps; elsewhere the design's (or the sketch's).
         .onChange(of: workspace.tab) { old, new in
+            assistant.focus = new == .circuits ? .circuits : .cad
             if new == .circuits { model.localUndoTarget = circuits }
             else if old == .circuits, model.localUndoTarget === circuits { model.localUndoTarget = nil }
         }

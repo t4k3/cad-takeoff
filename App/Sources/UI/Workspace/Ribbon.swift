@@ -403,6 +403,9 @@ struct Ribbon: View {
                 .help("Unisci un simbolo e un'impronta della libreria in un componente da posare (pin ↔ piazzole proposti, da verificare sul datasheet)")
         }
         ToolGroup("PRODUZIONE") {
+            Button { circuits.tool = .select; circuits.openFabrication() } label: { Label("Gerber", systemImage: "square.stack.3d.up") }
+                .disabled(circuits.document == nil)
+                .help("Verifica di produzione, anteprima degli strati e export Gerber, forature, BOM e CPL in una cartella nuova")
             Button { circuits.exportJLCWithPanel() } label: { Label("JLCPCB", systemImage: "shippingbox") }
                 .disabled(circuits.document == nil)
                 .help("BOM e CPL per il montaggio JLCPCB (CSV). Il motore blocca l'export se manca qualcosa e dice cosa.")

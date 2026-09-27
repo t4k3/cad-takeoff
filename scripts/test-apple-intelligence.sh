@@ -9,9 +9,14 @@ core_sources=()
 while IFS= read -r -d '' source; do core_sources+=("$source"); done < <(find Packages/CADCore/Sources/CADCore -type f -name '*.swift' -print0)
 xcrun swiftc -swift-version 6 -emit-library -emit-module -module-name CADCore "${core_sources[@]}" \
     -emit-module-path "$test_dir/CADCore.swiftmodule" -o "$test_dir/libCADCore.dylib"
-xcrun swiftc -swift-version 6 -parse-as-library -I "$test_dir" -L "$test_dir" -lCADCore \
+electronics_sources=()
+while IFS= read -r -d '' source; do electronics_sources+=("$source"); done < <(find Packages/ElectronicsCore/Sources/ElectronicsCore -type f -name '*.swift' -print0)
+xcrun swiftc -swift-version 6 -emit-library -emit-module -module-name ElectronicsCore "${electronics_sources[@]}" \
+    -emit-module-path "$test_dir/ElectronicsCore.swiftmodule" -o "$test_dir/libElectronicsCore.dylib"
+xcrun swiftc -swift-version 6 -parse-as-library -I "$test_dir" -L "$test_dir" -lCADCore -lElectronicsCore \
     -Xlinker -rpath -Xlinker "$test_dir" \
-    App/Sources/Integration/ToolBridge.swift App/Sources/Model/DesignModel.swift App/Sources/Model/Tools/*.swift \
+    App/Sources/Integration/ToolBridge.swift App/Sources/Integration/ToolRouter.swift App/Sources/Model/Electronics/*.swift \
+    App/Sources/Model/DesignModel.swift App/Sources/Model/Tools/*.swift \
     App/Sources/Integration/Assistant/AssistantProvider.swift App/Sources/Integration/Assistant/AssistantSession.swift \
     App/Sources/Integration/Assistant/AppleIntelligenceProvider.swift \
     Tests/AppleIntelligence/Runner.swift -o "$test_dir/fm-tests"

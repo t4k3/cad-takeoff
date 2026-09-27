@@ -37,6 +37,8 @@ final class AssistantSession {
     @ObservationIgnored var providers: [AssistantProvider]
     var providerIndex = 0 { didSet { if providerIndex != oldValue { newConversation() } } }
     @ObservationIgnored weak var tools: CADToolProvider?
+    /// The workspace the user is in: the request is about the design or the circuit.
+    @ObservationIgnored var focus: AssistantFocus = .cad
     @ObservationIgnored private var task: Task<Void, Never>?
 
     init(providers: [AssistantProvider]) {
@@ -70,6 +72,12 @@ final class AssistantSession {
     - Lamiera: add_sheet_metal con materiale e spessore commerciale; raggio e K vengono dalla tabella di piega; riporta all'utente gli avvisi (flange sotto il minimo piegabile). Lo sviluppo si esporta con export_flat_dxf.
     - Assiemi: list_project_designs, add_component, bill_of_materials.
     - Pezzi più grandi del piatto: add_split per dividerli.
+
+    Circuiti (strumenti circuit_*, sul circuito aperto nella scheda CIRCUITI, millimetri, scheda vista dall'alto):
+    - Leggi con circuit_info, circuit_library, circuit_pins e circuit_issues; il token `revision` dei risultati circuit_* vale solo per i circuiti (quello del CAD è un altro).
+    - Ogni modifica in due passi: circuit_preview (nulla cambia; mostra can_apply, blocking_issues, new_issues), poi circuit_apply con lo stesso preview_id. Se il motore la blocca, spiega perché invece di forzarla.
+    - Componenti dalla libreria (modelli generici da verificare sul datasheet), collegamenti con i nomi dei pin «R1.2», pin inutilizzati con no_connect.
+    - La produzione (Gerber) si verifica con circuit_fabrication_check; l'export lo fa l'utente in CIRCUITI › PRODUZIONE.
     """
 
     func newConversation() {
@@ -97,13 +105,14 @@ final class AssistantSession {
         // Apple's on-device model calls the tools inside its own turn: through the same execution
         // (shown in the conversation, undoable), started here.
         if let apple = provider as? AppleIntelligenceProvider {
+            apple.focus = focus
             apple.executor = { [weak self] name, arguments in
                 guard let self else { return .error("Assistente chiuso.") }
                 // Its tools have no `expected_revision` (one argument less to get wrong): a write
                 // runs on the revision the design has when the model calls it.
                 var arguments = arguments
                 if case var .object(o) = arguments, o["expected_revision"] == nil,
-                   self.tools?.tools.first(where: { $0.name == name })?.isReadOnly == false, let revision = self.tools?.designRevision {
+                   self.tools?.tools.first(where: { $0.name == name })?.isReadOnly == false, let revision = self.tools?.expectedRevision(for: name) {
                     o["expected_revision"] = .string(revision); arguments = .object(o)
                 }
                 let call = ToolCallRequest(id: UUID().uuidString, name: name, arguments: arguments, rawArguments: arguments.jsonString)
@@ -129,7 +138,9 @@ final class AssistantSession {
             var current: Int?
             let stop: AssistantStop
             do {
-                stop = try await provider.runTurn(system: Self.systemPrompt, tools: specs) { [weak self] event in
+                let system = Self.systemPrompt + (focus == .circuits
+                    ? "\nL'utente è nella scheda CIRCUITI: la richiesta riguarda il circuito aperto (strumenti circuit_*)." : "")
+                stop = try await provider.runTurn(system: system, tools: specs) { [weak self] event in
                     self?.apply(event, current: &current, specs: specs)
                 }
             } catch is CancellationError {
@@ -216,3 +227,6 @@ final class AssistantSession {
         return result
     }
 }
+
+/// Which document the user is working on when they write to the assistant.
+enum AssistantFocus: Sendable { case cad, circuits }

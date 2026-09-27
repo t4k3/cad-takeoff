@@ -4,7 +4,11 @@ import CADCore
 @main struct MCPIntegrationTests {
     @MainActor static func main() async throws {
         let model = DesignModel(); model.newDesign()
-        let server = MCPServer(); server.provider = model
+        // The app's provider: CAD tools and CIRCUITI's circuit_* tools behind one router (T100).
+        let circuits = CircuitModel()
+        try circuits.newCircuit(name: "MCP")
+        let router = ToolRouter(cad: model, circuits: circuits)
+        let server = MCPServer(); server.provider = router
         let token = UUID().uuidString
         let transport = LocalHTTPTransport(token: token) { data, client in await server.handle(data, client: client) }
         let port: UInt16 = try await withCheckedThrowingContinuation { c in transport.start(preferredPort: 0) { c.resume(with: $0) } }
@@ -25,7 +29,8 @@ import CADCore
         let initReply = try await send("initialize", ["protocolVersion": "2024-11-05", "capabilities": [:], "clientInfo": ["name": "integration-test", "version": "1"]])
         expect(initReply.0 == 200, "real loopback listener initialized")
         let list = try await send("tools/list")
-        expect(list.1?["result"]?["tools"]?.array?.count == 27, "27 tools via HTTP")
+        let names = list.1?["result"]?["tools"]?.array?.compactMap { $0["name"]?.string } ?? []
+        expect(names.count == 36 && names.filter { $0.hasPrefix("circuit_") }.count == 9, "27 CAD + 9 circuit tools via HTTP (\(names.count))")
         let scene = try await send("tools/call", ["name": "scene_info", "arguments": [:]])
         let structured = scene.1!["result"]!["structuredContent"]!
         let text = scene.1!["result"]!["content"]!.array![0]["text"]!.string!
@@ -54,6 +59,31 @@ import CADCore
         expect(HTTPRequest(Data("POST /mcp HTTP/1.1\r\nContent-Length: invalid\r\n\r\n".utf8)) == nil, "invalid length refused")
         let unknown = try await send("tools/call", ["name": "create_sheet_metal", "arguments": [:]])
         expect(unknown.1?["error"]?["code"]?.number == -32602, "unimplemented operation is explicit")
+        // CIRCUITI over the same transport: its own token, preview then apply of the same ID.
+        func call(_ name: String, _ args: JSONValue) async throws -> JSONValue {
+            try await send("tools/call", ["name": .string(name), "arguments": args]).1?["result"] ?? .null
+        }
+        let info = try await call("circuit_info", [:])
+        let circuitToken = info["structuredContent"]?["revision"]?.string ?? ""
+        expect(info["isError"]?.bool == false && !circuitToken.isEmpty && circuitToken != model.designRevision, "circuit_info: own revision token")
+        expect(router.expectedRevision(for: "circuit_preview") == circuits.designRevision && router.expectedRevision(for: "add_box") == model.designRevision
+               && router.designRevision == model.designRevision, "router: CAD and circuit tokens per tool")
+        let cadWithCircuitToken = try await call("add_box", ["width": 5, "depth": 5, "height": 5, "expected_revision": .string(circuitToken)])
+        expect(cadWithCircuitToken["isError"]?.bool == true, "circuit token refused by a CAD write")
+        let library = try await call("circuit_library", [:])
+        let device = library["structuredContent"]?["devices"]?.array?.first?["device"]?.string ?? ""
+        let before = circuits.document
+        let preview = try await call("circuit_preview", ["action": "add_component", "device": .string(device), "x": 10, "y": 10, "expected_revision": .string(circuitToken)])
+        let previewID = preview["structuredContent"]?["preview_id"]?.string ?? ""
+        expect(preview["isError"]?.bool == false && !previewID.isEmpty && circuits.document == before, "circuit_preview over HTTP: nothing changed")
+        let applied = try await call("circuit_apply", ["preview_id": .string(previewID), "expected_revision": .string(circuitToken)])
+        expect(applied["isError"]?.bool == false && circuits.design?.components.count == 1 && circuits.document!.revision == before!.revision + 1,
+               "circuit_apply over HTTP: one component, one step")
+        let replay = try await call("circuit_apply", ["preview_id": .string(previewID), "expected_revision": .string(circuitToken)])
+        expect(replay["isError"]?.bool == true && circuits.design?.components.count == 1, "replayed confirmation refused")
+        let undoCircuit = try await call("circuit_undo", ["expected_revision": .string(circuits.designRevision)])
+        expect(undoCircuit["isError"]?.bool == false && circuits.design == before?.design, "circuit_undo over HTTP")
+        expect(model.document.features.count == 1, "CAD design untouched by circuit tools")
         print("PASS: \(checks) MCP HTTP integration checks (isolated scene; no user document changed)")
     }
 }

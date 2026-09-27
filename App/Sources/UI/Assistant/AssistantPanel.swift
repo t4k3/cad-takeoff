@@ -5,6 +5,7 @@ import SwiftUI
 struct AssistantPanel: View {
     @Environment(AssistantSession.self) private var session
     @Environment(DesignModel.self) private var model
+    @Environment(CircuitModel.self) private var circuits
     @Environment(WorkspaceState.self) private var workspace
     @State private var draft = ""
     @State private var desktopMessage: String?
@@ -16,6 +17,15 @@ struct AssistantPanel: View {
         "Quanto volume ha il pezzo e sta su un piatto 256×256?",
         "Rendi la base più alta di 2 mm",
     ]
+
+    static let circuitSuggestions = [
+        "Aggiungi due resistenze e collega R1.2 con R2.1",
+        "Quali errori ha il circuito e come si correggono?",
+        "Rinomina la rete N1 in VCC",
+        "La scheda è pronta per la produzione?",
+    ]
+
+    private var inCircuits: Bool { workspace.tab == .circuits }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -109,7 +119,14 @@ struct AssistantPanel: View {
                     let id = run.changedFeatures.first
                     workspace.hovered = inside ? id : (workspace.hovered == id ? nil : workspace.hovered)
                 }
-                .onTapGesture { if let id = run.changedFeatures.first { model.selection = id } }
+                .onTapGesture {
+                    guard let id = run.changedFeatures.first else { return }
+                    if run.name.hasPrefix("circuit_") {
+                        // A circuit change: its component on the board, in CIRCUITI.
+                        workspace.tab = .circuits
+                        if circuits.design?.components.contains(where: { $0.id == id }) == true { circuits.selection = id; circuits.canvas = .board }
+                    } else { model.selection = id }
+                }
         case let .notice(text, isError):
             VStack(alignment: .leading, spacing: 6) {
                 Label(text, systemImage: isError ? "exclamationmark.triangle.fill" : "info.circle")
@@ -126,8 +143,10 @@ struct AssistantPanel: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Assistente di progettazione").font(.system(size: 14, weight: .semibold))
-                Text("Descrivi il pezzo a parole: l'assistente crea e modifica la geometria nel design aperto. Ogni modifica si annulla con ⌘Z.")
+                Text(inCircuits ? "Assistente dei circuiti" : "Assistente di progettazione").font(.system(size: 14, weight: .semibold))
+                Text(inCircuits
+                     ? "Chiedi a parole: l'assistente legge il circuito aperto, aggiunge e collega componenti, sposta, traccia piste e verifica la produzione. Ogni modifica passa da un'anteprima del motore e si annulla con ⌘Z."
+                     : "Descrivi il pezzo a parole: l'assistente crea e modifica la geometria nel design aperto. Ogni modifica si annulla con ⌘Z.")
                     .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -165,7 +184,7 @@ struct AssistantPanel: View {
                 .padding(10)
                 .background(Theme.Palette.panel.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
             }
-            ForEach(Self.suggestions, id: \.self) { s in
+            ForEach(inCircuits ? Self.circuitSuggestions : Self.suggestions, id: \.self) { s in
                 Button { send(s) } label: {
                     HStack {
                         Text(s).font(Theme.Typeface.body).multilineTextAlignment(.leading)

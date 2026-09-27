@@ -18,6 +18,9 @@ final class MCPServer {
     Unità: millimetri. Asse Z verso l'alto; il piano XY è il piatto di stampa.
     Prima di modificare, leggi lo stato con gli strumenti di sola lettura (es. list_features, scene_info).
     Ogni strumento che modifica il design crea un passo annullabile nell'app.
+    Gli strumenti circuit_* lavorano sul circuito aperto in CIRCUITI (mm, scheda vista dall'alto) con un
+    proprio token di revisione: leggi con circuit_info, modifica con circuit_preview e poi circuit_apply
+    dello stesso preview_id.
     """
 
     /// Handles one JSON-RPC message (or batch). Returns the response bytes, or nil for notifications.

@@ -26,6 +26,7 @@ struct CircuitWorkspace: View {
             .sheet(isPresented: $c.showAddComponent) { AddComponentSheet() }
             .sheet(isPresented: $c.showBoard) { BoardSheet() }
             .sheet(isPresented: $c.showNetClasses) { NetClassesSheet() }
+            .sheet(isPresented: Binding(get: { circuits.showFabrication }, set: { if !$0 { circuits.closeFabrication() } })) { FabricationSheet() }
             .sheet(isPresented: $c.showCreateDevice) { CreateDeviceSheet() }
             .sheet(isPresented: Binding(get: { circuits.importProposal != nil }, set: { if !$0 { circuits.importProposal = nil } })) { ImportPreviewSheet() }
             .sheet(isPresented: Binding(get: { circuits.symbolChoice != nil }, set: { if !$0 { circuits.symbolChoice = nil } })) { SymbolChoiceSheet() }

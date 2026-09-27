@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-27 18:00. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-27 18:16. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -159,9 +159,10 @@ flowchart LR
     T97["T97 · Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude)<br/><i>claude</i>"]:::in_progress
     T98["T98 · Elettronica E6: strumenti MCP equivalenti alla UI e accettazione scheda reale<br/><i>codex</i>"]:::todo
     T99["T99 · Aggancio ElectronicsCore nell'app: package nel progetto Xcode, ponte Model/Electronics, documento elettronico nel progetto/Home, test elettronica nella CI<br/><i>claude</i>"]:::done
-    T100["T100 · Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI)<br/><i>claude</i>"]:::todo
+    T100["T100 · Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI)<br/><i>claude</i>"]:::in_progress
     T101["T101 · Elettronica: adattatore CAD della scheda (PCB e modelli nell'assieme, interferenze) sopra i dati E5<br/><i>claude</i>"]:::todo
     T103["T103 · Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati<br/><i>codex</i>"]:::done
+    T104["T104 · Collaudo integrazione Produzione e comandi Circuiti via app e MCP<br/><i>codex</i>"]:::in_progress
   end
   subgraph P27["E2"]
     T102["T102 · Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico<br/><i>codex</i>"]:::done
@@ -370,6 +371,8 @@ flowchart LR
   T91 --> T102
   T91 --> T103
   T102 --> T103
+  T103 --> T104
+  T102 --> T104
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -384,7 +387,6 @@ flowchart LR
 - **T92** Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB — suggerito: codex
 - **T93** Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente — suggerito: codex
 - **T94** Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico — suggerito: codex
-- **T100** Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI) — suggerito: claude
 
 ## Tabella
 
@@ -490,7 +492,8 @@ flowchart LR
 | T97 | Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude) | in_progress | claude | T91, T99 | App/Sources/UI/Electronics<br>App/Sources/Model/Electronics<br>App/Sources/UI/Workspace/Ribbon.swift |
 | T98 | Elettronica E6: strumenti MCP equivalenti alla UI e accettazione scheda reale | todo | codex | T93, T94, T95, T96, T97, T100 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics |
 | T99 | Aggancio ElectronicsCore nell'app: package nel progetto Xcode, ponte Model/Electronics, documento elettronico nel progetto/Home, test elettronica nella CI | done | claude | T91 | App/Sources/Model/Electronics<br>project.yml<br>scripts/ci.sh |
-| T100 | Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI) | todo | claude | T102, T99 | App/Sources/Model/Tools |
+| T100 | Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI) | in_progress | claude | T102, T99 | App/Sources/Model/Tools |
 | T101 | Elettronica: adattatore CAD della scheda (PCB e modelli nell'assieme, interferenze) sopra i dati E5 | todo | claude | T96, T99 | App/Sources/Model/Electronics<br>Packages/CADCore |
 | T102 | Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico | done | codex | T91 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T103 | Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati | done | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
+| T104 | Collaudo integrazione Produzione e comandi Circuiti via app e MCP | in_progress | codex | T103, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |

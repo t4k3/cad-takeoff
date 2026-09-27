@@ -100,4 +100,11 @@ protocol CADToolProvider: AnyObject {
     func call(_ name: String, arguments: JSONValue) async -> ToolResult
     /// The design's current revision (what `expected_revision` must match).
     var designRevision: String { get }
+    /// What `expected_revision` must match for `tool` (a provider serving several documents —
+    /// CAD and CIRCUITI — answers per tool; T100).
+    func expectedRevision(for tool: String) -> String
+}
+
+extension CADToolProvider {
+    func expectedRevision(for tool: String) -> String { designRevision }
 }

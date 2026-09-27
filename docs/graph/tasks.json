@@ -1939,7 +1939,7 @@
       "id": "T100",
       "title": "Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI)",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T102",
         "T99"
@@ -1948,7 +1948,8 @@
         "App/Sources/Model/Tools"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-27 18:16"
     },
     {
       "id": "T101",
@@ -2010,6 +2011,25 @@
       "notes": [
         "2026-09-27 18:00 codex: Nucleo fabbricazione due strati completato: 155 Swift,7 lettori indipendenti,184 CAD sullo snapshot587b69a PASS; 17 file/revisione, output atomico, DRC preflight, varianti/DNP, mask/paste/silk/PTH, SHA256. Parser Ucamco:9 Gerber X2,0 errori/0 deprecated; drill riconosciuto. Visualizzazione Ucamco limitata da backend500. Core/CLI verificati; Claude ha confermato contratto per Produzione/T100, aggancio app ancora da collaudare. NPTH/asole/cutout/profiliJLC e dati reali restano T95. Docs FABRICATION/VALIDATION."
       ]
+    },
+    {
+      "id": "T104",
+      "title": "Collaudo integrazione Produzione e comandi Circuiti via app e MCP",
+      "phase": "Elettronica",
+      "status": "in_progress",
+      "deps": [
+        "T103",
+        "T102"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-27 18:11"
     }
   ]
 }
