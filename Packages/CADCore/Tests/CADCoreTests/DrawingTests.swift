@@ -2,6 +2,14 @@ import Foundation
 import Testing
 @testable import CADCore
 
+/// Every line inside the sheet (A4 landscape unless given).
+func onSheet(_ s: DrawingSheet, width: Double = 297, height: Double = 210) -> Bool {
+    for line in s.lines {
+        for p in [line.a, line.b] where p.x < 0 || p.x > width || p.y < 0 || p.y > height { return false }
+    }
+    return true
+}
+
 private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> DrawingSheet {
     let bodies = DesignEvaluator.evaluate(CADDocument(features: features), revision: "d").bodies.map { (mesh: $0.mesh, snapshot: $0.snapshot) }
     return try TechnicalDrawing.make(bodies, info: .init(title: "Prova à", material: "PLA", date: Date(timeIntervalSince1970: 0)), format: format)
@@ -23,7 +31,7 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     for t in ["Foro", "F1", "15", "20", "10", "0,0"] { #expect(texts.contains(t), "\(t)") }
     #expect(texts.filter { $0 == "F1" }.count == 2)   // table row and the label on the view
     // Everything inside the A4 sheet.
-    #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
+    #expect(onSheet(s))
 }
 
 @Test func drawingPicksAStandardScaleAndWritesPDFAndDXF() throws {
@@ -75,7 +83,7 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     #expect(s.lines.filter { $0.style == .hidden }.count == 6)
     let blank = flat.outline.map(\.x).max()! - flat.outline.map(\.x).min()!
     #expect(texts.contains(TechnicalDrawing.number(blank)))
-    #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
+    #expect(onSheet(s))
     #expect(DrawingDXF.dxf(s).contains("GI\\U+00D9"))
 }
 
@@ -100,7 +108,7 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     let texts = s.texts.map(\.text)
     for t in ["40", "25", "R10"] { #expect(texts.contains(t), "\(t)") }
     #expect(texts.filter { $0 == "80" }.count == 1 && !texts.contains("Ø8"))
-    #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
+    #expect(onSheet(s))
     // The 40 between the holes: a horizontal dimension under the view from above.
     let forty = try #require(s.texts.first { $0.text == "40" })
     #expect(forty.angle == 0)
@@ -146,7 +154,7 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     let dims = Sketch(name: "S", shapes: shapes, constraints: constraints).drawingDimensions
     let bodies = DesignEvaluator.evaluate(CADDocument(features: [plate]), revision: "d").bodies.map { (mesh: $0.mesh, snapshot: $0.snapshot) }
     let s = try TechnicalDrawing.make(bodies, info: .init(title: "Piastra"), dimensions: dims)
-    #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
+    #expect(onSheet(s))
     // Six a side, the shortest kept: 5 … 50 horizontally, 10 … 30 vertically.
     let texts = s.texts.map(\.text)
     #expect(texts.contains("5") && texts.contains("50") && !texts.contains("95"))
