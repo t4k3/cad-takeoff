@@ -627,10 +627,13 @@ final class DesignModel {
             guard case let .sheetMetal(spec) = f.kind,
                   let build = try? SheetMetalGeometry.build(spec, featureID: f.id, position: f.position, folded: false) else { return nil }
             let cutters = bodies.first { $0.id == f.id }?.modifiedBy ?? []
-            let holes = document.features.filter { cutters.contains($0.id) }.compactMap { h -> HoleSpec? in
+            let tools = document.features.filter { cutters.contains($0.id) }
+            let holes = tools.compactMap { h -> HoleSpec? in
                 if case let .hole(spec) = h.kind { spec } else { nil }
             }
-            let (flat, skipped) = build.flat(adding: holes)
+            // Sketch cuts and cylinders through the sheet: windows, slots, round holes.
+            let cutouts = tools.flatMap { SheetCutout.of($0) ?? [] }
+            let (flat, skipped) = build.flat(adding: holes, cutouts: cutouts)
             return (f, build, flat, skipped)
         }
     }
@@ -685,7 +688,7 @@ final class DesignModel {
             try dxf.write(to: url, atomically: true, encoding: .utf8)
             let skipped = sheetParts().first { $0.feature.name == name }?.skippedHoles ?? 0
             statusMessage = "Esportato \(url.lastPathComponent) — taglio (CUT), fori e linee di piega, in mm"
-                + (skipped > 0 ? " · \(skipped) for\(skipped == 1 ? "o" : "i") su pieghe o non passant\(skipped == 1 ? "e" : "i") non riportat\(skipped == 1 ? "o" : "i")" : "")
+                + (skipped > 0 ? " · \(skipped) for\(skipped == 1 ? "o/taglio" : "i/tagli") su pieghe o non passant\(skipped == 1 ? "e" : "i") non riportat\(skipped == 1 ? "o" : "i")" : "")
         } catch { statusMessage = "Errore export DXF: \(error.localizedDescription)" }
     }
 

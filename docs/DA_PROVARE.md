@@ -35,3 +35,4 @@ sono le prove a mano, sull'interfaccia.
 - [ ] **Risvolto / orlo** (Lamiera › «Sulla punta»): profilo a C, a Z, orlo 180°; scatola con risvolti → scarichi negli angoli dello sviluppo.
 - [ ] **Tavola con le quote degli schizzi**: quota due fori in uno schizzo (distanza orizzontale), estrudi, STAMPA › Tavola: la quota compare nella vista dall'alto.
 - [ ] **Tornito**: profilo su XZ con quote dall'asse, Rivoluzione, Tavola (anche «in sezione»): le quote dall'asse escono come Ø.
+- [ ] **Tagli nello sviluppo**: schizzo su una faccia della lamiera, rettangolo/asola, Estrudi in taglio Passante: la finestra compare nello sviluppo, nel DXF e nella tavola di piega.

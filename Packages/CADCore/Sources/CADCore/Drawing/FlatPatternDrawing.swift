@@ -27,6 +27,9 @@ extension TechnicalDrawing {
         for i in flat.outline.indices {
             sheet.lines.append(.init(a: at(flat.outline[i]), b: at(flat.outline[(i + 1) % flat.outline.count]), style: .visible))
         }
+        for c in flat.cutouts {
+            for i in c.indices { sheet.lines.append(.init(a: at(c[i]), b: at(c[(i + 1) % c.count]), style: .visible)) }
+        }
         for h in flat.holes {
             let r = h.diameter / 2
             for k in 0..<48 {

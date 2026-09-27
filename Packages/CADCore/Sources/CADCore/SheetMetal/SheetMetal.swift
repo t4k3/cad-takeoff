@@ -202,11 +202,16 @@ public struct SheetFlatPattern: Equatable, Sendable {
     public let bends: [Bend]
     /// Round holes to cut, unfolded from the holes drilled in the folded part.
     public internal(set) var holes: [Hole] = []
+    /// Other cut-outs (windows, slots from sketch cuts), closed outlines in the same frame.
+    public internal(set) var cutouts: [[Vec2]] = []
     public let thickness: Double
     /// Offset of the part (the feature position): the flat pattern lies at the plate.
     public let origin: Vec3
 
-    public var area: Double { Profile2D(points: outline).area - holes.reduce(0) { $0 + .pi * $1.diameter * $1.diameter / 4 } }
+    public var area: Double {
+        Profile2D(points: outline).area - holes.reduce(0) { $0 + .pi * $1.diameter * $1.diameter / 4 }
+            - cutouts.reduce(0) { $0 + abs(Profile2D(points: $1).area) }
+    }
     public var size: (width: Double, height: Double) {
         let xs = outline.map(\.x), ys = outline.map(\.y)
         return ((xs.max() ?? 0) - (xs.min() ?? 0), (ys.max() ?? 0) - (ys.min() ?? 0))
@@ -224,7 +229,9 @@ public struct SheetMetalBuild: Sendable {
     /// The flat pattern with the holes drilled in the folded part (hole features that cut it).
     /// Holes on the plate or on a flange's straight part unfold exactly; holes crossing a bend,
     /// blind or not square to the sheet are skipped and counted.
-    public func flat(adding holes: [HoleSpec]) -> (flat: SheetFlatPattern, skipped: Int) {
+    /// Cut-outs (`SheetCutout`) unfold when the whole outline lies on one flat region, cut
+    /// square to it; round ones become holes.
+    public func flat(adding holes: [HoleSpec], cutouts: [SheetCutout] = []) -> (flat: SheetFlatPattern, skipped: Int) {
         var out = flat, skipped = 0
         for spec in holes {
             let through = spec.depth.map { $0 >= layout.t - 1e-6 } ?? true
@@ -234,7 +241,42 @@ public struct SheetMetalBuild: Sendable {
                 } else { skipped += 1 }
             }
         }
+        for cut in cutouts {
+            let axis = cut.axis.normalized
+            let mapped = cut.outline.map { layout.region(of: $0, axis: axis) }
+            guard cut.outline.count >= 3, let first = mapped.first??.region,
+                  mapped.allSatisfy({ $0?.region == first }) else { skipped += 1; continue }
+            let pts = mapped.map { $0!.point }
+            // A sketch circle (a polygon on one circle): a hole, as the laser wants it.
+            if pts.count >= 16, let fit = PrimitiveKernel.fit(pts), pts.allSatisfy({ abs(($0 - fit.c).length - fit.r) < 1e-3 * max(1, fit.r) }) {
+                out.holes.append(.init(center: fit.c, diameter: 2 * fit.r))
+            } else {
+                out.cutouts.append(pts)
+            }
+        }
         return (out, skipped)
+    }
+}
+
+/// A cut through the folded sheet (a sketch cut): its outline where it meets the sheet, in world
+/// coordinates, and the cutting direction.
+public struct SheetCutout: Sendable, Equatable {
+    public var outline: [Vec3]
+    public var axis: Vec3
+    public init(outline: [Vec3], axis: Vec3) { self.outline = outline; self.axis = axis }
+
+    /// What a cutting feature leaves through a sheet: a sketch cut's outline (and its islands),
+    /// a cylinder's circle; nil for other kinds and drafted cuts.
+    public static func of(_ f: Feature) -> [SheetCutout]? {
+        guard f.operation == .cut, f.taper == 0 else { return nil }
+        let outlines: [[Vec2]]
+        switch f.kind {
+        case let .extrude(profile, _): outlines = [profile.points] + f.holes.map(\.points)
+        case let .cylinder(r, _): outlines = [(0..<48).map { k in let a = Double(k) / 48 * 2 * .pi; return Vec2(r * cos(a), r * sin(a)) }]
+        default: return nil
+        }
+        let plane = f.placement?.plane ?? .xy
+        return outlines.map { SheetCutout(outline: $0.map { plane.world($0) + f.position }, axis: plane.normal) }
     }
 }
 
@@ -251,13 +293,18 @@ struct SheetLayout: Sendable {
     let flanges: [Bent]
 
     /// Flat-pattern point of a hole centre drilled along `axis`, if it lies on a flat region.
-    func unfold(_ world: Vec3, axis: Vec3) -> Vec2? {
+    func unfold(_ world: Vec3, axis: Vec3) -> Vec2? { region(of: world, axis: axis, inSheet: true)?.point }
+
+    /// Flat-pattern point of a point cut along `axis` and the flat region it falls on (0 = plate,
+    /// k = the k-th flange's straight part). `inSheet`: the point itself must lie within the
+    /// sheet's thickness (a hole centre); otherwise the cut's line along the axis is followed.
+    func region(of world: Vec3, axis: Vec3, inSheet: Bool = false) -> (point: Vec2, region: Int)? {
         let q = world - position
         let e = 1e-4
-        if abs(axis.z) > 0.999, q.x >= x0 - e, q.x <= x1 + e, q.y >= y0 - e, q.y <= y1 + e, q.z >= -e, q.z <= t + e {
-            return Vec2(q.x, q.y)
+        if abs(axis.z) > 0.999, q.x >= x0 - e, q.x <= x1 + e, q.y >= y0 - e, q.y <= y1 + e, !inSheet || (q.z >= -e && q.z <= t + e) {
+            return (Vec2(q.x, q.y), 0)
         }
-        for b in flanges {
+        for (k, b) in flanges.enumerated() {
             let (origin, out, along, span): (Vec2, Vec2, Vec2, Double) = switch b.edge {
             case .front: (Vec2(x0, y0), Vec2(0, -1), Vec2(1, 0), x1 - x0)
             case .back: (Vec2(x0, y1), Vec2(0, 1), Vec2(1, 0), x1 - x0)
@@ -278,10 +325,10 @@ struct SheetLayout: Sendable {
             // The flange's normal in world: perpendicular to d in the (out, z) plane.
             let normal = Vec3(out.x * -d.y, out.y * -d.y, d.x)
             let inBend = along2 < e
-            guard s >= -e - (inBend ? 0 : b.extStart), s <= span + e + (inBend ? 0 : b.extEnd), along2 >= -e, along2 <= b.straight + e, across <= t / 2 + e,
-                  abs(normal.dot(axis)) > 0.999 else { continue }
+            guard s >= -e - (inBend ? 0 : b.extStart), s <= span + e + (inBend ? 0 : b.extEnd), along2 >= -e, along2 <= b.straight + e,
+                  !inSheet || across <= t / 2 + e, abs(normal.dot(axis)) > 0.999 else { continue }
             let reach = b.allowance + along2
-            return Vec2(origin.x + along.x * s + out.x * reach, origin.y + along.y * s + out.y * reach)
+            return (Vec2(origin.x + along.x * s + out.x * reach, origin.y + along.y * s + out.y * reach), k + 1)
         }
         return nil
     }
@@ -521,7 +568,7 @@ public enum SheetMetalGeometry {
 
     /// Flat pattern as a thin solid (for display and 3MF), at the plate's height, holes cut.
     public static func flatMesh(_ flat: SheetFlatPattern) -> Mesh {
-        guard !flat.holes.isEmpty else {
+        guard !flat.holes.isEmpty || !flat.cutouts.isEmpty else {
             return Operations.extrude(Profile2D(points: flat.outline), height: flat.thickness).translated(by: flat.origin)
         }
         return flatSolid(flat, id: UUID()).triangulated().mesh
@@ -533,6 +580,11 @@ public enum SheetMetalGeometry {
                             position: flat.origin)
         guard let brep = try? PrimitiveKernel.build(plate) else { return CSGSolid(polygons: [], faces: []) }
         var solid = CSGSolid(brep.snapshot(revision: "flat"))
+        for (i, c) in flat.cutouts.enumerated() {
+            let tool = Feature(id: UUID(uuidString: String(format: "00000000-0000-0000-0001-%012d", i)) ?? id, name: "Taglio",
+                               kind: .extrude(profile: Profile2D(points: c), height: flat.thickness + 2), position: flat.origin - Vec3(0, 0, 1))
+            if let brep = try? PrimitiveKernel.build(tool) { solid = solid.subtracting(CSGSolid(brep.snapshot(revision: "flat"))) }
+        }
         for (i, h) in flat.holes.enumerated() {
             let spec = HoleSpec(centers: [Vec3(h.center.x, h.center.y, flat.thickness) + flat.origin], fit: .manual, diameter: h.diameter)
             let hole = HoleGeometry.solid(spec, featureID: UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", i)) ?? id,
@@ -725,6 +777,11 @@ public enum SheetMetalDXF {
             put(0, "LINE"); put(100, "AcDbEntity"); put(8, layer); put(100, "AcDbLine")
             put(10, number(l.0.x)); put(20, number(l.0.y)); put(30, "0")
             put(11, number(l.1.x)); put(21, number(l.1.y)); put(31, "0")
+        }
+        for c in flat.cutouts {
+            put(0, "LWPOLYLINE"); put(100, "AcDbEntity"); put(8, "CUT"); put(100, "AcDbPolyline")
+            put(90, String(c.count)); put(70, "1")
+            for p in c { put(10, number(p.x)); put(20, number(p.y)) }
         }
         for h in flat.holes {
             put(0, "CIRCLE"); put(100, "AcDbEntity"); put(8, "CUT"); put(100, "AcDbCircle")

@@ -237,3 +237,33 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     #expect(build.flat.bends.count == 8)
     #expect(build.flat.bends.filter { $0.edge == .left }.map { abs($0.line.1.y - $0.line.0.y) }.sorted().first.map { abs($0 - sideLip) < 1e-9 } == true)
 }
+
+@Test func sketchCutsUnfoldOntoTheBlank() throws {
+    // U channel: 100 wide, 40 deep, 30 tall walls; a 30 × 10 window in the plate, a slot and a
+    // round cut in the front wall, one cut crossing the bend (skipped).
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 100, depth: 40,
+                              flanges: [.front: SheetFlange(length: 30), .back: SheetFlange(length: 30)])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID(), folded: false)
+    let window = SheetCutout(outline: [Vec3(-15, -5, 2), Vec3(15, -5, 2), Vec3(15, 5, 2), Vec3(-15, 5, 2)], axis: Vec3(0, 0, -1))
+    // Front wall: outer face y = −20, cut along +Y; a slot 20 × 6 at height 15–21.
+    let slot = SheetCutout(outline: [Vec3(-10, -20, 15), Vec3(10, -20, 15), Vec3(10, -20, 21), Vec3(-10, -20, 21)], axis: Vec3(0, 1, 0))
+    let round = SheetCutout(outline: (0..<32).map { k in let a = Double(k) / 32 * 2 * .pi; return Vec3(30 + 4 * cos(a), -20, 18 + 4 * sin(a)) },
+                            axis: Vec3(0, 1, 0))
+    let crossing = SheetCutout(outline: [Vec3(-5, -25, 5), Vec3(5, -25, 5), Vec3(5, -15, 5), Vec3(-5, -15, 5)], axis: Vec3(0, 0, -1))
+    let (flat, skipped) = build.flat(adding: [], cutouts: [window, slot, round, crossing])
+    #expect(skipped == 1 && flat.cutouts.count == 2 && flat.holes.count == 1)
+    // The window stays where it is on the plate; the slot lands on the front strip, the height
+    // from the plate's outer face becoming the distance out along the strip.
+    #expect(flat.cutouts[0].contains(Vec2(-15, -5)) && abs(Profile2D(points: flat.cutouts[0]).area.magnitude - 300) < 1e-9)
+    let r = build.rule.insideRadius, t = 2.0
+    let yPlate = -20 + r + t   // the plate's front tangent line
+    let slotY = flat.cutouts[1].map(\.y)
+    let expected = yPlate - build.rule.allowance(angleDegrees: 90) - (15 - (r + t))
+    #expect(abs(slotY.max()! - expected) < 1e-9 && abs(slotY.max()! - slotY.min()! - 6) < 1e-9)
+    #expect(abs(flat.holes[0].diameter - 8) < 1e-6 && abs(flat.holes[0].center.x - 30) < 1e-6)
+    #expect(abs(flat.area - (build.flat.area - 300 - 120 - .pi * 16)) < 0.05)
+    // The laser file and the blank solid carry them.
+    let dxf = SheetMetalDXF.export(flat, rule: build.rule, name: "U")
+    #expect(dxf.components(separatedBy: "LWPOLYLINE").count - 1 == 3 && dxf.contains("CIRCLE"))
+    #expect(MeshValidator.validate(SheetMetalGeometry.flatMesh(flat)).isWatertight)
+}

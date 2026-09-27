@@ -70,7 +70,7 @@ extension DesignModel: CADToolProvider {
                 return result("DXF dello sviluppo pronto", [
                     "filename": .string("\(name) - sviluppo.dxf"), "mime_type": "image/vnd.dxf", "encoding": "base64",
                     "data": .string(data.base64EncodedString()), "bytes": .number(Double(data.count)), "coordinate_units": "mm",
-                    "holes": .number(Double(part?.flat.holes.count ?? 0)), "skipped_holes": .number(Double(part?.skippedHoles ?? 0))
+                    "holes": .number(Double(part?.flat.holes.count ?? 0)), "cutouts": .number(Double(part?.flat.cutouts.count ?? 0)), "skipped_holes": .number(Double(part?.skippedHoles ?? 0))
                 ])
             case "undo": return try restore(redo: false)
             case "redo": return try restore(redo: true)
