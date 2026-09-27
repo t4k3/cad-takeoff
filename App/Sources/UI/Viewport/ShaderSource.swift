@@ -12,7 +12,13 @@ struct FrameUniforms {
     float4x4 viewProjection;
     float4 eye;          // xyz = camera position
     float4 lightDir;     // xyz = direction towards the key light
+    float4 clip;         // section: points with dot(p, xyz) > w are cut away (xyz = 0: off)
 };
+
+// Cut away by the section plane (only bodies and their edges, never overlays or handles).
+static bool clipped(float3 p, float4 clip) {
+    return dot(clip.xyz, clip.xyz) > 0.0 && dot(p, clip.xyz) > clip.w;
+}
 
 struct DrawUniforms {
     float4 color;        // rgb + highlight strength in a
@@ -22,6 +28,7 @@ struct MeshOut {
     float4 position [[position]];
     float3 normal;
     float3 world;
+    float clipOn;
 };
 
 vertex MeshOut meshVertex(uint id [[vertex_id]],
@@ -31,6 +38,7 @@ vertex MeshOut meshVertex(uint id [[vertex_id]],
     o.position = frame.viewProjection * v[id].position;
     o.normal = v[id].normal.xyz;
     o.world = v[id].position.xyz;
+    o.clipOn = 1.0;
     return o;
 }
 
@@ -44,14 +52,20 @@ vertex MeshOut gizmoVertex(uint id [[vertex_id]],
     o.position.z *= 0.02;
     o.normal = v[id].normal.xyz;
     o.world = v[id].position.xyz;
+    o.clipOn = 0.0;
     return o;
 }
 
 fragment float4 meshFragment(MeshOut in [[stage_in]],
                              constant FrameUniforms &frame [[buffer(1)]],
                              constant DrawUniforms &draw [[buffer(2)]]) {
+    if (in.clipOn > 0.5 && clipped(in.world, frame.clip)) discard_fragment();
     float3 n = normalize(in.normal);
     float3 viewDir = normalize(frame.eye.xyz - in.world);
+    // Seen through the section: the inside of the part, drawn as a flat cut face.
+    if (in.clipOn > 0.5 && dot(frame.clip.xyz, frame.clip.xyz) > 0.0 && dot(n, viewDir) < 0.0) {
+        return float4(mix(draw.color.rgb, float3(0.95, 0.45, 0.2), 0.55) * 0.8, 1.0);
+    }
     float3 l = normalize(frame.lightDir.xyz);
     // Hemisphere ambient (sky above, ground below) + key light + soft headlight.
     float hemi = mix(0.35, 0.62, n.z * 0.5 + 0.5);
@@ -69,6 +83,8 @@ struct LineOut {
     float4 position [[position]];
     float4 color;
     float fade;
+    float3 world;
+    float clipOn;
 };
 
 vertex LineOut lineVertex(uint id [[vertex_id]],
@@ -80,6 +96,8 @@ vertex LineOut lineVertex(uint id [[vertex_id]],
     // Fade the grid with distance from the camera.
     float d = distance(v[id].position.xyz, frame.eye.xyz);
     o.fade = clamp(1.6 - d / max(frame.eye.w, 1.0), 0.0, 1.0);
+    o.world = v[id].position.xyz;
+    o.clipOn = 1.0;
     return o;
 }
 
@@ -109,6 +127,8 @@ vertex LineOut thickLineVertex(uint id [[vertex_id]],
     o.position = a;
     o.color = t.color;
     o.fade = 1.0;
+    o.world = t.position.xyz;
+    o.clipOn = 0.0;
     return o;
 }
 
@@ -117,7 +137,9 @@ fragment float4 lineFragment(LineOut in [[stage_in]]) {
 }
 
 fragment float4 edgeFragment(LineOut in [[stage_in]],
+                             constant FrameUniforms &frame [[buffer(1)]],
                              constant DrawUniforms &draw [[buffer(2)]]) {
+    if (in.clipOn > 0.5 && clipped(in.world, frame.clip)) discard_fragment();
     // draw.color.a > 0 overrides the baked edge colour (selection / hover highlight).
     return draw.color.a > 0 ? draw.color : in.color;
 }

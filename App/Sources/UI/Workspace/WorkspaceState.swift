@@ -165,6 +165,18 @@ final class WorkspaceState {
     @ObservationIgnored weak var sketchStore: SketchStore?
     @ObservationIgnored weak var model: DesignModel?
 
+    /// Section view: the bodies cut by a plane square to X, Y or Z (0, 1, 2) at `sectionOffset`
+    /// mm, the side beyond it taken away (the other side when flipped). Display only.
+    var sectionAxis: Int?
+    var sectionOffset = 0.0
+    var sectionFlip = false
+    var sectionPlane: SIMD4<Float> {
+        guard let axis = sectionAxis else { return .zero }
+        var n = SIMD3<Float>(repeating: 0)
+        n[axis] = sectionFlip ? -1 : 1
+        return SIMD4(n, Float(sectionFlip ? -sectionOffset : sectionOffset))
+    }
+
     /// «Schizzo» waits for a click on a planar face (or a base plane).
     var pickingSketchPlane = false {
         didSet { if !pickingSketchPlane { planePickPoints = []; planePickFace = nil } }

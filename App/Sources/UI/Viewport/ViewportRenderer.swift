@@ -50,7 +50,7 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
 
     private struct MeshVertex { var position: SIMD4<Float>; var normal: SIMD4<Float> }
     private struct LineVertex { var position: SIMD4<Float>; var color: SIMD4<Float> }
-    private struct FrameUniforms { var viewProjection: simd_float4x4; var eye: SIMD4<Float>; var lightDir: SIMD4<Float> }
+    private struct FrameUniforms { var viewProjection: simd_float4x4; var eye: SIMD4<Float>; var lightDir: SIMD4<Float>; var clip: SIMD4<Float> }
     private struct DrawUniforms { var color: SIMD4<Float> }
 
     let camera: CameraController
@@ -79,6 +79,8 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     /// Solid on-canvas handles (drag arrows): triangles as (position, normal), one colour each.
     var gizmos: [GizmoMesh] = []
+    /// Section plane (Ispeziona › Sezione): bodies with dot(p, xyz) > w are cut away; zero = off.
+    var section: SIMD4<Float> = .zero
 
     private weak var view: MTKView?
 
@@ -239,7 +241,7 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         let right = camera.basis.right
         let light = simd_normalize(-camera.forward + right * 0.5 + SIMD3(0, 0, 0.8))
         var frame = FrameUniforms(viewProjection: camera.projectionMatrix(aspect: aspect) * camera.viewMatrix,
-                                  eye: SIMD4(eye, camera.pose.distance * 3 + 150), lightDir: SIMD4(light, 0))
+                                  eye: SIMD4(eye, camera.pose.distance * 3 + 150), lightDir: SIMD4(light, 0), clip: section)
         enc.setVertexBytes(&frame, length: MemoryLayout<FrameUniforms>.stride, index: 1)
         enc.setFragmentBytes(&frame, length: MemoryLayout<FrameUniforms>.stride, index: 1)
 

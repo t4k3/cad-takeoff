@@ -16,6 +16,8 @@ struct MetalViewport: NSViewRepresentable {
     var highlightTriangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var highlightLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
     var gizmos: [GizmoMesh] = []
+    /// Section plane: bodies with dot(p, xyz) > w cut away; zero = off.
+    var section: SIMD4<Float> = .zero
     /// Cursor over the viewport (crosshair while sketching or placing).
     var cursor: NSCursor? = nil
     var onClick: (CGPoint, Ray, NSEvent.ModifierFlags) -> Void = { _, _, _ in }
@@ -70,6 +72,7 @@ struct MetalViewport: NSViewRepresentable {
         r.highlightTriangles = highlightTriangles
         r.highlightLines = highlightLines
         r.gizmos = gizmos
+        r.section = section
         view.redraw()
     }
 }

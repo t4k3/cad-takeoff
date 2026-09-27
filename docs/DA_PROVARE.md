@@ -36,3 +36,4 @@ sono le prove a mano, sull'interfaccia.
 - [ ] **Tavola con le quote degli schizzi**: quota due fori in uno schizzo (distanza orizzontale), estrudi, STAMPA › Tavola: la quota compare nella vista dall'alto.
 - [ ] **Tornito**: profilo su XZ con quote dall'asse, Rivoluzione, Tavola (anche «in sezione»): le quote dall'asse escono come Ø.
 - [ ] **Tagli nello sviluppo**: schizzo su una faccia della lamiera, rettangolo/asola, Estrudi in taglio Passante: la finestra compare nello sviluppo, nel DXF e nella tavola di piega.
+- [ ] **Sezione** (barra in basso, forbici): piano in squadro a X/Y/Z, cursore per spostarlo, «Tieni l'altra metà»; l'interno tagliato è arancio.

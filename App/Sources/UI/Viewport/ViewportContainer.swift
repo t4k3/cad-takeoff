@@ -188,6 +188,7 @@ struct ViewportContainer: View {
                   highlightTriangles: geoHighlight.triangles + (workspace.sketch?.regionFill() ?? []),
                   highlightLines: geoHighlight.lines,
                   gizmos: workspace.manipulator.map { [$0.mesh(length: arrowLength)] } ?? [],
+                  section: workspace.sectionPlane,
                   cursor: workspace.sketch != nil || workspace.holePlacement != nil || workspace.pickingSketchPlane ? .crosshair : nil,
                   onClick: handleClick,
                   onHover: handleHover,
@@ -778,9 +779,48 @@ struct ViewportContainer: View {
             .menuIndicator(.hidden)
             .frame(width: 26)
             .help("Stile di visualizzazione")
+            Menu {
+                Button("Nessuna sezione") { workspace.sectionAxis = nil }
+                ForEach(0..<3, id: \.self) { axis in
+                    Button("Piano in squadro a \(["X", "Y", "Z"][axis])") { startSection(axis) }
+                }
+                Divider()
+                Button("Tieni l'altra metà") { workspace.sectionFlip.toggle() }.disabled(workspace.sectionAxis == nil)
+            } label: {
+                Image(systemName: "scissors")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .frame(width: 26)
+            .help("Sezione: taglia la vista con un piano per guardare dentro al pezzo (non cambia il modello)")
+            if let axis = workspace.sectionAxis {
+                let range = sectionRange(axis)
+                Slider(value: Binding(get: { min(max(workspace.sectionOffset, range.lowerBound), range.upperBound) },
+                                      set: { workspace.sectionOffset = $0 }), in: range)
+                    .frame(width: 130).controlSize(.small)
+                Text("\(["X", "Y", "Z"][axis]) \(String(format: "%.1f", workspace.sectionOffset)) mm")
+                    .font(.system(size: 10.5).monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
+                    .frame(width: 70, alignment: .leading)
+                Button { workspace.sectionAxis = nil } label: { Label("Chiudi sezione", systemImage: "xmark") }
+                    .help("Togli la sezione")
+            }
         }
         .buttonStyle(IconButtonStyle())
         .overlayChip()
+    }
+
+    /// Where the section plane can go along an axis: across the visible bodies.
+    private func sectionRange(_ axis: Int) -> ClosedRange<Double> {
+        guard let b = viewport.renderer?.sceneBounds else { return -100...100 }
+        let lo = [b.min.x, b.min.y, b.min.z][axis], hi = [b.max.x, b.max.y, b.max.z][axis]
+        return hi - lo > 1e-6 ? lo...hi : (lo - 1)...(hi + 1)
+    }
+
+    /// A new section through the middle of the parts.
+    private func startSection(_ axis: Int) {
+        let r = sectionRange(axis)
+        workspace.sectionAxis = axis
+        workspace.sectionOffset = (r.lowerBound + r.upperBound) / 2
     }
 }
 
