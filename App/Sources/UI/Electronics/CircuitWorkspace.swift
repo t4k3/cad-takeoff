@@ -681,7 +681,9 @@ struct CircuitBoardView: View {
     /// engine's preview fill instead.
     private func drawZones(_ ctx: inout GraphicsContext, _ m: Mapping, litNet: UUID?, accent: Color) {
         let count = circuits.layerCount, active = circuits.activeLayer
-        let previewed = Set(circuits.ruleCheck?.fills?.map(\.zone.id) ?? [])
+        // With a change being checked, the engine's fills of the candidate replace the current ones.
+        let candidate = circuits.ruleCheck?.fills ?? []
+        let previewed = Set(candidate.map(\.zone.id))
         func surface(_ fill: PCBZoneFill) {
             var path = Path()
             for cell in fill.cells {
@@ -701,7 +703,7 @@ struct CircuitBoardView: View {
         }
         let other = (circuits.pcb?.zones ?? []).filter { !previewed.contains($0.zone.id) }
         for fill in other.sorted(by: { ($0.zone.layer == active ? 1 : 0) < ($1.zone.layer == active ? 1 : 0) }) { surface(fill) }
-        for fill in circuits.ruleCheck?.fills ?? [] { surface(fill) }
+        for fill in candidate { surface(fill) }
         for fill in circuits.pcb?.zones ?? [] {
             var pts = fill.zone.outline
             if let mv = movingZone, mv.id == fill.zone.id { pts = pts.map { PCBPoint($0.x + mv.delta.x, $0.y + mv.delta.y) } }

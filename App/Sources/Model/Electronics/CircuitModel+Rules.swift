@@ -96,7 +96,8 @@ extension CircuitModel {
         var revision: UInt64
         var newErrors: [ElectronicsIssue]?
         var refusal: String?
-        /// A plane being drawn, changed or moved: its fill as the engine computes it.
+        /// Every plane's fill as the engine computes it with the change (an area, a rule or a
+        /// plane changes the planes around it): the drawing shows these instead, empty ones too.
         var fills: [PCBZoneFill]?
     }
 
@@ -109,11 +110,7 @@ extension CircuitModel {
         ruleCheckTask?.cancel()
         let before = pcbIsCurrent ? (pcb?.issues ?? []) : []
         ruleCheckTask = Task { [weak self] in
-            let zone: UUID? = switch command {
-            case .addZone(let z), .updateZone(let z): z.id
-            case .moveZone(let id, _): id
-            default: nil
-            }
+            let planes = !(doc.design.board.copper?.zones.isEmpty ?? true) || { if case .addZone = command { true } else { false } }()
             let result = await Self.offMain { () -> (errors: [ElectronicsIssue], refusal: String?, fills: [PCBZoneFill]?) in
                 do {
                     let preview = try ElectronicsCommands.preview(.pcb(command), document: doc, expectedRevision: doc.revision)
@@ -121,7 +118,7 @@ extension CircuitModel {
                         e.severity == .error && e.code.hasPrefix("pcb_")
                             && !before.contains { $0.code == e.code && $0.subjectIDs == e.subjectIDs }
                     }
-                    let fills = zone.flatMap { id in (try? preview.pcbSnapshot())?.zones.filter { $0.zone.id == id } }
+                    let fills = planes ? (try? preview.pcbSnapshot())?.zones : nil
                     return (errors, nil, fills)
                 } catch {
                     return ([], CircuitModel.describe(error), nil)
@@ -206,6 +203,7 @@ extension CircuitModel {
         }
         guard await runPCB(.addKeepout(area), expectedRevision: d.baseRevision) else { return false }
         if keepoutDraft?.id == d.id { keepoutDraft = nil; ruleCheck = nil }
+        selection = nil; copperSelection = nil; zoneSelection = nil
         keepoutSelection = area.id
         let where_ = area.layers.count == layerCount ? "tutti gli strati" : area.layers.map(layerName).joined(separator: ", ")
         report("\(area.name) su \(where_): niente piste, via e piazzole")

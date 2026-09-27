@@ -349,6 +349,19 @@ struct CircuitTests {
         check(fill != nil && !fill!.cells.isEmpty && fill!.area > 0 && fill!.area < 48 * 28, "piano riempito attorno al rame dell'altra rete (\(fill?.area ?? -1) mm²)")
         check(sc.zoneHit(at: PCBPoint(25, 25), tolerance: 0.1)?.id == planeID, "piano trovato dal contorno")
         check(sc.copperHit(at: PCBPoint(25, 25), tolerance: 0.1) == nil, "il rame del piano non si seleziona come pista")
+        // An area being drawn across the plane: the preview shows the plane's fill already cut.
+        sc.tool = .keepout
+        await sc.keepoutClick(at: PCBPoint(24, 0), tolerance: 0.01)
+        await sc.keepoutClick(at: PCBPoint(26, 30), tolerance: 0.01)
+        await sc.ruleCheckReady()
+        let cut = sc.ruleCheck?.fills?.first { $0.zone.id == planeID }
+        check(cut != nil && cut!.area < fill!.area - 1, "anteprima dell'area: il piano già tagliato (\(cut?.area ?? -1) < \(fill!.area))")
+        check(await sc.finishKeepout() && sc.zoneSelection == nil && sc.keepoutSelection != nil, "area confermata: selezionata solo lei")
+        sc.undo()
+        await sc.pcbReady()
+        sc.zoneSelection = planeID
+        sc.tool = .zone
+
         // Another net's plane over it on the same layer: refused, said before confirming.
         await sc.zoneClick(at: PCBPoint(5, 5), tolerance: 0.01)
         sc.zoneNet = air.netID

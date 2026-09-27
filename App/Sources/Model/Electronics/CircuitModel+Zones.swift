@@ -91,6 +91,7 @@ extension CircuitModel {
         guard let plane = d.plane() else { report("Piano di rame: clicca almeno i due angoli opposti di un rettangolo, o tre punti."); return false }
         guard await runPCB(.addZone(plane), expectedRevision: d.baseRevision) else { return false }
         if zoneDraft?.id == d.id { zoneDraft = nil; ruleCheck = nil }
+        selection = nil; copperSelection = nil; keepoutSelection = nil
         zoneSelection = plane.id
         let net = design?.nets.first { $0.id == plane.netID }?.name ?? "?"
         report("\(plane.name): rete \(net) su \(layerName(plane.layer)), collegamento pieno")
