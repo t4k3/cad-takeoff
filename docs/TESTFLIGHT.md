@@ -24,7 +24,7 @@ Dopo 10–30 minuti la build compare in App Store Connect › TestFlight (la pri
 - **Interni** (fino a 100, con ruolo nel tuo team App Store Connect): subito, senza revisione.
 - **Esterni** (colleghi con un semplice indirizzo email, fino a 10.000): crea un gruppo, aggiungi gli indirizzi o un link pubblico. La prima build passa una breve *Beta App Review* di Apple.
 
-Nota per la revisione: «App di progettazione CAD. L'assistente in chat usa la chiave API personale che l'utente inserisce in Impostazioni (Anthropic o OpenAI); senza chiave tutte le funzioni CAD restano disponibili.»
+Nota per la revisione: «App di progettazione CAD ed elettronica (Circuiti). L'assistente in chat usa Apple Intelligence sul Mac, senza chiave; in alternativa la chiave API personale che l'utente inserisce in Impostazioni (Anthropic o OpenAI). Tutte le funzioni CAD restano disponibili senza assistente. Richiede macOS 27.»
 
 ## 4. Cosa fa ogni collega
 
