@@ -52,7 +52,12 @@ struct InspectorPanel: View {
                         section("Proprietà") {
                             // The evaluated body (booleans, copies, components), else the feature's own mesh.
                             let mesh = model.evaluation().bodies.first { $0.id == feature.id }?.mesh ?? feature.buildMesh()
-                            info("Volume", String(format: "%.2f cm³", mesh.volume / 1000))
+                            // On the true surfaces when ready (the facets' volume meanwhile, marked ≈).
+                            if let exact = model.exactVolume(of: feature.id) {
+                                info("Volume", String(format: "%.3f cm³", exact / 1000))
+                            } else {
+                                info("Volume", String(format: "≈ %.2f cm³", mesh.volume / 1000))
+                            }
                             if let b = mesh.bounds {
                                 info("Ingombro", String(format: "%.1f × %.1f × %.1f mm", b.size.x, b.size.y, b.size.z))
                             }
@@ -60,6 +65,7 @@ struct InspectorPanel: View {
                             Toggle("Visibile", isOn: $model.document.features[i].isVisible)
                                 .toggleStyle(.switch).controlSize(.small)
                         }
+                        .task(id: model.designRevision) { model.requestExactVolumes() }
                     }
                     .padding(Theme.Metrics.pad + 2)
                 }

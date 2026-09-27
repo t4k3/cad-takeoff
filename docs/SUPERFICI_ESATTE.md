@@ -88,7 +88,11 @@ e interpolazione B-spline cubica; lo STEP tiene esatte anche le facce curve bord
 non sono né rette né cerchi (fori trasversali, cilindri a T, tagli obliqui): la curva è una
 B-spline che passa per punti esatti su entrambe le superfici, i vertici sono i punti comuni.
 Albero Ø20 con foro trasversale Ø6: prima 142 faccette, ora 4 facce esatte; volume letto da
-OpenCascade 12007,320 mm³ contro 12007,319 esatti. Da fare: volumi esatti nell'app, le stesse
+OpenCascade 12007,320 mm³ contro 12007,319 esatti. **Volumi esatti nell'app (27/09):** l'errore
+delle faccette sul volume va come 1/n² (anche sulle curve delle booleane), quindi due risoluzioni
+lo cancellano, (4·V₂ₙ − Vₙ)/3: albero forato 2·10⁻⁷ relativo alla risoluzione normale (le faccette
+da sole 1,6·10⁻³), entro 10⁻⁶ a ogni risoluzione. Il pannello Proprietà mostra il volume esatto,
+calcolato in background per revisione (≈ quello delle faccette nel frattempo). Da fare: le stesse
 curve per tavola e misure.
 
 Intersezione faccia–faccia analitica dove esiste in forma chiusa (piano con piano, cilindro,

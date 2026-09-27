@@ -257,6 +257,18 @@ struct AssistantToolsTests {
         expect(!freeSheet.isError && freeInfo.structured?["edge_closed"]?.bool == true && badSide.isError && mixed.isError,
                "free-form sheet metal via tool (\(freeSheet.text))")
         expect(listed.text.contains("outline") || (listed.structured?.jsonString.contains("outline") ?? false), "free-form base listed with its outline")
+        // Exact volumes (true surfaces), computed in the background for the revision shown.
+        let volumes = DesignModel()
+        volumes.newDesign()
+        let pin = Feature(name: "Perno", kind: .cylinder(radius: 7, height: 12))
+        volumes.document.features = [pin]
+        expect(volumes.exactVolume(of: pin.id) == nil, "exact volume not guessed before it is computed")
+        volumes.requestExactVolumes()
+        await volumes.exactVolumesReady()
+        let exact = Double.pi * 49 * 12
+        expect(abs((volumes.exactVolume(of: pin.id) ?? 0) - exact) / exact < 1e-6, "cylinder volume on its true surface")
+        volumes.document.features[0].kind = .cylinder(radius: 7, height: 20)
+        expect(volumes.exactVolume(of: pin.id) == nil, "a changed design drops the old exact volume")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }
