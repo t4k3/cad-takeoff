@@ -209,7 +209,37 @@ extension STEPExporter {
             return ids.allSatisfy { let q = points[$0] - a; return (q - d.normalized * q.dot(d.normalized)).length < tol * max(1, d.length) }
         }
 
-        // 3. Settle the exact cylinders: every edge on the surface, as a circle or an axis line.
+        // Curves where two exact surfaces meet that are neither lines nor circles (two cylinders
+        // crossing, a plane across a cylinder): every point carried onto both surfaces. The facets
+        // are off them by at most their sagitta; a point that would move more is not on them.
+        var meeting: [[Int]: [Vec3]] = [:]
+        func slack(_ surfaces: [SurfaceDescriptor]) -> Double {
+            let radii = surfaces.compactMap { s -> Double? in
+                switch s {
+                case let .cylinder(_, _, r), let .sphere(_, r): r
+                case let .torus(_, _, _, r): r
+                case .cone: 10
+                default: nil
+                }
+            }
+            return 0.02 * (radii.min() ?? 1) + 1e-6
+        }
+        func intersection(_ ch: Chain) -> [Vec3]? {
+            let key = ch.points + [ch.pieces.0.face, ch.pieces.1.face]
+            if let known = meeting[key] { return known }
+            let surfaces = [s.faces[ch.pieces.0.face].surface, s.faces[ch.pieces.1.face].surface]
+            let limit = slack(surfaces)
+            var out: [Vec3] = []
+            for v in ch.points {
+                guard let q = SurfaceDescriptor.project(points[v], onto: surfaces), (q - points[v]).length <= limit else { return nil }
+                out.append(q)
+            }
+            meeting[key] = out
+            return out
+        }
+
+        // 3. Settle the exact cylinders: every edge on the surface, as a circle or an axis line,
+        // or a curve where it meets another exact surface.
         var pieceOf = tris.indices.map(piece)
         var found = chains(pieceOf)
         var changed = true
@@ -221,10 +251,12 @@ extension STEPExporter {
                     guard ch.pieces.0.face == f || ch.pieces.1.face == f else { return true }
                     let other = ch.pieces.0.face == f ? ch.pieces.1.face : ch.pieces.0.face
                     let keyPoints = corners(ch.points, closed: ch.closed)
-                    guard keyPoints.allSatisfy({ surface.distance(points[$0]) < 1e-5 * max(1, points[$0].length * 1e-3) + 1e-5 }) else { return false }
-                    if !ch.closed, straight(ch.points), surface.holdsLine(points[ch.points.first!], points[ch.points.last!]) { return true }
-                    guard exact.contains(other), let c = circle(ch.points, closed: ch.closed) else { return false }
-                    return surface.holdsCircle(center: c.c, normal: c.n, radius: c.r, sample: points[keyPoints[0]])
+                    if keyPoints.allSatisfy({ surface.distance(points[$0]) < 1e-5 * max(1, points[$0].length * 1e-3) + 1e-5 }) {
+                        if !ch.closed, straight(ch.points), surface.holdsLine(points[ch.points.first!], points[ch.points.last!]) { return true }
+                        if exact.contains(other), let c = circle(ch.points, closed: ch.closed),
+                           surface.holdsCircle(center: c.c, normal: c.n, radius: c.r, sample: points[keyPoints[0]]) { return true }
+                    }
+                    return exact.contains(other) && ch.points.count >= 3 && intersection(ch) != nil
                 }
                 if !fine { exact.remove(f); changed = true }
             }
@@ -234,9 +266,27 @@ extension STEPExporter {
         // 4. Curves: circles between exact faces, one line for a straight run, else segments.
         struct CurveEdge { let start: Int, end: Int; let entity: String }
         var vertexIDs: [Int: String] = [:]
+        // Where every face around a vertex is exact, the vertex is where their surfaces meet.
+        var facesAt = [Set<Int>](repeating: [], count: points.count)
+        var faceted = [Bool](repeating: false, count: points.count)
+        for (t, tri) in tris.enumerated() {
+            for v in tri.v { facesAt[v].insert(tri.face); if pieceOf[t].plane != .zero || !exact.contains(tri.face) { faceted[v] = true } }
+        }
+        var vertexPoint: [Int: Vec3] = [:]
+        func exactPoint(_ v: Int) -> Vec3 {
+            if let known = vertexPoint[v] { return known }
+            var q = points[v]
+            if !faceted[v] {
+                var surfaces: [SurfaceDescriptor] = []
+                for f in facesAt[v].sorted() where !surfaces.contains(s.faces[f].surface) { surfaces.append(s.faces[f].surface) }
+                if let p = SurfaceDescriptor.project(points[v], onto: surfaces), (p - points[v]).length <= slack(surfaces) { q = p }
+            }
+            vertexPoint[v] = q
+            return q
+        }
         func vertex(_ v: Int) -> String {
             if let id = vertexIDs[v] { return id }
-            let id = w.add("VERTEX_POINT('',\(w.point(points[v])))")
+            let id = w.add("VERTEX_POINT('',\(w.point(exactPoint(v))))")
             vertexIDs[v] = id
             return id
         }
@@ -267,6 +317,30 @@ extension STEPExporter {
                 register(ids, closed: ch.closed, entity: w.add("EDGE_CURVE('',\(vertex(ids[0])),\(vertex(end)),\(geometry),.T.)"))
             } else if !ch.closed, straight(ids) {
                 register(ids, closed: false, entity: w.add("EDGE_CURVE('',\(vertex(ids[0])),\(vertex(ids.last!)),\(line(ids[0], ids.last!)),.T.)"))
+            } else if bothExact, ids.count >= 3, var on = intersection(ch) {
+                // The curve where the two surfaces meet: its points on both, four times denser, as a
+                // cubic B-spline through them; the ends are the exact vertices.
+                let surfaces = [s.faces[ch.pieces.0.face].surface, s.faces[ch.pieces.1.face].surface]
+                on[0] = exactPoint(ids[0])
+                if !ch.closed { on[on.count - 1] = exactPoint(ids.last!) }
+                let seq = ch.closed ? on + [on[0]] : on
+                var dense = [seq[0]]
+                for (a, b) in zip(seq, seq.dropFirst()) {
+                    for k in 1...3 { if let q = SurfaceDescriptor.project(a + (b - a) * (Double(k) / 4), onto: surfaces) { dense.append(q) } }
+                    dense.append(b)
+                }
+                if let spline = CubicInterpolation(dense) {
+                    let cps = spline.controls.map { w.point($0) }.joined(separator: ",")
+                    let geometry = w.add("B_SPLINE_CURVE_WITH_KNOTS('',3,(\(cps)),.UNSPECIFIED.,.F.,.F.,(\(spline.multiplicities.map(String.init).joined(separator: ","))),(\(spline.knots.map { w.real($0) }.joined(separator: ","))),.UNSPECIFIED.)")
+                    let end = ch.closed ? ids[0] : ids.last!
+                    register(ids, closed: ch.closed, entity: w.add("EDGE_CURVE('',\(vertex(ids[0])),\(vertex(end)),\(geometry),.T.)"))
+                } else {
+                    let seg = ch.closed ? ids + [ids[0]] : ids
+                    for i in 0..<(seg.count - 1) {
+                        register([seg[i], seg[i + 1]], closed: false,
+                                 entity: w.add("EDGE_CURVE('',\(vertex(seg[i])),\(vertex(seg[i + 1])),\(line(seg[i], seg[i + 1])),.T.)"))
+                    }
+                }
             } else {
                 let seq = ch.closed ? ids + [ids[0]] : ids
                 for i in 0..<(seq.count - 1) {

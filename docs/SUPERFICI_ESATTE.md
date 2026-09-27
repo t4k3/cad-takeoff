@@ -78,6 +78,19 @@ fori esatti a 1e-9.
 
 ### Tappa 3 — Booleane sulle superfici
 
+**Stato 27/09 — primo passo fatto, approccio scelto.** La booleana a poligoni resta quella che
+decide *quali* facce e contorni esistono (robusta, e i raccordi successivi si appoggiano ai suoi
+vertici); sopra di essa si ricava la descrizione esatta: ogni faccia sulla sua superficie vera,
+ogni contorno fatto di curve vere. Spostare i vertici della mesh sulle superfici è stato scartato:
+gli utensili di raccordo costruiti dopo non combacerebbero più col solido interno.
+Fatto: proiezione di Newton sulle superfici (una, due, tre: facce, curve d'intersezione, angoli)
+e interpolazione B-spline cubica; lo STEP tiene esatte anche le facce curve bordate da curve che
+non sono né rette né cerchi (fori trasversali, cilindri a T, tagli obliqui): la curva è una
+B-spline che passa per punti esatti su entrambe le superfici, i vertici sono i punti comuni.
+Albero Ø20 con foro trasversale Ø6: prima 142 faccette, ora 4 facce esatte; volume letto da
+OpenCascade 12007,320 mm³ contro 12007,319 esatti. Da fare: volumi esatti nell'app, le stesse
+curve per tavola e misure.
+
 Intersezione faccia–faccia analitica dove esiste in forma chiusa (piano con piano, cilindro,
 cono, sfera, toro; cilindri coassiali o paralleli), numerica con tolleranza per le altre coppie
 (cilindro–cilindro sghembi…); facce tagliate descritte dalla superficie e dai loro bordi, poi

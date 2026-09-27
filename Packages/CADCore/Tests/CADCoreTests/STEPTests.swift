@@ -92,3 +92,45 @@ private func check(_ step: String, genus: Int, faces expectedFaces: Int? = nil) 
         check(step, genus: 0, faces: 5)
     }
 }
+
+/// Where two exact surfaces meet on a curve that is neither a line nor a circle (a cross hole
+/// through a shaft, a plane across a cylinder), both stay exact and the curve is a cubic
+/// B-spline through points on both surfaces (docs/SUPERFICI_ESATTE.md, tappa 3).
+@Test func stepWritesCrossHolesAndObliqueCutsExactly() throws {
+    let shaft = Feature(name: "Albero", kind: .cylinder(radius: 10, height: 40))
+    let cross = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(-15, 0, 20)], direction: Vec3(1, 0, 0), fit: .manual, diameter: 6)), operation: .cut)
+    let step = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [shaft, cross])), name: "Albero", date: Date(timeIntervalSince1970: 0))
+    let values = entities(step).values
+    // Two ends, the shaft's wall, the hole's wall: four faces, two exact cylinders, two crossing curves.
+    check(step, genus: 1, faces: 4)
+    #expect(values.filter { $0.hasPrefix("CYLINDRICAL_SURFACE(") }.count == 2)
+    #expect(values.filter { $0.hasPrefix("B_SPLINE_CURVE_WITH_KNOTS(") }.count == 2)
+
+    // A plane across the shaft at 45°: an ellipse, the wall still one exact cylinder.
+    var wedge = Feature(name: "Taglio", kind: .box(width: 40, depth: 40, height: 20), operation: .cut)
+    wedge.placement = FeaturePlacement(plane: SketchPlane(origin: Vec3(0, 0, 30), xAxis: Vec3(1, 0, 0), yAxis: Vec3(0, 1, 1).normalized))
+    let cut = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [shaft, wedge])), name: "Smusso", date: Date(timeIntervalSince1970: 0))
+    check(cut, genus: 0, faces: 3)
+    #expect(entities(cut).values.filter { $0.hasPrefix("B_SPLINE_CURVE_WITH_KNOTS(") }.count == 1)
+}
+
+@Test func pointsGoOntoTheTrueSurfacesAndSplinesThroughThem() throws {
+    // Where a cylinder Ø20 (Z) and a cylinder Ø6 (X) meet, near a facets' point.
+    let a = SurfaceDescriptor.cylinder(axisOrigin: .zero, axisDirection: Vec3(0, 0, 1), radius: 10)
+    let b = SurfaceDescriptor.cylinder(axisOrigin: Vec3(0, 0, 20), axisDirection: Vec3(1, 0, 0), radius: 3)
+    let q = try #require(SurfaceDescriptor.project(Vec3(9.9, 1.4, 22.5), onto: [a, b]))
+    #expect(abs(a.signedDistance(q)!.d) < 1e-9 && abs(b.signedDistance(q)!.d) < 1e-9 && (q - Vec3(9.9, 1.4, 22.5)).length < 0.3, "\(q)")
+    // A torus and a plane and a sphere: each on its own.
+    for s in [SurfaceDescriptor.torus(center: .zero, axisDirection: Vec3(0, 0, 1), majorRadius: 10, minorRadius: 2),
+              .sphere(center: Vec3(1, 2, 3), radius: 4), .cone(apex: .zero, axisDirection: Vec3(0, 0, 1), halfAngle: 0.5)] {
+        let p = try #require(SurfaceDescriptor.project(Vec3(7, 3, 2), onto: [s]))
+        #expect(abs(s.signedDistance(p)!.d) < 1e-9)
+    }
+    // Two parallel planes never meet.
+    #expect(SurfaceDescriptor.project(.zero, onto: [.plane(origin: .zero, normal: Vec3(0, 0, 1)), .plane(origin: Vec3(0, 0, 1), normal: Vec3(0, 0, 1))]) == nil)
+    // The spline passes through the points it interpolates.
+    let pts = (0...20).map { k -> Vec3 in let t = Double(k) / 20 * .pi; return Vec3(cos(t) * 5, sin(t) * 5, t) }
+    let spline = try #require(CubicInterpolation(pts))
+    #expect(spline.controls.first == pts.first && spline.controls.last == pts.last)
+    #expect(spline.multiplicities.first == 4 && spline.multiplicities.last == 4 && spline.multiplicities.reduce(0, +) == pts.count + 4)
+}
