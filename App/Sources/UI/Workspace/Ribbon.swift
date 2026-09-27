@@ -29,7 +29,8 @@ struct Ribbon: View {
                     .disabled(!UndoRouter.canRedo(model))
                     .help(UndoRouter.redoTitle(model) + " (⇧⌘Z)")
                 Divider().frame(height: 14)
-                ForEach(WorkspaceState.Tab.allCases) { tab in
+                // SCHIZZO only while a sketch is open (as in Fusion): it starts from SOLIDO › Schizzo.
+                ForEach(WorkspaceState.Tab.allCases.filter { $0 != .sketch || workspace.sketch != nil }) { tab in
                     TabButton(title: tab.rawValue, isSelected: workspace.tab == tab) { workspace.tab = tab }
                 }
                 Spacer()
@@ -54,7 +55,7 @@ struct Ribbon: View {
                 HStack(alignment: .top, spacing: 0) {
                     switch workspace.tab {
                     case .solid: solidTools
-                    case .sketch: sketchTools
+                    case .sketch: if workspace.sketch != nil { sketchTools } else { solidTools }
                     case .sheetMetal: sheetMetalTools
                     case .print: printTools
                     }
