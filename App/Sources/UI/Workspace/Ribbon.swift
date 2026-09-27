@@ -290,6 +290,28 @@ struct Ribbon: View {
             Button { circuits.openExample() } label: { Label("Esempio", systemImage: "sparkles") }
                 .help("Il circuito di prova del motore (componenti fittizi, da non ordinare)")
         }
+        if circuits.canvas == .schematic {
+            ToolGroup("SCHEMA") {
+                Button { circuits.schematicTool = .select; circuits.showAddComponent = true } label: { Label("Componente", systemImage: "cpu") }
+                    .disabled(circuits.document == nil)
+                    .help("Aggiungi un componente allo schema: scegli, poi clic sul foglio")
+                schematicToolButton(.wire, "Filo", "line.diagonal", "Collega pin, giunzioni e fili: clic sul pin di partenza, clic nel vuoto per le pieghe, clic sull'arrivo (Esc annulla)")
+                schematicToolButton(.label, "Etichetta", "tag", "Dai un nome alla rete di un pin: lo stesso nome altrove è la stessa rete")
+                schematicToolButton(.noConnect, "NC", "xmark", "Segna un pin da lasciare scollegato")
+                schematicToolButton(.junction, "Giunzione", "circle.fill", "Una giunzione su un filo, per ramificare")
+            }
+            ToolGroup("SIMBOLO") {
+                Button { if let c = circuits.schematicSelection?.componentID { circuits.rotateSymbol(c) } } label: { Label("Ruota", systemImage: "rotate.right") }
+                    .disabled(circuits.schematicSelection?.componentID == nil)
+                    .help("Ruota di 90° il simbolo selezionato (R)")
+                Button { if let c = circuits.schematicSelection?.componentID { circuits.mirrorSymbol(c) } } label: { Label("Specchia", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right") }
+                    .disabled(circuits.schematicSelection?.componentID == nil)
+                    .help("Specchia il simbolo selezionato (M)")
+                Button { if let s = circuits.schematicSelection { circuits.removeSchematicObject(s) } } label: { Label("Elimina", systemImage: "trash") }
+                    .disabled(circuits.schematicSelection == nil)
+                    .help("Elimina simbolo, filo, etichetta o giunzione selezionati (Canc); il componente resta sulla scheda")
+            }
+        } else {
         ToolGroup("CREA") {
             Button { circuits.tool = .select; circuits.showAddComponent = true } label: { Label("Componente", systemImage: "cpu") }
                 .disabled(circuits.document == nil)
@@ -302,14 +324,6 @@ struct Ribbon: View {
                 .disabled(circuits.document == nil)
                 .help("Misure e spessore della scheda, con anteprima")
         }
-        ToolGroup("LIBRERIA") {
-            Button { circuits.tool = .select; circuits.importWithPanel() } label: { Label("Importa", systemImage: "square.and.arrow.down.on.square") }
-                .disabled(circuits.document == nil)
-                .help("Importa un'impronta o un simbolo KiCad, o un'impronta EasyEDA Standard: anteprima e avvisi prima di confermare")
-            Button { circuits.tool = .select; circuits.showCreateDevice = true } label: { Label("Nuovo tipo", systemImage: "puzzlepiece.extension") }
-                .disabled(circuits.document == nil)
-                .help("Unisci un simbolo e un'impronta della libreria in un componente da posare (pin ↔ piazzole proposti, da verificare sul datasheet)")
-        }
         ToolGroup("COMPONENTE") {
             Button { if let c = circuits.selection { circuits.rotate(c) } } label: { Label("Ruota", systemImage: "rotate.right") }
                 .disabled(circuits.selection == nil)
@@ -321,11 +335,27 @@ struct Ribbon: View {
                 .disabled(circuits.selection == nil)
                 .help("Elimina il componente selezionato con i suoi collegamenti (Canc)")
         }
+        }
+        ToolGroup("LIBRERIA") {
+            Button { circuits.tool = .select; circuits.importWithPanel() } label: { Label("Importa", systemImage: "square.and.arrow.down.on.square") }
+                .disabled(circuits.document == nil)
+                .help("Importa un'impronta o un simbolo KiCad, o un'impronta EasyEDA Standard: anteprima e avvisi prima di confermare")
+            Button { circuits.tool = .select; circuits.showCreateDevice = true } label: { Label("Nuovo tipo", systemImage: "puzzlepiece.extension") }
+                .disabled(circuits.document == nil)
+                .help("Unisci un simbolo e un'impronta della libreria in un componente da posare (pin ↔ piazzole proposti, da verificare sul datasheet)")
+        }
         ToolGroup("PRODUZIONE") {
             Button { circuits.exportJLCWithPanel() } label: { Label("JLCPCB", systemImage: "shippingbox") }
                 .disabled(circuits.document == nil)
                 .help("BOM e CPL per il montaggio JLCPCB (CSV). Il motore blocca l'export se manca qualcosa e dice cosa.")
         }
+    }
+
+    private func schematicToolButton(_ tool: CircuitModel.SchematicTool, _ title: String, _ symbol: String, _ help: String) -> some View {
+        Button { circuits.schematicTool = circuits.schematicTool == tool ? .select : tool } label: { Label(title, systemImage: symbol) }
+            .buttonStyle(RibbonButtonStyle(isActive: circuits.schematicTool == tool, tint: Theme.Palette.accent))
+            .disabled(circuits.document == nil)
+            .help(help)
     }
 
     @ViewBuilder private var printTools: some View {

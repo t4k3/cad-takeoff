@@ -7,7 +7,7 @@ import Observation
 ///
 /// The model calls the tools itself while it answers (Foundation Models' `Tool`); each call runs
 /// through the session's executor, so it shows in the conversation and is undoable like any
-/// other. Its context is small (4096 tokens on macOS 26): it gets short instructions and, when
+/// other. Its context is small (8192 tokens on macOS 27): it gets short instructions and, when
 /// the window is that small, the everyday tools with one-line descriptions.
 @MainActor
 @Observable
@@ -96,23 +96,14 @@ final class AppleIntelligenceProvider: AssistantProvider {
 
     enum FailureKind { case contextFull, refused, other }
 
-    /// The model's errors: `LanguageModelError` from macOS 27, `GenerationError` on macOS 26.
+    /// The model's errors (macOS 27: `LanguageModelError`).
     static func kind(of error: Error) -> FailureKind {
-        if #available(macOS 27.0, *), let e = error as? LanguageModelError {
-            switch e {
-            case .contextSizeExceeded: return .contextFull
-            case .guardrailViolation, .refusal: return .refused
-            default: return .other
-            }
+        guard let e = error as? LanguageModelError else { return .other }
+        switch e {
+        case .contextSizeExceeded: return .contextFull
+        case .guardrailViolation, .refusal: return .refused
+        default: return .other
         }
-        if let e = error as? LanguageModelSession.GenerationError {
-            switch e {
-            case .exceededContextWindowSize: return .contextFull
-            case .guardrailViolation: return .refused
-            default: return .other
-            }
-        }
-        return .other
     }
 
     private func run(_ name: String, _ arguments: JSONValue) async -> ToolResult {

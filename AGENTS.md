@@ -73,7 +73,7 @@ sulle abitudini di default di ciascun agente. `CLAUDE.md` rimanda a questo file.
 - Unità: **millimetri**. Asse **Z verso l'alto** (come gli slicer). Il viewport converte.
 - Mesh: triangoli CCW visti dall'esterno (normali uscenti); ogni solido esportato deve essere chiuso (watertight).
 - Il core (`CADCore`) non importa AppKit/SwiftUI/SceneKit/Metal: deve restare testabile con `swift test`.
-- Swift 6, app e CADCore **macOS 26+** (decisione di Ross del 27/09: usare le capacità di Tahoe; i package di Codex possono restare più bassi). Progetto Xcode generato da `project.yml` con XcodeGen.
+- Swift 6, **macOS 27+** per app, CADCore ed ElectronicsCore (decisione di Ross del 27/09: usare le API più nuove, Foundation Models compreso). Progetto Xcode generato da `project.yml` con XcodeGen.
 - Lingua UI: italiano. Codice e identificatori: inglese.
 
 ## Conflitti

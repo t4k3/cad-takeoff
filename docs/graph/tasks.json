@@ -1793,18 +1793,19 @@
       "id": "T93",
       "title": "Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T91"
       ],
       "paths": [
         "Packages/ElectronicsCore",
         "docs/electronics",
-        "Tests/Electronics"
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
       ],
       "suggested": "codex",
-      "owner": null,
-      "started": "2026-09-27 10:36",
+      "owner": "codex",
+      "started": "2026-09-27 11:17",
       "notes": [
         "2026-09-27 10:59 codex: Primo traguardo E2 consegnato: ElectronicsCommand/preview/apply, documento vuoto, tre modelli generici, CRUD componenti/reti/NC, movimenti e scheda con undo/revisioni. 53 test motore, lettori indipendenti e 174 CAD PASS; app Claude 1.0.6 verificata a schermo da vuoto fino a posa R1/R2, collegamento, scheda, storico e salvataggio/riapertura. Due difetti UI individuati da Codex e corretti da Claude con regressioni. Contratto EDITING.md, evidenze VALIDATION.md, commit motore 3afd5f5. T93 ancora da completare: schema gerarchico editabile, snapshot/render e pick/snap ufficiali, ERC avanzato e contratto completo per assistente. Non completare E2 basandosi su questo primo percorso."
       ]

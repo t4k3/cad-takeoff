@@ -13,8 +13,12 @@ struct CircuitWorkspace: View {
         } else {
             @Bindable var c = circuits
             HStack(spacing: 0) {
-                CircuitBoardView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 0) {
+                    canvasBar
+                    Divider()
+                    if circuits.canvas == .schematic { CircuitSchematicView() } else { CircuitBoardView() }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 Divider()
                 CircuitChecksPanel()
                     .frame(width: 280)
@@ -24,7 +28,45 @@ struct CircuitWorkspace: View {
             .sheet(isPresented: $c.showCreateDevice) { CreateDeviceSheet() }
             .sheet(isPresented: Binding(get: { circuits.importProposal != nil }, set: { if !$0 { circuits.importProposal = nil } })) { ImportPreviewSheet() }
             .sheet(isPresented: Binding(get: { circuits.symbolChoice != nil }, set: { if !$0 { circuits.symbolChoice = nil } })) { SymbolChoiceSheet() }
+            .sheet(isPresented: Binding(get: { circuits.labelTarget != nil }, set: { if !$0 { circuits.labelTarget = nil } })) { LabelSheet() }
         }
+    }
+
+    /// Schema | PCB, the sheet shown (schematic), and what is still to place on the board.
+    private var canvasBar: some View {
+        @Bindable var c = circuits
+        return HStack(spacing: 10) {
+            Picker("", selection: $c.canvas) {
+                ForEach(CircuitModel.Canvas.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden().frame(width: 160)
+            if circuits.canvas == .schematic {
+                Menu {
+                    ForEach(circuits.sheets, id: \.id) { sheet in
+                        Button(sheet.name) { circuits.chosenSheet = sheet.id }
+                    }
+                    Divider()
+                    Button("Nuovo foglio") { circuits.addSheet() }
+                    if let id = circuits.currentSheetID, circuits.sheets.count > 1 {
+                        Button("Elimina questo foglio") { circuits.removeSheet(id) }
+                    }
+                } label: {
+                    Label(circuits.sheets.first { $0.id == circuits.currentSheetID }?.name ?? "Nessun foglio", systemImage: "doc")
+                }
+                .menuStyle(.borderlessButton).fixedSize()
+                .help("Fogli dello schema")
+            } else if let unplaced = circuits.board?.unplacedComponents, !unplaced.isEmpty {
+                Button {
+                    circuits.tool = .placeExisting(unplaced[0])
+                } label: {
+                    Label("\(unplaced.count) da posare dallo schema", systemImage: "arrow.down.to.line")
+                }
+                .help("Componenti disegnati nello schema e non ancora sulla scheda: clic, poi clic sulla scheda per ciascuno")
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(Theme.Palette.panel)
     }
 
     private var emptyState: some View {
@@ -56,8 +98,7 @@ struct CircuitBoardView: View {
     @State private var hoveredPad: PlacedPad?
     /// Where the mouse is on the board (placing a component, the Collega rubber band).
     @State private var cursor: PCBPoint?
-    /// Posa: the part's pads where it would go (the engine's preview).
-    @State private var ghost: [PlacedPad] = []
+
     @State private var dragging: (component: UUID, from: PCBPoint, delta: PCBPoint)?
     @GestureState private var pinch: CGFloat = 1
     @FocusState private var focused: Bool
@@ -109,13 +150,9 @@ struct CircuitBoardView: View {
                     if case let .active(q) = phase {
                         let p = m.board(q)
                         hoveredPad = pad(at: p)
-                        let snapped = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)   // 0,5 mm grid
-                        if snapped != cursor, case let .place(placing) = circuits.tool {
-                            ghost = circuits.placementPreview(placing, at: snapped)
-                        }
-                        cursor = snapped
+                        cursor = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)   // 0,5 mm grid
                         placingCursor(true)
-                    } else { hoveredPad = nil; cursor = nil; ghost = []; placingCursor(false) }
+                    } else { hoveredPad = nil; cursor = nil; placingCursor(false) }
                 }
                 .gesture(
                     DragGesture(minimumDistance: 2)
@@ -165,10 +202,7 @@ struct CircuitBoardView: View {
                 .overlay(alignment: .bottomTrailing) { zoomButtons.padding(12) }
                 .overlay(alignment: .topLeading) { hoverChip.padding(12) }
                 .overlay(alignment: .top) { toolHint.padding(.top, 12) }
-                .onChange(of: circuits.tool) { _, tool in
-                    focused = true
-                    if case let .place(p) = tool, let c = cursor { ghost = circuits.placementPreview(p, at: c) } else { ghost = [] }
-                }
+                .onChange(of: circuits.tool) { _, _ in focused = true }
         }
     }
 
@@ -179,9 +213,10 @@ struct CircuitBoardView: View {
             // Keeps placing (next identity and reference) until Esc: the model moves the session on.
             let at = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)
             circuits.addComponent(placing, at: at)
-            if case let .place(next) = circuits.tool { ghost = circuits.placementPreview(next, at: at) }
         case .connect:
             if let hit = pad(at: p) { circuits.connectClick(hit) }
+        case let .placeExisting(id):
+            circuits.placeExistingOnBoard(id, at: PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2))
         case .select:
             circuits.selection = pad(at: p)?.componentID
         }
@@ -189,7 +224,11 @@ struct CircuitBoardView: View {
 
     /// The crosshair while placing a component (a click puts a point); the arrow otherwise.
     private func placingCursor(_ inside: Bool) {
-        if inside, case .place = circuits.tool { NSCursor.crosshair.set() } else if inside { NSCursor.arrow.set() }
+        guard inside else { return }
+        switch circuits.tool {
+        case .place, .placeExisting: NSCursor.crosshair.set()
+        default: NSCursor.arrow.set()
+        }
     }
 
     @ViewBuilder private var toolHint: some View {
@@ -197,6 +236,8 @@ struct CircuitBoardView: View {
         case let .place(p): "Clicca dove posare \(p.reference) (\(p.name)) · Esc per finire"
         case .connect: circuits.connectFrom == nil ? "Collega: clicca la prima piazzola · Esc per finire"
             : "Collega: clicca la seconda piazzola · Esc per ricominciare"
+        case let .placeExisting(id):
+            "Clicca dove posare \(circuits.design?.components.first { $0.id == id }?.reference ?? "il componente") · Esc per finire"
         case .select: nil
         }
         if let text {
@@ -294,9 +335,10 @@ struct CircuitBoardView: View {
             ctx.stroke(Path(ellipseIn: CGRect(x: q.x - r, y: q.y - r, width: 2 * r, height: 2 * r)), with: .color(accent), lineWidth: 2)
         }
         // Posa: the part's pads where it will go, then its reference.
-        if case .place = circuits.tool {
-            for pad in ghost {
-                let c = m.screen(pad.center)
+        if case .place = circuits.tool, let at = cursor {
+            // The session's pads (previewed once at the origin) moved under the mouse.
+            for pad in circuits.boardGhost {
+                let c = m.screen(PCBPoint(pad.center.x + at.x, pad.center.y + at.y))
                 let w = CGFloat(pad.size.x) * m.scale, h = CGFloat(pad.size.y) * m.scale
                 let rect = Path(roundedRect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: min(w, h) * 0.25)
                     .applying(CGAffineTransform(rotationAngle: -CGFloat(pad.rotationDegrees) * .pi / 180))
@@ -356,7 +398,9 @@ struct CircuitChecksPanel: View {
                                 place.side == .top ? "sopra" : "sotto"))
                         .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
                 }
-                Text("R ruota di 90° · F cambia lato · trascina per spostare").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+                Text(circuits.canvas == .schematic ? "R ruota di 90° · M specchia · trascina per spostare · Canc elimina il simbolo"
+                     : "R ruota di 90° · F cambia lato · trascina per spostare · Canc elimina")
+                    .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
             }
         }
         .padding(12)
@@ -426,17 +470,35 @@ struct AddComponentSheet: View {
                 }
                 .textFieldStyle(.roundedBorder)
             }
+            // Already in the circuit: without a symbol (schematic) or not on the board (PCB).
+            let existing: [CircuitComponent] = circuits.canvas == .schematic ? circuits.componentsWithoutSymbol
+                : (circuits.board?.unplacedComponents ?? []).compactMap { id in circuits.design?.components.first { $0.id == id } }
+            if !existing.isEmpty {
+                Text(circuits.canvas == .schematic ? "Nel circuito, senza simbolo" : "Dallo schema, da posare sulla scheda")
+                    .font(.caption.weight(.semibold))
+                ScrollView(.horizontal) {
+                    HStack {
+                        ForEach(existing, id: \.id) { comp in
+                            Button(comp.reference) {
+                                if circuits.canvas == .schematic { circuits.startSchematicPlacing(existing: comp) }
+                                else { circuits.tool = .placeExisting(comp.id) }
+                                circuits.showAddComponent = false
+                            }
+                        }
+                    }
+                }
+            }
             Spacer(minLength: 0)
             HStack {
                 Spacer()
                 Button("Annulla") { circuits.showAddComponent = false }.keyboardShortcut(.cancelAction)
-                Button("Posiziona sulla scheda") { place() }
+                Button(circuits.canvas == .schematic ? "Posiziona sullo schema" : "Posiziona sulla scheda") { place() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(choice == nil || reference.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(16)
-        .frame(width: 440, height: circuits.deviceChoices.isEmpty ? 200 : 400)
+        .frame(width: 440, height: circuits.deviceChoices.isEmpty ? 200 : 460)
         .onAppear { if let first = circuits.deviceChoices.first { select(first) } }
         .onChange(of: choice) { _, c in if let c { select(c) } }
     }
@@ -449,7 +511,12 @@ struct AddComponentSheet: View {
 
     private func place() {
         guard let c = choice else { return }
-        circuits.startPlacing(c, reference: reference.trimmingCharacters(in: .whitespaces), value: value)
+        let ref = reference.trimmingCharacters(in: .whitespaces)
+        if circuits.canvas == .schematic {
+            circuits.startSchematicPlacing(c, reference: ref, value: value)
+        } else {
+            circuits.startPlacing(c, reference: ref, value: value)
+        }
         circuits.showAddComponent = false
     }
 }

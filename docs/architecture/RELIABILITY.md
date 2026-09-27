@@ -10,7 +10,7 @@ in `docs/requirements/` è distinto dal sorgente implementato.
 ## Identità e copertura
 
 Checkout `/Users/ross/APP varie/FUSION-TAKEOFF`; progetto e scheme
-`FusionTakeoff`; Debug, macOS arm64, Swift 6, deployment macOS 26.
+`FusionTakeoff`; Debug, macOS arm64, Swift 6, deployment macOS 27.
 Commit, dirty state, data UTC, toolchain e hash sono nel dataset.
 
 | Misura dello snapshot T78 | Risultato |

@@ -21,8 +21,42 @@ final class CircuitModel {
     /// Integrity and electrical checks of the current revision.
     private(set) var issues: [ElectronicsIssue] = []
     private(set) var isDirty = false
-    /// The selected component (by identity, never by index).
+    /// The selected component (by identity, never by index; the same on schematic and PCB).
     var selection: UUID?
+
+    /// Schema or PCB on the canvas.
+    enum Canvas: String, CaseIterable, Identifiable { case schematic = "Schema", board = "PCB"; var id: String { rawValue } }
+    var canvas: Canvas = .schematic { didSet { if canvas != oldValue { tool = .select; schematicTool = .select } } }
+    /// The sheet chosen (see `currentSheetID`), the drawing kept for it, the schematic tool and
+    /// the object selected on it, and the wire being drawn.
+    var chosenSheet: UUID? { didSet { refreshSchematic() } }
+    /// The drawing of the sheet shown: built off the main thread for each revision and sheet
+    /// (a big sheet takes long); `schematicIsCurrent` says whether it matches the document yet —
+    /// picks and snaps only use it then.
+    var schematic: SchematicSnapshot?
+    @ObservationIgnored var schematicTask: Task<Void, Never>?
+    var schematicTool: SchematicTool = .select {
+        didSet {
+            if schematicTool != .wire { wireStart = nil; wireBends = [] }
+            prepareSchematicGhost()
+        }
+    }
+    /// Posa: the symbol being placed as drawn at the origin (moved under the mouse by the view),
+    /// from one engine preview per placing session, made off the main thread.
+    var schematicGhost: [SchematicPrimitive] = []
+    @ObservationIgnored var ghostTask: Task<Void, Never>?
+    /// The placing session, revision and sheet the ghost was made for (any change: a new one).
+    @ObservationIgnored var ghostSession: GhostKey?
+    /// PCB posa: the pads of the part being placed, at the origin, the same way.
+    private(set) var boardGhost: [PlacedPad] = []
+    @ObservationIgnored var boardGhostSession: GhostKey?
+    @ObservationIgnored var boardGhostTask: Task<Void, Never>?
+    func boardGhostReady() async { await boardGhostTask?.value }
+    var schematicSelection: SchematicObject?
+    var wireStart: WireEnd?
+    var wireBends: [PCBPoint] = []
+    /// Etichetta: the terminal being named (the name panel is open).
+    var labelTarget: SchematicTerminal?
     /// The circuit's own last message (the status bar shows it in CIRCUITI, never the CAD's).
     var message = ""
     /// Where messages go: set by the workspace to `message` (tests read them here).
@@ -171,6 +205,17 @@ final class CircuitModel {
         case place(Placing)
         /// Collega: pads clicked two by two.
         case connect
+        /// A component of the circuit (drawn on the schematic) still to put on the board.
+        case placeExisting(UUID)
+    }
+
+    /// PCB: puts a component that has no board position yet (from the schematic) where clicked.
+    func placeExistingOnBoard(_ id: UUID, at position: PCBPoint) {
+        if run(.placeComponent(ComponentPlacement(componentID: id, position: position))) {
+            selection = id
+            // The next one still to place, if any.
+            if let next = board?.unplacedComponents.first { tool = .placeExisting(next) } else { tool = .select }
+        }
     }
 
     /// A placing session: the same component identity and the same base revision from the
@@ -195,7 +240,12 @@ final class CircuitModel {
                             reference: reference, value: value, baseRevision: document?.revision ?? 0))
     }
 
-    var tool: Tool = .select { didSet { if tool != .connect { connectFrom = nil } } }
+    var tool: Tool = .select {
+        didSet {
+            if tool != .connect { connectFrom = nil }
+            prepareBoardGhost()
+        }
+    }
     /// Collega: the first pad chosen.
     var connectFrom: PlacedPad?
     /// Scheda: the outline being edited, drawn over the board until OK or Annulla.
@@ -250,15 +300,35 @@ final class CircuitModel {
                              library: ElectronicsLibrary())
     }
 
-    /// Posa: the pads the part would have there, from the engine's preview (nothing changes).
-    func placementPreview(_ p: Placing, at position: PCBPoint) -> [PlacedPad] {
-        guard let doc = document,
-              let preview = try? ElectronicsCommands.preview(placeCommand(p, at: position), document: doc, expectedRevision: p.baseRevision)
-        else { return [] }
-        return preview.board.pads.filter { $0.componentID == p.componentID }
+    struct GhostKey: Equatable { var component: UUID; var revision: UInt64; var sheet: UUID? }
+
+    /// Work off the main thread whose cancellation reaches the work itself (not only its result).
+    nonisolated static func offMain<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
+        let worker = Task.detached(priority: .userInitiated, operation: work)
+        return await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
     }
 
-    /// addComponent: the component and its placement in one step.
+    /// PCB posa: one preview per placing session (and revision), at the origin, off the main
+    /// thread; the view moves the pads under the mouse.
+    func prepareBoardGhost() {
+        guard case let .place(p) = tool else { boardGhostTask?.cancel(); boardGhost = []; boardGhostSession = nil; return }
+        let key = GhostKey(component: p.componentID, revision: p.baseRevision, sheet: nil)
+        guard boardGhostSession != key else { return }
+        boardGhostSession = key
+        boardGhost = []
+        boardGhostTask?.cancel()
+        guard let doc = document else { return }
+        let command = placeCommand(p, at: PCBPoint()), id = p.componentID, base = p.baseRevision
+        boardGhostTask = Task { [weak self] in
+            let pads = await Self.offMain { () -> [PlacedPad] in
+                guard let preview = try? ElectronicsCommands.preview(command, document: doc, expectedRevision: base) else { return [] }
+                return preview.board.pads.filter { $0.componentID == id }
+            }
+            guard !Task.isCancelled, let self, self.boardGhostSession == key else { return }
+            self.boardGhost = pads
+        }
+    }
+
     /// Places the session's component (at the revision it was previewed on). After it goes in,
     /// the session goes on with a new identity, the next reference and the new revision; if the
     /// circuit changed meanwhile (an undo…), the engine refuses and the session restarts on it.
@@ -531,6 +601,7 @@ final class CircuitModel {
     }
 
     private func refresh() {
+        refreshSchematic()
         guard let d = design else { board = nil; issues = []; return }
         board = try? ElectronicsConnectivity.snapshot(d)
         issues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
