@@ -58,3 +58,34 @@ private func run(_ spec: PatternSpec, extra: [Feature] = []) -> ([DesignEvaluato
     let (drilled, i4) = split(SplitSpec(body: block.id, plane: .xz, offset: 0), [hole])
     #expect(i4.isEmpty && drilled.count == 2 && drilled.allSatisfy { MeshValidator.validate($0.mesh).isWatertight })
 }
+
+/// A pattern of a feature repeats its operation: a row of holes, a ring of cuts, a mirrored cut.
+@Test func patternsOfFeaturesRepeatTheirOperation() throws {
+    let plate = Feature(name: "Piastra", kind: .box(width: 100, depth: 40, height: 6))
+    let base = DesignEvaluator.evaluate(CADDocument(features: [plate]), revision: "p").bodies[0].mesh.volume
+    // One cut cylinder r3, then three more copies 20 mm apart along X.
+    let cut = Feature(name: "Foro", kind: .cylinder(radius: 3, height: 10), position: Vec3(-30, 0, -2), operation: .cut)
+    var row = PatternSpec(body: cut.id, kind: .rectangular)
+    row.countX = 4; row.spacingX = 20; row.countY = 1
+    let one = DesignEvaluator.evaluate(CADDocument(features: [plate, cut]), revision: "a").bodies[0].mesh.volume
+    let result = DesignEvaluator.evaluate(CADDocument(features: [plate, cut, Feature(name: "Serie", kind: .pattern(row))]), revision: "b")
+    #expect(result.issues.isEmpty && result.bodies.count == 1)
+    let m = result.bodies[0].mesh
+    #expect(MeshValidator.validate(m).isWatertight)
+    #expect(abs((base - m.volume) - 4 * (base - one)) < 1e-6)
+    // Mirrored about YZ: the hole at x = -30 appears at +30.
+    var mirror = PatternSpec(body: cut.id, kind: .mirror)
+    mirror.plane = .yz; mirror.offset = 0
+    let mirrored = DesignEvaluator.evaluate(CADDocument(features: [plate, cut, Feature(name: "Specchio", kind: .pattern(mirror))]), revision: "c")
+    #expect(abs((base - mirrored.bodies[0].mesh.volume) - 2 * (base - one)) < 1e-6)
+    // A hole feature in a circular pattern: six around the centre.
+    let disc = Feature(name: "Disco", kind: .cylinder(radius: 30, height: 5))
+    let hole = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(20, 0, 5)], size: "M4", diameter: 4.5)))
+    var ring = PatternSpec(body: hole.id, kind: .circular)
+    ring.count = 6; ring.angle = 360; ring.center = .zero
+    let discVol = DesignEvaluator.evaluate(CADDocument(features: [disc]), revision: "d").bodies[0].mesh.volume
+    let oneHole = DesignEvaluator.evaluate(CADDocument(features: [disc, hole]), revision: "e").bodies[0].mesh.volume
+    let six = DesignEvaluator.evaluate(CADDocument(features: [disc, hole, Feature(name: "Serie", kind: .pattern(ring))]), revision: "f")
+    #expect(six.issues.isEmpty && MeshValidator.validate(six.bodies[0].mesh).isWatertight)
+    #expect(abs((discVol - six.bodies[0].mesh.volume) - 6 * (discVol - oneHole)) < 1e-3)
+}

@@ -91,7 +91,7 @@ struct Ribbon: View {
         ToolGroup("MODIFICA") {
             Button { workspace.startPattern(model: model, kind: .rectangular) } label: { Label("Serie", systemImage: "square.grid.3x3") }
                 .disabled(model.selection == nil)
-                .help("Ripete il corpo selezionato in griglia o in cerchio")
+                .help("Ripete il corpo selezionato in griglia o in cerchio; con un foro o un taglio selezionato ripete l'operazione")
             Button { workspace.startPattern(model: model, kind: .mirror) } label: {
                 Label("Specchio", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right")
             }

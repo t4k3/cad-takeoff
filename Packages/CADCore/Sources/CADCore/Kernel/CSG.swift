@@ -57,6 +57,18 @@ public struct CSGSolid: Sendable {
 
     init(polygons: [Polygon], faces: [CSGFace]) { self.polygons = polygons; self.faces = faces }
 
+    /// The solid moved (or mirrored: `reflect`), its face IDs prefixed to stay unique among copies.
+    func transformed(point: (Vec3) -> Vec3, direction: (Vec3) -> Vec3, reflect: Bool, prefix: String) -> CSGSolid {
+        let polys = polygons.map { p -> Polygon in
+            var v = p.vertices.map(point)
+            if reflect { v.reverse() }
+            let n = direction(p.normal).normalized
+            return Polygon(vertices: v, normal: n, w: n.dot(v[0]), face: p.face)
+        }
+        let fs = faces.map { CSGFace(id: FaceID(rawValue: prefix + $0.id.rawValue), surface: $0.surface.mapped(point: point, direction: direction), flipped: $0.flipped) }
+        return CSGSolid(polygons: polys, faces: fs)
+    }
+
     // MARK: Operations
 
     /// The polygon-pair booleans (CSGMesh) first; the BSP only when they cannot decide.

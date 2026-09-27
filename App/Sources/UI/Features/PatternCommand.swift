@@ -11,9 +11,15 @@ enum PatternCommand {
         if let feature, case let .pattern(existing) = feature.kind {
             spec = existing
         } else {
-            // The body of the selection (a feature that makes a body).
-            guard let id = model.selection, model.evaluation().bodies.contains(where: { $0.id == id }) else {
-                model.statusMessage = "Seleziona prima il corpo da \(kind == .mirror ? "specchiare" : "ripetere")."
+            // The body of the selection, or a feature that cuts or adds (a hole, a pocket, a boss):
+            // then its operation is what gets repeated.
+            let isTool: (UUID) -> Bool = { id in
+                guard let f = model.document.features.first(where: { $0.id == id }) else { return false }
+                if case .hole = f.kind { return true }
+                return f.operation != .newBody
+            }
+            guard let id = model.selection, model.evaluation().bodies.contains(where: { $0.id == id }) || isTool(id) else {
+                model.statusMessage = "Seleziona prima il corpo, il foro o il taglio da \(kind == .mirror ? "specchiare" : "ripetere")."
                 return nil
             }
             spec = PatternSpec(body: id, kind: kind)

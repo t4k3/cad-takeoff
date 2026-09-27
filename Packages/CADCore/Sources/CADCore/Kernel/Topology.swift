@@ -31,6 +31,20 @@ public enum SurfaceDescriptor: Equatable, Sendable {
     case freeform
 }
 
+extension SurfaceDescriptor {
+    /// The same surface moved by a rigid motion (or mirror image) given on points and directions.
+    public func mapped(point: (Vec3) -> Vec3, direction: (Vec3) -> Vec3) -> SurfaceDescriptor {
+        switch self {
+        case let .plane(o, n): .plane(origin: point(o), normal: direction(n))
+        case let .cylinder(o, a, r): .cylinder(axisOrigin: point(o), axisDirection: direction(a), radius: r)
+        case let .cone(apex, a, h): .cone(apex: point(apex), axisDirection: direction(a), halfAngle: h)
+        case let .torus(c, a, R, r): .torus(center: point(c), axisDirection: direction(a), majorRadius: R, minorRadius: r)
+        case let .sphere(c, r): .sphere(center: point(c), radius: r)
+        case .freeform: .freeform
+        }
+    }
+}
+
 public enum KernelError: Error, LocalizedError, Equatable, Sendable {
     case invalidParameter(String)
     case invalidProfile(String)

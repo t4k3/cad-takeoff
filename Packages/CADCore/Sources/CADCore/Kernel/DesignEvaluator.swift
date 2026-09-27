@@ -213,6 +213,38 @@ public enum DesignEvaluator {
                     issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
                 }
                 guard let i = bodies.firstIndex(where: { $0.source.id == spec.body }) else {
+                    // A pattern of a feature (a row of holes, cuts or bosses): its tool repeated
+                    // with its own operation on the bodies it reaches.
+                    if let source = features.prefix(k).first(where: { $0.id == spec.body }),
+                       let tool = toolSolid(of: source, bodies: bodies, revision: revision) {
+                        let (copies, reflect) = spec.transforms()
+                        var all: CSGSolid?
+                        for (c, t) in copies.enumerated() {
+                            let piece = tool.transformed(point: t.point, direction: t.direction, reflect: reflect, prefix: "pat:\(feature.id.uuidString)/\(c)/")
+                            all = all.map { $0.union(piece) } ?? piece
+                        }
+                        guard let all, !all.isEmpty else { continue }
+                        let op: BooleanOperation = if case .hole = source.kind { .cut } else { source.operation }
+                        let toolBox = bounds(all)
+                        let touched = bodies.indices.filter { overlaps(bounds(bodies[$0].snapshot), toolBox) }
+                        switch op {
+                        case .join:
+                            if let first = touched.first {
+                                var solid = solidOf(bodies[first]).union(all)
+                                for other in touched.dropFirst() { solid = solid.union(solidOf(bodies[other])) }
+                                bodies[first] = rebuilt(bodies[first], solid, by: feature.id, revision: revision)
+                                for other in touched.dropFirst().reversed() { bodies.remove(at: other) }
+                            }
+                        case .cut, .intersect:
+                            for b in touched.reversed() {
+                                let solid = op == .cut ? solidOf(bodies[b]).subtracting(all) : solidOf(bodies[b]).intersecting(all)
+                                if solid.isEmpty { bodies.remove(at: b) } else { bodies[b] = rebuilt(bodies[b], solid, by: feature.id, revision: revision) }
+                            }
+                        case .newBody:
+                            break
+                        }
+                        continue
+                    }
                     issues.append(.init(featureID: feature.id, message: "\(spec.kind.label): il corpo da copiare non esiste (deve venire prima nella timeline)."))
                     continue
                 }
@@ -351,6 +383,26 @@ public enum DesignEvaluator {
         return (out, issues)
 
         func solidOf(_ w: Work) -> CSGSolid { w.solid ?? CSGSolid(w.snapshot) }
+        /// The solid a feature adds or removes (for patterns of features): holes through the
+        /// bodies there are now, other features as built.
+        func toolSolid(of f: Feature, bodies: [Work], revision: String) -> CSGSolid? {
+            if case let .hole(spec) = f.kind {
+                let axis = spec.direction.normalized
+                var reach = 1.0
+                for box in bodies.compactMap({ bounds($0.snapshot) }) {
+                    for c in spec.centers {
+                        for x in [box.min.x, box.max.x] { for y in [box.min.y, box.max.y] { for z in [box.min.z, box.max.z] {
+                            reach = max(reach, (Vec3(x, y, z) - c).dot(axis) + 1)
+                        } } }
+                    }
+                }
+                return HoleGeometry.solid(spec, featureID: f.id, throughDepth: reach)
+            }
+            guard f.operation != .newBody else { return nil }
+            if case let .revolve(spec) = f.kind { return try? Revolve.build(spec, holes: f.holes, featureID: f.id, position: f.position) }
+            if !f.holes.isEmpty { return try? PrimitiveKernel.solidWithHoles(f, revision: revision) }
+            return (try? PrimitiveKernel.build(f)).map { CSGSolid($0.snapshot(revision: revision)) }
+        }
         func rebuilt(_ w: Work, _ solid: CSGSolid, by id: UUID, revision: String) -> Work {
             let (mesh, triFace) = solid.triangulated()
             return Work(source: w.source, snapshot: snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: w.source.id, revision: revision),
