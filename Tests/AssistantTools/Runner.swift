@@ -68,7 +68,7 @@ struct AssistantToolsTests {
         expect(invalidShape.isError, "JSON shape validation")
         let missing = await m.call("get_feature", arguments: ["feature_id": .string(UUID().uuidString)])
         expect(missing.isError, "unknown ID")
-        expect(Set(m.tools.map(\.name)).count == 23, "23 unique tools")
+        expect(Set(m.tools.map(\.name)).count == 24, "24 unique tools")
         let partID = m.document.features[0].id
         let beforeColour = m.document
         let coloured = await edit("set_color", ["feature_id": .string(partID.uuidString), "color": "#E53935"])

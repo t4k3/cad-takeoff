@@ -34,7 +34,7 @@ public enum SketchPrim: Equatable, Sendable {
 
     public func distance(to p: Vec2) -> Double {
         switch self {
-        case let .line(a, b):
+        case .line:
             let t = max(0, min(1, param(p)))
             return (p - at(t)).length
         case let .arc(c, r, _, _):
@@ -359,7 +359,7 @@ extension Sketch {
         guard let reach else { return false }
         var next = shape
         switch shape.kind {
-        case var .polyline(pts, closed):
+        case .polyline(var pts, let closed):
             let q = prim.at(reach)
             if atEnd { pts[pts.count - 1] = q } else { pts[0] = q }
             next.kind = .polyline(pts, closed: closed)

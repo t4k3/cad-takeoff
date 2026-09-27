@@ -34,7 +34,7 @@ Livello per area, da 0 (assente) a 5 (come Fusion per l'uso di Ross).
 | **Scambio file** | Export STL, 3MF a colori, DXF sviluppi; import STL/OBJ/3MF; da Fusion interi progetti (mesh) con l'add-in e lo script | 1,5 |
 | **Interfaccia** | Ribbon tipo Fusion, schede dei disegni, Home con progetti e cartelle, menu col tasto destro, frecce ed etichette modificabili, ViewCube | 3 |
 | **Prestazioni** | Booleane per coppie reali di poligoni; assieme da 1 M triangoli aperto in ~3 s in background | 3,5 |
-| **AI** | 23 strumenti; chat interna (API) e Claude Desktop (abbonamento) via MCP | 3 |
+| **AI** | 24 strumenti (anche export STEP); chat interna (API) e Claude Desktop (abbonamento) via MCP | 3 |
 | **Qualità e distribuzione** | CI, test del motore, TestFlight, GitHub AGPL, versione automatica | 4 |
 
 ## 3. Cosa manca, per area (dal più grave)
@@ -104,6 +104,12 @@ disegnati a mano.
 - *Accettazione:* staffa a L disegnata con quote; cambio una quota da 40 a 60 e il solido estruso segue.
 
 ### Settimana 2 (6 – 10 ott) — Solidi di tutti i giorni
+
+**Stato al 27/09 (in anticipo), in attesa della prova di Ross:** fatti Rivoluzione, Guscio,
+estrusione simmetrica e con sformo, Sposta/ruota corpi; raccordi e smussi su tutti gli spigoli ora
+danno solidi chiusi (auto sportiva: da R0,8 a R8), anche lungo cilindri che incontrano un piano.
+Restano: piani/assi di costruzione, «fino a faccia», serie e specchio di feature, raccordo sferico
+d'angolo, superfici esatte come verità.
 - Rivoluzione, guscio, estrusione simmetrica / fino a faccia / rastremata.
 - Piani, assi e punti di costruzione.
 - Raccordi d'angolo (sfera dove si incontrano tre raccordi): niente più solidi aperti.
@@ -113,6 +119,10 @@ disegnati a mano.
 - *Accettazione:* il perno forcella TKP-202 e un coperchio stampato col guscio rifatti con quote.
 
 ### Settimana 3 (13 – 17 ott) — Verso il fornitore
+
+**Stato al 27/09:** export STEP AP214 fatto (un solido per corpo con colori; facce piane esatte,
+superfici curve sfaccettate), verificato con OpenCascade. Restano le superfici curve esatte nello
+STEP e i disegni tecnici.
 - **Export STEP AP214** scritto da noi: facce analitiche esatte, sfaccettato come riserva.
 - **Disegni tecnici v1:** tavola A4/A3 ISO, viste ortogonali e isometrica, linee nascoste, quote lineari,
   radiali e di foro, cartiglio, export PDF e DXF.
