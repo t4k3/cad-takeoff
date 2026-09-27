@@ -39,6 +39,7 @@ run_step 02g-circuiti-app bash scripts/test-circuits.sh
 run_step 02h-apple-intelligence bash scripts/test-apple-intelligence.sh
 run_step 03-mcp bash scripts/test-mcp-integration.sh
 run_step 04-openai bash scripts/test-openai-provider.sh
+run_step 04b-remote-providers bash Tests/Electronics/RemoteProviders/run.sh
 run_step 05-connector python3 -m unittest discover -s Tests/ChatGPTConnector -v
 run_step 06-3mf bash scripts/test-3mf.sh
 run_step 07-sheet-metal bash scripts/test-sheet-metal.sh
