@@ -179,7 +179,7 @@ final class WorkspaceState {
 
     /// «Schizzo» waits for a click on a planar face (or a base plane).
     var pickingSketchPlane = false {
-        didSet { if !pickingSketchPlane { planePickPoints = []; planePickFace = nil } }
+        didSet { if !pickingSketchPlane { planePickPoints = []; planePickFace = nil; geoHover = nil } }
     }
     /// How the construction plane is picked: a face (planar, or tangent to a round one), three
     /// points, or midway between two parallel faces.
@@ -204,7 +204,7 @@ final class WorkspaceState {
         command?.onCancel(); command = nil
         if case let .face(id)? = geoSelection.first?.kind, let body = geoSelection.first.flatMap({ ref in
                model?.evaluation().bodies.first { $0.id == ref.feature } }),
-           let face = body.snapshot.faces.first(where: { $0.id == id }), case let .plane(origin, normal) = face.surface {
+           let (origin, normal) = body.snapshot.flatPlane(of: id) {
             enterSketch(plane: SketchPlane.onFace(point: origin, normal: normal), focus: origin)
             return
         }

@@ -40,3 +40,4 @@ sono le prove a mano, sull'interfaccia.
 - [ ] **Giunto trascinabile**: nel comando Giunto (e modificandolo) una freccia sull'asse: trascinala per girare (Rotazione) o far scorrere (Scorrimento).
 - [ ] **Schizzo più facile**: la linea si aggancia ai lati e ai cerchi (◇), agli incroci (×), si allinea in orizzontale/verticale coi punti già disegnati (guida tratteggiata); si finisce con doppio clic, Esc o cambiando strumento.
 - [ ] **Vincoli sotto un pulsante** (Schizzo › VINCOLI › Vincoli): la lista si apre sotto, un clic per scegliere.
+- [ ] **Schizzo su una faccia qualsiasi**: SOLIDO › Schizzo, passa sulle facce (si illuminano), clic su una piana anche di smussi/STL; selezione ora arancio pieno con contorno spesso.

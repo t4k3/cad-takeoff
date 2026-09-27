@@ -117,3 +117,32 @@ import Testing
     #expect(abs(m.origin.x - 5) < 1e-12 && abs(abs(m.normal.x) - 1) < 1e-12)
     #expect(SketchPlane.midway(.zero, Vec3(0, 0, 1), .zero, Vec3(1, 0, 0)) == nil)
 }
+
+@Test func flatFacesWithoutAPlaneDescriptionStillGiveTheirPlane() throws {
+    // A chamfered box: the bevel face is flat; the kernel's plane or the triangles give it.
+    let box = Feature(name: "B", kind: .box(width: 40, depth: 30, height: 20))
+    let body = try #require(DesignEvaluator.evaluate(CADDocument(features: [box]), revision: "r").bodies.first)
+    let s = body.snapshot
+    for face in s.faces {
+        let plane = try #require(s.flatPlane(of: face.id))
+        #expect(abs(plane.normal.length - 1) < 1e-12)
+    }
+    // The same faces seen only as triangles (freeform): the same planes, facing out.
+    let bare = BodySnapshot(bodyID: s.bodyID, revision: "t", positions: s.positions, normals: s.normals, triangles: s.triangles,
+                            triangleFace: s.triangleFace, triangleTopologyFace: s.triangleTopologyFace,
+                            faces: s.faces.map { FaceInfo(id: $0.id, surface: .freeform, area: $0.area, topologyFaceIDs: $0.topologyFaceIDs) }, edges: s.edges,
+                            maximumSurfaceDeviation: s.maximumSurfaceDeviation)
+    for face in s.faces {
+        let exact = try #require(s.flatPlane(of: face.id)), found = try #require(bare.flatPlane(of: face.id))
+        #expect((exact.normal - found.normal).length < 1e-9 && abs((found.origin - exact.origin).dot(exact.normal)) < 1e-9)
+    }
+    // A round face is not flat.
+    let cyl = try #require(DesignEvaluator.evaluate(CADDocument(features: [Feature(name: "C", kind: .cylinder(radius: 5, height: 10))]), revision: "r").bodies.first)
+    let side = try #require(cyl.snapshot.faces.first { if case .cylinder = $0.surface { true } else { false } })
+    let bareSide = BodySnapshot(bodyID: cyl.snapshot.bodyID, revision: "t", positions: cyl.snapshot.positions, normals: cyl.snapshot.normals,
+                                triangles: cyl.snapshot.triangles, triangleFace: cyl.snapshot.triangleFace,
+                                triangleTopologyFace: cyl.snapshot.triangleTopologyFace,
+                                faces: cyl.snapshot.faces.map { FaceInfo(id: $0.id, surface: .freeform, area: $0.area, topologyFaceIDs: $0.topologyFaceIDs) }, edges: cyl.snapshot.edges,
+                                maximumSurfaceDeviation: 0)
+    #expect(bareSide.flatPlane(of: side.id) == nil)
+}

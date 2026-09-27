@@ -354,8 +354,9 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     /// True part colour always; selection = strong orange rim + slight lift, hover = soft rim.
     private func color(for f: Feature) -> SIMD4<Float> {
         let base = f.color.simd
-        if f.id == selection { return SIMD4(base, 0.5) }
-        if f.id == hovered { return SIMD4(simd_mix(base, SIMD3(repeating: 1), SIMD3(repeating: 0.2)), 0.3) }
+        // Selected: tinted towards the accent with a strong rim, clearly apart from the rest.
+        if f.id == selection { return SIMD4(simd_mix(base, Theme.Palette.bodySelected, SIMD3(repeating: 0.45)), 0.9) }
+        if f.id == hovered { return SIMD4(simd_mix(base, Theme.Palette.bodySelected, SIMD3(repeating: 0.15)), 0.45) }
         return SIMD4(base, 0)
     }
 }

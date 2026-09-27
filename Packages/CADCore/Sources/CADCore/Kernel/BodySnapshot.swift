@@ -140,3 +140,25 @@ extension BodySnapshot {
         return chain
     }
 }
+
+extension BodySnapshot {
+    /// The plane of a flat face: its kernel description, or, when the kernel only has its
+    /// triangles (a bevel, an imported mesh, a face rebuilt by a boolean), the plane they all lie
+    /// in. Nil for a face that is not flat. The normal points out of the part.
+    public func flatPlane(of id: FaceID) -> (origin: Vec3, normal: Vec3)? {
+        guard let f = faces.firstIndex(where: { $0.id == id }) else { return nil }
+        if case let .plane(o, n) = faces[f].surface { return (o, n.normalized) }
+        guard case .freeform = faces[f].surface else { return nil }
+        var normal = Vec3.zero, points: [Vec3] = []
+        for t in 0..<triangleFace.count where Int(triangleFace[t]) == f {
+            let v = (0..<3).map { positions[Int(triangles[t * 3 + $0])] }
+            normal = normal + (v[1] - v[0]).cross(v[2] - v[0])
+            points += v
+        }
+        guard normal.length > 1e-12, let o = points.first else { return nil }
+        let n = normal.normalized
+        let size = points.reduce(0.0) { max($0, ($1 - o).length) }
+        guard points.allSatisfy({ abs(($0 - o).dot(n)) <= 1e-6 * max(size, 1) }) else { return nil }
+        return (o, n)
+    }
+}

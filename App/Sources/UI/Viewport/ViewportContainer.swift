@@ -303,7 +303,8 @@ struct ViewportContainer: View {
         switch workspace.planePickMode {
         case .face:
             guard let face, let point else { workspace.enterSketch(); return }
-            if case let .plane(origin, normal) = face.surface {
+            let snapshot = hit.flatMap { h in bodies.first { $0.feature.id == h.featureID }?.snapshot }
+            if let (origin, normal) = snapshot?.flatPlane(of: face.id) {
                 workspace.enterSketch(plane: SketchPlane.onFace(point: origin, normal: normal), focus: point)
             } else if let plane = SketchPlane.tangent(to: face.surface, at: point) {
                 model.statusMessage = "Schizzo sul piano tangente alla faccia tonda nel punto cliccato"
@@ -326,7 +327,8 @@ struct ViewportContainer: View {
             }
             workspace.enterSketch(plane: facing(plane), focus: (q[0] + q[1] + q[2]) * (1.0 / 3))
         case .midway:
-            guard let face, let point, case let .plane(origin, normal) = face.surface else {
+            guard let face, let point,
+                  let (origin, normal) = hit.flatMap({ h in bodies.first { $0.feature.id == h.featureID }?.snapshot })?.flatPlane(of: face.id) else {
                 model.statusMessage = "Clicca due facce piane parallele."
                 return
             }
@@ -409,6 +411,12 @@ struct ViewportContainer: View {
         if let m = workspace.manipulator {
             let hot = ray.map { m.hits($0, length: arrowLength, tolerance: viewport.screenTolerance(10)) } ?? false
             if m.isHot != hot { m.isHot = hot }
+        }
+        // Choosing the face to sketch on: the one under the mouse lights up before the click.
+        if workspace.pickingSketchPlane {
+            let ref = workspace.planePickMode == .points ? nil : ray.flatMap { viewport.pickGeo($0, filter: .face) }
+            if workspace.geoHover != ref { workspace.geoHover = ref }
+            return
         }
         if let sketch = workspace.sketch {
             sketch.vertexSnap = 11 * viewport.mmPerPoint
@@ -499,10 +507,15 @@ struct ViewportContainer: View {
             let accent = Theme.Palette.bodySelected
             switch ref.kind {
             case let .face(id):
-                let c = SIMD4(accent, selected ? 0.45 : 0.22)
+                // Well visible: a strong fill and its outline drawn thick.
+                let c = SIMD4(accent, selected ? 0.72 : 0.38)
                 for t in body.triangles(of: id) {
                     let (a, b, cc) = body.triangle(t)
                     tris.append((f(a), f(b), f(cc), c))
+                }
+                let rim = selected ? SIMD4(accent, 1) : SIMD4(accent, 0.75)
+                for e in body.snapshot.edges where e.faces.contains(id) {
+                    for (a, b) in zip(e.polyline, e.polyline.dropFirst()) { lines.append((f(a), f(b), rim)) }
                 }
             case let .edge(id):
                 guard let e = body.edge(id) else { return }
