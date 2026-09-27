@@ -1,5 +1,34 @@
 # Elettronica — prove del motore e dell’app
 
+## T106 — confronto delle revisioni di libreria, 27/09/2026
+
+Contratto [LIBRARY_REVISIONS.md](LIBRARY_REVISIONS.md). Confronto nativo prima/dopo
+di simboli, impronte e dispositivi, entità per UUID e componenti agganciati a ogni
+precisa revisione. Preview serializzabile senza mutazione; importazione sempre
+additiva, nessuna sostituzione automatica di componenti, connessioni o rame.
+
+`bash scripts/test-electronics.sh`: **165 test Swift PASS e sette lettori Python
+indipendenti PASS, exit 0**, log `/tmp/ftk-t106-electronics.log`, artefatti
+`build/electronics/run.awhANA`. I dieci nuovi test coprono cambi di piazzole/fori,
+tipo elettrico dei pin, ID rimossi/aggiunti anche a numero uguale, pin-map/MPN/JLC,
+provenienza e riferimenti 3D, ordine degli array, revisioni usate contemporaneamente,
+revisioni precedenti importate, conflitti e duplicati, preview e storico persistente.
+
+`swift test --package-path Packages/CADCore --scratch-path build/codex-cad-fabrication-check`:
+**197 test PASS, exit 0**, log `/tmp/ftk-t106-cad.log`, sul CAD di Claude `7a47254`.
+CADCore e app non modificati da Codex per questo task.
+
+Il lettore indipendente importa una seconda revisione del campione KiCad R0603:
+verifica UUID e centri da ±0,825 a ±0,925 mm nei valori prima/dopo, documento
+iniziale immutato byte per byte, nuova libreria uguale alla preview dopo conferma,
+un solo passo di storico e componenti/connessioni/scheda intatti. Revisione obsoleta,
+output esistente e argomenti CLI incompleti sono rifiutati. Una prima esecuzione
+si era fermata per un refuso nel test Python, corretto prima del risultato sopra.
+
+Integrazione UI T97 accettata da Claude nel registro; non ancora collaudata a
+schermo. T106 non completa T92: catalogo live, componenti reali e migrazione delle
+istanze fra revisioni restano distinti. Formato 7 invariato, nessuna dipendenza esterna.
+
 ## T105 — integrità dei provider remoti, 27/09/2026
 
 Procedura e prerequisiti: [REMOTE_PROVIDERS.md](REMOTE_PROVIDERS.md).

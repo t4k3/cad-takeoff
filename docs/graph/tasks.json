@@ -2059,6 +2059,29 @@
       "notes": [
         "2026-09-27 19:20 codex: Collaudo protocolli e prerequisiti concluso:23/23 provider reali su SSE offline e193test CAD PASS. Riprodotti difetti stream Claude, corretti dal proprietario in dede339/b0f01bb: EOF/blocchi/fine/ID/reset, sigillo dopo message_stop. Test e procedura live in Tests/Electronics/RemoteProviders e REMOTE_PROVIDERS.md. Chiavi API assenti; tunnel-client/runtime assenti; config Claude MCP presente ma caricamento non provato. QA autenticato resta T55/T98. Claude aggancia04b alla CI dopo questo commit."
       ]
+    },
+    {
+      "id": "T106",
+      "title": "Librerie: confronto revisioni e impatto sui componenti prima dell import",
+      "phase": "E1",
+      "status": "done",
+      "deps": [
+        "T91",
+        "T102"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-27 19:34",
+      "finished": "2026-09-27 19:42",
+      "notes": [
+        "2026-09-27 19:42 codex: Confronto revisioni librerie nativo: prima/dopo per ID, campi e componenti della revisione esatta; preview Codable e CLI senza mutazione; conferma additiva e storico preservato. 165 test elettronici, sette lettori Python e197CAD PASS. Contratto LIBRARY_REVISIONS.md consegnato a Claude per integrazione T97 accettata; UI non ancora collaudata. Nessuna dipendenza esterna, formato7 invariato."
+      ]
     }
   ]
 }

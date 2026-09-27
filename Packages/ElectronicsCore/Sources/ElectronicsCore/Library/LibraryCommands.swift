@@ -12,10 +12,11 @@ public enum ElectronicsLibraryCommand: Codable, Equatable, Sendable {
     }
 }
 
-public struct LibraryCommandPreview: Sendable {
+public struct LibraryCommandPreview: Codable, Equatable, Sendable {
     public var baseRevision: UInt64
     public var library: ElectronicsLibrary
     public var issues: [ElectronicsIssue]
+    public var revisionDiffs: [LibraryRevisionDiff]
 }
 
 /// One typed command path for the UI, chat and MCP. Preview changes a value copy only;
@@ -25,7 +26,8 @@ public enum ElectronicsLibraryCommands {
                                expectedRevision: UInt64) throws -> LibraryCommandPreview {
         var copy = document
         let issues = try apply(command, to: &copy, expectedRevision: expectedRevision)
-        return .init(baseRevision: document.revision, library: copy.design.library, issues: issues)
+        let diffs = try ElectronicsLibraryComparison.compare(current: document.design, proposedLibrary: copy.design.library)
+        return .init(baseRevision: document.revision, library: copy.design.library, issues: issues, revisionDiffs: diffs)
     }
 
     @discardableResult

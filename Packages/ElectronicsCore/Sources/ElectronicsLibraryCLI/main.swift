@@ -36,14 +36,18 @@ struct ElectronicsLibraryCLI {
             struct Metadata: Decodable { var columns: CatalogColumns; var sourceReference: String; var observedAt: Date }
             let meta = try decoder.decode(Metadata.self, from: read(2))
             try write(ComponentCatalogImporter.csv(read(1), columns: meta.columns, sourceReference: meta.sourceReference, observedAt: meta.observedAt), args[3])
-        case "apply-import" where args.count == 5:
+        case let action? where ["apply-import", "preview-import"].contains(action) && args.count == 5:
             var document = try ElectronicsDocument.decode(read(1))
             let imported = try decoder.decode(LibraryImportResult.self, from: read(2))
             guard let revision = UInt64(args[3]) else { throw ElectronicsFailure([.init("invalid_revision", "documento", "Revisione non valida.")]) }
-            try ElectronicsLibraryCommands.apply(.importLibrary(imported), to: &document, expectedRevision: revision)
-            try write(document, args[4])
+            if args[0] == "preview-import" {
+                try write(ElectronicsLibraryCommands.preview(.importLibrary(imported), document: document, expectedRevision: revision), args[4])
+            } else {
+                try ElectronicsLibraryCommands.apply(.importLibrary(imported), to: &document, expectedRevision: revision)
+                try write(document, args[4])
+            }
         default:
-            throw ElectronicsFailure([.init("usage", "librerie", "Usare: kicad-footprint input contesto.json output | kicad-symbol input contesto.json nome output | easyeda-footprint input contesto.json nome output | catalog input meta.json output | apply-import documento bundle revisione output.")])
+            throw ElectronicsFailure([.init("usage", "librerie", "Usare: kicad-footprint input contesto.json output | kicad-symbol input contesto.json nome output | easyeda-footprint input contesto.json nome output | catalog input meta.json output | preview-import documento bundle revisione output | apply-import documento bundle revisione output.")])
         }
     }
 }

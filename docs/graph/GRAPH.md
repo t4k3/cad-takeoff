@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-27 19:20. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-27 19:42. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -169,6 +169,9 @@ flowchart LR
   end
   subgraph P28["E6"]
     T105["T105 · Circuiti: collaudo provider remoti e prerequisiti dei connettori Claude/ChatGPT<br/><i>codex</i>"]:::done
+  end
+  subgraph P29["E1"]
+    T106["T106 · Librerie: confronto revisioni e impatto sui componenti prima dell import<br/><i>codex</i>"]:::done
   end
   T00 --> T02
   T00 --> T03
@@ -378,6 +381,8 @@ flowchart LR
   T102 --> T104
   T100 --> T105
   T104 --> T105
+  T91 --> T106
+  T102 --> T106
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -503,3 +508,4 @@ flowchart LR
 | T103 | Fabbricazione base a due strati: preflight DRC e Gerber/Excellon verificati | done | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T104 | Collaudo integrazione Produzione e comandi Circuiti via app e MCP | done | codex | T103, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T105 | Circuiti: collaudo provider remoti e prerequisiti dei connettori Claude/ChatGPT | done | codex | T100, T104 | Tests/Electronics<br>docs/electronics |
+| T106 | Librerie: confronto revisioni e impatto sui componenti prima dell import | done | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |

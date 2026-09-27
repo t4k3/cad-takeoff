@@ -2,7 +2,7 @@
 
 27/09/2026 · T92 · Codex. Motore Swift nativo, Foundation e CryptoKit Apple; nessuna dipendenza software di terzi. I tre campioni KiCad sono **dati di componenti**, redistribuiti con fonte, hash, attribuzione e licenza in `Packages/ElectronicsCore/Tests/ElectronicsCoreTests/Fixtures/Library/`.
 
-Questa consegna permette di importare, controllare e salvare librerie nel documento elettronico tramite API e CLI. Non è un editor PCB nell’app. T92 resta aperto per completare il catalogo e ampliare il corpus; T99 (Claude) collega il package e il documento all’app.
+Questa consegna permette di importare, controllare e salvare librerie nel documento elettronico tramite API e CLI. T99 ha collegato il package e il documento all’app; T92 resta aperto per completare il catalogo e ampliare il corpus. T106 aggiunge il [confronto delle revisioni](LIBRARY_REVISIONS.md) nell'anteprima: geometria prima/dopo, metadati e componenti interessati, senza sostituzione automatica. L'aggancio di questo confronto al pannello d'importazione è di Claude/T97.
 
 ## Contratto per Claude: anteprima e conferma
 
@@ -17,14 +17,14 @@ let command = ElectronicsLibraryCommand.importLibrary(proposal)
 let preview = try ElectronicsLibraryCommands.preview(
     command, document: document, expectedRevision: document.revision
 )
-// Mostrare preview.library e preview.issues; Esc scarta soltanto la proposta.
+// Mostrare preview.library, preview.issues e preview.revisionDiffs; Esc scarta la proposta.
 // OK usa la revisione dell’anteprima, NON una nuova revisione letta al momento del clic.
 try ElectronicsLibraryCommands.apply(command, to: &document, expectedRevision: preview.baseRevision)
 let saved = try document.encoded()
 ```
 
 - Preview opera su una copia; conferma e anteprima usano la stessa validazione. Un’importazione confermata produce un solo passo di undo, persistente anche dopo riapertura. Reimportare dati identici è un’operazione nulla.
-- Il documento scrive **formato 3** e legge i formati 1, 2 e 3. I dati opzionali assenti nei documenti precedenti, incluso lo schema, restano `nil`; geometria e storico sono conservati. I lettori precedenti rifiutano il formato nuovo anziché perdere i campi sconosciuti. Nessuna migrazione del documento CAD `.ftk`.
+- Il documento attuale scrive **formato 7** e legge i formati 1–7. Geometria e storico sono conservati nella migrazione; il confronto T106 non cambia il formato. I lettori precedenti rifiutano il formato nuovo anziché perdere i campi sconosciuti. Nessuna migrazione del documento CAD `.ftk`.
 - `LibraryRevision` è UUID + revisione. L’app conserva l’UUID quando importa una nuova revisione della stessa libreria. Stessa chiave con contenuto diverso → errore atomico; una nuova revisione si aggiunge e non sostituisce quelle usate dai componenti esistenti.
 - Pin e piazzole hanno ID derivati dall’identità della libreria e dagli identificatori sorgente. Nei formati senza UUID le piazzole usano numero/occorrenza, la grafica un indice: riordinare elementi legacy o piazzole con numeri duplicati può cambiare questi ID. Gli ID restano persistenti dopo conferma, undo e riapertura.
 - `SymbolPin` contiene numero, tipo elettrico, posizione, angolo, lunghezza e stile; `LibraryGraphic` contiene primitive in mm, strato e ID. Il campo `sourceLayers` delle piazzole è la descrizione della libreria **prima** del posizionamento, non lo stack fisico trasformato sul lato inferiore.
@@ -61,13 +61,14 @@ Ogni impronta importata avverte di verificare il centro di presa. L’origine de
 bash scripts/test-electronics.sh
 ```
 
-Esegue test Swift, CLI di assemblaggio e librerie e due lettori Python indipendenti. Genera sotto `build/electronics/run.XXXXXX/` anche contesti, bundle e documenti di esempio. Non sovrascrive output esistenti; errori producono exit 1 e nessun documento parziale.
+Esegue test Swift, CLI e sette lettori Python indipendenti, dal catalogo ai Gerber. Genera sotto `build/electronics/run.XXXXXX/` anche contesti, bundle, anteprime e documenti di esempio. Non sovrascrive output esistenti; errori producono exit 1 e nessun documento parziale.
 
 ```text
 electronics-library kicad-footprint input.kicad_mod context.json output.json
 electronics-library kicad-symbol input.kicad_sym context.json NomeSimbolo output.json
 electronics-library easyeda-footprint input.json context.json NomeImpronta output.json
 electronics-library catalog input.csv metadata.json output.json
+electronics-library preview-import documento.json bundle.json revisioneAttesa anteprima.json
 electronics-library apply-import documento.json bundle.json revisioneAttesa output.json
 ```
 

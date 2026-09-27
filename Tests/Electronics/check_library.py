@@ -125,4 +125,41 @@ bad_source = root / "unsupported.kicad_mod"
 bad_source.write_text('(footprint X (layer F.Cu) (pad 1 smd custom (at 0 0) (size 1 1) (layers F.Cu)))')
 run("kicad-footprint", bad_source, fp_context, bad_output, error="unsupported_pad")
 assert not bad_output.exists()
+
+# Preview a new footprint revision without changing the input document or its history.
+revision_context = read(fp_context)
+revision_context["key"]["revision"] = 2
+context2 = write("footprint-revision-2-context.json", revision_context)
+revision_source = root / "footprint-revision-2.kicad_mod"
+revision_source.write_text((library / "R_0603_1608Metric.kicad_mod").read_text().replace("0.825", "0.925"))
+revision_bundle = root / "footprint-revision-2.json"
+run("kicad-footprint", revision_source, context2, revision_bundle)
+before_document = second.read_bytes()
+preview_path = root / "revision-preview.json"
+run("preview-import", second, revision_bundle, 2, preview_path)
+preview = read(preview_path)
+assert second.read_bytes() == before_document
+assert preview["baseRevision"] == 2
+assert len(preview["revisionDiffs"]) == 1
+diff = preview["revisionDiffs"][0]
+assert diff["before"]["footprint"]["_0"]["key"] == fp["key"]
+assert diff["after"]["footprint"]["_0"]["key"] == revision_context["key"]
+assert "pads" in diff["changedFields"] and len(diff["pads"]) == 2
+assert {p["id"] for p in diff["pads"]} == {p["id"] for p in fp["pads"]}
+assert all(math.isclose(abs(p["after"]["center"]["x"]), 0.925) for p in diff["pads"])
+assert all(math.isclose(abs(p["before"]["center"]["x"]), 0.825) for p in diff["pads"])
+assert diff["affectedComponentIDs"] == []  # This imported footprint has no placed instances.
+applied_path = root / "revision-applied.json"
+run("apply-import", second, revision_bundle, 2, applied_path)
+applied = read(applied_path)
+assert applied["design"]["library"] == preview["library"]
+assert applied["revision"] == 3 and len(applied["past"]) == 3
+for field in ["components", "connections", "board"]:
+    assert applied["design"][field] == two["design"][field]
+run("preview-import", second, revision_bundle, 0, bad_output, error="stale_revision")
+assert not bad_output.exists()
+run("preview-import", second, revision_bundle, 2, preview_path, error="output_exists")
+run("apply-import", error="usage")
+run("preview-import", error="usage")
 print("PASS: independent library CLI, pinned source hashes, KiCad geometry, EasyEDA units, offline catalog, v1 migration, atomic history and no overwrite.")
+print("PASS: independent revision preview, stable pad IDs, before/after dimensions, no mutation, persistent history and stale revision rejection.")
