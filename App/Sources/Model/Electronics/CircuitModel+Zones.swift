@@ -12,6 +12,40 @@ extension CircuitModel {
     /// The engine's fill of a plane (current drawing only).
     func zoneFill(_ id: UUID) -> PCBZoneFill? { pcbIsCurrent ? pcb?.zones.first { $0.zone.id == id } : nil }
 
+    /// How a plane joins its pads and how narrow its copper may get (docs/electronics/PCB_THERMALS.md).
+    struct ZoneRules: Equatable {
+        var connection: PCBZoneConnection = .solid
+        var thermalGap = 0.3
+        var thermalSpokeWidth = 0.3
+        var thermalAngleDegrees = 0.0
+        var minimumSpokes = 2
+        /// 0: no filter (the copper as the outline gives it).
+        var minimumWidth = 0.0
+        init() {}
+        init(_ z: PCBZone) {
+            connection = z.connection; thermalGap = z.thermalGap; thermalSpokeWidth = z.thermalSpokeWidth
+            thermalAngleDegrees = z.thermalAngleDegrees; minimumSpokes = z.minimumSpokes; minimumWidth = z.minimumWidth
+        }
+        func applied(to z: PCBZone) -> PCBZone {
+            var z = z
+            z.connection = connection; z.thermalGap = thermalGap; z.thermalSpokeWidth = thermalSpokeWidth
+            z.thermalAngleDegrees = thermalAngleDegrees; z.minimumSpokes = minimumSpokes; z.minimumWidth = minimumWidth
+            return z
+        }
+        /// Thermal reliefs matter (spokes, angle, how many).
+        var hasThermals: Bool { connection == .thermal || connection == .thermalThroughHole }
+        /// The gap around the pads matters (thermals, or pads kept apart).
+        var hasGap: Bool { hasThermals || connection == .none }
+        var label: String {
+            switch connection {
+            case .solid: "collegamento pieno"
+            case .thermal: "termiche sulle piazzole"
+            case .thermalThroughHole: "termiche sulle piazzole passanti"
+            case .none: "piazzole isolate"
+            }
+        }
+    }
+
     /// A plane being drawn: identity and base revision for the whole session, net, layer, points.
     struct ZoneDraft: Equatable {
         var id = UUID()
@@ -20,6 +54,7 @@ extension CircuitModel {
         var netID: UUID?
         var layer: Int
         var removeIslands = true
+        var rules = ZoneRules()
         var points: [PCBPoint] = []
 
         /// The outline with `next` (the mouse) as last point; two points: the rectangle between them.
@@ -31,7 +66,7 @@ extension CircuitModel {
         }
         func plane(with next: PCBPoint? = nil) -> PCBZone? {
             guard let netID, let outline = outline(with: next) else { return nil }
-            return PCBZone(id: id, name: name, netID: netID, layer: layer, outline: outline, removeIslands: removeIslands)
+            return rules.applied(to: PCBZone(id: id, name: name, netID: netID, layer: layer, outline: outline, removeIslands: removeIslands))
         }
     }
 
@@ -42,7 +77,7 @@ extension CircuitModel {
         guard !pcbBusy else { return }
         let q = keepoutPoint(near: p, tolerance: tolerance)
         var d = zoneDraft ?? ZoneDraft(baseRevision: document?.revision ?? 0, name: "Piano di rame \(zones.count + 1)",
-                                       netID: nil, layer: activeLayer, removeIslands: zoneRemoveIslands)
+                                       netID: nil, layer: activeLayer, removeIslands: zoneRemoveIslands, rules: zoneRules)
         if d.points.isEmpty {
             let under = pcbIsCurrent ? pcb?.pick(point: p, tolerance: tolerance, layer: activeLayer).first { $0.netID != nil }?.netID : nil
             d.netID = under ?? zoneNet ?? design?.nets.first { $0.name.uppercased() == "GND" }?.id
@@ -70,6 +105,15 @@ extension CircuitModel {
         }
     }
 
+    /// The rules of the plane being drawn (and of the next ones), before its first click too.
+    func setDraftRules(_ rules: ZoneRules) {
+        zoneRules = rules
+        guard var d = zoneDraft else { return }
+        d.rules = rules
+        zoneDraft = d
+        checkRule(d.plane().map { .addZone($0) })
+    }
+
     func setDraftRemoveIslands(_ on: Bool) {
         zoneRemoveIslands = on
         guard var d = zoneDraft else { return }
@@ -94,7 +138,7 @@ extension CircuitModel {
         selection = nil; copperSelection = nil; keepoutSelection = nil
         zoneSelection = plane.id
         let net = design?.nets.first { $0.id == plane.netID }?.name ?? "?"
-        report("\(plane.name): rete \(net) su \(layerName(plane.layer)), collegamento pieno")
+        report("\(plane.name): rete \(net) su \(layerName(plane.layer)), \(ZoneRules(plane).label)")
         return true
     }
 

@@ -98,8 +98,9 @@ final class CircuitModel {
         pcbWork = nil; pcbOperation = nil; pcbBusy = false
         report("Modifica del rame annullata.")
     }
-    /// «Togli le isole» for the next plane (before its first click too).
+    /// «Togli le isole» and the thermal/width rules for the next plane (before its first click too).
     var zoneRemoveIslands = true
+    var zoneRules = ZoneRules()
     /// What the engine says of a rule change before it is confirmed (an area being drawn or
     /// moved, a class being edited): checked in the background, the last request wins.
     var ruleCheck: RuleCheck?

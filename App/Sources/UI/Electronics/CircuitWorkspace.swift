@@ -114,6 +114,8 @@ struct CircuitBoardView: View {
     @State private var movingZone: (id: UUID, delta: PCBPoint)?
     /// The next area on every layer (else on the one being drawn on).
     @State private var keepoutAllLayers = false
+    /// Piano: the rules' popover.
+    @State private var showZoneRules = false
     @GestureState private var pinch: CGFloat = 1
     @FocusState private var focused: Bool
 
@@ -371,6 +373,8 @@ struct CircuitBoardView: View {
             Group {
                 if let refusal = check.refusal {
                     Label("Non confermabile: \(refusal)", systemImage: "xmark.octagon.fill").foregroundStyle(.red)
+                } else if let blocking = check.blocking, let first = blocking.first {
+                    Label("Non confermabile: \(first.message)", systemImage: "xmark.octagon.fill").foregroundStyle(.red)
                 } else if let errors = check.newErrors, !errors.isEmpty {
                     Label("\(errors.count) conflitt\(errors.count == 1 ? "o" : "i") col rame già presente: si può confermare, poi vanno corretti",
                           systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
@@ -409,7 +413,15 @@ struct CircuitBoardView: View {
                 Toggle("Togli le isole", isOn: Binding(get: { circuits.zoneDraft?.removeIslands ?? circuits.zoneRemoveIslands }, set: { circuits.setDraftRemoveIslands($0) }))
                     .toggleStyle(.checkbox).font(.system(size: 11))
                     .help("Toglie i pezzi di rame del piano non collegati a nessuna piazzola")
-                Text("Collegamento pieno · termiche e colli minimi non ancora disponibili").font(.system(size: 11)).foregroundStyle(.secondary)
+                Button { showZoneRules.toggle() } label: {
+                    Text(ZoneRulesForm.summary(circuits.zoneDraft?.rules ?? circuits.zoneRules)).font(.system(size: 11))
+                }
+                .buttonStyle(.borderless)
+                .help("Collegamento alle piazzole (pieno, termiche, isolate) e larghezza minima del rame")
+                .popover(isPresented: $showZoneRules, arrowEdge: .top) {
+                    ZoneRulesForm(rules: Binding(get: { circuits.zoneDraft?.rules ?? circuits.zoneRules }, set: { circuits.setDraftRules($0) }))
+                        .padding(12).frame(width: 300)
+                }
                 draftButtons(open: circuits.zoneDraft != nil, close: { await circuits.finishZone() }, cancel: { circuits.zoneDraft = nil; circuits.ruleCheck = nil })
             }
             .padding(.horizontal, 10).padding(.vertical, 5)
@@ -963,19 +975,65 @@ private struct ZoneDetail: View {
         }
         Toggle("Togli le isole", isOn: Binding(get: { plane.removeIslands }, set: { var z = plane; z.removeIslands = $0; Task { await circuits.updateZone(z) } }))
             .toggleStyle(.checkbox).font(.caption)
+        ZoneRulesForm(rules: Binding(get: { CircuitModel.ZoneRules(plane) }, set: { r in
+            let z = r.applied(to: plane)
+            if z != plane { Task { await circuits.updateZone(z) } }
+        }))
         if let fill = circuits.zoneFill(plane.id) {
             if fill.cells.isEmpty {
                 Label("Vuoto: nessun rame collegato a una piazzola di questa rete qui", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
             } else {
                 Text(String(format: "Rame %.1f mm² · %d isol%@", fill.area, fill.islandCount, fill.islandCount == 1 ? "a" : "e")
-                     + (fill.removedIslandCount > 0 ? " · \(fill.removedIslandCount) tolt\(fill.removedIslandCount == 1 ? "a" : "e")" : ""))
+                     + (fill.removedIslandCount > 0 ? " · \(fill.removedIslandCount) tolt\(fill.removedIslandCount == 1 ? "a" : "e")" : "")
+                     + (fill.removedNarrowArea > 0 ? String(format: " · %.1f mm² troppo stretti tolti", fill.removedNarrowArea) : ""))
                     .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
+                if !fill.thermals.isEmpty {
+                    let starved = fill.thermals.filter { $0.connectedSpokes < plane.minimumSpokes }.count
+                    Text("\(fill.thermals.count) piazzol\(fill.thermals.count == 1 ? "a" : "e") con termica" + (starved > 0 ? " · \(starved) con meno di \(plane.minimumSpokes) raggi (vedi VERIFICHE)" : ""))
+                        .font(.caption).foregroundStyle(starved > 0 ? .orange : Theme.Palette.textSecondary)
+                }
             }
         }
-        Text("Collegamento pieno alle piazzole. Termiche e larghezza minima dei colli non ancora disponibili.")
+        Text("Le via restano sempre piene; i fori non hanno rame.")
             .font(.caption2).foregroundStyle(Theme.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
         Text("Trascina per spostare · Canc elimina").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+    }
+}
+
+/// How a plane joins its pads (solid, thermal reliefs, isolated) and how narrow its copper may
+/// get. Fields with no effect in the chosen mode are hidden, their values kept.
+struct ZoneRulesForm: View {
+    @Binding var rules: CircuitModel.ZoneRules
+
+    static let modes: [(PCBZoneConnection, String)] = [
+        (.solid, "Pieno"), (.thermal, "Termiche"), (.thermalThroughHole, "Termiche solo passanti"), (.none, "Piazzole isolate"),
+    ]
+    static func summary(_ r: CircuitModel.ZoneRules) -> String {
+        (modes.first { $0.0 == r.connection }?.1 ?? "Pieno") + (r.minimumWidth > 0 ? " · min \(CircuitBoardView.mm(r.minimumWidth))" : "") + " ▾"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("Alle piazzole", selection: $rules.connection) {
+                ForEach(Self.modes, id: \.0) { Text($0.1).tag($0.0) }
+            }
+            .help("Termiche: un anello d'aria con quattro ponticelli, per saldare senza che il piano porti via il calore. Le via restano piene.")
+            if rules.hasGap {
+                DimensionField(title: rules.hasThermals ? "Spazio attorno" : "Distanza dalle piazzole", value: $rules.thermalGap)
+            }
+            if rules.hasThermals {
+                DimensionField(title: "Ponticelli", value: $rules.thermalSpokeWidth)
+                DimensionField(title: "Angolo", value: $rules.thermalAngleDegrees, unit: "°")
+                Stepper("Raggi minimi: \(rules.minimumSpokes == 0 ? "nessun controllo" : "\(rules.minimumSpokes)")", value: $rules.minimumSpokes, in: 0...4)
+                    .help("Quanti dei quattro ponticelli devono arrivare interi alla piazzola; 0 non controlla")
+            }
+            DimensionField(title: "Larghezza minima", value: $rules.minimumWidth)
+            Text(rules.minimumWidth > 0 ? "Il rame più stretto di così viene tolto, i colli rimasti segnalati."
+                 : "0: nessun filtro, il rame segue il contorno com'è.")
+                .font(.caption2).foregroundStyle(Theme.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.caption)
     }
 }
 

@@ -95,6 +95,8 @@ extension CircuitModel {
         var command: PCBCommand
         var revision: UInt64
         var newErrors: [ElectronicsIssue]?
+        /// Errors the engine would refuse the change for (a new plane with its own errors).
+        var blocking: [ElectronicsIssue]?
         var refusal: String?
         /// Every plane's fill as the engine computes it with the change (an area, a rule or a
         /// plane changes the planes around it): the drawing shows these instead, empty ones too.
@@ -111,7 +113,7 @@ extension CircuitModel {
         let before = pcbIsCurrent ? (pcb?.issues ?? []) : []
         ruleCheckTask = Task { [weak self] in
             let planes = !(doc.design.board.copper?.zones.isEmpty ?? true) || { if case .addZone = command { true } else { false } }()
-            let result = await Self.offMain { () -> (errors: [ElectronicsIssue], refusal: String?, fills: [PCBZoneFill]?) in
+            let result = await Self.offMain { () -> (errors: [ElectronicsIssue], blocking: [ElectronicsIssue], refusal: String?, fills: [PCBZoneFill]?) in
                 do {
                     let preview = try ElectronicsCommands.preview(.pcb(command), document: doc, expectedRevision: doc.revision)
                     let errors = preview.issues.filter { e in
@@ -119,13 +121,14 @@ extension CircuitModel {
                             && !before.contains { $0.code == e.code && $0.subjectIDs == e.subjectIDs }
                     }
                     let fills = planes ? (try? preview.pcbSnapshot())?.zones : nil
-                    return (errors, nil, fills)
+                    return (errors, preview.blockingIssues, nil, fills)
                 } catch {
-                    return ([], CircuitModel.describe(error), nil)
+                    return ([], [], CircuitModel.describe(error), nil)
                 }
             }
             guard !Task.isCancelled, let self, self.ruleCheck?.command == command, self.ruleCheck?.revision == doc.revision else { return }
             self.ruleCheck?.newErrors = result.errors
+            self.ruleCheck?.blocking = result.blocking
             self.ruleCheck?.refusal = result.refusal
             self.ruleCheck?.fills = result.fills
         }

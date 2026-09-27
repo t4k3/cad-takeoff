@@ -349,6 +349,30 @@ struct CircuitTests {
         check(fill != nil && !fill!.cells.isEmpty && fill!.area > 0 && fill!.area < 48 * 28, "piano riempito attorno al rame dell'altra rete (\(fill?.area ?? -1) mm²)")
         check(sc.zoneHit(at: PCBPoint(25, 25), tolerance: 0.1)?.id == planeID, "piano trovato dal contorno")
         check(sc.copperHit(at: PCBPoint(25, 25), tolerance: 0.1) == nil, "il rame del piano non si seleziona come pista")
+        // Thermal reliefs chosen in the bar: the plane's pad gets its four spokes (docs PCB_THERMALS.md).
+        var thermal = CircuitModel.ZoneRules()
+        thermal.connection = .thermal
+        let solidPlane = sc.zone(planeID!)!
+        check(await sc.updateZone(thermal.applied(to: solidPlane)) && sc.zone(planeID!)?.connection == .thermal, "piano con termiche (\(last))")
+        await sc.pcbReady()
+        let relieved = sc.zoneFill(planeID!)
+        check(!(relieved?.thermals.isEmpty ?? true) && relieved!.thermals.allSatisfy { $0.connectedSpokes >= 2 } && relieved!.area < fill!.area,
+              "termica sulla piazzola VCC, raggi collegati (\(relieved?.thermals.map(\.connectedSpokes) ?? []))")
+        var narrow = CircuitModel.ZoneRules(sc.zone(planeID!)!)
+        narrow.minimumWidth = 0.2
+        check(await sc.updateZone(narrow.applied(to: sc.zone(planeID!)!)) && sc.zone(planeID!)?.minimumWidth == 0.2, "larghezza minima impostata (\(last))")
+        // Narrower than the spokes: they go, the pad would have none — refused, the plane unchanged.
+        narrow.minimumWidth = 0.35
+        check(!(await sc.updateZone(narrow.applied(to: sc.zone(planeID!)!))) && sc.zone(planeID!)?.minimumWidth == 0.2 && last.contains("raggi"),
+              "filtro più largo dei ponticelli rifiutato (\(last))")
+        sc.undo(); sc.undo()
+        await sc.pcbReady()
+        check(sc.zone(planeID!)?.connection == .solid && sc.zone(planeID!)?.minimumWidth == 0, "annulla: di nuovo pieno, senza filtro")
+        // Rules set before the first click go into the next plane.
+        sc.setDraftRules(thermal)
+        check(sc.zoneRules.connection == .thermal && sc.zoneDraft == nil, "regole ricordate prima del primo clic")
+        sc.setDraftRules(CircuitModel.ZoneRules())
+
         // An area being drawn across the plane: the preview shows the plane's fill already cut.
         sc.tool = .keepout
         await sc.keepoutClick(at: PCBPoint(24, 0), tolerance: 0.01)
