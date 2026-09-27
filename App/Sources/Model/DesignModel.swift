@@ -409,6 +409,35 @@ final class DesignModel {
         } catch { statusMessage = "Errore export: \(error.localizedDescription)" }
     }
 
+    /// Technical drawing of the visible bodies (ISO first angle, hidden lines, overall dimensions,
+    /// title block): PDF or DXF by the chosen extension; A4, or A3 when the part is large. The file
+    /// name is the drawing's title.
+    func exportDrawingWithPanel() {
+        let bodies = evaluation().bodies.filter(\.isVisible).map { (mesh: $0.mesh, snapshot: $0.snapshot) }
+        guard !bodies.isEmpty else { statusMessage = "Niente da disegnare"; return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.pdf, UTType(filenameExtension: "dxf") ?? .data]
+        panel.nameFieldStringValue = "Tavola.pdf"
+        panel.message = "Tavola tecnica: .pdf per stampare, .dxf per altri CAD"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let info = TechnicalDrawing.Info(title: url.deletingPathExtension().lastPathComponent,
+                                             material: sheetParts().first.map { $0.build.rule.material.name } ?? "")
+            // A4 unless the part only fits it at 1:5 or smaller.
+            var sheet = try TechnicalDrawing.make(bodies, info: info, format: .a4)
+            if let scale = sheet.texts.first(where: { t in TechnicalDrawing.scales.contains { $0.1 == t.text } }),
+               let value = TechnicalDrawing.scales.first(where: { $0.1 == scale.text })?.0, value <= 0.2 {
+                sheet = try TechnicalDrawing.make(bodies, info: info, format: .a3)
+            }
+            if url.pathExtension.lowercased() == "dxf" {
+                try DrawingDXF.dxf(sheet).write(to: url, atomically: true, encoding: .utf8)
+            } else {
+                try PDFWriter.pdf(sheet).write(to: url)
+            }
+            statusMessage = "Tavola salvata: \(url.lastPathComponent)"
+        } catch { statusMessage = "Tavola non riuscita: \(error.localizedDescription)" }
+    }
+
     /// STEP AP214 of the visible bodies (one solid each, with colours), for suppliers and other CAD.
     func exportSTEPWithPanel() {
         let parts = evaluation().bodies.filter(\.isVisible).map {

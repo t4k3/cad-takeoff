@@ -34,7 +34,7 @@ Livello per area, da 0 (assente) a 5 (come Fusion per l'uso di Ross).
 | **Scambio file** | Export STL, 3MF a colori, DXF sviluppi; import STL/OBJ/3MF; da Fusion interi progetti (mesh) con l'add-in e lo script | 1,5 |
 | **Interfaccia** | Ribbon tipo Fusion, schede dei disegni, Home con progetti e cartelle, menu col tasto destro, frecce ed etichette modificabili, ViewCube | 3 |
 | **Prestazioni** | Booleane per coppie reali di poligoni; assieme da 1 M triangoli aperto in ~3 s in background | 3,5 |
-| **AI** | 24 strumenti (anche export STEP); chat interna (API) e Claude Desktop (abbonamento) via MCP | 3 |
+| **AI** | 25 strumenti (anche export STEP e tavola PDF); chat interna (API) e Claude Desktop (abbonamento) via MCP | 3 |
 | **Qualità e distribuzione** | CI, test del motore, TestFlight, GitHub AGPL, versione automatica | 4 |
 
 ## 3. Cosa manca, per area (dal più grave)
@@ -120,9 +120,10 @@ d'angolo, superfici esatte come verità.
 
 ### Settimana 3 (13 – 17 ott) — Verso il fornitore
 
-**Stato al 27/09:** export STEP AP214 fatto (un solido per corpo con colori; facce piane esatte,
-superfici curve sfaccettate), verificato con OpenCascade. Restano le superfici curve esatte nello
-STEP e i disegni tecnici.
+**Stato al 27/09:** export STEP AP214 fatto (un solido per corpo con colori; piani, cilindri, coni e
+tori esatti, il resto sfaccettato), verificato con OpenCascade. Tavola tecnica v1 fatta: viste ISO
+primo diedro con linee nascoste, isometrica, quote d'ingombro, diametri e assi, cartiglio; PDF e DXF.
+Restano: quote scelte a mano sulla tavola, sezioni, raccordi dritti esatti nello STEP.
 - **Export STEP AP214** scritto da noi: facce analitiche esatte, sfaccettato come riserva.
 - **Disegni tecnici v1:** tavola A4/A3 ISO, viste ortogonali e isometrica, linee nascoste, quote lineari,
   radiali e di foro, cartiglio, export PDF e DXF.

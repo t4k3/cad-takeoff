@@ -29,6 +29,7 @@ extension DesignModel: CADToolProvider {
             case "export_stl": return try export(args)
             case "export_3mf": return try export3MF(args)
             case "export_step": return try exportSTEP(args)
+            case "export_drawing": return try exportDrawing(args)
             case "list_project_designs":
                 let paths = projectDesigns?() ?? []
                 return result("\(paths.count) disegni nel progetto", ["designs": .array(paths.map { p in
@@ -240,6 +241,22 @@ extension DesignModel: CADToolProvider {
             "filename": "Design.stl", "mime_type": "model/stl", "encoding": "base64", "data": .string(data.base64EncodedString()),
             "bytes": .number(Double(data.count)), "coordinate_units": "mm",
             "warning": "STL senza metadati unità. Solidi concatenati: non è stata eseguita una unione booleana."
+        ])
+    }
+
+    private func exportDrawing(_ args: [String: JSONValue]) throws -> ToolResult {
+        let bodies = evaluation().bodies.filter(\.isVisible).map { (mesh: $0.mesh, snapshot: $0.snapshot) }
+        guard !bodies.isEmpty else { throw CADToolFailure("Niente da disegnare.") }
+        let title = args["title"]?.string ?? "Tavola"
+        let format = SheetFormat(rawValue: args["format"]?.string ?? "A4") ?? .a4
+        let sheet: DrawingSheet
+        do { sheet = try TechnicalDrawing.make(bodies, info: .init(title: title, material: args["material"]?.string ?? ""), format: format) }
+        catch { throw CADToolFailure(error.localizedDescription) }
+        let data = PDFWriter.pdf(sheet)
+        let scale = sheet.texts.first { t in TechnicalDrawing.scales.contains { $0.1 == t.text } }?.text ?? "?"
+        return result("Tavola \(format.rawValue) in scala \(scale)", [
+            "filename": .string(title + ".pdf"), "mime_type": "application/pdf", "encoding": "base64", "data": .string(data.base64EncodedString()),
+            "bytes": .number(Double(data.count)), "scale": .string(scale),
         ])
     }
 
