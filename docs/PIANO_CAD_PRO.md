@@ -126,8 +126,9 @@ del motore.
 tori esatti, il resto sfaccettato), verificato con OpenCascade. Tavola tecnica v1 fatta: viste ISO
 primo diedro con linee nascoste, isometrica, quote d'ingombro, diametri e assi, cartiglio; PDF e DXF.
 Vista in sezione A-A con tratteggio. Nello STEP anche le sfere: un box raccordato esce tutto esatto.
-Settimana 4 anticipata in parte: controllo interferenze. Restano: quote scelte a mano sulla tavola,
-giunti e vista esplosa, lamiera avanzata.
+Settimana 4 anticipata in parte: controllo interferenze. Poi le quote messe negli schizzi finiscono
+sulla tavola, nella vista che vede lo schizzo in vero (senza ripetere quelle d'ingombro). Resta:
+spostare o aggiungere a mano quote sulla tavola.
 - **Export STEP AP214** scritto da noi: facce analitiche esatte, sfaccettato come riserva.
 - **Disegni tecnici v1:** tavola A4/A3 ISO, viste ortogonali e isometrica, linee nascoste, quote lineari,
   radiali e di foro, cartiglio, export PDF e DXF.

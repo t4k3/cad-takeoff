@@ -427,10 +427,11 @@ final class DesignModel {
             let info = TechnicalDrawing.Info(title: url.deletingPathExtension().lastPathComponent,
                                              material: sheetParts().first.map { $0.build.rule.material.name } ?? "")
             // A4 unless the part only fits it at 1:5 or smaller.
-            var sheet = try TechnicalDrawing.make(bodies, info: info, format: .a4, section: section)
+            let dims = drawingDimensions()
+            var sheet = try TechnicalDrawing.make(bodies, info: info, format: .a4, section: section, dimensions: dims)
             if let scale = sheet.texts.first(where: { t in TechnicalDrawing.scales.contains { $0.1 == t.text } }),
                let value = TechnicalDrawing.scales.first(where: { $0.1 == scale.text })?.0, value <= 0.2 {
-                sheet = try TechnicalDrawing.make(bodies, info: info, format: .a3, section: section)
+                sheet = try TechnicalDrawing.make(bodies, info: info, format: .a3, section: section, dimensions: dims)
             }
             if url.pathExtension.lowercased() == "dxf" {
                 try DrawingDXF.dxf(sheet).write(to: url, atomically: true, encoding: .utf8)
@@ -439,6 +440,15 @@ final class DesignModel {
             }
             statusMessage = "Tavola salvata: \(url.lastPathComponent)"
         } catch { statusMessage = "Tavola non riuscita: \(error.localizedDescription)" }
+    }
+
+    /// Dimensions of the sketches that shape the visible bodies (not moved since), for the
+    /// drawing: each goes on the view that sees its sketch true.
+    func drawingDimensions() -> [ModelDimension] {
+        let bodies = evaluation().bodies.filter { $0.isVisible && $0.placement == .identity }
+        let shaping = Set(bodies.flatMap { [$0.id] + $0.modifiedBy })
+        let used = Set(document.sketchLinks.filter { shaping.contains($0.featureID) }.map(\.sketchID))
+        return document.sketches.filter { used.contains($0.id) }.flatMap(\.drawingDimensions)
     }
 
     /// STEP AP214 of the visible bodies (one solid each, with colours), for suppliers and other CAD.

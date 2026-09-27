@@ -78,3 +78,32 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
     #expect(DrawingDXF.dxf(s).contains("GI\\U+00D9"))
 }
+
+@Test func sketchDimensionsGoOnTheViewThatSeesThemTrue() throws {
+    let plate = Feature(name: "Piastra", kind: .box(width: 80, depth: 50, height: 6))
+    let h1 = Feature(name: "F1", kind: .cylinder(radius: 4, height: 20), position: Vec3(-20, 0, -2), operation: .cut)
+    let h2 = Feature(name: "F2", kind: .cylinder(radius: 4, height: 20), position: Vec3(20, 0, -2), operation: .cut)
+    let rect = SketchShape(kind: .rectangle(corner: Vec2(-40, -25), width: 80, height: 50))
+    let c1 = SketchShape(kind: .circle(center: Vec2(-20, 0), radius: 4)), c2 = SketchShape(kind: .circle(center: Vec2(20, 0), radius: 4))
+    let corner = SketchShape(kind: .arc(center: Vec2(30, 15), radius: 10, start: 0, end: .pi / 2))
+    let sketch = Sketch(name: "S", shapes: [rect, c1, c2, corner], constraints: [
+        SketchConstraint(.horizontalDistance(.point(c1.id, 0), .point(c2.id, 0), 40)),
+        SketchConstraint(.verticalDistance(.point(rect.id, 0), .point(c1.id, 0), 25)),
+        SketchConstraint(.length(.segment(rect.id, 0), 80)),          // the overall width: not repeated
+        SketchConstraint(.diameter(.circle(c1.id, 0), 8)),             // in the hole table already
+        SketchConstraint(.radius(.circle(corner.id, 0), 10)),
+    ])
+    let dims = sketch.drawingDimensions
+    #expect(dims.count == 5)
+    let bodies = DesignEvaluator.evaluate(CADDocument(features: [plate, h1, h2]), revision: "d").bodies.map { (mesh: $0.mesh, snapshot: $0.snapshot) }
+    let s = try TechnicalDrawing.make(bodies, info: .init(title: "Piastra", date: Date(timeIntervalSince1970: 0)), dimensions: dims)
+    let texts = s.texts.map(\.text)
+    for t in ["40", "25", "R10"] { #expect(texts.contains(t), "\(t)") }
+    #expect(texts.filter { $0 == "80" }.count == 1 && !texts.contains("Ø8"))
+    #expect(s.lines.allSatisfy { [$0.a, $0.b].allSatisfy { $0.x >= 0 && $0.x <= 297 && $0.y >= 0 && $0.y <= 210 } })
+    // The 40 between the holes: a horizontal dimension under the view from above.
+    let forty = try #require(s.texts.first { $0.text == "40" })
+    #expect(forty.angle == 0)
+    let plain = try TechnicalDrawing.make(bodies, info: .init(title: "Piastra"))
+    #expect(!plain.texts.map(\.text).contains("40"))
+}

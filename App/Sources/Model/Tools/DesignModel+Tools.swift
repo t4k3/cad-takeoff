@@ -278,7 +278,7 @@ extension DesignModel: CADToolProvider {
         let format = SheetFormat(rawValue: args["format"]?.string ?? "A4") ?? .a4
         let sheet: DrawingSheet
         do { sheet = try TechnicalDrawing.make(bodies, info: .init(title: title, material: args["material"]?.string ?? ""), format: format,
-                                                section: args["section"]?.bool ?? false) }
+                                                section: args["section"]?.bool ?? false, dimensions: drawingDimensions()) }
         catch { throw CADToolFailure(error.localizedDescription) }
         let data = PDFWriter.pdf(sheet)
         let scale = sheet.texts.first { t in TechnicalDrawing.scales.contains { $0.1 == t.text } }?.text ?? "?"

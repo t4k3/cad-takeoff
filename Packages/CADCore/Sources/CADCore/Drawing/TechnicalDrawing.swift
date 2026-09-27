@@ -44,8 +44,9 @@ public enum TechnicalDrawing {
 
     /// `section`: the front view is the section A–A through the middle of the part (hatched cut
     /// faces, no hidden lines), with the cutting line in the view from above.
+    /// `dimensions`: the sketches' dimensions, each shown in the view that sees it true.
     public static func make(_ bodies: [(mesh: Mesh, snapshot: BodySnapshot)], info: Info, format: SheetFormat = .a4,
-                            section: Bool = false) throws -> DrawingSheet {
+                            section: Bool = false, dimensions: [ModelDimension] = []) throws -> DrawingSheet {
         let model = Model(bodies)
         guard let box = model.bounds else { throw KernelError.invalidParameter("disegno: nessun corpo visibile") }
         let (W, H) = format.size
@@ -69,7 +70,17 @@ public enum TechnicalDrawing {
         // Largest standard scale that fits, trying two layouts: the isometric in a third column,
         // or beside the view from above (second row).
         let gap = 18.0
-        let availW = frame.x1 - frame.x0 - 4 * gap, availH = frame.y1 - frame.y0 - titleH - 3 * gap
+        // Sketch dimensions: rows above the front and left views, below the view from above,
+        // columns left of the front view (outside its overall height) and of the view from above,
+        // right of the view from the left. Each row or column 6 mm, the first 8 from the view.
+        let placed = placeDimensions(dimensions, views: [front, top, left], extents: [ef, et, el], topView: 1)
+        func count(_ v: Int, _ side: PlacedDimension.Side) -> Int { placed.filter { d in d.view == v && d.side == side && !d.isRound }.count }
+        func need(_ n: Int, first: Double = 8) -> Double { n == 0 ? 0 : first + 6 * Double(n - 1) + 6 }
+        let marginTop = max(gap, need(max(count(0, .above), count(2, .above))))
+        let marginLeft = max(gap, need(count(0, .left), first: 14), need(count(1, .left)))
+        let marginBelow = max(gap, need(count(1, .below)))
+        let gapLeftIso = max(gap, need(count(2, .right)))
+        let availW = frame.x1 - frame.x0 - marginLeft - 2 * gap - gapLeftIso, availH = frame.y1 - frame.y0 - titleH - marginTop - gap - marginBelow
         let row1 = max(h(ef), h(el))
         // Heights where the part steps (horizontal edges seen from the front): dimensioned from the
         // bottom on the right of the front view, so each needs a little room there.
@@ -89,10 +100,10 @@ public enum TechnicalDrawing {
 
         // Placement: front top-left, the view from the left on its right, from above below it
         // (first angle); the isometric in the right column or right of the view from above.
-        let rowTop = frame.y1 - gap - row1 * scale
-        let colFront = frame.x0 + gap
+        let rowTop = frame.y1 - marginTop - row1 * scale
+        let colFront = frame.x0 + marginLeft
         let colLeft = colFront + w(ef) * scale + gap + levelRoom
-        let colIso = isoBelow ? colFront + w(et) * scale + gap : colLeft + w(el) * scale + gap
+        let colIso = isoBelow ? colFront + w(et) * scale + gap : colLeft + w(el) * scale + gapLeftIso
         func place(_ v: View, _ e: (min: Vec2, max: Vec2), at origin: Vec2) -> (Vec2) -> Vec2 {
             { p in Vec2(origin.x + (p.x - e.min.x) * scale, origin.y + (p.y - e.min.y) * scale) }
         }
@@ -144,6 +155,48 @@ public enum TechnicalDrawing {
             dimension(&sheet, from: frontAt(Vec2(ef.max.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, z)), offset: -(8 + 6 * Double(k)), value: z - ef.min.y)
         }
         dimension(&sheet, from: leftAt(Vec2(el.min.x, el.min.y)), to: leftAt(Vec2(el.max.x, el.min.y)), offset: -8, value: size.y)
+        // The sketches' dimensions, stacked outwards (shorter ones nearer the view).
+        let viewAt = [frontAt, topAt, leftAt], viewExtent = [ef, et, el]
+        for v in 0..<3 where !(section && v == 0) {
+            let at = viewAt[v], e = viewExtent[v]
+            let lo = at(e.min), hi = at(e.max)
+            for side in [PlacedDimension.Side.above, .below, .left, .right] {
+                let row: [PlacedDimension] = placed.filter { d in d.view == v && d.side == side && !d.isRound }
+                    .sorted { d, e in d.span < e.span }
+                for (k, d) in row.enumerated() {
+                    let step = 6 * Double(k)
+                    switch side {
+                    case .above: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, 1), level: hi.y + 8 + step, value: d.value)
+                    case .below: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, -1), level: -(lo.y - 8 - step), value: d.value)
+                    case .left:
+                        let first = v == 0 ? 14.0 : 8.0
+                        linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(-1, 0), level: -(lo.x - first - step), value: d.value)
+                    case .right: linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(1, 0), level: hi.x + 8 + step, value: d.value)
+                    case .aligned: break
+                    }
+                }
+            }
+            // Oblique ones beside their line, away from the view's middle; radii with a leader.
+            let middle = (lo + hi) * 0.5
+            for d in placed where d.view == v && d.side == .aligned {
+                let a = at(d.a), b = at(d.b)
+                if let round = d.round {
+                    let centre = at(round.centre), tip = at(round.at)
+                    var dir = (tip - centre).normalized
+                    if dir.length < 0.5 { dir = Vec2(cos(.pi / 4), sin(.pi / 4)) }
+                    let knee = tip + dir * 6, right = dir.x >= 0
+                    sheet.lines.append(.init(a: round.prefix == "Ø" ? centre - (tip - centre) : tip, b: knee, style: .thin))
+                    sheet.lines.append(.init(a: knee, b: knee + Vec2(right ? 12 : -12, 0), style: .thin))
+                    arrow(&sheet, tip: tip, from: knee)
+                    sheet.texts.append(.init(at: knee + Vec2(right ? 1 : -1, 1), text: round.prefix + number(d.value), size: 3.2, align: right ? .left : .right))
+                    continue
+                }
+                let u = (b - a).normalized
+                var n = Vec2(-u.y, u.x)
+                if ((a + b) * 0.5 - middle).dot(n) < 0 { n = n * -1 }
+                linear(&sheet, a, b, along: u, side: n, level: max(a.dot(n), b.dot(n)) + 8, value: d.value)
+            }
+        }
         // Round holes and bosses seen end-on from above: their diameters.
         // Centre lines: a cross on every circle seen end-on in the top view.
         let circles = model.circles(for: top)
