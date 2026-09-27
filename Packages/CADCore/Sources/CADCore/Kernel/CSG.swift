@@ -379,7 +379,53 @@ public extension CSGSolid {
                 for k in 0..<ids.count { addTriangle(&mesh, &triangleFace, ci, ids[k], ids[(k + 1) % ids.count], face) }
             }
         }
-        return Self.removingZeroVolumeFins(mesh, triangleFace)
+        let (clean, cleanFaces) = Self.removingZeroVolumeFins(mesh, triangleFace)
+        return Self.closingPinholes(clean, cleanFaces)
+    }
+
+    /// A boolean can drop a sliver piece a hundredth of a millimetre across (a tool grazing a
+    /// curved surface, as a round's border does): the mesh is left with a pinhole. Holes that
+    /// small — a triangle under 0.5 mm around or a sliver thinner than 0.01 mm (closed exactly by
+    /// its own triangle), a loop of at most 8 edges under 0.1 mm — are closed with a fan; anything
+    /// larger stays open, a real defect to be seen.
+    private static func closingPinholes(_ mesh: Mesh, _ faces: [Int]) -> (mesh: Mesh, triangleFace: [Int]) {
+        struct E: Hashable { let a: UInt32, b: UInt32 }
+        var owner: [E: Int] = [:]
+        for t in 0..<mesh.triangleCount {
+            for k in 0..<3 { owner[E(a: mesh.indices[t * 3 + k], b: mesh.indices[t * 3 + (k + 1) % 3])] = t }
+        }
+        var next: [UInt32: [UInt32]] = [:]
+        var open: [E] = []
+        for e in owner.keys where owner[E(a: e.b, b: e.a)] == nil { next[e.a, default: []].append(e.b); open.append(e) }
+        guard !open.isEmpty, open.count <= 64 else { return (mesh, faces) }
+        var out = mesh, outFaces = faces
+        var used = Set<E>()
+        for start in open.sorted(by: { ($0.a, $0.b) < ($1.a, $1.b) }) where !used.contains(start) {
+            var loop = [start.a], at = start.b, perimeter = (mesh.vertices[Int(start.b)] - mesh.vertices[Int(start.a)]).length
+            var edges = [start]
+            while at != start.a, loop.count <= 8, let nexts = next[at], nexts.count == 1 {
+                let e = E(a: at, b: nexts[0])
+                edges.append(e); loop.append(at)
+                perimeter += (mesh.vertices[Int(e.b)] - mesh.vertices[Int(e.a)]).length
+                at = nexts[0]
+            }
+            guard at == start.a, loop.count >= 3, loop.count <= 8 else { continue }
+            if loop.count == 3 {
+                // A triangle: small, or a sliver (thinner than 0.01 mm) up to 2 mm around.
+                let p = loop.map { mesh.vertices[Int($0)] }
+                let twiceArea = (p[1] - p[0]).cross(p[2] - p[0]).length
+                let longest = max((p[1] - p[0]).length, (p[2] - p[1]).length, (p[0] - p[2]).length)
+                guard perimeter < 0.5 || (perimeter < 2 && twiceArea / max(longest, 1e-12) < 0.01) else { continue }
+            } else if perimeter >= 0.1 { continue }
+            used.formUnion(edges)
+            // The hole is traced along its neighbours' edges: the patch runs the other way.
+            let face = faces[owner[start]!]
+            for k in 1..<(loop.count - 1) {
+                out.indices += [loop[0], loop[k + 1], loop[k]]
+                outFaces.append(face)
+            }
+        }
+        return (out, outFaces)
     }
 
     /// Welding can turn two tiny BSP fragments into the same triangle with opposite winding:

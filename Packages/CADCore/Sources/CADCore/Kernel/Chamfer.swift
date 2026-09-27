@@ -187,6 +187,8 @@ public enum ChamferGeometry {
             // Circular edges where a bevel's cone meets a plane, a wall or another cone (rounds on
             // rounds): the same corner profile turned around their common axis.
             if let tool = try revolved(edge, a: fa, b: fb, spec: spec, snapshot: snapshot, prefix: prefix) { return tool }
+            // Any other closed edge between exact surfaces (a cross hole's mouth): the swept ring.
+            if let tool = try swept(edge, a: fa, b: fb, spec: spec, snapshot: snapshot, prefix: prefix) { return tool }
             throw KernelError.invalidParameter("smusso: supportati spigoli tra facce piane, cilindri e coni con lo stesso asse")
         }
     }
@@ -1010,6 +1012,8 @@ public enum ChamferGeometry {
     // MARK: Helpers
 
     /// Makes the polygons face outward (positive volume).
+    static func orientedSolid(_ polys: [CSGSolid.Polygon], _ faces: [CSGFace]) -> CSGSolid { oriented(polys, faces) }
+
     private static func oriented(_ polys: [CSGSolid.Polygon], _ faces: [CSGFace]) -> CSGSolid {
         var volume = 0.0
         let o = polys.first?.vertices.first ?? .zero

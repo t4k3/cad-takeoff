@@ -677,7 +677,9 @@ public enum DesignEvaluator {
         }
         var edges: [EdgeInfo] = []
         for (pair, segments) in byPair.sorted(by: { $0.key.lexicographicallyPrecedes($1.key) }) {
-            for (n, chain) in chains(segments).enumerated() {
+            // Sorted: the dictionary above hands them in a different order every run, and the
+            // chains (start, direction, «#n» of two rims between the same faces) must not change.
+            for (n, chain) in chains(segments.sorted { ($0.0, $0.1) < ($1.0, $1.1) }).enumerated() {
                 let ids = pair.map { faces[$0].id }
                 let id = EdgeID(rawValue: ids.map(\.rawValue).joined(separator: "|") + "#\(n)")
                 let polyline = chain.map { mesh.vertices[Int($0)] }

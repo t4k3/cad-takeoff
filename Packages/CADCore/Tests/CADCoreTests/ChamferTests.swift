@@ -280,3 +280,45 @@ private func roundArea(_ r: Double, _ n: Int = 16) -> Double { r * r - Double(n)
     }
     _ = snap
 }
+
+@Test func roundsAndChamfersOnACrossHoleMouth() throws {
+    // A shaft Ø20 cross-drilled Ø6: the hole's mouths are curves between two cylinders (not
+    // circles). Rounds and chamfers on them: the ball rolled on the true surfaces, closed solids.
+    let shaft = Feature(name: "Albero", kind: .cylinder(radius: 10, height: 40))
+    let cross = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(-15, 0, 20)], direction: Vec3(1, 0, 0), fit: .manual, diameter: 6)), operation: .cut)
+    let base = DesignEvaluator.evaluate(CADDocument(features: [shaft, cross]), revision: "a").bodies[0]
+    let mouths = base.snapshot.edges.filter { e in e.faces.contains { $0.rawValue.contains("bore") } }
+    #expect(mouths.count == 2)
+    var removed: [String: Double] = [:]
+    for profile in [ChamferSpec.Profile.round, .flat] {
+        for size in [0.5, 1.0] {
+            let spec = ChamferSpec(edges: mouths.compactMap(EdgeRef.init), profile: profile, distance: size)
+            let r = DesignEvaluator.evaluate(CADDocument(features: [shaft, cross, Feature(name: "R", kind: .chamfer(spec))]), revision: "\(profile)\(size)")
+            #expect(r.issues.isEmpty, "\(profile) \(size): \(r.issues)")
+            let body = try #require(r.bodies.first)
+            #expect(MeshValidator.validate(body.mesh).isWatertight, "\(profile) \(size): closed")
+            let gone = base.mesh.volume - body.mesh.volume
+            // About the section (r²(1 − π/4) round, d²/2 chamfer at a right angle) times the two
+            // mouths' length (~2 × 20 mm), the angle between the walls varying around them.
+            let section = profile == .round ? size * size * (1 - .pi / 4) : size * size / 2
+            #expect(gone > section * 40 * 0.5 && gone < section * 40 * 2.5, "\(profile) \(size): \(gone) mm³ removed")
+            removed["\(profile)\(size)"] = gone
+        }
+    }
+    // Twice the size, about four times the material.
+    #expect(abs(removed["round1.0"]! / removed["round0.5"]! - 4) < 1)
+}
+
+@Test func edgeChainsAreTheSameEveryRun() throws {
+    // Two mouths between the same two faces: their order and starting points must not depend on
+    // how a dictionary happens to be ordered (they were renumbered from run to run).
+    let shaft = Feature(name: "Albero", kind: .cylinder(radius: 10, height: 40))
+    let cross = Feature(name: "Foro", kind: .hole(HoleSpec(centers: [Vec3(-15, 0, 20)], direction: Vec3(1, 0, 0), fit: .manual, diameter: 6)), operation: .cut)
+    let edges = DesignEvaluator.evaluate(CADDocument(features: [shaft, cross]), revision: "e").bodies[0].snapshot.edges
+    let mouths = edges.filter { e in e.faces.contains { $0.rawValue.contains("bore") } }
+    #expect(mouths.count == 2 && mouths[0].polyline.first!.x < 0 && mouths[1].polyline.first!.x > 0
+            || mouths.count == 2 && mouths[0].polyline.first!.x > 0 && mouths[1].polyline.first!.x < 0)
+    // The same evaluation again gives exactly the same chains.
+    let again = DesignEvaluator.evaluate(CADDocument(features: [shaft, cross]), revision: "e2").bodies[0].snapshot.edges
+    #expect(again.map(\.id) == edges.map(\.id) && again.map(\.polyline) == edges.map(\.polyline))
+}

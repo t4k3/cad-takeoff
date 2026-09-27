@@ -118,6 +118,17 @@ erano tra i due angoli dello spigolo; le facce piane si ricostruiscono dal conto
 una sola faccia aperta la cavità prende pareti e tappo dell'apertura sullo stesso contorno (un
 solo solido, niente facce complanari da unire), e le giunzioni a T non fanno più pareti fasulle.
 
+**27/09 — raccordi e smussi su spigoli curvi qualsiasi.** Sugli spigoli chiusi tra due superfici
+esatte che non sono né rette né cerchi (la bocca di un foro trasversale, due cilindri che si
+incrociano) la sfera del raccordo rotola sulle superfici vere: a ogni punto dello spigolo il suo
+centro si trova con Newton a distanza r da entrambe, nel piano trasversale; i piedi sono i bordi
+del raccordo; lo smusso a distanze uguali usa la sfera di raggio d·tan(α/2), che tocca le facce a d
+dallo spigolo. La sezione spazzata diventa un anello sottratto. Resi robusti lungo la strada: gli
+spigoli si concatenano sempre uguali (l'ordine di un dizionario li cambiava da un avvio all'altro)
+e i fori minuscoli che una booleana può lasciare dove l'utensile sfiora le faccette si chiudono
+(triangoli sotto 0,5 mm o più sottili di 0,01 mm). Da fare: angoli interni (materiale aggiunto) e
+spigoli aperti su superfici curve.
+
 Raccordo a sfera rotolante sulle coppie analitiche (piano–piano, piano–cilindro, cilindro–
 cilindro coassiale), smusso per distanze sulle superfici, guscio per superfici offset.
 
