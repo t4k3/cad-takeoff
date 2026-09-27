@@ -62,6 +62,10 @@ struct MetalViewport: NSViewRepresentable {
         if view.viewCursor !== cursor {
             view.viewCursor = cursor
             view.window?.invalidateCursorRects(for: view)
+            // Under the mouse already: change it now.
+            if let window = view.window, view.bounds.contains(view.convert(window.mouseLocationOutsideOfEventStream, from: nil)) {
+                (cursor ?? .arrow).set()
+            }
         }
         guard let r = view.renderer else { return }
         r.update(features: features, snapshot: snapshot)
@@ -97,7 +101,8 @@ final class CADMetalView: MTKView {
 
     override func resetCursorRects() {
         super.resetCursorRects()
-        if let viewCursor { addCursorRect(bounds, cursor: viewCursor) }
+        // Always a rect, so going back to the arrow happens at once (not on the next exit/enter).
+        addCursorRect(bounds, cursor: viewCursor ?? .arrow)
     }
 
     private var dragStart: CGPoint?

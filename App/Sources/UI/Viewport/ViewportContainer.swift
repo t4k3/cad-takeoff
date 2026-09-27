@@ -189,7 +189,7 @@ struct ViewportContainer: View {
                   highlightLines: geoHighlight.lines,
                   gizmos: workspace.manipulator.map { [$0.mesh(length: arrowLength)] } ?? [],
                   section: workspace.sectionPlane,
-                  cursor: workspace.sketch != nil || workspace.holePlacement != nil || workspace.pickingSketchPlane ? .crosshair : nil,
+                  cursor: viewportCursor,
                   onClick: handleClick,
                   onHover: handleHover,
                   onDragBegin: dragBegin,
@@ -208,6 +208,19 @@ struct ViewportContainer: View {
                       viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
                       DispatchQueue.main.async { viewport.fitOnce() }
                   })
+    }
+
+    /// Pointer over the viewport: the crosshair only where a click places a point (drawing tools,
+    /// hole centres, a plane by 3 points); the arrow wherever a click picks something (Seleziona,
+    /// constraints and dimensions, trim, the face to sketch on, the areas to extrude…).
+    private var viewportCursor: NSCursor? {
+        if workspace.pickingSketchPlane { return workspace.planePickMode == .points ? .crosshair : nil }
+        if workspace.holePlacement != nil { return .crosshair }
+        if let sketch = workspace.sketch {
+            guard sketch.constraintTool == nil, !sketch.pickingRegions, workspace.command == nil else { return nil }
+            return sketch.placesPoints ? .crosshair : nil
+        }
+        return nil
     }
 
     /// Command preview, flat patterns (LAMIERA › Sviluppo) or the design.

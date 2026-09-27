@@ -118,6 +118,8 @@ final class SketchSession {
         }
     }
     var selection: SketchShape.ID?
+    /// A click places a point (drawing tools), rather than picking something already there.
+    var placesPoints: Bool { constraintTool == nil && Tool.drawing.contains(tool) && tool != .select }
     private(set) var pending: [Vec2] = []
     private(set) var cursor: Vec2?
     private(set) var cursorScreen: CGPoint?
@@ -791,13 +793,13 @@ final class SketchSession {
         }
         out += editOverlay(sketchColor: sketchColor, selectedColor: selectedColor)
         // Midpoints of the segments near the cursor light up (then snap when closer).
-        if let raw = rawCursor, tool != .select {
+        if let raw = rawCursor, placesPoints {
             let faint = SIMD4<Float>(1, 0.62, 0.25, 0.55)
             for (a, b) in segments where distanceToSegment(raw, a, b) < vertexSnap * 3 {
                 out += glyph(Vec2((a.x + b.x) / 2, (a.y + b.y) / 2), .midpoint, size: vertexSnap * 0.45, color: faint)
             }
         }
-        if let c = cursor, tool != .select {
+        if let c = cursor, placesPoints {
             let snapColor = SIMD4<Float>(1, 0.62, 0.2, 1)
             out += cross(c, size: vertexSnap * 1.6, color: snapped == nil ? sketchColor : snapColor)
             if let s = snapped { out += glyph(s.point, s.kind, size: vertexSnap * 0.6, color: snapColor) }

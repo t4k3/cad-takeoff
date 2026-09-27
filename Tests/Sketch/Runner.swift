@@ -93,6 +93,17 @@ struct SketchTests {
         face.hover(at(31.2, 0), screen: nil)
         check(face.snapped?.kind == .midpoint, "il punto medio si prende anche stando sulla linea")
 
+        // Crosshair only where a click places a point; the arrow where it picks something.
+        let tools = SketchSession(sketch: Sketch(name: "Puntatore"))
+        for t in [SketchSession.Tool.line, .rectangle, .circle, .polygon, .slot, .arc, .spline] {
+            tools.tool = t; check(tools.placesPoints, "\(t.rawValue): crocetta")
+        }
+        for t in [SketchSession.Tool.select, .fillet, .chamfer, .trim, .extend, .offset, .mirror, .dimension] {
+            tools.tool = t; check(!tools.placesPoints, "\(t.rawValue): freccia")
+        }
+        tools.constraintTool = .parallel
+        check(!tools.placesPoints, "vincolo: freccia")
+
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
         print("OK: schizzo — agganci e fine linea")
     }
