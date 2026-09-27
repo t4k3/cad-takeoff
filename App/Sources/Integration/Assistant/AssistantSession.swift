@@ -39,7 +39,13 @@ final class AssistantSession {
     @ObservationIgnored weak var tools: CADToolProvider?
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    init(providers: [AssistantProvider]) { self.providers = providers }
+    init(providers: [AssistantProvider]) {
+        self.providers = providers
+        // Nothing set up for the first one: start on one that works (e.g. Apple's model on the Mac).
+        if let first = providers.first, !first.isConfigured, let ready = providers.firstIndex(where: \.isConfigured) {
+            providerIndex = ready
+        }
+    }
 
     var provider: AssistantProvider { providers[providerIndex] }
 
@@ -88,6 +94,24 @@ final class AssistantSession {
         }
         entries.append(Entry(kind: .user(text)))
         provider.addUserMessage(text)
+        // Apple's on-device model calls the tools inside its own turn: through the same execution
+        // (shown in the conversation, undoable), started here.
+        if let apple = provider as? AppleIntelligenceProvider {
+            apple.executor = { [weak self] name, arguments in
+                guard let self else { return .error("Assistente chiuso.") }
+                // Its tools have no `expected_revision` (one argument less to get wrong): a write
+                // runs on the revision the design has when the model calls it.
+                var arguments = arguments
+                if case var .object(o) = arguments, o["expected_revision"] == nil,
+                   self.tools?.tools.first(where: { $0.name == name })?.isReadOnly == false, let revision = self.tools?.designRevision {
+                    o["expected_revision"] = .string(revision); arguments = .object(o)
+                }
+                let call = ToolCallRequest(id: UUID().uuidString, name: name, arguments: arguments, rawArguments: arguments.jsonString)
+                let title = self.tools?.tools.first { $0.name == name }?.title ?? name
+                self.entries.append(Entry(kind: .tool(ToolRun(id: call.id, name: name, title: title, status: .running))))
+                return await self.execute(call)
+            }
+        }
         isRunning = true
         task = Task { [weak self] in
             await self?.loop()

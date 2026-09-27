@@ -98,4 +98,6 @@ struct ToolResult: Sendable, Equatable {
 protocol CADToolProvider: AnyObject {
     var tools: [ToolSpec] { get }
     func call(_ name: String, arguments: JSONValue) async -> ToolResult
+    /// The design's current revision (what `expected_revision` must match).
+    var designRevision: String { get }
 }

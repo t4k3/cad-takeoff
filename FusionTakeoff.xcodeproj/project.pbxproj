@@ -28,6 +28,7 @@
 		363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */; };
 		36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */; };
 		373A61520DDA32DF06C8685D /* CircuitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5F02CE2EF0AEDD8D86251 /* CircuitModel.swift */; };
+		374D3487F7C1E42058D55966 /* AppleIntelligenceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C69E2616D246AEA66F7ECC38 /* AppleIntelligenceProvider.swift */; };
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
 		3AC54D45E3D318B30B845B0B /* ProjectLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */; };
 		3B556AEB2AA490F04E2ACC8F /* MoveCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = D067A2E9C4BB917828D77F92 /* MoveCommand.swift */; };
@@ -181,6 +182,7 @@
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
 		BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaderSource.swift; sourceTree = "<group>"; };
 		BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FusionTakeoff.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C69E2616D246AEA66F7ECC38 /* AppleIntelligenceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligenceProvider.swift; sourceTree = "<group>"; };
 		C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Files.swift"; sourceTree = "<group>"; };
 		CA251AD54A99FF5A9A16C764 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		CE04E5C771D6558145AEF42B /* OpenAIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIProvider.swift; sourceTree = "<group>"; };
@@ -485,6 +487,7 @@
 			isa = PBXGroup;
 			children = (
 				0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */,
+				C69E2616D246AEA66F7ECC38 /* AppleIntelligenceProvider.swift */,
 				FBE73A74E138A56A42C4B126 /* AssistantProvider.swift */,
 				DA831E610F555E8A4BC81923 /* AssistantSession.swift */,
 				BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */,
@@ -723,6 +726,7 @@
 			files = (
 				8D308AF90188E787036E54E3 /* AnthropicStream.swift in Sources */,
 				6A10CC336BAEA35811826D10 /* AppVersion.swift in Sources */,
+				374D3487F7C1E42058D55966 /* AppleIntelligenceProvider.swift in Sources */,
 				A56B13EBDA846ABD85D547EE /* AssemblySheets.swift in Sources */,
 				D13A88B158259CB5CBCA9E6E /* AssistantPanel.swift in Sources */,
 				A356F40BEC0C7A4C5B4C19F1 /* AssistantProvider.swift in Sources */,
@@ -892,7 +896,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -956,7 +960,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

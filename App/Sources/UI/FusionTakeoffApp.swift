@@ -8,7 +8,7 @@ struct FusionTakeoffApp: App {
     @State private var library = ProjectLibrary()
     @State private var sketches = SketchStore()
     @State private var circuits = CircuitModel()
-    @State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider()])
+    @State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider(), AppleIntelligenceProvider()])
 
     var body: some Scene {
         WindowGroup("CAD Takeoff") {
