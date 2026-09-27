@@ -123,6 +123,13 @@ final class WorkspaceState {
         command = SplitCommand.start(workspace: self, model: model)
     }
 
+    func startExplode(model: DesignModel) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        let session = ExplodeCommand.start(workspace: self, model: model)
+        command = session
+        session.onPreview(session.fields)
+    }
     func startJoint(model: DesignModel) {
         command?.onCancel()
         if sketch != nil { exitSketch() }

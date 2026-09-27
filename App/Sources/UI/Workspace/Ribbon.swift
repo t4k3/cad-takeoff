@@ -47,16 +47,19 @@ struct Ribbon: View {
             .frame(height: Theme.Metrics.tabBarHeight)
             .background(Theme.Palette.panel)
 
-            HStack(alignment: .top, spacing: 0) {
-                switch workspace.tab {
-                case .solid: solidTools
-                case .sketch: sketchTools
-                case .sheetMetal: sheetMetalTools
-                case .print: printTools
+            // Scrolls sideways when the window is narrower than the tools (no bar shown).
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 0) {
+                    switch workspace.tab {
+                    case .solid: solidTools
+                    case .sketch: sketchTools
+                    case .sheetMetal: sheetMetalTools
+                    case .print: printTools
+                    }
+                    Spacer(minLength: 0)
                 }
-                Spacer()
+                .padding(.horizontal, 8)
             }
-            .padding(.horizontal, 8)
             .frame(height: Theme.Metrics.ribbonHeight - Theme.Metrics.tabBarHeight)
             .background(Theme.Palette.ribbon)
         }
@@ -83,6 +86,9 @@ struct Ribbon: View {
             Button { workspace.startJoint(model: model) } label: { Label("Giunto", systemImage: "link") }
                 .disabled(model.document.features.count < 2)
                 .help("Unisci due pezzi: clicca il bordo del foro o dell'albero sul pezzo che si muove, poi dove va; rigido, rotazione o scorrimento")
+            Button { workspace.startExplode(model: model) } label: { Label("Esplosa", systemImage: "arrow.up.left.and.arrow.down.right") }
+                .disabled(model.document.features.count < 2)
+                .help("Vista esplosa: i pezzi si allontanano dal centro dell'assieme (solo vista, il disegno non cambia)")
             Button { workspace.showInterference = true } label: { Label("Interferenze", systemImage: "exclamationmark.triangle") }
                 .disabled(model.document.features.count < 2)
                 .help("Controlla quali corpi e componenti si compenetrano, e di quanto")

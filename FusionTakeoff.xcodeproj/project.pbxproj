@@ -30,6 +30,7 @@
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
 		3AC54D45E3D318B30B845B0B /* ProjectLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */; };
 		3B556AEB2AA490F04E2ACC8F /* MoveCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = D067A2E9C4BB917828D77F92 /* MoveCommand.swift */; };
+		3F353536F6FC56921AE033E2 /* ExplodeCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B64F683EF67CA5B65DCDA84 /* ExplodeCommand.swift */; };
 		3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */; };
 		479BA7F0547BB800519289F5 /* AssistantSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */; };
 		4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */; };
@@ -117,6 +118,7 @@
 		00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionTakeoffApp.swift; sourceTree = "<group>"; };
 		01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTConnector.swift; sourceTree = "<group>"; };
 		069D2799753CD573213F79CB /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersion.swift; sourceTree = "<group>"; };
+		0B64F683EF67CA5B65DCDA84 /* ExplodeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplodeCommand.swift; sourceTree = "<group>"; };
 		0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStream.swift; sourceTree = "<group>"; };
 		0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIConversation.swift; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
@@ -344,6 +346,7 @@
 			children = (
 				F565E8DD894590B674296FD8 /* ChamferCommand.swift */,
 				14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */,
+				0B64F683EF67CA5B65DCDA84 /* ExplodeCommand.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
 				54EE962FA7CFBEA7427A80E8 /* JointCommand.swift */,
 				D067A2E9C4BB917828D77F92 /* MoveCommand.swift */,
@@ -699,6 +702,7 @@
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */,
 				F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */,
+				3F353536F6FC56921AE033E2 /* ExplodeCommand.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */,
 				78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */,
@@ -841,7 +845,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.128;
+				MARKETING_VERSION = 0.1.129;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -904,7 +908,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.128;
+				MARKETING_VERSION = 0.1.129;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
