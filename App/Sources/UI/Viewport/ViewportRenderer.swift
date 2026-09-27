@@ -292,14 +292,14 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
                 enc.setVertexBuffer(buf, offset: 0, index: 0)
                 enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: tris.count)
             }
-            drawThick(highlightLines, width: 3.5, view: view, encoder: enc)
+            drawThick(highlightLines, width: 2, view: view, encoder: enc)   // the colour marks it, not the width
             enc.setDepthBias(0, slopeScale: 0, clamp: 0)
         }
         if !overlayLines.isEmpty {
             var none = DrawUniforms(color: .zero)
             enc.setFragmentBytes(&none, length: MemoryLayout<DrawUniforms>.stride, index: 2)
             enc.setDepthStencilState(depthAlways)
-            drawThick(overlayLines, width: 2.2, view: view, encoder: enc)
+            drawThick(overlayLines, width: 1.5, view: view, encoder: enc)
         }
         if !gizmos.isEmpty {
             enc.setRenderPipelineState(gizmoPipeline)
