@@ -430,6 +430,54 @@ struct CircuitTests {
         catch { check(CircuitModel.describe(error).contains("non è un circuito") && sc.design == before, "JSON che non è un circuito: detto in italiano (\(CircuitModel.describe(error)))") }
         try? FileManager.default.removeItem(at: notCircuit)
 
+        // OPEN while other things happen, with a reader that waits until told to go on.
+        let gate = ReadGate()
+        let slow = CircuitModel()
+        slow.report = { last = $0 }
+        slow.readFile = { url in await gate.wait(url); return try Data(contentsOf: url) }
+        try slow.newCircuit()
+        // An edit while the file is being read wins: nothing replaced, the edit kept.
+        async let openDuringEdit: Void = slow.open(outS2)
+        await gate.arrived(outS2)
+        slow.setBoard(width: 70, height: 40, thickness: 1.6)
+        let edited = slow.document
+        await gate.release(outS2)
+        do { try await openDuringEdit; check(false, "apertura sopra una modifica?") }
+        catch { check(slow.document == edited && slow.isDirty && CircuitModel.describe(error).contains("è cambiato"), "modifica durante l'apertura conservata") }
+        // Two opens: the latest request wins even if it finishes first; the older ends quietly.
+        async let older: Void = slow.open(outS2)
+        await gate.arrived(outS2)
+        async let newer: Void = slow.open(fixture)
+        await gate.arrived(fixture)
+        await gate.release(fixture)
+        try await newer
+        let latest = slow.document
+        await gate.release(outS2)
+        do { try await older; check(false, "apertura superata installata?") }
+        catch { check((error as? CircuitEditError)?.isSuperseded == true && slow.document == latest, "vince l'ultima richiesta, la vecchia tace") }
+        // Starting a drawing while reading: the open gives way, the drawing stays.
+        async let openUnderDraft: Void = slow.open(outS2)
+        await slow.pcbReady()
+        await gate.arrived(outS2)
+        slow.canvas = .board
+        slow.tool = .keepout
+        await slow.keepoutClick(at: PCBPoint(2, 2), tolerance: 0.01)
+        let drawn = slow.document
+        await gate.release(outS2)
+        do { try await openUnderDraft; check(false, "apertura sopra una bozza?") }
+        catch { check(slow.keepoutDraft != nil && slow.document == drawn && (error as? CircuitEditError)?.isSuperseded == true, "bozza iniziata durante l'apertura conservata") }
+        slow.keepoutDraft = nil
+        slow.tool = .select
+
+        // Cancelled while reading: nothing installed.
+        let before2 = slow.document
+        let cancelledOpen = Task { try await slow.open(outS2) }
+        await gate.arrived(outS2)
+        cancelledOpen.cancel()
+        await gate.release(outS2)
+        _ = await cancelledOpen.result
+        check(slow.document == before2, "apertura annullata: nulla installato")
+
         // Another document with the same revision: nothing of the previous drawings, route or selection.
         let two = CircuitModel()
         try two.newCircuit(name: "Primo")
@@ -450,4 +498,26 @@ struct CircuitTests {
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
         print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, piani di rame, annulla, salva e riapri")
     }
+}
+
+/// A file reader that stops at each file until the test lets it go on (keyed by the standardized
+/// path: a relative file URL and the same file resolved are different URLs).
+actor ReadGate {
+    private var waiting: [String: CheckedContinuation<Void, Never>] = [:]
+    private var arrivals: [String: [CheckedContinuation<Void, Never>]] = [:]
+    private func key(_ url: URL) -> String { url.standardizedFileURL.path }
+    func wait(_ url: URL) async {
+        let k = key(url)
+        await withCheckedContinuation { c in
+            waiting[k] = c
+            arrivals.removeValue(forKey: k)?.forEach { $0.resume() }
+        }
+    }
+    /// Until a read of `url` is waiting.
+    func arrived(_ url: URL) async {
+        let k = key(url)
+        if waiting[k] != nil { return }
+        await withCheckedContinuation { c in arrivals[k, default: []].append(c) }
+    }
+    func release(_ url: URL) { waiting.removeValue(forKey: key(url))?.resume() }
 }

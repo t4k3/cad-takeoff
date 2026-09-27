@@ -69,6 +69,7 @@ extension CircuitModel {
     /// stays (a copy of a file has the same design and revision).
     func forgetDrawings() {
         documentEpoch += 1
+        openRequest = nil   // an open still reading is overtaken
         pcbTask?.cancel(); pcb = nil
         routeCheckTask?.cancel(); route = nil; routeCheck = nil
         copperSelection = nil; issueMark = nil; activeLayer = 0
@@ -120,6 +121,7 @@ extension CircuitModel {
     }
 
     private func startRoute(at p: PCBPoint, tolerance: Double, in snapshot: PCBSnapshot) {
+        yieldOpen()
         // The layer being drawn on first (where top and bottom copper cross, the one in view).
         let onLayer = snapshot.pick(point: p, tolerance: tolerance, layer: activeLayer)
         let hits = onLayer.contains { $0.netID != nil } ? onLayer : snapshot.pick(point: p, tolerance: tolerance)

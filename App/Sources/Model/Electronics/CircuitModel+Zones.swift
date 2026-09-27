@@ -41,6 +41,7 @@ extension CircuitModel {
     func zoneClick(at p: PCBPoint, tolerance: Double) async {
         guard !pcbBusy else { return }
         let q = keepoutPoint(near: p, tolerance: tolerance)
+        if zoneDraft == nil && keepoutDraft == nil { yieldOpen() }
         var d = zoneDraft ?? ZoneDraft(baseRevision: document?.revision ?? 0, name: "Piano di rame \(zones.count + 1)",
                                        netID: nil, layer: activeLayer, removeIslands: zoneRemoveIslands)
         if d.points.isEmpty {

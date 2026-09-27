@@ -80,6 +80,12 @@ final class CircuitModel {
     var zoneDraft: ZoneDraft?
     var zoneSelection: UUID?
     @ObservationIgnored var lastZoneNet: UUID?
+    /// The latest open request (only it may install its circuit), and how files are read (tests
+    /// read with a delay they control).
+    @ObservationIgnored var openRequest: UUID?
+    @ObservationIgnored var readFile: @Sendable (URL) async throws -> Data = { url in
+        try await Task.detached(priority: .userInitiated) { try Data(contentsOf: url) }.value
+    }
     /// A copper change is being applied (runPCB): its token and its work.
     private(set) var pcbBusy = false
     @ObservationIgnored private(set) var pcbOperation: UUID?
@@ -120,29 +126,57 @@ final class CircuitModel {
 
     // MARK: Files
 
-    /// Reads and checks the file (its whole history) off the main thread; the open circuit
-    /// changes only if that succeeds, and only if nothing else was opened meanwhile.
+    /// Reads and checks the file (its whole history) off the main thread. The open circuit
+    /// changes only if this is still the latest request, it was not cancelled, and the circuit
+    /// is the same one at the same revision as when the request started (an edit meanwhile wins:
+    /// nothing is overwritten). A request overtaken by a later one ends quietly (`superseded`).
     func open(_ given: URL) async throws {
         // A file reference (from the open panel) as its path: a save replaces the file, and a
         // reference to the old one no longer resolves.
         let url = (given as NSURL).filePathURL ?? given
-        let epoch = documentEpoch
-        let doc = try await Self.offMain { () -> Result<ElectronicsDocument, CircuitEditError> in
-            let data: Data
-            do { data = try Data(contentsOf: url) } catch { return .failure(CircuitEditError(Self.readFailure(url, error))) }
+        let name = url.deletingPathExtension().lastPathComponent
+        let request = UUID()
+        openRequest = request
+        defer { if openRequest == request { openRequest = nil } }
+        let epoch = documentEpoch, revision = document?.revision, designID = document?.design.id
+        /// Still this request's to install (or to report its failure): latest, not cancelled,
+        /// the same circuit at the same revision.
+        func stillMine() throws {
+            guard openRequest == request, !Task.isCancelled else { throw CircuitEditError.superseded }
+            guard documentEpoch == epoch, document?.revision == revision, document?.design.id == designID else {
+                throw CircuitEditError("Il circuito è cambiato mentre si apriva «\(name)»: niente è stato sostituito, riprova.")
+            }
+        }
+        let read = readFile
+        let data: Data
+        do { data = try await read(url) } catch {
+            try stillMine()
+            throw CircuitEditError(Self.readFailure(url, error))
+        }
+        let decoded = await Self.offMain { () -> Result<ElectronicsDocument, CircuitEditError> in
             do { return .success(try ElectronicsDocument.decode(data)) } catch is DecodingError {
                 // Another JSON (the panel shows .json too): not a circuit, said so.
-                return .failure(CircuitEditError("«\(url.deletingPathExtension().lastPathComponent)» non è un circuito di CAD Takeoff (.ftkc): scegli un file di circuito."))
+                return .failure(CircuitEditError("«\(name)» non è un circuito di CAD Takeoff (.ftkc): scegli un file di circuito."))
             } catch {
                 return .failure(CircuitEditError(Self.describe(error)))
             }
-        }.get()
-        guard documentEpoch == epoch else { throw CircuitEditError("Nel frattempo è stato aperto un altro circuito.") }
+        }
+        try stillMine()
+        let doc = try decoded.get()
         forgetDrawings()
         document = doc; self.url = url; isDirty = false
         refresh()
-        report("Aperto \(url.deletingPathExtension().lastPathComponent) — \(summary)")
+        report("Aperto \(name) — \(summary)")
     }
+
+    /// Starting to draw (a route, an area, a plane) while a file is being opened: the open
+    /// gives way, said so — it would otherwise replace the circuit under the new drawing.
+    func yieldOpen() {
+        guard openRequest != nil else { return }
+        openRequest = nil
+        report("Apertura annullata: hai iniziato a disegnare sul circuito aperto.")
+    }
+
 
     /// A new, empty circuit: a 50 × 30 mm board, no components yet (the engine's empty document).
     func newCircuit(name: String = "Nuovo circuito") throws {
@@ -169,7 +203,9 @@ final class CircuitModel {
         // From the current circuit's folder: its listing is read again (after a save the file is a new one).
         if let url { panel.directoryURL = url.deletingLastPathComponent() }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        Task { do { try await open(url) } catch { report("Circuito non aperto: \(Self.describe(error))") } }
+        Task {
+            do { try await open(url) } catch let e as CircuitEditError where e.isSuperseded {} catch { report("Circuito non aperto: \(Self.describe(error))") }
+        }
     }
 
     func saveWithPanel(asNew: Bool = false) {
@@ -189,7 +225,7 @@ final class CircuitModel {
             do {
                 try await open(url)
                 self.url = nil   // a copy: «Salva» asks where
-            } catch { report("Esempio non aperto: \(Self.describe(error))") }
+            } catch let e as CircuitEditError where e.isSuperseded {} catch { report("Esempio non aperto: \(Self.describe(error))") }
         }
     }
 
@@ -789,5 +825,8 @@ extension CircuitModel: LocalUndoTarget {
 /// ElectronicsFailure).
 struct CircuitEditError: Error, Sendable {
     let message: String
+    var isSuperseded = false
     init(_ message: String) { self.message = message }
+    /// An open overtaken by a later one (or cancelled): nothing to tell.
+    static let superseded: CircuitEditError = { var e = CircuitEditError("Apertura sostituita da una più recente."); e.isSuperseded = true; return e }()
 }
