@@ -175,3 +175,65 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     let decoded = try JSONDecoder().decode(SheetMetalSpec.self, from: JSONEncoder().encode(SheetMetalSpec()))
     #expect(decoded.cornerStyle == .open && decoded.gap == 0.2)
 }
+
+@Test func cChannelLipsFromOutsideDimensions() throws {
+    // C channel: 40 deep, 30 tall walls with 10 mm inward lips, all outside dimensions.
+    let lip = SheetLip(length: 10)
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, width: 60, depth: 40,
+                              flanges: [.front: SheetFlange(length: 30, lip: lip), .back: SheetFlange(length: 30, lip: lip)])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID())
+    let r = 2.6, t = 2.0, k = build.rule.kFactor
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    let b = mesh.bounds!
+    #expect(abs(b.min.y + 20) < 1e-9 && abs(b.max.y - 20) < 1e-9 && abs(b.max.z - 30) < 1e-9 && abs(b.min.z) < 1e-9)
+    // The lips' tips stand 10 in from the outside faces.
+    #expect(mesh.vertices.contains { abs($0.y - (-20 + 10)) < 1e-9 && $0.z > 25 })
+    // Each wall: plate-side setback, lip-side setback; each lip one setback.
+    let setback = r + t, plate = 40 - 2 * setback, wall = 30 - 2 * setback, tip = 10 - setback
+    let volume = 60 * (plate * t + 4 * bendSection(r, t, .pi / 2, 16) + 2 * (wall + tip) * t)
+    #expect(abs(mesh.volume - volume) < 1e-6)
+    let allowance = .pi / 2 * (r + k * t)
+    #expect(abs(build.flat.area - 60 * (plate + 4 * allowance + 2 * (wall + tip))) < 1e-9)
+    // Four bends, all up (the lips curl on the same way), the lips' beyond the walls'.
+    #expect(build.flat.bends.count == 4 && build.flat.bends.allSatisfy { $0.direction == .up && $0.angle == 90 })
+    let front = build.flat.bends.filter { $0.edge == .front }.map(\.line.0.y).sorted()
+    #expect(front.count == 2 && abs(front[1] - front[0] - (allowance / 2 + wall + allowance / 2)) < 1e-9)
+}
+
+@Test func zLipAndHemFoldTheOtherWay() throws {
+    let spec = SheetMetalSpec(material: "dc01", thickness: 1.5, width: 50, depth: 40,
+                              flanges: [.front: SheetFlange(length: 25, lip: SheetLip(length: 12, inward: false)),
+                                        .back: SheetFlange(length: 25, lip: SheetLip(length: 8, angle: 180))])
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID())
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    // The Z lip turns outwards: 12 from the wall's far face (outside of its bend), so 12 − t past
+    // the part's outside; the hem folds back inside the wall.
+    let b = mesh.bounds!
+    #expect(abs(b.min.y - (-20 - 12 + 1.5)) < 1e-9 && abs(b.max.y - 20) < 1e-9 && abs(b.max.z - 25) < 1e-9)
+    let lips = build.flat.bends.filter { $0.angle != 90 || $0.direction == .down }
+    #expect(build.flat.bends.contains { $0.edge == .front && $0.direction == .down } && lips.contains { $0.angle == 180 && $0.direction == .up })
+    // A 180° hem: the lip's straight part is parallel to the wall, 2r from it (open hem).
+    #expect(throws: SheetMetalError.self) { try SheetMetalGeometry.build(SheetMetalSpec(material: "dc01", thickness: 1.5, width: 50, depth: 40,
+        flanges: [.front: SheetFlange(length: 25, lip: SheetLip(length: 3, angle: 180))]), featureID: UUID()) }
+}
+
+@Test func boxWithInwardLipsLeavesCornerReliefs() throws {
+    let lip = SheetLip(length: 10)
+    var flanges: [SheetEdge: SheetFlange] = [:]
+    for e in SheetEdge.allCases { flanges[e] = SheetFlange(length: 20, lip: lip) }
+    let spec = SheetMetalSpec(material: "dc01", thickness: 1, width: 80, depth: 60, flanges: flanges)
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID())
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    // No overlap: the folded volume is the sum of the pieces (the side lips stop short of the front/back ones).
+    let r = 1.3, t = 1.0, setback = r + t
+    let x = 80 - 2 * setback, y = 60 - 2 * setback, wall = 20 - 2 * setback, tip = 10 - setback
+    let sideLip = y - 2 * (tip + spec.gap)
+    let bend = bendSection(r, t, .pi / 2, 16)
+    let volume = x * y * t + 2 * x * (2 * bend + (wall + tip) * t) + 2 * y * (bend + wall * t) + 2 * sideLip * (bend + tip * t)
+    #expect(abs(mesh.volume - volume) < 1e-6)
+    #expect(build.flat.bends.count == 8)
+    #expect(build.flat.bends.filter { $0.edge == .left }.map { abs($0.line.1.y - $0.line.0.y) }.sorted().first.map { abs($0 - sideLip) < 1e-9 } == true)
+}

@@ -63,10 +63,31 @@ public struct SheetFlange: Codable, Equatable, Sendable {
     public var angle: Double
     public var direction: SheetBendDirection
     public var reference: SheetFlangeReference
+    /// A second bend at the flange's tip (nil = none).
+    public var lip: SheetLip?
 
-    public init(length: Double, angle: Double = 90, direction: SheetBendDirection = .up, reference: SheetFlangeReference = .outside) {
-        self.length = length; self.angle = angle; self.direction = direction; self.reference = reference
+    public init(length: Double, angle: Double = 90, direction: SheetBendDirection = .up, reference: SheetFlangeReference = .outside,
+                lip: SheetLip? = nil) {
+        self.length = length; self.angle = angle; self.direction = direction; self.reference = reference; self.lip = lip
     }
+}
+
+/// «Risvolto» / «orlo»: a second bend at a flange's tip. Inward it curls on towards the part (a C
+/// channel's lip); outward it turns away (a Z); at 180° it folds back against the flange (open hem,
+/// with the material's inside radius). The flange's length then runs to the lip's outside, the
+/// lip's from the flange face on the outside of the lip's bend (for a Z, the far face); both as
+/// the flange's reference says.
+public struct SheetLip: Codable, Equatable, Sendable {
+    public var length: Double
+    /// Degrees from straight on, 5–180 (180 = hem).
+    public var angle: Double
+    public var inward: Bool
+
+    public init(length: Double, angle: Double = 90, inward: Bool = true) {
+        self.length = length; self.angle = angle; self.inward = inward
+    }
+
+    public var label: String { angle >= 180 - 1e-9 ? "orlo" : "risvolto" }
 }
 
 public struct SheetMetalSpec: Codable, Equatable, Sendable {
@@ -285,7 +306,21 @@ public enum SheetMetalGeometry {
         }
 
         // Per flange: straight length, bend allowance and outside setback from the mould line.
-        struct Bent { let edge: SheetEdge; let flange: SheetFlange; let theta: Double; let straight: Double; let allowance: Double; let setback: Double }
+        struct Bent {
+            let edge: SheetEdge; let flange: SheetFlange; let theta: Double; let straight: Double; let allowance: Double; let setback: Double
+            /// The lip's bend angle, straight part and allowance (0 without a lip).
+            var lipTheta = 0.0, lipStraight = 0.0, lipAllowance = 0.0
+            /// Flat reach: up to the lip's bend, and in all.
+            var reach: Double { allowance + straight }
+            var total: Double { reach + lipAllowance + lipStraight }
+        }
+        // Setback of a bend at a length's far end: to the virtual sharp up to 90°, to the bend's
+        // farthest point beyond (a hem has no sharp).
+        func setback(_ theta: Double, _ radius: Double, _ ref: SheetFlangeReference) -> Double {
+            let rr = ref == .inside ? radius : radius + t
+            guard ref != .tangent else { return 0 }
+            return theta <= .pi / 2 + 1e-9 ? tan(theta / 2) * rr : rr
+        }
         var bent: [SheetEdge: Bent] = [:]
         for edge in SheetEdge.allCases {
             guard let f = spec[edge] else { continue }
@@ -297,11 +332,29 @@ public enum SheetMetalGeometry {
             }
             let theta = f.angle * .pi / 180
             let outer = tan(theta / 2) * (r + t), inner = tan(theta / 2) * r
-            let straight: Double
+            var straight: Double
             switch f.reference {
             case .outside: straight = f.length - outer
             case .inside: straight = f.length - inner
             case .tangent: straight = f.length
+            }
+            var lipTheta = 0.0, lipStraight = 0.0
+            if let lip = f.lip {
+                guard lip.angle.isFinite, (5...180).contains(lip.angle) else {
+                    throw SheetMetalError.invalidParameter("\(edge.label.lowercased()): angolo del \(lip.label) 5–180°")
+                }
+                guard lip.length.isFinite, (0.1...10_000).contains(lip.length) else {
+                    throw SheetMetalError.invalidParameter("\(edge.label.lowercased()): lunghezza del \(lip.label) 0,1–10000 mm")
+                }
+                lipTheta = lip.angle * .pi / 180
+                straight -= setback(lipTheta, r, f.reference)
+                lipStraight = lip.length - setback(lipTheta, r, f.reference)
+                guard lipStraight >= 0.05 else {
+                    throw SheetMetalError.invalidParameter("\(lip.label) \(edge.label.lowercased()) troppo corto: serve più di \(fmt(setback(lipTheta, r, f.reference))) mm")
+                }
+                if lip.length < rule.minimumFlange - 1e-9 {
+                    warnings.append("\(lip.label.capitalized) \(edge.label.lowercased()) \(fmt(lip.length)) mm: sotto il minimo piegabile ≈ \(fmt(rule.minimumFlange)) mm con matrice V\(fmt(rule.vDie))")
+                }
             }
             guard straight >= 0.05 else {
                 let min = f.reference == .outside ? outer : inner
@@ -312,8 +365,26 @@ public enum SheetMetalGeometry {
             if outsideLength < rule.minimumFlange - 1e-9 {
                 warnings.append("Flangia \(edge.label.lowercased()) \(fmt(outsideLength)) mm (esterna): sotto il minimo piegabile ≈ \(fmt(rule.minimumFlange)) mm con matrice V\(fmt(rule.vDie))")
             }
-            bent[edge] = Bent(edge: edge, flange: f, theta: theta, straight: straight,
-                              allowance: rule.allowance(angleDegrees: f.angle), setback: outer)
+            var b = Bent(edge: edge, flange: f, theta: theta, straight: straight,
+                         allowance: rule.allowance(angleDegrees: f.angle), setback: outer)
+            if let lip = f.lip { b.lipTheta = lipTheta; b.lipStraight = lipStraight; b.lipAllowance = rule.allowance(angleDegrees: lip.angle) }
+            bent[edge] = b
+        }
+
+        // Inward lips meet over the part's corners: the front/back ones run the whole side, the
+        // left/right ones stop short of them by the gap (a square relief in the blank).
+        var lipTrim: [SheetEdge: (start: Double, end: Double)] = [:]
+        for (cover, butt, atStart) in [(SheetEdge.front, SheetEdge.left, true), (.front, .right, false), (.back, .left, true), (.back, .right, false)] {
+            guard let a = bent[cover], let b = bent[butt], let la = a.flange.lip, let lb = b.flange.lip, la.inward, lb.inward else { continue }
+            guard a.flange.direction == b.flange.direction, abs(a.flange.angle - 90) < 1e-6, abs(b.flange.angle - 90) < 1e-6,
+                  abs(la.angle - 90) < 1e-6, abs(lb.angle - 90) < 1e-6 else {
+                warnings.append("Risvolti \(cover.label.lowercased())-\(butt.label.lowercased()): possibile sovrapposizione nell'angolo (si accorciano solo a 90°)")
+                continue
+            }
+            // The cover's lip reaches this far over the plate from its side's tangent line.
+            let reach = a.lipStraight + spec.gap
+            if cover == .front { lipTrim[butt, default: (0, 0)].start = reach } else { lipTrim[butt, default: (0, 0)].end = reach }
+            _ = atStart
         }
 
         // Closed corners: which side runs on over each corner, and by how much.
@@ -357,6 +428,17 @@ public enum SheetMetalGeometry {
                                origin: frame.origin + position, out: frame.out, along: frame.along, span: frame.span,
                                prefix: prefix + "/" + edge.rawValue)
             solid = solid.union(piece)
+            if let lip = b.flange.lip {
+                let trim = lipTrim[edge] ?? (0, 0)
+                let span = frame.span - trim.start - trim.end
+                guard span > 0.1 else { throw SheetMetalError.invalidParameter("\(lip.label) \(edge.label.lowercased()) senza spazio tra i risvolti vicini") }
+                let tip = flangeTip(b.flange, theta: b.theta, straight: b.straight, r: r, t: t)
+                func world(_ p: Vec2) -> Vec3 { frame.origin + position + frame.out * p.x + Vec3(0, 0, p.y) + frame.along * trim.start }
+                let dir = frame.out * tip.d.x + Vec3(0, 0, tip.d.y), inside = frame.out * tip.inner.x + Vec3(0, 0, tip.inner.y)
+                solid = solid.union(flange(SheetFlange(length: lip.length), theta: b.lipTheta, straight: b.lipStraight, r: r, t: t,
+                                           origin: world(lip.inward ? tip.outer : tip.innerFace), out: dir, along: frame.along, span: span,
+                                           prefix: prefix + "/" + edge.rawValue + "/lip", up: lip.inward ? inside : -inside))
+            }
             // Closed corners: the straight wall runs on past the bend.
             let e = ext[edge] ?? (0, 0)
             for (from, to, name) in [(-e.start, 0.0, "corner-a"), (frame.span, frame.span + e.end, "corner-b")] where to - from > 1e-9 {
@@ -380,20 +462,30 @@ public enum SheetMetalGeometry {
             let atStart = side == .front || side == .back ? corner.x == x0 : corner.y == y0
             return atStart ? e.start : e.end
         }
+        func lipCut(_ side: SheetEdge, at corner: Vec2) -> Double {
+            let e = lipTrim[side] ?? (0, 0)
+            let atStart = side == .front || side == .back ? corner.x == x0 : corner.y == y0
+            return atStart ? e.start : e.end
+        }
         var raw: [Vec2] = []
         for (p, i, o) in walk {
             let ni = outward(i), no = outward(o)
-            let reachI = bent[i].map { $0.allowance + $0.straight } ?? 0, reachO = bent[o].map { $0.allowance + $0.straight } ?? 0
+            let reachI = bent[i]?.reach ?? 0, reachO = bent[o]?.reach ?? 0
+            let totalI = bent[i]?.total ?? 0, totalO = bent[o]?.total ?? 0
             let eI = runOn(i, at: p), eO = runOn(o, at: p)
+            let cI = lipCut(i, at: p), cO = lipCut(o, at: p)
+            // The incoming strip's lip (narrowed by its cut), then down to its flange.
+            raw += [p + ni * totalI - no * cI, p + ni * reachI - no * cI]
             if eI > 0 || eO > 0, let bi = bent[i], let bo = bent[o] {
                 raw += [p + ni * reachI + no * eI, p + ni * bi.allowance + no * eI, p + ni * bi.allowance, p,
                         p + no * bo.allowance, p + no * bo.allowance + ni * eO, p + no * reachO + ni * eO]
             } else {
                 raw += [p + ni * reachI, p, p + no * reachO]
             }
+            raw += [p + no * reachO - ni * cO, p + no * totalO - ni * cO]
         }
         // Start at the front strip's left end, as before closed corners (stable DXF output).
-        raw = [raw.removeLast()] + raw
+        raw = Array(raw.suffix(3)) + raw.dropLast(3)
         var bends: [SheetFlatPattern.Bend] = []
         for edge in SheetEdge.allCases {
             guard let b = bent[edge] else { continue }
@@ -408,6 +500,15 @@ public enum SheetMetalGeometry {
             }
             bends.append(.init(edge: edge, line: line(b.allowance / 2), tangents: [line(0), line(b.allowance)],
                                angle: b.flange.angle, direction: b.flange.direction, insideRadius: r))
+            if let lip = b.flange.lip {
+                // The lip's bend: across its (cut) width, curling on the same way when inward.
+                let cut = lipTrim[edge] ?? (0, 0)
+                let along: Vec2 = edge == .front || edge == .back ? Vec2(1, 0) : Vec2(0, 1)
+                func lipLine(_ d: Double) -> (Vec2, Vec2) { let l = line(d); return (l.0 + along * cut.start, l.1 - along * cut.end) }
+                let dir: SheetBendDirection = lip.inward == (b.flange.direction == .up) ? .up : .down
+                bends.append(.init(edge: edge, line: lipLine(b.reach + b.lipAllowance / 2), tangents: [lipLine(b.reach), lipLine(b.reach + b.lipAllowance)],
+                                   angle: lip.angle, direction: dir, insideRadius: r))
+            }
         }
         let flat = SheetFlatPattern(outline: simplified(raw), bends: bends, thickness: t, origin: position)
         let layout = SheetLayout(x0: x0, x1: x1, y0: y0, y1: y1, r: r, t: t, position: position,
@@ -476,7 +577,7 @@ public enum SheetMetalGeometry {
     /// w up); a downward bend is the upward one mirrored about the plate's mid-plane.
     private static func flange(_ f: SheetFlange, theta: Double, straight: Double, r: Double, t: Double,
                                origin: Vec3, out: Vec3, along: Vec3, span: Double, prefix: String,
-                               straightOnly: Bool = false) -> CSGSolid {
+                               straightOnly: Bool = false, up upVector: Vec3 = Vec3(0, 0, 1)) -> CSGSolid {
         let up = f.direction == .up
         let n = max(2, Int((Double(bendSegments) * theta / (.pi / 2)).rounded(.up)))
         func mirror(_ p: Vec2) -> Vec2 { up ? p : Vec2(p.x, t - p.y) }
@@ -487,7 +588,7 @@ public enum SheetMetalGeometry {
         let d = up ? Vec2(cos(theta), sin(theta)) : Vec2(cos(theta), -sin(theta))
         let outerTip = Vec2(outer[n].x + d.x * straight, outer[n].y + d.y * straight)
         let innerTip = Vec2(inner[n].x + d.x * straight, inner[n].y + d.y * straight)
-        let z = Vec3(0, 0, 1)
+        let z = upVector
         func world(_ p: Vec2, _ s: Double) -> Vec3 { origin + out * p.x + z * p.y + along * s }
         let axis = world(mirror(centre), 0)
 
@@ -531,6 +632,18 @@ public enum SheetMetalGeometry {
             polys.append(CSGSolid.Polygon(vertices: q.map { world($0, span) }, face: capB))
         }
         return oriented(polys, faces)
+    }
+
+    /// A flange's tip in its section (u outward, w up): the outer and inner faces' ends, the
+    /// straight part's direction and the unit normal of its inner face.
+    static func flangeTip(_ f: SheetFlange, theta: Double, straight: Double, r: Double, t: Double) -> (outer: Vec2, innerFace: Vec2, d: Vec2, inner: Vec2) {
+        let up = f.direction == .up
+        func mirror(_ p: Vec2) -> Vec2 { up ? p : Vec2(p.x, t - p.y) }
+        let d = up ? Vec2(cos(theta), sin(theta)) : Vec2(cos(theta), -sin(theta))
+        let o = mirror(Vec2((r + t) * sin(theta), r + t - (r + t) * cos(theta))) + d * straight
+        let i = mirror(Vec2(r * sin(theta), r + t - r * cos(theta))) + d * straight
+        let n = up ? Vec2(-sin(theta), cos(theta)) : Vec2(-sin(theta), -cos(theta))
+        return (o, i, d, n)
     }
 
     /// Consistent outward winding (the side-quad loop direction depends on up/down and side).

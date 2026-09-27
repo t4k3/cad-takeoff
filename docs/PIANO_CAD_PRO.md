@@ -109,8 +109,8 @@ completa.
 estrusione simmetrica e con sformo, Sposta/ruota corpi, piani di schizzo inclinati; raccordi e smussi
 su tutti gli spigoli danno solidi chiusi (auto sportiva: da R0,8 a R8), anche lungo cilindri che
 incontrano un piano; angoli sferici dove tre raccordi si incontrano (come Fusion).
-Restano: piani per tre punti/tangenti, «fino a faccia», serie e specchio di feature, superfici esatte
-come verità del motore.
+Poi anche «fino a faccia» e serie/specchio di feature (un foro ripetuto). Restano: piani per tre
+punti/tangenti, superfici esatte come verità del motore.
 - Rivoluzione, guscio, estrusione simmetrica / fino a faccia / rastremata.
 - Piani, assi e punti di costruzione.
 - Raccordi d'angolo (sfera dove si incontrano tre raccordi): niente più solidi aperti.
@@ -134,6 +134,12 @@ giunti e vista esplosa, lamiera avanzata.
   lavorata al tornio.
 
 ### Settimana 4 (20 – 24 ott) — Assiemi e lamiera
+
+**Stato al 27/09:** fatti controllo interferenze, giunti (rigido, rotazione, scorrimento, cilindrico),
+vista esplosa, misura; lamiera con risvolti (profilo a C e a Z) e orli a 180°, tavola di piega PDF/DXF
+con sviluppo quotato e tabelle pieghe e fori. Restano: flangia su spigolo qualsiasi, scarichi tondi,
+sezione dinamica, trascinamento dei giunti.
+
 - Giunti (rigido, rotazione, scorrimento) con trascinamento, controllo interferenze, vista esplosa.
 - Lamiera: flangia su qualsiasi spigolo, orli, scarichi tondi.
 - Misura e sezione dinamica.

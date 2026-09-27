@@ -391,8 +391,12 @@ extension DesignModel: CADToolProvider {
             var flanges: [String: JSONValue] = [:]
             for e in SheetEdge.allCases {
                 if let f = s[e] {
-                    flanges[e.rawValue] = ["length": .number(f.length), "angle": .number(f.angle),
-                                           "direction": .string(f.direction.rawValue), "reference": .string(f.reference.rawValue)]
+                    var flange: [String: JSONValue] = ["length": .number(f.length), "angle": .number(f.angle),
+                                                       "direction": .string(f.direction.rawValue), "reference": .string(f.reference.rawValue)]
+                    if let lip = f.lip {
+                        flange["lip"] = ["length": .number(lip.length), "angle": .number(lip.angle), "side": .string(lip.inward ? "in" : "out")]
+                    }
+                    flanges[e.rawValue] = .object(flange)
                 }
             }
             value["flanges"] = .object(flanges)
@@ -543,8 +547,13 @@ extension DesignModel: CADToolProvider {
                 : (SheetBendDirection(rawValue: try string(args, "flange_direction")) ?? .up)
             let reference: SheetFlangeReference = args["flange_reference"] == nil ? .outside
                 : (SheetFlangeReference(rawValue: try string(args, "flange_reference")) ?? .outside)
-            let flange = SheetFlange(length: try number(args, "flange_length"),
+            var flange = SheetFlange(length: try number(args, "flange_length"),
                                      angle: try optionalNumber(args, "flange_angle", 90), direction: direction, reference: reference)
+            if args["lip_length"] != nil {
+                let side = args["lip_side"] == nil ? "in" : try string(args, "lip_side")
+                guard side == "in" || side == "out" else { throw CADToolFailure("lip_side: in o out.") }
+                flange.lip = SheetLip(length: try number(args, "lip_length"), angle: try optionalNumber(args, "lip_angle", 90), inward: side == "in")
+            }
             for side in list {
                 guard let raw = side.string, let e = SheetEdge(rawValue: raw) else { throw CADToolFailure("flange_sides: front, right, back, left.") }
                 spec[e] = flange

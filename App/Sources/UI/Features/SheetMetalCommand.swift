@@ -10,6 +10,7 @@ enum SheetMetalCommand {
     static let directions = SheetBendDirection.allCases
     static let references = SheetFlangeReference.allCases
     static let cornerStyles = SheetCornerStyle.allCases
+    static let lipKinds = ["Nessuno", "Risvolto verso l'interno (C)", "Risvolto verso l'esterno (Z)", "Orlo (180°)"]
 
     /// Display colour of a new part, by material family.
     static func colour(_ material: String) -> PartColor {
@@ -41,7 +42,7 @@ enum SheetMetalCommand {
         func thicknessOptions(_ m: SheetMaterial) -> [String] { m.thicknesses.map { mm($0) + " mm" } }
         let material = SheetMaterial.named(spec.material) ?? materials[0]
 
-        let fields: [CommandField] = [
+        var fields: [CommandField] = [
             .init(id: "material", label: "Materiale", kind: .choice(materials.map(\.name)),
                   value: .index(materials.firstIndex(where: { $0.id == material.id }) ?? 0)),
             .init(id: "materialNote", label: material.note, kind: .note(warning: false), value: .flag(false)),
@@ -82,6 +83,19 @@ enum SheetMetalCommand {
             .init(id: "warnings", label: "", kind: .note(warning: true), value: .flag(false), isHidden: true),
         ]
 
+        // The lip at the flanges' tips, before the corners.
+        let lip = firstFlange.lip
+        let lipKind: Int = lip == nil ? 0 : (lip!.angle >= 180 - 1e-9 ? 3 : (lip!.inward ? 1 : 2))
+        let lipFields: [CommandField] = [
+            .init(id: "lip", label: "Sulla punta", kind: .choice(lipKinds), value: .index(lipKind),
+                  help: "Seconda piega in punta a ogni flangia: risvolto (profilo a C o a Z) o orlo ripiegato contro la flangia"),
+            .init(id: "lipLength", label: "Lunghezza risvolto", kind: .length(0.5...2000), value: .number(lip?.length ?? 10),
+                  help: "Quota esterna, dalla faccia della flangia fuori dalla piega", isHidden: lipKind == 0),
+            .init(id: "lipAngle", label: "Angolo risvolto", kind: .angle(5...179), value: .number(min(lip?.angle ?? 90, 179)),
+                  isHidden: lipKind == 0 || lipKind == 3)
+        ]
+        fields.insert(contentsOf: lipFields, at: fields.firstIndex { $0.id == "corners" } ?? fields.count)
+
         func read(_ f: [CommandField]) -> SheetMetalSpec {
             func idx(_ id: String) -> Int { if case let .index(i)? = f.first(where: { $0.id == id })?.value { i } else { 0 } }
             func flag(_ id: String) -> Bool { if case let .flag(b)? = f.first(where: { $0.id == id })?.value { b } else { false } }
@@ -94,9 +108,14 @@ enum SheetMetalCommand {
             s.width = num("width"); s.depth = num("depth")
             s.corners = cornerStyles[min(idx("corners"), cornerStyles.count - 1)]
             s.cornerGap = num("gap")
-            let flange = SheetFlange(length: num("length"), angle: num("angle"),
+            var flange = SheetFlange(length: num("length"), angle: num("angle"),
                                      direction: directions[min(idx("direction"), directions.count - 1)],
                                      reference: references[min(idx("reference"), references.count - 1)])
+            switch idx("lip") {
+            case 1, 2: flange.lip = SheetLip(length: num("lipLength"), angle: num("lipAngle"), inward: idx("lip") == 1)
+            case 3: flange.lip = SheetLip(length: num("lipLength"), angle: 180)
+            default: break
+            }
             for e in SheetEdge.allCases {
                 guard flag(e.rawValue) else { s[e] = nil; continue }
                 var own = flange
@@ -124,7 +143,10 @@ enum SheetMetalCommand {
             session.update("radius") { $0.isHidden = auto }
             let anyFlange = SheetEdge.allCases.contains { s[$0] != nil }
             let perSide = { if case let .flag(b)? = f.first(where: { $0.id == "perSide" })?.value { b } else { false } }()
-            for id in ["angle", "direction", "reference", "perSide"] { session.update(id) { $0.isHidden = !anyFlange } }
+            for id in ["angle", "direction", "reference", "perSide", "lip"] { session.update(id) { $0.isHidden = !anyFlange } }
+            let lipKind = { if case let .index(i)? = f.first(where: { $0.id == "lip" })?.value { i } else { 0 } }()
+            session.update("lipLength") { $0.isHidden = !anyFlange || lipKind == 0; $0.label = lipKind == 3 ? "Lunghezza orlo" : "Lunghezza risvolto" }
+            session.update("lipAngle") { $0.isHidden = !anyFlange || lipKind == 0 || lipKind == 3 }
             session.update("length") { $0.isHidden = !anyFlange || perSide }
             // Corners exist where a front/back flange meets a side one.
             let anyCorner = [SheetEdge.front, .back].contains { s[$0] != nil } && [SheetEdge.left, .right].contains { s[$0] != nil }
