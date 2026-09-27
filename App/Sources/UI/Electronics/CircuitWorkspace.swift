@@ -949,6 +949,31 @@ private struct ZoneDetail: View {
     let plane: PCBZone
     @State private var name = ""
     @FocusState private var editingName: Bool
+    /// The rules as edited here: each change is one command; while it runs, or after the engine
+    /// refused it, this copy stays (not the plane's), so a field never jumps back under the user.
+    @State private var rules = CircuitModel.ZoneRules()
+    @State private var applying = false
+    @State private var refused: String?
+
+    /// One command for the rules as they are here now (a later edit made while it runs follows
+    /// right after it).
+    private func commitRules() {
+        guard !applying else { return }
+        let target = rules.applied(to: plane)
+        guard target != plane else { refused = nil; return }
+        applying = true
+        let wanted = rules
+        Task {
+            let ok = await circuits.updateZone(target)
+            applying = false
+            if ok {
+                refused = nil
+                if rules != wanted { commitRules() }
+            } else {
+                refused = circuits.message.replacingOccurrences(of: "Modifica piano di rame non riuscito: ", with: "")
+            }
+        }
+    }
 
     var body: some View {
         Divider()
@@ -975,10 +1000,18 @@ private struct ZoneDetail: View {
         }
         Toggle("Togli le isole", isOn: Binding(get: { plane.removeIslands }, set: { var z = plane; z.removeIslands = $0; Task { await circuits.updateZone(z) } }))
             .toggleStyle(.checkbox).font(.caption)
-        ZoneRulesForm(rules: Binding(get: { CircuitModel.ZoneRules(plane) }, set: { r in
-            let z = r.applied(to: plane)
-            if z != plane { Task { await circuits.updateZone(z) } }
-        }))
+        ZoneRulesForm(rules: Binding(get: { rules }, set: { rules = $0; commitRules() }))
+            .onAppear { rules = CircuitModel.ZoneRules(plane) }
+            .onChange(of: plane.id) { rules = CircuitModel.ZoneRules(plane); refused = nil; applying = false }
+            // The plane changed elsewhere (undo, another panel): follow it unless a change of ours is pending or refused.
+            .onChange(of: plane) { if !applying && refused == nil { rules = CircuitModel.ZoneRules(plane) } }
+        if let refused {
+            HStack(alignment: .top) {
+                Label("Non applicato: \(refused)", systemImage: "xmark.octagon.fill").foregroundStyle(.red)
+                    .font(.caption).fixedSize(horizontal: false, vertical: true)
+                Button("Ripristina") { rules = CircuitModel.ZoneRules(plane); self.refused = nil }.controlSize(.small)
+            }
+        }
         if let fill = circuits.zoneFill(plane.id) {
             if fill.cells.isEmpty {
                 Label("Vuoto: nessun rame collegato a una piazzola di questa rete qui", systemImage: "exclamationmark.triangle.fill")
