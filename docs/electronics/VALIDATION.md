@@ -32,20 +32,74 @@ Queste sono prove automatiche del Model dell'app, **non un collaudo visivo**.
 Il tentativo di collaudo grafico del 27/09 alle 14:45–14:47 è bloccato dallo strumento CUA:
 `cgWindowNotFound` per il percorso esatto della build, Finder e Claude; reset della sessione
 e nuovo aggancio senza risultato. Nessuna evidenza di difetto di Circuiti da questo errore.
-Non è stata verificata a schermo la build 1.0.33; la fixture UI è rimasta invariata.
-La decodifica dello storico all'apertura è ancora sul MainActor: da spostare in worker
-prima di qualificare file grandi. Undo/redo non ricalcolano il rame nel core.
+A quell'ora la build 1.0.33 non era stata verificata a schermo e la fixture UI era
+rimasta invariata. Il controllo è tornato disponibile alle 15:46; risultati sotto.
+Undo/redo non ricalcolano il rame nel core.
 
 Limiti espliciti in [PCB_ZONES.md](PCB_ZONES.md): mancano termiche, larghezza minima dei colli,
 priorità tra reti sovrapposte e qualificazione produttiva; il riempimento usa connessioni piene.
 
-Protocollo per la prova UI: copia `build/electronics/run.55mFbj/pcb/zones-ui.ftkc`, inizialmente
+### Collaudo UI T97 del 27/09, dalle 15:46
+
+Prova nella copia separata dell'app, senza modificare l'app originale di Ross. Fixture
+`build/electronics/run.55mFbj/pcb/zones-ui.ftkc`: copia di `zones-before.ftkc`, inizialmente
 revision6 e sei passi, due R collegate logicamente a GND e pista POWER con classe da 0,75 mm.
-Disegnare piano GND, verificare anteprima/clearance e scomparsa dell'airwire; dividere il rame
-con un'area vietata, verificare il ritorno dell'airwire; annullare/ripetere e salvare/riaprire.
-Controllare i dati del file risultante e la catena before/after con lettore separato.
-Verificare anche annullamento della bozza e ripresa dopo cambio strumento. Questi sono
-passi da eseguire quando il controllo delle finestre torna disponibile, non risultati già acquisiti.
+Operazioni eseguite tramite UI nativa, senza chiamare direttamente il Model.
+
+Su **1.0.33 / ae1a607+**, compilata alle 14:44:
+
+- Disegnato piano GND: anteprima ritagliata intorno a POWER e ai pad senza rete;
+  conferma **1145,4 mm²**, un'isola e zero collegamenti da sbrogliare.
+- Area vietata verticale: dopo conferma **1097,9 mm²**, due isole e un collegamento
+  da sbrogliare. L'area vieta anche POWER; disattivando «Piste» il relativo errore sparisce,
+  mentre il taglio del piano rimane perché «Piani» è ancora attivo.
+- Pista GND da un'isola all'altra: aggancio al rame effettivo, ponte di 6,9 mm,
+  un'isola connessa e zero collegamenti da sbrogliare. Annulla ripristina due isole/un
+  collegamento; Ripeti ripristina il ponte, in un solo passo.
+- Salva → Apri, verificando il nome della fixture selezionata: piano, aree e ponte
+  conservati. Annulla/Ripeti dopo riapertura PASS. Python verifica formato6, revision14,
+  dieci passi, `past[-1].after == design` e tutte le coppie before/after coerenti.
+
+Difetti riprodotti e corretti da Claude in **692c492**: l'anteprima dell'area vietata
+mostrava il vecchio piano pieno fino alla conferma; piano e area potevano restare selezionati
+insieme. Il worker ora restituisce tutti i riempimenti candidati anche per aree e regole;
+la conferma mantiene selezionato un solo oggetto.
+
+Nuova prova su **1.0.36 / 692c492+**, compilata alle 15:54; CI `build/ci/run.yGjpJG`
+**16/16 PASS**, log del ponte app PASS e `08-app.log` con `BUILD SUCCEEDED`:
+
+- Riaperta la stessa fixture: zero collegamenti da sbrogliare.
+- Nuova area rettangolare all'interno del piano: il foro nel rame è visibile **prima**
+  della conferma; cambio ad altro strumento e ritorno conserva i due punti e l'anteprima.
+- Clic ripetuto sull'ultimo punto chiude il rettangolo in un passo. Annulla ripristina
+  il rame. Ripetuta la creazione con piano già selezionato: dopo Invio resta solo
+  il pannello dell'area, senza selezione concorrente del piano.
+- Una terza area abbozzata e annullata con Esc non cambia il rame né aggiunge storico.
+  Salvataggio finale: **revision17, undici passi, zero redo, un piano, due aree e due piste**.
+  Lettura JSON Python: catena completa coerente, ultimo stato uguale al design corrente.
+  La fixture iniziale `zones-before.ftkc` è rimasta intatta.
+- Piano POWER sovrapposto a GND: anteprima «Non confermabile», conferma rifiutata
+  senza perdere la bozza. Esc e Salva lasciano revision17, undici passi e solo il piano GND.
+
+Ricontrollo CADCore nello stesso turno: `swift test --package-path Packages/CADCore`,
+exit 0, **178 test PASS**, log `/tmp/ftk-zones-ui-cad-20260927.log`.
+
+L'apertura è stata spostata fuori dal MainActor da Claude in `6e206a4`. La revisione
+Codex ha individuato una protezione incompleta: l'epoca da sola non impediva di perdere
+modifiche fatte durante la lettura dello stesso documento. Claude ha corretto in `a630edb`
+e `216a422`: identità/revisione, token dell'ultima richiesta, cancellazione e controllo
+prima di propagare anche gli errori; una bozza nuova o modificata durante la lettura fa
+cedere l'apertura. Test deterministici con lettura sospesa fino al rilascio esplicito:
+modifica del documento, due richieste completate in ordine inverso, cancellazione,
+bozza iniziata e vertice aggiunto a una bozza esistente. La prima correzione passa la
+CI `build/ci/run.cqYCyJ` **16/16**; l'estensione finale passa la CI
+`build/ci/run.CleO2V` **16/16**, incluso ponte Circuiti e `BUILD SUCCEEDED`.
+Queste verifiche del Model sono distinte dal Salva/Apri sequenziale a schermo riuscito sopra.
+
+Ultimo controllo UI: build **1.0.38 / 216a422+**, compilata alle **16:09**. Riaperta la
+fixture revision17 attraverso il pannello nativo e mostrata in PCB: piano, due aree,
+ponte e zero collegamenti da sbrogliare conservati; Annulla espone l'ultima operazione
+«Crea area vietata». Nessuna ulteriore modifica al file in questa riapertura.
 
 ## 27/09/2026 — T94: classi di rete e aree vietate
 

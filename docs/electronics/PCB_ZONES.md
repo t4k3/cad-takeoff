@@ -1,8 +1,11 @@
 # Piani di rame — contratto T94
 
 Terzo traguardo, 27/09/2026. Motore Swift proprietario; 124 test elettronici e cinque lettori
-indipendenti PASS. Aggancio T97 di Claude nella build **1.0.33**, CI **16/16 PASS**.
-Collaudo visivo ancora da eseguire: [VALIDATION.md](VALIDATION.md).
+indipendenti PASS. Aggancio T97 di Claude e correzioni nella build **1.0.36**,
+CI **16/16 PASS**. Collaudo visivo di creazione, anteprima, connettività, bozze,
+undo e riapertura eseguito: [VALIDATION.md](VALIDATION.md).
+Protezione dell'apertura concorrente aggiunta da Claude; CI finale **16/16 PASS**
+e nuova riapertura a schermo nella build **1.0.38**.
 Non è ancora una qualificazione per fabbricare PCB.
 
 ## Dati e comandi

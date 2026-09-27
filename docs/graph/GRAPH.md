@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-27 14:47. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-27 16:12. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
