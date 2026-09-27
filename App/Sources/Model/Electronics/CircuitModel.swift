@@ -22,7 +22,9 @@ final class CircuitModel {
     private(set) var isDirty = false
     /// The selected component (by identity, never by index).
     var selection: UUID?
-    /// Status bar messages go through the design model's (one status line in the app).
+    /// The circuit's own last message (the status bar shows it in CIRCUITI, never the CAD's).
+    var message = ""
+    /// Where messages go: set by the workspace to `message` (tests read them here).
     @ObservationIgnored var report: (String) -> Void = { _ in }
 
     var design: ElectronicsDesign? { document?.design }

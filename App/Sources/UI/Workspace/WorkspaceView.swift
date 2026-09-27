@@ -65,7 +65,7 @@ struct WorkspaceView: View {
             else if old == .circuits, model.localUndoTarget === circuits { model.localUndoTarget = nil }
         }
         .onAppear {
-            circuits.report = { [weak model] in model?.statusMessage = $0 }
+            circuits.report = { [weak circuits] in circuits?.message = $0 }
             workspace.sketchStore = sketches; workspace.model = model
             model.finishPendingEdits = { [weak workspace] in
                 if workspace?.sketch != nil { workspace?.exitSketch() }

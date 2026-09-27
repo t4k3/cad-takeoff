@@ -3,16 +3,35 @@ import SwiftUI
 
 struct StatusBar: View {
     @Environment(DesignModel.self) private var model
+    @Environment(WorkspaceState.self) private var workspace
+    @Environment(CircuitModel.self) private var circuits
 
     var body: some View {
         HStack(spacing: 14) {
-            Text(model.statusMessage).lineLimit(1)
-            Spacer()
-            let stats = model.stats()
-            Label("\(stats.bodies) corpi", systemImage: "shippingbox")
-            Label("\(stats.triangles) triangoli", systemImage: "triangle")
-            Label(String(format: "%.2f cm³", stats.volume / 1000), systemImage: "cube.transparent")
-            Text("mm · Z↑")
+            if workspace.tab == .circuits {
+                // CIRCUITI: the circuit's messages and counts, never the 3D design's.
+                Text(circuits.message).lineLimit(1)
+                Spacer()
+                if let design = circuits.design {
+                    let errors = circuits.issues.filter { $0.severity == .error }.count
+                    let warnings = circuits.issues.count - errors
+                    Label("\(design.components.count) componenti", systemImage: "cpu")
+                    Label("\(design.nets.count) reti", systemImage: "point.3.connected.trianglepath.dotted")
+                    Label("\(circuits.board?.airwires.count ?? 0) da sbrogliare", systemImage: "line.diagonal")
+                        .help("Collegamenti logici ancora senza pista")
+                    if errors > 0 { Label("\(errors) errori", systemImage: "xmark.octagon").foregroundStyle(.red) }
+                    if warnings > 0 { Label("\(warnings) avvisi", systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
+                    Text("mm · vista dall'alto")
+                }
+            } else {
+                Text(model.statusMessage).lineLimit(1)
+                Spacer()
+                let stats = model.stats()
+                Label("\(stats.bodies) corpi", systemImage: "shippingbox")
+                Label("\(stats.triangles) triangoli", systemImage: "triangle")
+                Label(String(format: "%.2f cm³", stats.volume / 1000), systemImage: "cube.transparent")
+                Text("mm · Z↑")
+            }
             Divider().frame(height: 12)
             MCPStatusButton()
             Divider().frame(height: 12)
