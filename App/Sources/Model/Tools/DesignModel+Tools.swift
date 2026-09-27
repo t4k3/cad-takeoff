@@ -28,6 +28,7 @@ extension DesignModel: CADToolProvider {
             case "scene_info": return try sceneInfo()
             case "export_stl": return try export(args)
             case "export_3mf": return try export3MF(args)
+            case "export_step": return try exportSTEP(args)
             case "list_project_designs":
                 let paths = projectDesigns?() ?? []
                 return result("\(paths.count) disegni nel progetto", ["designs": .array(paths.map { p in
@@ -146,6 +147,10 @@ extension DesignModel: CADToolProvider {
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
                 case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
+                case var .move(spec):
+                    legal = ["angle"]
+                    spec.angle = try optionalNumber(args, "angle", spec.angle)
+                    f.kind = .move(spec)
                 case var .shell(spec):
                     legal = ["thickness"]
                     spec.thickness = try optionalNumber(args, "thickness", spec.thickness)
@@ -235,6 +240,26 @@ extension DesignModel: CADToolProvider {
             "filename": "Design.stl", "mime_type": "model/stl", "encoding": "base64", "data": .string(data.base64EncodedString()),
             "bytes": .number(Double(data.count)), "coordinate_units": "mm",
             "warning": "STL senza metadati unità. Solidi concatenati: non è stata eseguita una unione booleana."
+        ])
+    }
+
+    private func exportSTEP(_ args: [String: JSONValue]) throws -> ToolResult {
+        let all = evaluation().bodies
+        let bodies: [DesignEvaluator.Body]
+        if args["feature_id"] != nil {
+            let id = document.features[try index(args)].id
+            guard let b = all.first(where: { $0.id == id }) else { throw CADToolFailure("Questa operazione non crea un corpo: esporta il corpo che modifica.") }
+            bodies = [b]
+        } else { bodies = all.filter(\.isVisible) }
+        guard !bodies.isEmpty else { throw CADToolFailure("Niente da esportare.") }
+        let parts = bodies.map { STEPExporter.Part(name: $0.source.name, mesh: $0.mesh, snapshot: $0.snapshot, color: $0.source.color) }
+        let data: Data
+        do { data = Data(try STEPExporter.export(parts).utf8) } catch { throw CADToolFailure(error.localizedDescription) }
+        guard data.count <= 8 * 1024 * 1024 else { throw CADToolFailure("Export troppo grande per la chat (8 MiB). Usare il pannello esportazione.") }
+        return result("STEP AP214 pronto; \(parts.count) solidi", [
+            "filename": "Design.step", "mime_type": "model/step", "encoding": "base64", "data": .string(data.base64EncodedString()),
+            "bytes": .number(Double(data.count)), "coordinate_units": "mm",
+            "warning": "Facce piane esatte, superfici curve sfaccettate."
         ])
     }
 
@@ -330,6 +355,12 @@ extension DesignModel: CADToolProvider {
                 value["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
                 value["warnings"] = .array(build.warnings.map { .string($0) })
             }
+        case let .move(m):
+            value["kind"] = "move"
+            value["translation"] = vector(m.translation)
+            value["axis"] = vector(m.axis)
+            value["angle"] = .number(m.angle)
+            value["bodies"] = .array(m.bodies.map { .string($0.uuidString) })
         case let .shell(s):
             value["kind"] = "shell"
             value["thickness"] = .number(s.thickness)

@@ -409,6 +409,23 @@ final class DesignModel {
         } catch { statusMessage = "Errore export: \(error.localizedDescription)" }
     }
 
+    /// STEP AP214 of the visible bodies (one solid each, with colours), for suppliers and other CAD.
+    func exportSTEPWithPanel() {
+        let parts = evaluation().bodies.filter(\.isVisible).map {
+            STEPExporter.Part(name: $0.source.name, mesh: $0.mesh, snapshot: $0.snapshot, color: $0.source.color)
+        }
+        guard !parts.isEmpty else { statusMessage = "Niente da esportare"; return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "step") ?? .data]
+        panel.nameFieldStringValue = "Design.step"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let name = url.deletingPathExtension().lastPathComponent
+            try STEPExporter.export(parts, name: name).write(to: url, atomically: true, encoding: .utf8)
+            statusMessage = "Esportato \(url.lastPathComponent) — \(parts.count) \(parts.count == 1 ? "solido" : "solidi") STEP AP214 in mm"
+        } catch { statusMessage = "Errore export STEP: \(error.localizedDescription)" }
+    }
+
     /// Export visible parts, or the explicit feature even when hidden. Does not change the scene.
     func export3MFData(featureID: UUID? = nil) throws -> Data {
         let all = evaluation().bodies

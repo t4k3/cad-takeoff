@@ -127,6 +127,30 @@ public enum DesignEvaluator {
                 }
                 continue
             }
+            if case let .move(spec) = feature.kind {
+                do { try spec.validate() } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue
+                }
+                let targets = bodies.indices.filter { spec.bodies.contains(bodies[$0].source.id) }
+                guard !targets.isEmpty else {
+                    issues.append(.init(featureID: feature.id, message: "Sposta: i corpi scelti non esistono (devono venire prima nella timeline)."))
+                    continue
+                }
+                // Pivot: the centre of all the moved bodies together.
+                let boxes = targets.compactMap { bounds(bodies[$0].snapshot) }
+                let centre = spec.pivot ?? boxes.dropFirst().reduce(boxes.first!) { a, b in
+                    BoundingBox(min: Vec3(Swift.min(a.min.x, b.min.x), Swift.min(a.min.y, b.min.y), Swift.min(a.min.z, b.min.z)),
+                                max: Vec3(Swift.max(a.max.x, b.max.x), Swift.max(a.max.y, b.max.y), Swift.max(a.max.z, b.max.z)))
+                }.center
+                let (point, direction) = spec.transform(pivot: centre)
+                for i in targets {
+                    let w = bodies[i]
+                    let m = merged([Placed(mesh: w.mesh, snapshot: w.snapshot, prefix: "", point: point, direction: direction, reflect: false)],
+                                   bodyID: w.source.id, revision: revision)
+                    bodies[i] = Work(source: w.source, snapshot: m.snapshot, solid: nil, mesh: m.mesh, modifiedBy: w.modifiedBy + [feature.id])
+                }
+                continue
+            }
             if case let .shell(spec) = feature.kind {
                 // The body with the open faces (they keep their IDs through booleans), else the named one.
                 let i = spec.openFaces.first.flatMap { face in bodies.firstIndex { $0.snapshot.faces.contains { $0.id == face } } }

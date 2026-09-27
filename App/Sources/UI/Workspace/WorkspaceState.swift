@@ -122,6 +122,11 @@ final class WorkspaceState {
         command = SplitCommand.start(workspace: self, model: model)
     }
 
+    func startMove(model: DesignModel) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = MoveCommand.start(workspace: self, model: model)
+    }
     func startShell(model: DesignModel) {
         command?.onCancel()
         if sketch != nil { exitSketch() }
@@ -239,6 +244,10 @@ final class WorkspaceState {
             command = SheetMetalCommand.start(workspace: self, model: model, editing: f)
             return
         }
+        if let f = model.document.features.first(where: { $0.id == id }), case .move = f.kind {
+            command = MoveCommand.start(workspace: self, model: model, editing: f)
+            return
+        }
         if let f = model.document.features.first(where: { $0.id == id }), case .shell = f.kind {
             command = ShellCommand.edit(f, workspace: self, model: model)
             return
@@ -266,6 +275,7 @@ extension Feature.Kind {
         case .split: "rectangle.split.2x1"
         case .revolve: "arrow.triangle.2.circlepath"
         case .shell: "cube.transparent"
+        case .move: "arrow.up.and.down.and.arrow.left.and.right"
         }
     }
 
@@ -283,6 +293,7 @@ extension Feature.Kind {
         case .split: "Dividi"
         case .revolve: "Rivoluzione"
         case .shell: "Guscio"
+        case .move: "Sposta"
         }
     }
 }

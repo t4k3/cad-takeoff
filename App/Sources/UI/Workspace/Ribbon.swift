@@ -99,6 +99,9 @@ struct Ribbon: View {
                 .help("Divide il corpo selezionato con un piano (es. per stampare un pezzo più grande del piatto)")
             Button { workspace.startPressPull(model: model) } label: { Label("Premi/Tira", systemImage: "arrow.up.and.down.square") }
                 .help("Clicca una faccia e trascina la freccia (Q): l'alto o il basso di un'estrusione ne cambia l'altezza, le altre facce si estrudono")
+            Button { workspace.startMove(model: model) } label: { Label("Sposta", systemImage: "arrow.up.and.down.and.arrow.left.and.right") }
+                .disabled(model.selection == nil)
+                .help("Sposta e ruota il corpo selezionato (resta un passo della timeline)")
             Button { workspace.startShell(model: model) } label: { Label("Guscio", systemImage: "cube.transparent") }
                 .help("Svuota un corpo lasciando pareti di spessore dato: clicca le facce da aprire (es. il sopra di una scatola)")
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
@@ -249,6 +252,9 @@ struct Ribbon: View {
             Button { model.export3MFWithPanel() } label: { Label("3MF", systemImage: "paintpalette") }
                 .disabled(model.document.features.isEmpty)
                 .help("Esporta in 3MF con parti separate e colori (Bambu Studio, OrcaSlicer, Snapmaker Orca)")
+            Button { model.exportSTEPWithPanel() } label: { Label("STEP", systemImage: "shippingbox") }
+                .disabled(model.document.features.isEmpty)
+                .help("Esporta in STEP AP214 (mm): un solido per corpo, con i colori — per fornitori, CNC e altri CAD")
         }
     }
 }

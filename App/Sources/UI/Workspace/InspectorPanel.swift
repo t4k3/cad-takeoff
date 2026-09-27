@@ -142,6 +142,14 @@ struct InspectorPanel: View {
                 if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
             }
             .controlSize(.small)
+        case let .move(spec):
+            info("Corpi", spec.bodies.compactMap { id in model.document.features.first { $0.id == id }?.name }.joined(separator: ", ").ifEmpty("—"))
+            info("Spostamento", String(format: "%.2f · %.2f · %.2f mm", spec.translation.x, spec.translation.y, spec.translation.z))
+            info("Rotazione", String(format: "%.1f°", spec.angle))
+            Button("Modifica…") {
+                if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
+            }
+            .controlSize(.small)
         case let .shell(spec):
             DimensionField(title: "Spessore", value: Binding(get: { spec.thickness }, set: { var s = spec; s.thickness = max(0.01, $0); kind.wrappedValue = .shell(s) }))
             info("Facce aperte", "\(spec.openFaces.count)")
