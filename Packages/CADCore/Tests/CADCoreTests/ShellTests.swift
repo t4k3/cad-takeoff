@@ -62,3 +62,14 @@ private func topFace(_ snap: BodySnapshot) -> FaceID {
         #expect(m.volume < rounded.mesh.volume * 0.6 && m.volume > rounded.mesh.volume * 0.1)
     }
 }
+
+/// Hollowing moves each curved wall into the material: the cup's wall towards its axis (the
+/// cavity wall is the cylinder r − t, described exactly).
+@Test func shellMovesCurvedWallsIntoTheMaterialExactly() throws {
+    let cyl = Feature(name: "Tazza", kind: .cylinder(radius: 10, height: 20))
+    let snap = DesignEvaluator.evaluate(CADDocument(features: [cyl]), revision: "a").bodies[0].snapshot
+    let shell = Feature(name: "Guscio", kind: .shell(ShellSpec(body: cyl.id, thickness: 1.5, openFaces: [topFace(snap)])))
+    let body = try #require(DesignEvaluator.evaluate(CADDocument(features: [cyl, shell]), revision: "b").bodies.first)
+    let radii = body.snapshot.faces.compactMap { f -> Double? in if case let .cylinder(_, _, r) = f.surface { r } else { nil } }
+    #expect(Set(radii) == [10, 8.5], "\(radii)")
+}

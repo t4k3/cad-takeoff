@@ -72,12 +72,26 @@ enum ShellGeometry {
         }
         // Faces of the cavity: the body's, moved in (the subtraction flips them).
         let prefix = featureID.uuidString.lowercased() + "/shell/"
-        let faces = snapshot.faces.map { f -> CSGFace in
+        // Each curved surface moved exactly into the material: towards its axis or centre where
+        // the part is outside it (a shaft), away from it where the part is around it (a hole).
+        var outward = [Double](repeating: 0, count: snapshot.faces.count)
+        for f in 0..<count where normals[f] != .zero {
+            let slot = Int(snapshot.triangleFace[f])
+            guard outward[slot] == 0 else { continue }
+            let c = (points[tri[f * 3]] + points[tri[f * 3 + 1]] + points[tri[f * 3 + 2]]) * (1.0 / 3)
+            if let g = snapshot.faces[slot].surface.signedDistance(c)?.g { outward[slot] = normals[f].dot(g) >= 0 ? 1 : -1 }
+        }
+        let faces = snapshot.faces.enumerated().map { k, f -> CSGFace in
+            // The level of the surface's signed distance where the moved face lies.
+            let level = -t * (outward[k] == 0 ? 1 : outward[k])
             let s: SurfaceDescriptor
             switch f.surface {
             case let .plane(o, n): s = .plane(origin: o - n.normalized * t, normal: n)
-            case let .cylinder(o, d, r): s = r > t ? .cylinder(axisOrigin: o, axisDirection: d, radius: r - t) : .freeform
-            default: s = .freeform
+            case let .cylinder(o, d, r): s = r + level > 1e-9 ? .cylinder(axisOrigin: o, axisDirection: d, radius: r + level) : .freeform
+            case let .sphere(c, r): s = r + level > 1e-9 ? .sphere(center: c, radius: r + level) : .freeform
+            case let .torus(c, a, big, small): s = small + level > 1e-9 ? .torus(center: c, axisDirection: a, majorRadius: big, minorRadius: small + level) : .freeform
+            case let .cone(apex, a, half): s = .cone(apex: apex - a.normalized * (level / sin(half)), axisDirection: a, halfAngle: half)
+            case .freeform: s = .freeform
             }
             return CSGFace(id: FaceID(rawValue: prefix + f.id.rawValue), surface: s, flipped: false)
         }

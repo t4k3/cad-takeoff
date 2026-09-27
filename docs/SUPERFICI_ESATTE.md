@@ -102,6 +102,11 @@ risoluzione; STEP tutto esatto per i pezzi di prova del RobotVolley.
 
 ### Tappa 4 — Raccordi, smussi e gusci sulle superfici vere
 
+**27/09:** il guscio descrive ora esatte le pareti spostate (cilindri, sfere, coni, tori; verso
+l'asse per un albero, lontano per un foro — prima un foro dava r − t). Limite trovato: svuotare un
+pezzo con un **foro passante** fallisce («spessore troppo grande»): gli angoli si calcolano dai
+piani delle faccette, e sul bordo del foro non reggono. È il primo caso da risolvere qui.
+
 Raccordo a sfera rotolante sulle coppie analitiche (piano–piano, piano–cilindro, cilindro–
 cilindro coassiale), smusso per distanze sulle superfici, guscio per superfici offset.
 
