@@ -167,6 +167,133 @@ final class CircuitModel {
         do { try doc.redo(expectedRevision: doc.revision); document = doc; isDirty = true; refresh() } catch { report(Self.describe(error)) }
     }
 
+    // MARK: Building a circuit (T97; the engine's commands of docs/electronics/EDITING.md)
+    //
+    // Same names and rules as ElectronicsCommand (Codex, T93). Until ElectronicsCommands compiles
+    // they are done here through the engine's own transaction (`edit`: checked, one undo step);
+    // then they become ElectronicsCommands.preview/apply and the views do not change.
+
+    /// What a click on the board does.
+    enum Tool: Equatable {
+        case select
+        /// Posa un componente: the next one to place (reference and value already chosen).
+        case place(Placing)
+        /// Collega: pads clicked two by two.
+        case connect
+    }
+
+    struct Placing: Equatable {
+        var device: LibraryRevision
+        var name: String
+        var prefix: String
+        var reference: String
+        var value: String
+        var side: BoardSide = .top
+    }
+
+    var tool: Tool = .select { didSet { if tool != .connect { connectFrom = nil } } }
+    /// Collega: the first pad chosen.
+    var connectFrom: PlacedPad?
+    /// Scheda: the outline being edited, drawn over the board until OK or Annulla.
+    var boardPreview: [PCBPoint]?
+    /// The CREA panels (Componente, Scheda).
+    var showAddComponent = false
+    var showBoard = false
+
+    struct DeviceChoice: Identifiable, Hashable {
+        var id: LibraryRevision { key }
+        var key: LibraryRevision
+        var name: String
+        var detail: String
+        var prefix: String
+    }
+
+    /// Devices the circuit's library holds (the engine's generic models join them in T93).
+    var deviceChoices: [DeviceChoice] {
+        guard let library = design?.library else { return [] }
+        return library.devices.map { d in
+            let symbol = library.symbols.first { $0.key == d.symbol }?.name ?? "Componente"
+            let footprint = library.footprints.first { $0.key == d.footprint }?.name ?? ""
+            let prefix = String(symbol.first(where: \.isLetter) ?? "U").uppercased()
+            return DeviceChoice(key: d.key, name: symbol, detail: [footprint, d.manufacturerPartNumber].filter { !$0.isEmpty }.joined(separator: " · "),
+                                prefix: prefix)
+        }
+    }
+
+    /// The first free reference with this prefix (R1, R2…).
+    func nextReference(prefix: String) -> String {
+        let used = Set(design?.components.map(\.reference) ?? [])
+        var n = 1
+        while used.contains("\(prefix)\(n)") { n += 1 }
+        return "\(prefix)\(n)"
+    }
+
+    /// addComponent: the component and its placement in one step.
+    @discardableResult
+    func addComponent(_ p: Placing, at position: PCBPoint) -> UUID? {
+        let component = CircuitComponent(reference: p.reference, value: p.value, device: p.device)
+        let ok = edit("Aggiungi \(p.reference)") { d in
+            guard !d.components.contains(where: { $0.reference == p.reference }) else {
+                throw CircuitEditError("La sigla \(p.reference) c'è già: scegline un'altra.")
+            }
+            d.components.append(component)
+            d.board.placements.append(ComponentPlacement(componentID: component.id, position: position, side: p.side))
+        }
+        guard ok else { return nil }
+        selection = component.id
+        return component.id
+    }
+
+    /// removeComponent: its placement and connections go with it (one step); the library stays.
+    func removeComponent(_ id: UUID) {
+        let name = design?.components.first { $0.id == id }?.reference ?? "componente"
+        if edit("Elimina \(name)", { d in
+            d.components.removeAll { $0.id == id }
+            d.board.placements.removeAll { $0.componentID == id }
+            d.connections.removeAll { $0.pin.componentID == id }
+        }) { selection = nil }
+    }
+
+    /// connect: both pins on one net — the one either already has, or a new one. A pin already
+    /// on another net is refused (no silent merging: disconnect it first).
+    func connect(_ a: PinReference, _ b: PinReference) {
+        guard a != b, let d0 = design else { return }
+        let refA = d0.components.first { $0.id == a.componentID }?.reference ?? "?"
+        let refB = d0.components.first { $0.id == b.componentID }?.reference ?? "?"
+        edit("Collega \(refA)–\(refB)") { d in
+            func net(_ p: PinReference) -> UUID? { d.connections.first { $0.pin == p }?.netID ?? nil }
+            let na = net(a), nb = net(b)
+            if let na, let nb, na != nb {
+                let names = [na, nb].map { id in d.nets.first { $0.id == id }?.name ?? "?" }
+                throw CircuitEditError("\(refA) è sulla rete \(names[0]) e \(refB) sulla rete \(names[1]): scollega uno dei due prima.")
+            }
+            let target: UUID
+            if let existing = na ?? nb {
+                target = existing
+            } else {
+                var k = 1
+                while d.nets.contains(where: { $0.name == "N\(k)" }) { k += 1 }
+                let fresh = CircuitNet(name: "N\(k)")
+                d.nets.append(fresh)
+                target = fresh.id
+            }
+            for p in [a, b] {
+                d.connections.removeAll { $0.pin == p }
+                d.connections.append(PinConnection(pin: p, netID: target))
+            }
+        }
+    }
+
+    /// setBoard: a rectangle from the origin, and the thickness.
+    func setBoard(width: Double, height: Double, thickness: Double) {
+        let outline = [PCBPoint(0, 0), PCBPoint(width, 0), PCBPoint(width, height), PCBPoint(0, height)]
+        edit(String(format: "Scheda %.1f × %.1f mm", width, height)) { d in
+            guard width > 0, height > 0, thickness > 0 else { throw CircuitEditError("Larghezza, altezza e spessore devono essere maggiori di zero.") }
+            d.board.outline = outline
+            d.board.thickness = thickness
+        }
+    }
+
     // MARK: Manufacturing
 
     /// JLCPCB BOM and pick-and-place files (CSV) into a chosen folder. The engine refuses when
@@ -210,6 +337,7 @@ final class CircuitModel {
     }
 
     static func describe(_ error: Error) -> String {
+        if let e = error as? CircuitEditError { return e.message }
         if let f = error as? ElectronicsFailure { return f.issues.map { "\($0.subject): \($0.message)" }.joined(separator: " · ") }
         return error.localizedDescription
     }
@@ -223,4 +351,11 @@ extension CircuitModel: LocalUndoTarget {
     var localRedoTitle: String? { document?.future.last?.title }
     func undoLocally() { undo() }
     func redoLocally() { redo() }
+}
+
+/// A change the circuit refuses before reaching the engine (the engine's own checks come as
+/// ElectronicsFailure).
+struct CircuitEditError: Error {
+    let message: String
+    init(_ message: String) { self.message = message }
 }

@@ -1793,7 +1793,7 @@
       "id": "T93",
       "title": "Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T91"
       ],
@@ -1803,7 +1803,8 @@
         "Tests/Electronics"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": "codex",
+      "started": "2026-09-27 10:36"
     },
     {
       "id": "T94",
@@ -1860,16 +1861,19 @@
       "id": "T97",
       "title": "Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude)",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T91",
         "T99"
       ],
       "paths": [
-        "App/Sources/UI/Electronics"
+        "App/Sources/UI/Electronics",
+        "App/Sources/Model/Electronics",
+        "App/Sources/UI/Workspace/Ribbon.swift"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-27 10:39"
     },
     {
       "id": "T98",

@@ -11,6 +11,7 @@ struct CircuitWorkspace: View {
         if circuits.document == nil {
             emptyState
         } else {
+            @Bindable var c = circuits
             HStack(spacing: 0) {
                 CircuitBoardView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -18,6 +19,8 @@ struct CircuitWorkspace: View {
                 CircuitChecksPanel()
                     .frame(width: 280)
             }
+            .sheet(isPresented: $c.showAddComponent) { AddComponentSheet() }
+            .sheet(isPresented: $c.showBoard) { BoardSheet() }
         }
     }
 
@@ -48,6 +51,8 @@ struct CircuitBoardView: View {
     @State private var pan: CGSize = .zero
     @State private var panStart: CGSize?
     @State private var hoveredPad: PlacedPad?
+    /// Where the mouse is on the board (placing a component, the Collega rubber band).
+    @State private var cursor: PCBPoint?
     @State private var dragging: (component: UUID, from: PCBPoint, delta: PCBPoint)?
     @GestureState private var pinch: CGFloat = 1
     @FocusState private var focused: Bool
@@ -96,7 +101,12 @@ struct CircuitBoardView: View {
                 .background(Color(red: 0.11, green: 0.12, blue: 0.14))
                 .contentShape(Rectangle())
                 .onContinuousHover { phase in
-                    if case let .active(q) = phase { hoveredPad = pad(at: m.board(q)) } else { hoveredPad = nil }
+                    if case let .active(q) = phase {
+                        let p = m.board(q)
+                        hoveredPad = pad(at: p)
+                        cursor = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)   // 0,5 mm grid
+                        placingCursor(true)
+                    } else { hoveredPad = nil; cursor = nil; placingCursor(false) }
                 }
                 .gesture(
                     DragGesture(minimumDistance: 2)
@@ -127,7 +137,7 @@ struct CircuitBoardView: View {
                         }
                 )
                 .simultaneousGesture(SpatialTapGesture().onEnded { tap in
-                    circuits.selection = pad(at: m.board(tap.location))?.componentID
+                    click(m.board(tap.location))
                     focused = true
                 })
                 .gesture(MagnifyGesture().updating($pinch) { value, state, _ in state = value.magnification }
@@ -135,10 +145,64 @@ struct CircuitBoardView: View {
                 .focusable().focused($focused).focusEffectDisabled()
                 .onKeyPress("r") { if let c = circuits.selection { circuits.rotate(c) }; return .handled }
                 .onKeyPress("f") { if let c = circuits.selection { circuits.flip(c) }; return .handled }
-                .onKeyPress(.escape) { circuits.selection = nil; return .handled }
-                .onHover { inside in if inside { NSCursor.arrow.set() } }
+                .onKeyPress(.escape) {
+                    if circuits.connectFrom != nil { circuits.connectFrom = nil }
+                    else if circuits.tool != .select { circuits.tool = .select }
+                    else { circuits.selection = nil }
+                    return .handled
+                }
+                .onKeyPress(.delete) { if let c = circuits.selection { circuits.removeComponent(c) }; return .handled }
+                .onKeyPress(.deleteForward) { if let c = circuits.selection { circuits.removeComponent(c) }; return .handled }
                 .overlay(alignment: .bottomTrailing) { zoomButtons.padding(12) }
                 .overlay(alignment: .topLeading) { hoverChip.padding(12) }
+                .overlay(alignment: .top) { toolHint.padding(.top, 12) }
+                .onChange(of: circuits.tool) { _, _ in focused = true }
+        }
+    }
+
+    /// A click on the board: place, connect or select, by the tool.
+    private func click(_ p: PCBPoint) {
+        switch circuits.tool {
+        case let .place(placing):
+            let at = PCBPoint((p.x * 2).rounded() / 2, (p.y * 2).rounded() / 2)
+            if circuits.addComponent(placing, at: at) != nil {
+                // Keep placing the same part with the next reference; Esc ends.
+                var next = placing
+                next.reference = circuits.nextReference(prefix: placing.prefix)
+                circuits.tool = .place(next)
+            }
+        case .connect:
+            guard let hit = pad(at: p) else { return }
+            if let first = circuits.connectFrom {
+                if first.padID != hit.padID {
+                    circuits.connect(PinReference(componentID: first.componentID, pinID: first.pinID),
+                                     PinReference(componentID: hit.componentID, pinID: hit.pinID))
+                }
+                circuits.connectFrom = nil
+            } else {
+                circuits.connectFrom = hit
+            }
+        case .select:
+            circuits.selection = pad(at: p)?.componentID
+        }
+    }
+
+    /// The crosshair while placing a component (a click puts a point); the arrow otherwise.
+    private func placingCursor(_ inside: Bool) {
+        if inside, case .place = circuits.tool { NSCursor.crosshair.set() } else if inside { NSCursor.arrow.set() }
+    }
+
+    @ViewBuilder private var toolHint: some View {
+        let text: String? = switch circuits.tool {
+        case let .place(p): "Clicca dove posare \(p.reference) (\(p.name)) · Esc per finire"
+        case .connect: circuits.connectFrom == nil ? "Collega: clicca la prima piazzola · Esc per finire"
+            : "Collega: clicca la seconda piazzola · Esc per ricominciare"
+        case .select: nil
+        }
+        if let text {
+            Text(text).font(.system(size: 11, weight: .medium))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .overlayChip()
         }
     }
 
@@ -215,6 +279,29 @@ struct CircuitBoardView: View {
             let lit = wire.netID == litNet
             ctx.stroke(path, with: .color(lit ? accent : Color.white.opacity(0.55)), lineWidth: lit ? 1.6 : 0.8)
         }
+        // Scheda: the new outline, dashed, until OK or Annulla.
+        if let preview = circuits.boardPreview, preview.count >= 3 {
+            var path = Path()
+            for (i, p) in preview.enumerated() { i == 0 ? path.move(to: m.screen(p)) : path.addLine(to: m.screen(p)) }
+            path.closeSubpath()
+            ctx.stroke(path, with: .color(accent), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+        }
+        // Collega: from the first pad to the mouse.
+        if let first = circuits.connectFrom, let c = cursor {
+            var path = Path(); path.move(to: m.screen(first.center)); path.addLine(to: m.screen(hoveredPad?.center ?? c))
+            ctx.stroke(path, with: .color(accent), style: StrokeStyle(lineWidth: 1.4, dash: [5, 3]))
+            let r: CGFloat = 5, q = m.screen(first.center)
+            ctx.stroke(Path(ellipseIn: CGRect(x: q.x - r, y: q.y - r, width: 2 * r, height: 2 * r)), with: .color(accent), lineWidth: 2)
+        }
+        // Posa: where the part will go.
+        if case let .place(p) = circuits.tool, let c = cursor {
+            let q = m.screen(c), r: CGFloat = 8
+            var cross = Path()
+            cross.move(to: CGPoint(x: q.x - r, y: q.y)); cross.addLine(to: CGPoint(x: q.x + r, y: q.y))
+            cross.move(to: CGPoint(x: q.x, y: q.y - r)); cross.addLine(to: CGPoint(x: q.x, y: q.y + r))
+            ctx.stroke(cross, with: .color(accent), lineWidth: 1.5)
+            ctx.draw(Text(p.reference).font(.system(size: 12, weight: .semibold)).foregroundColor(accent), at: CGPoint(x: q.x, y: q.y - 16))
+        }
         // References at the components' placements.
         for place in design.board.placements {
             guard let comp = design.components.first(where: { $0.id == place.componentID }) else { continue }
@@ -288,5 +375,135 @@ private struct IssueRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+
+/// CREA › Componente: what to place (from the circuit's library; the engine's generic models
+/// join the list with T93), its reference and value; then a click on the board places it.
+struct AddComponentSheet: View {
+    @Environment(CircuitModel.self) private var circuits
+    @State private var choice: CircuitModel.DeviceChoice?
+    @State private var reference = ""
+    @State private var value = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Aggiungi componente", systemImage: "cpu").font(.headline)
+            let choices = circuits.deviceChoices
+            if choices.isEmpty {
+                Text("La libreria di questo circuito è vuota. I modelli generici (resistenza, condensatore, connettore) e l'import di librerie KiCad/EasyEDA arrivano con il motore di Codex: per ora prova con «Esempio».")
+                    .font(.callout).foregroundStyle(Theme.Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                List(choices, selection: $choice) { c in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(c.name).font(.body.weight(.medium))
+                        if !c.detail.isEmpty { Text(c.detail).font(.caption).foregroundStyle(Theme.Palette.textSecondary) }
+                    }
+                    .tag(c)
+                }
+                .frame(height: 180)
+                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                    GridRow {
+                        Text("Sigla")
+                        TextField("R1", text: $reference).frame(width: 120)
+                    }
+                    GridRow {
+                        Text("Valore")
+                        TextField("10k", text: $value).frame(width: 200)
+                    }
+                }
+                .textFieldStyle(.roundedBorder)
+            }
+            Spacer(minLength: 0)
+            HStack {
+                Spacer()
+                Button("Annulla") { circuits.showAddComponent = false }.keyboardShortcut(.cancelAction)
+                Button("Posiziona sulla scheda") { place() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(choice == nil || reference.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(16)
+        .frame(width: 440, height: circuits.deviceChoices.isEmpty ? 200 : 400)
+        .onAppear { if let first = circuits.deviceChoices.first { select(first) } }
+        .onChange(of: choice) { _, c in if let c { select(c) } }
+    }
+
+    private func select(_ c: CircuitModel.DeviceChoice) {
+        if choice != c { choice = c }
+        reference = circuits.nextReference(prefix: c.prefix)
+    }
+
+    private func place() {
+        guard let c = choice else { return }
+        circuits.tool = .place(.init(device: c.key, name: c.name, prefix: c.prefix,
+                                     reference: reference.trimmingCharacters(in: .whitespaces), value: value))
+        circuits.showAddComponent = false
+    }
+}
+
+/// CREA › Scheda: the board's size and thickness, previewed dashed on the board; OK is one undo
+/// step, Annulla leaves it as it was.
+struct BoardSheet: View {
+    @Environment(CircuitModel.self) private var circuits
+    @State private var width = 50.0
+    @State private var height = 30.0
+    @State private var thickness = 1.6
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Scheda", systemImage: "rectangle.dashed").font(.headline)
+            Text("Rettangolo dall'origine (0,0). Il contorno nuovo si vede tratteggiato sulla scheda.")
+                .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                row("Larghezza", $width, "mm")
+                row("Altezza", $height, "mm")
+                row("Spessore", $thickness, "mm")
+            }
+            .textFieldStyle(.roundedBorder)
+            if width <= 0 || height <= 0 || thickness <= 0 {
+                Text("Le misure devono essere maggiori di zero.").font(.caption).foregroundStyle(.red)
+            }
+            Spacer(minLength: 0)
+            HStack {
+                Spacer()
+                Button("Annulla") { circuits.boardPreview = nil; circuits.showBoard = false }.keyboardShortcut(.cancelAction)
+                Button("OK") {
+                    circuits.boardPreview = nil
+                    circuits.setBoard(width: width, height: height, thickness: thickness)
+                    circuits.showBoard = false
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(width <= 0 || height <= 0 || thickness <= 0)
+            }
+        }
+        .padding(16)
+        .frame(width: 340, height: 250)
+        .onAppear {
+            if let board = circuits.design?.board {
+                let xs = board.outline.map(\.x), ys = board.outline.map(\.y)
+                width = (xs.max() ?? 50) - (xs.min() ?? 0); height = (ys.max() ?? 30) - (ys.min() ?? 0)
+                thickness = board.thickness
+            }
+            preview()
+        }
+        .onChange(of: width) { preview() }
+        .onChange(of: height) { preview() }
+        .onDisappear { circuits.boardPreview = nil }
+    }
+
+    private func preview() {
+        guard width > 0, height > 0 else { circuits.boardPreview = nil; return }
+        circuits.boardPreview = [PCBPoint(0, 0), PCBPoint(width, 0), PCBPoint(width, height), PCBPoint(0, height)]
+    }
+
+    private func row(_ label: String, _ value: Binding<Double>, _ unit: String) -> some View {
+        GridRow {
+            Text(label)
+            TextField("", value: value, format: .number.precision(.fractionLength(0...2))).frame(width: 90)
+            Text(unit).foregroundStyle(Theme.Palette.textSecondary)
+        }
     }
 }

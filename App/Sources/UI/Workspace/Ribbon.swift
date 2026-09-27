@@ -290,6 +290,18 @@ struct Ribbon: View {
             Button { circuits.openExample() } label: { Label("Esempio", systemImage: "sparkles") }
                 .help("Il circuito di prova del motore (componenti fittizi, da non ordinare)")
         }
+        ToolGroup("CREA") {
+            Button { circuits.tool = .select; circuits.showAddComponent = true } label: { Label("Componente", systemImage: "cpu") }
+                .disabled(circuits.document == nil)
+                .help("Aggiungi un componente: scegli, dai sigla e valore, poi clicca sulla scheda dove posarlo")
+            Button { circuits.tool = circuits.tool == .connect ? .select : .connect } label: { Label("Collega", systemImage: "point.3.connected.trianglepath.dotted") }
+                .buttonStyle(RibbonButtonStyle(isActive: circuits.tool == .connect, tint: Theme.Palette.accent))
+                .disabled(circuits.document == nil)
+                .help("Collega due pin: clicca una piazzola, poi l'altra (stessa rete; collegamento logico, non ancora una pista)")
+            Button { circuits.tool = .select; circuits.showBoard = true } label: { Label("Scheda", systemImage: "rectangle.dashed") }
+                .disabled(circuits.document == nil)
+                .help("Misure e spessore della scheda, con anteprima")
+        }
         ToolGroup("COMPONENTE") {
             Button { if let c = circuits.selection { circuits.rotate(c) } } label: { Label("Ruota", systemImage: "rotate.right") }
                 .disabled(circuits.selection == nil)
@@ -297,6 +309,9 @@ struct Ribbon: View {
             Button { if let c = circuits.selection { circuits.flip(c) } } label: { Label("Lato", systemImage: "arrow.up.arrow.down.square") }
                 .disabled(circuits.selection == nil)
                 .help("Porta il componente sull'altro lato della scheda (F)")
+            Button { if let c = circuits.selection { circuits.removeComponent(c) } } label: { Label("Elimina", systemImage: "trash") }
+                .disabled(circuits.selection == nil)
+                .help("Elimina il componente selezionato con i suoi collegamenti (Canc)")
         }
         ToolGroup("PRODUZIONE") {
             Button { circuits.exportJLCWithPanel() } label: { Label("JLCPCB", systemImage: "shippingbox") }

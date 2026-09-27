@@ -53,3 +53,4 @@ sono le prove a mano, sull'interfaccia.
 - [ ] Trascina un componente (anteprima dal vivo, collegamenti che seguono), R ruota, F cambia lato; ⌘Z annulla una mossa alla volta.
 - [ ] VERIFICHE a destra: clic su un problema → seleziona il componente. PRODUZIONE › JLCPCB: se manca qualcosa il messaggio dice cosa (l'esempio ha componenti fittizi: non ordinare).
 - [ ] Nuovo / Salva / Apri (.ftkc); chiudendo con modifiche chiede se salvare.
+- [ ] **Costruire un circuito** (CIRCUITI › CREA): Componente → scegli, sigla/valore → clic sulla scheda (resta attivo per R2, R3…; Esc finisce). Collega → clic su una piazzola, poi su un'altra: compare la linea del collegamento. Scheda → misure con anteprima tratteggiata. Elimina (o Canc). Ogni passo si annulla con ⌘Z. Nota: da «Nuovo» la libreria è vuota finché Codex non consegna i modelli generici; intanto prova sull'Esempio.
