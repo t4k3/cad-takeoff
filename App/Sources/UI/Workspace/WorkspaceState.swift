@@ -166,7 +166,19 @@ final class WorkspaceState {
     @ObservationIgnored weak var model: DesignModel?
 
     /// «Schizzo» waits for a click on a planar face (or a base plane).
-    var pickingSketchPlane = false
+    var pickingSketchPlane = false {
+        didSet { if !pickingSketchPlane { planePickPoints = []; planePickFace = nil } }
+    }
+    /// How the construction plane is picked: a face (planar, or tangent to a round one), three
+    /// points, or midway between two parallel faces.
+    enum PlanePickMode: String, CaseIterable, Identifiable {
+        case face = "Faccia", points = "3 punti", midway = "Medio"
+        var id: String { rawValue }
+    }
+    var planePickMode = PlanePickMode.face
+    /// Points clicked so far (3 punti), or the first face and its click point (Medio).
+    var planePickPoints: [Vec3] = []
+    var planePickFace: (origin: Vec3, normal: Vec3)?
     /// Construction plane: the chosen face or base plane moved along its normal (mm).
     var sketchPlaneOffset = 0.0
     /// Inclined construction plane: degrees about the chosen plane's X (or Y) axis.

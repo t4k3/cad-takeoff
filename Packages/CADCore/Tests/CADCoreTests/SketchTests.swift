@@ -98,3 +98,22 @@ import Testing
     let m = try! PrimitiveKernel.build(f).mesh
     #expect(abs(m.volume - 500) < 1e-9)
 }
+
+@Test func constructionPlanesByPointsTangentAndMidway() throws {
+    // Three points on the plane z = x (tilted 45°): the normal is ±(−1, 0, 1)/√2.
+    let p = try #require(SketchPlane.through(Vec3(0, 0, 0), Vec3(0, 10, 0), Vec3(10, 0, 10)))
+    #expect(abs(abs(p.normal.dot(Vec3(-1, 0, 1).normalized)) - 1) < 1e-12)
+    for q in [Vec3(0, 0, 0), Vec3(0, 10, 0), Vec3(10, 0, 10)] { #expect(abs((q - p.origin).dot(p.normal)) < 1e-9) }
+    #expect(SketchPlane.through(Vec3(0, 0, 0), Vec3(1, 1, 1), Vec3(2, 2, 2)) == nil)
+    // Tangent to a vertical Ø20 cylinder at (10, 0, 5): the plane x = 10, facing +X, Y up.
+    let t = try #require(SketchPlane.tangent(to: .cylinder(axisOrigin: .zero, axisDirection: Vec3(0, 0, 1), radius: 10), at: Vec3(10, 0, 5)))
+    #expect((t.normal - Vec3(1, 0, 0)).length < 1e-12 && abs(t.origin.x - 10) < 1e-12 && (t.yAxis - Vec3(0, 0, 1)).length < 1e-12)
+    // A 45° cone opening upwards from the origin: at (5, 0, 5) the normal is (1, 0, −1)/√2.
+    let c = try #require(SketchPlane.tangent(to: .cone(apex: .zero, axisDirection: Vec3(0, 0, 1), halfAngle: .pi / 4), at: Vec3(5, 0, 5)))
+    #expect((c.normal - Vec3(1, 0, -1).normalized).length < 1e-12 && abs((Vec3(5, 0, 5) - c.origin).dot(c.normal)) < 1e-9)
+    #expect(SketchPlane.tangent(to: .plane(origin: .zero, normal: Vec3(0, 0, 1)), at: .zero) == nil)
+    // Between the faces x = −15 and x = 25 (facing away from each other): x = 5.
+    let m = try #require(SketchPlane.midway(Vec3(-15, 3, 0), Vec3(-1, 0, 0), Vec3(25, 0, 7), Vec3(1, 0, 0)))
+    #expect(abs(m.origin.x - 5) < 1e-12 && abs(abs(m.normal.x) - 1) < 1e-12)
+    #expect(SketchPlane.midway(.zero, Vec3(0, 0, 1), .zero, Vec3(1, 0, 0)) == nil)
+}

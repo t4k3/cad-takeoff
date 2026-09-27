@@ -273,20 +273,98 @@ struct ViewportContainer: View {
         model.selection = viewport.pick(ray)
     }
 
-    /// «Schizzo»: a click on a planar face sketches on it; in empty space, on the XY plane.
+    /// «Schizzo»: a click on a planar face sketches on it (on a round one, on the plane tangent
+    /// there); in empty space, on the XY plane. Or a plane through three points, or midway
+    /// between two parallel faces.
     private func pickSketchPlane(_ ray: Ray) {
         let bodies = viewport.renderer?.visibleBodies ?? []
-        guard let hit = Picking.pick(ray, in: bodies),
-              let face = bodies.first(where: { $0.feature.id == hit.featureID })?.face(ofTriangle: hit.triangle) else {
-            workspace.enterSketch(); return
+        let hit = Picking.pick(ray, in: bodies)
+        let face = hit.flatMap { h in bodies.first { $0.feature.id == h.featureID }?.face(ofTriangle: h.triangle) }
+        let point = hit.map { Vec3(Double($0.point.x), Double($0.point.y), Double($0.point.z)) }
+        let view = Vec3(Double(ray.direction.x), Double(ray.direction.y), Double(ray.direction.z))
+        // A built plane faces the viewer (not seen from behind, mirrored).
+        func facing(_ plane: SketchPlane) -> SketchPlane {
+            plane.normal.dot(view) > 0 ? SketchPlane.onFace(point: plane.origin, normal: -plane.normal) : plane
         }
-        guard case let .plane(origin, normal) = face.surface else {
-            model.statusMessage = "Lo schizzo va su una faccia piana: scegli un'altra faccia."
-            workspace.pickingSketchPlane = true
-            return
+        switch workspace.planePickMode {
+        case .face:
+            guard let face, let point else { workspace.enterSketch(); return }
+            if case let .plane(origin, normal) = face.surface {
+                workspace.enterSketch(plane: SketchPlane.onFace(point: origin, normal: normal), focus: point)
+            } else if let plane = SketchPlane.tangent(to: face.surface, at: point) {
+                model.statusMessage = "Schizzo sul piano tangente alla faccia tonda nel punto cliccato"
+                workspace.enterSketch(plane: plane, focus: point)
+            } else {
+                model.statusMessage = "Lo schizzo va su una faccia piana o tonda: scegli un'altra faccia."
+            }
+        case .points:
+            guard let p = snappedPoint(ray, bodies: bodies) ?? point else {
+                model.statusMessage = "Clicca un vertice, il centro di un foro, il punto medio di uno spigolo o una faccia."
+                return
+            }
+            workspace.planePickPoints.append(p)
+            let q = workspace.planePickPoints
+            guard q.count == 3 else { return }
+            guard let plane = SketchPlane.through(q[0], q[1], q[2]) else {
+                model.statusMessage = "I tre punti sono allineati: scegline altri."
+                workspace.planePickPoints = []
+                return
+            }
+            workspace.enterSketch(plane: facing(plane), focus: (q[0] + q[1] + q[2]) * (1.0 / 3))
+        case .midway:
+            guard let face, let point, case let .plane(origin, normal) = face.surface else {
+                model.statusMessage = "Clicca due facce piane parallele."
+                return
+            }
+            guard let first = workspace.planePickFace, let firstPoint = workspace.planePickPoints.first else {
+                workspace.planePickFace = (origin, normal); workspace.planePickPoints = [point]
+                return
+            }
+            guard let plane = SketchPlane.midway(first.origin, first.normal, origin, normal) else {
+                model.statusMessage = "Le due facce non sono parallele: scegline un'altra."
+                return
+            }
+            let c = (firstPoint + point) * 0.5
+            workspace.enterSketch(plane: facing(plane), focus: c - plane.normal * (c - plane.origin).dot(plane.normal))
         }
-        let p = Vec3(Double(hit.point.x), Double(hit.point.y), Double(hit.point.z))
-        workspace.enterSketch(plane: SketchPlane.onFace(point: origin, normal: normal), focus: p)
+    }
+
+    /// The vertex, hole centre or edge midpoint nearest the ray, within 10 points on screen.
+    private func snappedPoint(_ ray: Ray, bodies: [ViewportRenderer.Body]) -> Vec3? {
+        let ro = Vec3(Double(ray.origin.x), Double(ray.origin.y), Double(ray.origin.z))
+        let rd = Vec3(Double(ray.direction.x), Double(ray.direction.y), Double(ray.direction.z)).normalized
+        let tolerance = viewport.screenTolerance(10)
+        var best: (Vec3, Double)?
+        func consider(_ p: Vec3) {
+            let v = p - ro, t = v.dot(rd)
+            guard t > 0 else { return }
+            let score = (v - rd * t).length / tolerance(t)
+            if score <= 1, score < best?.1 ?? .infinity { best = (p, score) }
+        }
+        for body in bodies {
+            for e in body.snapshot.edges {
+                let pts = e.polyline
+                guard let a = pts.first, let b = pts.last else { continue }
+                if pts.count > 3, (a - b).length < 1e-6 {
+                    let unique = pts.dropLast()
+                    consider(unique.reduce(Vec3.zero, +) * (1 / Double(unique.count)))
+                    continue
+                }
+                consider(a); consider(b)
+                if pts.count == 2 { consider((a + b) * 0.5) }
+            }
+        }
+        return best?.0
+    }
+
+    /// Crosses on the points picked for a construction plane.
+    private var planePickMarkers: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
+        guard workspace.pickingSketchPlane else { return [] }
+        let size = Float(viewport.camera.pose.distance) * 0.012, colour = SIMD4<Float>(1, 0.55, 0.22, 1)
+        return workspace.planePickPoints.flatMap { p -> [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] in
+            let c = SIMD3(Float(p.x), Float(p.y), Float(p.z))
+            return [SIMD3<Float>(size, 0, 0), SIMD3(0, size, 0), SIMD3(0, 0, size)].map { (c - $0, c + $0, colour) }
+        }
     }
 
     private func dragBegin(_ ray: Ray) -> Bool {
@@ -511,7 +589,7 @@ struct ViewportContainer: View {
     // MARK: Sketch overlays
 
     private var sketchLines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
-        savedSketchLines + flatLines + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
+        savedSketchLines + flatLines + planePickMarkers + (workspace.holePlacement?.overlay() ?? []) + (workspace.manipulator?.overlay() ?? []) + (workspace.sketch?.overlay(sketchColor: SIMD4(0.35, 0.69, 1, 1),
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
                                   previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
             + (workspace.sketch?.dimensionLines(color: SIMD4(0.85, 0.88, 0.92, 0.7)) ?? [])
@@ -610,7 +688,20 @@ struct ViewportContainer: View {
         HStack(spacing: 8) {
             Label("SCHIZZO", systemImage: "pencil.and.outline").font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Theme.Palette.sketch)
-            Text("Clicca una faccia piana, oppure").font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+            Picker("", selection: Binding(get: { workspace.planePickMode }, set: { workspace.planePickMode = $0; workspace.planePickPoints = []; workspace.planePickFace = nil })) {
+                ForEach(WorkspaceState.PlanePickMode.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .labelsHidden().pickerStyle(.segmented).controlSize(.small).frame(width: 170)
+            .help("Faccia: piana, o tonda (piano tangente nel punto) · 3 punti: vertici, centri dei fori, punti medi · Medio: tra due facce parallele")
+            Text(planePickHint).font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
+        }
+    }
+
+    private var planePickHint: String {
+        switch workspace.planePickMode {
+        case .face: "Clicca una faccia, oppure"
+        case .points: "Clicca 3 punti (\(workspace.planePickPoints.count)/3), poi"
+        case .midway: "Clicca 2 facce parallele (\(workspace.planePickFace == nil ? 0 : 1)/2), poi"
         }
     }
 

@@ -109,8 +109,9 @@ completa.
 estrusione simmetrica e con sformo, Sposta/ruota corpi, piani di schizzo inclinati; raccordi e smussi
 su tutti gli spigoli danno solidi chiusi (auto sportiva: da R0,8 a R8), anche lungo cilindri che
 incontrano un piano; angoli sferici dove tre raccordi si incontrano (come Fusion).
-Poi anche «fino a faccia» e serie/specchio di feature (un foro ripetuto). Restano: piani per tre
-punti/tangenti, superfici esatte come verità del motore.
+Poi anche «fino a faccia», serie/specchio di feature (un foro ripetuto) e piani di costruzione per
+tre punti, tangenti a cilindri/coni/sfere e medi fra due facce. Resta: superfici esatte come verità
+del motore.
 - Rivoluzione, guscio, estrusione simmetrica / fino a faccia / rastremata.
 - Piani, assi e punti di costruzione.
 - Raccordi d'angolo (sfera dove si incontrano tre raccordi): niente più solidi aperti.

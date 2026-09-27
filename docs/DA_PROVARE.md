@@ -13,6 +13,7 @@ sono le prove a mano, sull'interfaccia.
 - [ ] **Parametri** (ƒ): crea `larghezza = 40`, scrivi `larghezza / 2` in una quota → «fx:»; cambia il parametro.
 - [ ] Arco disegnato dalla fine di una linea nella sua direzione: tangenza automatica.
 - [ ] Piano di schizzo **inclinato** (campo «Inclina» nella scelta del piano).
+- [ ] Piani di costruzione: **3 punti** (vertici/centri/punti medi), **Medio** fra due facce parallele, clic su un cilindro → piano **tangente**.
 
 ## Solidi
 - [ ] **Rivoluzione** (Schizzo › CREA): aree + linea d'asse (meglio di costruzione), angolo, verso.

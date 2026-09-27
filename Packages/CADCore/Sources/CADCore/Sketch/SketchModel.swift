@@ -53,6 +53,51 @@ public struct SketchPlane: Codable, Sendable, Equatable {
         let x = abs(n.z) > 0.999 ? Vec3(1, 0, 0) : Vec3(0, 0, 1).cross(n).normalized
         return SketchPlane(origin: origin, xAxis: x, yAxis: n.cross(x).normalized)
     }
+
+    /// Construction plane through three points (normal by the right-hand rule a → b → c), with
+    /// the axes of `onFace`; nil when the points are (nearly) in line.
+    public static func through(_ a: Vec3, _ b: Vec3, _ c: Vec3) -> SketchPlane? {
+        let n = (b - a).cross(c - a)
+        let scale = max((b - a).length, (c - a).length, 1e-9)
+        guard n.length > 1e-6 * scale * scale else { return nil }
+        return onFace(point: a, normal: n)
+    }
+
+    /// Construction plane tangent to a round face (cylinder, cone, sphere, torus) at a point on
+    /// it, facing out of the part; nil on a plane or a free-form face.
+    public static func tangent(to surface: SurfaceDescriptor, at p: Vec3) -> SketchPlane? {
+        func radial(_ o: Vec3, _ axis: Vec3) -> (Vec3, Vec3)? {
+            let k = axis.normalized, v = p - o
+            let r = v - k * v.dot(k)
+            return r.length > 1e-9 ? (r.normalized, k) : nil
+        }
+        let n: Vec3
+        switch surface {
+        case let .cylinder(o, a, _):
+            guard let (r, _) = radial(o, a) else { return nil }
+            n = r
+        case let .cone(apex, a, half):
+            guard let (r, k) = radial(apex, a) else { return nil }
+            n = (r * cos(half) - k * sin(half)).normalized
+        case let .sphere(c, _):
+            guard (p - c).length > 1e-9 else { return nil }
+            n = (p - c).normalized
+        case let .torus(c, a, major, _):
+            guard let (r, _) = radial(c, a), (p - (c + r * major)).length > 1e-9 else { return nil }
+            n = (p - (c + r * major)).normalized
+        case .plane, .freeform:
+            return nil
+        }
+        return onFace(point: p, normal: n)
+    }
+
+    /// Mid-plane of two parallel planar faces (each an origin and normal), facing as the first.
+    public static func midway(_ o1: Vec3, _ n1: Vec3, _ o2: Vec3, _ n2: Vec3) -> SketchPlane? {
+        let a = n1.normalized, b = n2.normalized
+        guard abs(a.dot(b)) > 1 - 1e-6 else { return nil }
+        let mid = o1 + a * ((o2 - o1).dot(a) / 2)
+        return onFace(point: mid, normal: a)
+    }
 }
 
 /// One entity drawn in a sketch.
