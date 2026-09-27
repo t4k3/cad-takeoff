@@ -88,19 +88,24 @@ struct CircuitTests {
         // samples) imported with preview, joined into a new type, placed.
         let lib = URL(fileURLWithPath: CommandLine.arguments[2])
         let symURL = lib.appendingPathComponent("Device_R.kicad_sym"), fpURL = lib.appendingPathComponent("R_0603_1608Metric.kicad_mod")
-        let names = CircuitModel.kicadSymbolNames(try Data(contentsOf: symURL))
-        check(names.contains("R"), "simboli del file KiCad elencati (\(names))")
+        c.chooseImport(symURL)
+        await c.importReady()
+        let names = c.symbolChoice?.names ?? []
+        check(names.contains("R") || c.importProposal?.symbols.first?.name == "R", "simboli del file KiCad elencati dal motore (\(names) · \(last))")
         let rev0 = c.document!.revision
-        c.prepareImport(symURL, symbol: "R")
+        if c.symbolChoice != nil { c.chooseSymbol("R") }
+        await c.importReady()
         check(c.importProposal?.symbols.first?.name == "R" && c.document!.revision == rev0, "anteprima del simbolo, nessuna modifica (\(last))")
+        check(c.importProposal?.preview.revisionDiffs.allSatisfy { $0.before == nil } == true, "simbolo nuovo: nessuna revisione precedente")
         c.confirmImport()
         c.prepareImport(fpURL)
+        await c.importReady()
         check((c.importProposal?.footprints.count ?? 0) == 1, "anteprima dell'impronta (\(last))")
         c.confirmImport()
         let lib1 = c.design!.library
         check(lib1.symbols.contains { $0.name == "R" } && lib1.footprints.contains { $0.name.contains("0603") }, "importati simbolo e impronta")
         // The same file again: nothing new.
-        c.prepareImport(fpURL); c.confirmImport()
+        c.prepareImport(fpURL); await c.importReady(); c.confirmImport()
         check(c.design!.library.footprints.count == lib1.footprints.count, "reimport identico senza doppioni")
         let sym = lib1.symbols.first { $0.name == "R" }!.key, fp = lib1.footprints.first { $0.name.contains("0603") && $0.source.reference.hasSuffix(".kicad_mod") }!.key
         guard case let .success(map) = c.suggestedPinMap(symbol: sym, footprint: fp) else { print("FALLITO: nessuna piedinatura proposta (\(last))"); exit(1) }
@@ -111,6 +116,69 @@ struct CircuitTests {
         c.startPlacing(kind, reference: c.nextReference(prefix: kind.prefix), value: "4k7")
         if case let .place(s) = c.tool { check(c.addComponent(s, at: PCBPoint(40, 20)) != nil, "tipo importato posato (\(last))") }
         c.tool = .select
+
+        // A new revision of the footprint (pads moved, same file name, another folder): compared
+        // with revision 1, the placed resistor listed to evaluate (it stays on revision 1).
+        let placedRef = c.design!.components.last!.id
+        let v2Dir = FileManager.default.temporaryDirectory.appendingPathComponent("rev2-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: v2Dir, withIntermediateDirectories: true)
+        let v2 = v2Dir.appendingPathComponent(fpURL.lastPathComponent)
+        let original = try String(contentsOf: fpURL, encoding: .utf8)
+        try original.replacingOccurrences(of: "(at -0.825 0)", with: "(at -0.925 0)").replacingOccurrences(of: "(at 0.825 0)", with: "(at 0.925 0)")
+            .write(to: v2, atomically: true, encoding: .utf8)
+        let beforeRev2 = c.document
+        c.prepareImport(v2)
+        await c.importReady()
+        let diff = c.importProposal?.preview.revisionDiffs.first { if case .footprint = $0.after { true } else { false } }
+        check(diff?.before?.key.revision == 1 && diff?.after.key.revision == 2 && diff?.pads.filter { $0.kind == .modified }.count == 2
+              && diff?.affectedComponentIDs.contains(placedRef) == true && c.document == beforeRev2,
+              "revisione 2 confrontata con la 1: 2 piazzole spostate, resistenza posata da valutare (\(diff.map { "\($0.pads.count)" } ?? "nessun confronto"))")
+        let shapes = c.importProposal?.footprintShapes ?? [:]
+        check(shapes.count == 2 && shapes.values.allSatisfy { $0.pads.count == 2 }, "forme esatte delle piazzole prima e dopo, dal motore")
+        c.cancelImport()
+        check(c.importProposal == nil && c.document == beforeRev2, "annulla: niente cambia")
+        // Previewed, then the circuit changes: the confirmation is refused.
+        c.prepareImport(v2); await c.importReady()
+        c.setBoard(width: 61, height: 41, thickness: 1.6)
+        let changedMeanwhile = c.document
+        c.confirmImport()
+        check(c.document == changedMeanwhile && last.contains("cambiato"), "anteprima su un altro stato: conferma rifiutata (\(last))")
+        c.prepareImport(v2); await c.importReady(); c.confirmImport()
+        check(c.design!.library.footprints.filter { $0.key.id == diff?.after.key.id }.map(\.key.revision).sorted() == [1, 2]
+              && c.design!.board.placements.contains { $0.componentID == placedRef }, "revisione 2 aggiunta, la resistenza resta sulla 1")
+        // The identical content again from another folder, same name, another date: nothing changes.
+        let v3Dir = v2Dir.appendingPathComponent("altra")
+        try FileManager.default.createDirectory(at: v3Dir, withIntermediateDirectories: true)
+        let v3 = v3Dir.appendingPathComponent(fpURL.lastPathComponent)
+        try FileManager.default.copyItem(at: v2, to: v3)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: 1_000_000_000)], ofItemAtPath: v3.path)
+        let unchanged = c.document
+        c.prepareImport(v3); await c.importReady()
+        check(c.importProposal?.preview.revisionDiffs.isEmpty == true, "reimport identico: nessun confronto")
+        c.confirmImport()
+        check(c.document == unchanged, "reimport identico da un'altra cartella e data: documento intero invariato (\(last))")
+        // Reading held; the same circuit reopened meanwhile: the preview never lands.
+        let saved = v2Dir.appendingPathComponent("circuito.ftkc")
+        try c.save(to: saved)
+        let libGate = ReadGate()
+        c.readLibraryFile = { url in await libGate.wait(url); return try Data(contentsOf: url) }
+        c.prepareImport(fpURL)
+        let pendingPreview = c.importTask
+        await libGate.arrived(fpURL)
+        try await c.open(saved)
+        await libGate.release(fpURL)
+        await pendingPreview?.value
+        check(c.importProposal == nil && c.importing == nil, "file riaperto durante la lettura: nessuna anteprima vecchia")
+        // Listing symbols held, then another file: no choice offered for the old circuit.
+        c.chooseImport(symURL)
+        let pendingList = c.importTask
+        await libGate.arrived(symURL)
+        try await c.open(saved)
+        await libGate.release(symURL)
+        await pendingList?.value
+        check(c.symbolChoice == nil && c.importProposal == nil, "elenco simboli di un altro circuito: scartato")
+        c.readLibraryFile = { url in try Data(contentsOf: url) }
+        try? FileManager.default.removeItem(at: v2Dir)
 
         // SCHEMA, from a new circuit: first sheet made on first use, two resistors placed on it.
         let sc = CircuitModel()

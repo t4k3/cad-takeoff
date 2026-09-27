@@ -28,8 +28,8 @@ struct CircuitWorkspace: View {
             .sheet(isPresented: $c.showNetClasses) { NetClassesSheet() }
             .sheet(isPresented: Binding(get: { circuits.showFabrication }, set: { if !$0 { circuits.closeFabrication() } })) { FabricationSheet() }
             .sheet(isPresented: $c.showCreateDevice) { CreateDeviceSheet() }
-            .sheet(isPresented: Binding(get: { circuits.importProposal != nil }, set: { if !$0 { circuits.importProposal = nil } })) { ImportPreviewSheet() }
-            .sheet(isPresented: Binding(get: { circuits.symbolChoice != nil }, set: { if !$0 { circuits.symbolChoice = nil } })) { SymbolChoiceSheet() }
+            .sheet(isPresented: Binding(get: { circuits.importProposal != nil || circuits.importing != nil }, set: { if !$0 { circuits.cancelImport() } })) { ImportPreviewSheet() }
+            .sheet(isPresented: Binding(get: { circuits.symbolChoice != nil }, set: { if !$0 { circuits.cancelImport() } })) { SymbolChoiceSheet() }
             .sheet(isPresented: Binding(get: { circuits.labelTarget != nil }, set: { if !$0 { circuits.labelTarget = nil } })) { LabelSheet() }
         }
     }
@@ -1524,58 +1524,15 @@ struct SymbolChoiceSheet: View {
             }
             HStack {
                 Spacer()
-                Button("Annulla") { circuits.symbolChoice = nil }.keyboardShortcut(.cancelAction)
+                Button("Annulla") { circuits.cancelImport() }.keyboardShortcut(.cancelAction)
                 Button("Anteprima") {
-                    guard let choice = circuits.symbolChoice, let name else { return }
-                    circuits.symbolChoice = nil
-                    circuits.prepareImport(choice.url, symbol: name)
+                    guard let name else { return }
+                    circuits.chooseSymbol(name)
                 }
                 .keyboardShortcut(.defaultAction).disabled(name == nil)
             }
         }
         .padding(16).frame(width: 380, height: 340)
-    }
-}
-
-/// LIBRERIA › Importa, step 2: what comes into the circuit's library and the warnings; nothing
-/// changes until «Importa» (one undo step).
-struct ImportPreviewSheet: View {
-    @Environment(CircuitModel.self) private var circuits
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let p = circuits.importProposal {
-                Label("Importa \(p.fileName)", systemImage: "square.and.arrow.down.on.square").font(.headline)
-                ForEach(p.symbols, id: \.key) { s in
-                    Label("Simbolo \(s.name) · \(s.pins.count) pin", systemImage: "function")
-                }
-                ForEach(p.footprints, id: \.key) { f in
-                    Label("Impronta \(f.name) · \(f.pads.count) piazzole", systemImage: "square.grid.2x2")
-                }
-                if !p.preview.issues.isEmpty {
-                    Text("Da controllare").font(.caption.weight(.semibold)).padding(.top, 4)
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(Array(p.preview.issues.enumerated()), id: \.offset) { _, issue in
-                                Label(issue.message, systemImage: issue.severity == .error ? "xmark.octagon" : "exclamationmark.triangle")
-                                    .font(.caption).foregroundStyle(issue.severity == .error ? Color.red : Color.orange)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                    }
-                    .frame(maxHeight: 140)
-                }
-                Text("Poi LIBRERIA › Nuovo tipo unisce simbolo e impronta in un componente da posare.")
-                    .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
-            }
-            Spacer(minLength: 0)
-            HStack {
-                Spacer()
-                Button("Annulla") { circuits.importProposal = nil }.keyboardShortcut(.cancelAction)
-                Button("Importa") { circuits.confirmImport() }.keyboardShortcut(.defaultAction)
-            }
-        }
-        .padding(16).frame(width: 460, height: 360)
     }
 }
 

@@ -634,18 +634,38 @@ final class CircuitModel {
     // MARK: Libraries (docs/electronics/LIBRARIES.md)
 
     /// An import waiting for OK: the engine's proposal and its preview (what the circuit's library
-    /// would become, and the warnings). OK applies it at the revision it was previewed on.
+    /// would become, the warnings, and each new revision compared with every revision it follows —
+    /// docs/electronics/LIBRARY_REVISIONS.md). OK applies that very command, only on the circuit
+    /// (identity, open document, revision) it was previewed on.
     struct ImportProposal {
         var fileName: String
         var command: ElectronicsLibraryCommand
         var preview: LibraryCommandPreview
         var symbols: [SymbolDefinition]
         var footprints: [FootprintDefinition]
+        var key: ImportKey
+        /// The engine's exact pad shapes of each footprint compared (by revision key), for the
+        /// before/after drawing.
+        var footprintShapes: [LibraryRevision: LibraryFootprintSnapshot] = [:]
+    }
+    struct ImportKey: Equatable, Sendable { var designID: UUID; var epoch: Int; var revision: UInt64 }
+    var importKey: ImportKey? {
+        document.map { ImportKey(designID: $0.design.id, epoch: documentEpoch, revision: $0.revision) }
     }
     var importProposal: ImportProposal?
+    /// Reading and comparing in the background (the panel waits; a new import or another file
+    /// makes it moot).
+    private(set) var importing: String?
+    @ObservationIgnored var importTask: Task<Void, Never>?
+    @ObservationIgnored var importRequest: UUID?
     var showCreateDevice = false
-    /// A KiCad symbol library with several symbols: which one to import.
-    var symbolChoice: (url: URL, names: [String])?
+    /// A KiCad symbol library with several symbols: which one to import (for the circuit it was
+    /// listed on).
+    var symbolChoice: (url: URL, names: [String], key: ImportKey)?
+    /// How library files are read (off the main thread; tests hold it).
+    @ObservationIgnored var readLibraryFile: @Sendable (URL) async throws -> Data = { url in
+        try await Task.detached(priority: .userInitiated) { try Data(contentsOf: url) }.value
+    }
 
     /// LIBRERIA › Importa: a KiCad footprint (.kicad_mod) or symbol library (.kicad_sym), or an
     /// EasyEDA Standard footprint (.json); then the preview panel.
@@ -655,11 +675,50 @@ final class CircuitModel {
         panel.allowedContentTypes = ["kicad_mod", "kicad_sym", "json"].compactMap { UTType(filenameExtension: $0) }
         panel.message = "Importa un'impronta KiCad (.kicad_mod), un simbolo KiCad (.kicad_sym) o un'impronta EasyEDA Standard (.json)"
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        chooseImport(url)
+    }
+
+    /// A file to import: a footprint straight to the preview; a symbol library listed first
+    /// (off the main thread), then its only symbol previewed or the choice offered — all for the
+    /// circuit it was picked on.
+    func chooseImport(_ url: URL) {
         guard Self.libraryFile(url) == .kicadSymbols else { prepareImport(url); return }
-        let names = (try? Data(contentsOf: url)).map(Self.kicadSymbolNames) ?? []
-        if names.count == 1 { prepareImport(url, symbol: names[0]) }
-        else if names.isEmpty { report("Nessun simbolo trovato in \(url.lastPathComponent)") }
-        else { symbolChoice = (url, names) }
+        guard let key = importKey else { return }
+        cancelImport()
+        let token = UUID()
+        importRequest = token
+        importing = url.lastPathComponent
+        let read = readLibraryFile
+        importTask = Task { [weak self] in
+            var names: Result<[String], CircuitEditError>
+            do {
+                let data = try await read(url)
+                names = await Self.offMain { () -> Result<[String], CircuitEditError> in
+                    do { return .success(try KiCadLibraryImporter.symbolNames(data)) }
+                    catch { return .failure(CircuitEditError(Self.describe(error))) }
+                }
+            } catch { names = .failure(CircuitEditError(Self.describe(error))) }
+            guard let self, self.importRequest == token else { return }
+            self.importing = nil
+            guard !Task.isCancelled, self.importKey == key else { return }
+            switch names {
+            case .success(let list) where list.count == 1: self.prepareImport(url, symbol: list[0])
+            case .success(let list) where list.isEmpty: self.report("Nessun simbolo trovato in \(url.lastPathComponent)")
+            case .success(let list): self.symbolChoice = (url, list, key)
+            case .failure(let e): self.report("\(url.lastPathComponent): \(e.message)")
+            }
+        }
+    }
+
+    /// The symbol chosen in the list: previewed only if the circuit is still the one listed.
+    func chooseSymbol(_ name: String) {
+        guard let choice = symbolChoice else { return }
+        symbolChoice = nil
+        guard choice.key == importKey else {
+            report("Il circuito è cambiato dopo l'elenco dei simboli: rifai l'import.")
+            return
+        }
+        prepareImport(choice.url, symbol: name)
     }
 
     enum LibraryFile { case kicadFootprint, kicadSymbols, easyedaFootprint }
@@ -673,62 +732,89 @@ final class CircuitModel {
         }
     }
 
-    /// The symbols of a KiCad symbol library, to choose one (top-level names; the engine checks
-    /// the chosen one). TODO: the engine's own listing when it offers one (RICHIESTA-API).
-    static func kicadSymbolNames(_ data: Data) -> [String] {
-        let text = String(decoding: data, as: UTF8.self)
-        var names: [String] = []
-        var depth = 0, i = text.startIndex
-        while i < text.endIndex {
-            let ch = text[i]
-            if ch == "(" {
-                depth += 1
-                if depth == 2, text[i...].hasPrefix("(symbol \""),
-                   let open = text[i...].firstIndex(of: "\""), let close = text[text.index(after: open)...].firstIndex(of: "\"") {
-                    names.append(String(text[text.index(after: open)..<close]))
-                }
-            } else if ch == ")" {
-                depth -= 1
-            } else if ch == "\"" {
-                // Skip quoted strings (they may hold parentheses).
-                var j = text.index(after: i)
-                while j < text.endIndex, text[j] != "\"" { if text[j] == "\\" { j = text.index(after: j) }; if j < text.endIndex { j = text.index(after: j) } }
-                i = j
+    /// Reads a library file and prepares its import off the main thread (nothing changes until
+    /// `confirmImport`); the proposal counts only for the circuit it was made on.
+    func prepareImport(_ url: URL, symbol: String? = nil) {
+        guard let doc = document, let key = importKey, let kind = Self.libraryFile(url) else { return }
+        importTask?.cancel()
+        symbolChoice = nil
+        importProposal = nil
+        importing = url.lastPathComponent
+        let token = UUID()
+        importRequest = token
+        let library = doc.design.library, read = readLibraryFile
+        importTask = Task { [weak self] in
+            let data: Data
+            do { data = try await read(url) } catch {
+                guard let self, self.importRequest == token else { return }
+                self.importing = nil
+                if self.importKey == key { self.report("Import di \(url.lastPathComponent) non riuscito: \(Self.describe(error))") }
+                return
             }
-            if i < text.endIndex { i = text.index(after: i) }
+            let built = await Self.offMain { () -> Result<ImportProposal, CircuitEditError> in
+                do {
+                    let name = symbol ?? url.deletingPathExtension().lastPathComponent
+                    let context = Self.importContext(for: url, name: name, data: data, in: library)
+                    try Task.checkCancellation()
+                    let result: LibraryImportResult = switch kind {
+                    case .kicadFootprint: try KiCadLibraryImporter.footprint(data, context: context)
+                    case .kicadSymbols: try KiCadLibraryImporter.symbol(data, name: name, context: context)
+                    case .easyedaFootprint: try EasyEDAStandardImporter.footprint(data, name: name, context: context)
+                    }
+                    let command = ElectronicsLibraryCommand.importLibrary(result)
+                    let preview = try ElectronicsLibraryCommands.preview(command, document: doc, expectedRevision: key.revision)
+                    var shapes: [LibraryRevision: LibraryFootprintSnapshot] = [:]
+                    for diff in preview.revisionDiffs {
+                        for case let .footprint(f)? in [diff.before, diff.after] where shapes[f.key] == nil {
+                            try Task.checkCancellation()
+                            shapes[f.key] = try? ElectronicsLibraryGeometry.footprint(f)
+                        }
+                    }
+                    return .success(ImportProposal(fileName: url.lastPathComponent, command: command, preview: preview,
+                                                   symbols: result.library.symbols, footprints: result.library.footprints, key: key,
+                                                   footprintShapes: shapes))
+                } catch {
+                    return .failure(CircuitEditError(Self.describe(error)))
+                }
+            }
+            guard let self, self.importRequest == token else { return }
+            self.importing = nil
+            guard !Task.isCancelled, self.importKey == key else { return }
+            switch built {
+            case .success(let proposal): self.importProposal = proposal
+            case .failure(let e): self.report("Import di \(url.lastPathComponent) non riuscito: \(e.message)")
+            }
         }
-        return names
     }
 
-    /// Reads a library file and prepares its import (nothing changes until `confirmImport`).
-    func prepareImport(_ url: URL, symbol: String? = nil) {
-        guard let doc = document, let kind = Self.libraryFile(url) else { return }
-        do {
-            let data = try Data(contentsOf: url)
-            let name = symbol ?? url.deletingPathExtension().lastPathComponent
-            let key = libraryKey(for: url.lastPathComponent + "|" + name, data: data)
-            let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
-                .map { ISO8601DateFormatter().string(from: $0) } ?? ""
-            let context = LibraryImportContext(key: key, source: LibrarySource(reference: url.path, license: "da verificare", sourceRevision: modified))
-            let result: LibraryImportResult = switch kind {
-            case .kicadFootprint: try KiCadLibraryImporter.footprint(data, context: context)
-            case .kicadSymbols: try KiCadLibraryImporter.symbol(data, name: name, context: context)
-            case .easyedaFootprint: try EasyEDAStandardImporter.footprint(data, name: name, context: context)
-            }
-            let command = ElectronicsLibraryCommand.importLibrary(result)
-            let preview = try ElectronicsLibraryCommands.preview(command, document: doc, expectedRevision: doc.revision)
-            importProposal = ImportProposal(fileName: url.lastPathComponent, command: command, preview: preview,
-                                            symbols: result.library.symbols, footprints: result.library.footprints)
-        } catch {
-            report("Import di \(url.lastPathComponent) non riuscito: \(Self.describe(error))")
+    /// Until the import work settles (a symbol list that goes on to its preview included).
+    func importReady() async {
+        while let task = importTask {
+            await task.value
+            if importTask == task { return }
         }
+    }
+
+    /// Annulla / Esc: the proposal and any reading in progress are dropped; nothing changed.
+    func cancelImport() {
+        importTask?.cancel(); importTask = nil
+        importRequest = nil; importing = nil
+        importProposal = nil; symbolChoice = nil
     }
 
     func confirmImport() {
         guard let p = importProposal, var doc = document else { return }
         importProposal = nil
+        guard importKey == p.key else {
+            report("Import non applicato: il circuito è cambiato o è stato aperto un altro file dopo l'anteprima. Rifai l'import.")
+            return
+        }
         do {
             try ElectronicsLibraryCommands.apply(p.command, to: &doc, expectedRevision: p.preview.baseRevision)
+            guard doc.revision != document?.revision else {
+                report("Già nella libreria: \(p.fileName) è identico alla revisione presente (nessun passo).")
+                return
+            }
             document = doc; isDirty = true
             refresh()
             let what = (p.symbols.map { "simbolo \($0.name)" } + p.footprints.map { "impronta \($0.name)" }).joined(separator: ", ")
@@ -738,23 +824,28 @@ final class CircuitModel {
         }
     }
 
-    /// The library identity of a file's content: the same file keeps its UUID; changed content
-    /// gets the next revision, identical content the one it already has (a no-op re-import).
-    private func libraryKey(for name: String, data: Data) -> LibraryRevision {
-        let id = Self.stableUUID(name)
-        let digest = Self.sha256(data)
-        let library = design?.library
-        let existing: [(Int, String?)] = (library?.symbols.filter { $0.key.id == id }.map { ($0.key.revision, $0.source.contentSHA256) } ?? [])
-            + (library?.footprints.filter { $0.key.id == id }.map { ($0.key.revision, $0.source.contentSHA256) } ?? [])
-        if let same = existing.first(where: { $0.1 == digest }) { return LibraryRevision(id: id, revision: same.0) }
-        return LibraryRevision(id: id, revision: (existing.map(\.0).max() ?? 0) + 1)
+    /// The identity a file's content gets in the library: the same file keeps its UUID; changed
+    /// content gets the next revision; identical content the revision it already has, with that
+    /// revision's own source record (a re-import from another folder or date changes nothing).
+    nonisolated static func importContext(for url: URL, name: String, data: Data, in library: ElectronicsLibrary) -> LibraryImportContext {
+        let id = stableUUID(url.lastPathComponent + "|" + name)
+        let digest = sha256(data)
+        let existing: [(Int, LibrarySource)] = library.symbols.filter { $0.key.id == id }.map { ($0.key.revision, $0.source) }
+            + library.footprints.filter { $0.key.id == id }.map { ($0.key.revision, $0.source) }
+        if let same = existing.first(where: { $0.1.contentSHA256 == digest }) {
+            return LibraryImportContext(key: LibraryRevision(id: id, revision: same.0), source: same.1)
+        }
+        let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+            .map { ISO8601DateFormatter().string(from: $0) } ?? ""
+        return LibraryImportContext(key: LibraryRevision(id: id, revision: (existing.map(\.0).max() ?? 0) + 1),
+                                    source: LibrarySource(reference: url.path, license: "da verificare", sourceRevision: modified))
     }
 
-    private static func sha256(_ data: Data) -> String {
+    nonisolated static func sha256(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
-    private static func stableUUID(_ text: String) -> UUID {
+    nonisolated static func stableUUID(_ text: String) -> UUID {
         var bytes = Array(SHA256.hash(data: Data(text.utf8)).prefix(16))
         bytes[6] = (bytes[6] & 0x0F) | 0x50; bytes[8] = (bytes[8] & 0x3F) | 0x80   // version 5 style
         return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],

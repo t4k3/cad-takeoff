@@ -70,6 +70,7 @@ extension CircuitModel {
     func forgetDrawings() {
         documentEpoch += 1
         openRequest = nil   // an open still reading is overtaken
+        cancelImport()      // a library preview belongs to the circuit it was made on
         pcbTask?.cancel(); pcb = nil
         routeCheckTask?.cancel(); route = nil; routeCheck = nil
         copperSelection = nil; issueMark = nil; activeLayer = 0
