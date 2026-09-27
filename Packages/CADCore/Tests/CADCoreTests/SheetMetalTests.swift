@@ -305,3 +305,87 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     let slot = SheetCutout(outline: [Vec3(-20, -15, 40), Vec3(-10, -15, 40), Vec3(-10, -12, 40), Vec3(-20, -12, 40)], axis: Vec3(0, 0, -1))
     #expect(build.flat(adding: [], cutouts: [slot]).flat.cutouts.count == 1)
 }
+
+// MARK: Free-form base
+
+@Test func rectangleAsOutlineMatchesTheRectangularBase() throws {
+    var rect = SheetMetalSpec(material: "aisi304", thickness: 1.5, width: 120, depth: 80)
+    for e in SheetEdge.allCases { rect[e] = SheetFlange(length: 20) }
+    rect.front = SheetFlange(length: 25, lip: SheetLip(length: 8))
+    // Counter-clockwise from the front-left corner: sides front, right, back, left.
+    let outline = [Vec2(-60, -40), Vec2(60, -40), Vec2(60, 40), Vec2(-60, 40)]
+    let free = SheetMetalSpec(material: "aisi304", thickness: 1.5, outline: outline, sideFlanges: [
+        SheetSideFlange(side: 0, flange: rect.front!), SheetSideFlange(side: 1, flange: SheetFlange(length: 20)),
+        SheetSideFlange(side: 2, flange: SheetFlange(length: 20)), SheetSideFlange(side: 3, flange: SheetFlange(length: 20)),
+    ])
+    #expect(free.width == 120 && free.depth == 80 && free.summary.hasSuffix("4 flange"))
+    let a = try SheetMetalGeometry.build(rect, featureID: UUID()), b = try SheetMetalGeometry.build(free, featureID: UUID())
+    let ma = a.folded.triangulated().mesh, mb = b.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mb).isWatertight)
+    #expect(abs(ma.volume - mb.volume) < 1e-6 && ma.bounds! == mb.bounds!)
+    #expect(abs(a.flat.area - b.flat.area) < 1e-9 && a.flat.outline.count == b.flat.outline.count && b.flat.bends.count == 5)
+    #expect(b.flat.bends.allSatisfy { $0.edge == nil && $0.side != nil })
+    // The same base drawn clockwise: its sides follow the points.
+    let cw = SheetMetalSpec(material: "aisi304", thickness: 1.5, outline: outline.reversed(), sideFlanges: [
+        SheetSideFlange(side: 2, flange: rect.front!), SheetSideFlange(side: 1, flange: SheetFlange(length: 20)),
+        SheetSideFlange(side: 0, flange: SheetFlange(length: 20)), SheetSideFlange(side: 3, flange: SheetFlange(length: 20)),
+    ])
+    let c = try SheetMetalGeometry.build(cw, featureID: UUID())
+    #expect(abs(c.folded.triangulated().mesh.volume - mb.volume) < 1e-6 && abs(c.flat.area - b.flat.area) < 1e-9)
+    // Saved and read back; files without an outline stay rectangular.
+    let doc = CADDocument(features: [Feature(name: "Vassoio", kind: .sheetMetal(free))])
+    #expect(try CADDocument.decode(doc.encoded()) == doc)
+}
+
+@Test func hexagonalTrayUnfoldsWithCornerReliefs() throws {
+    let R = 50.0
+    let hex = (0..<6).map { k in Vec2(R * cos(Double(k) * .pi / 3), R * sin(Double(k) * .pi / 3)) }
+    let spec = SheetMetalSpec(material: "dc01", thickness: 2, outline: hex,
+                              sideFlanges: (0..<6).map { SheetSideFlange(side: $0, flange: SheetFlange(length: 15)) })
+    let build = try SheetMetalGeometry.build(spec, featureID: UUID())
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight && build.warnings.isEmpty)
+    let r = build.rule.insideRadius, t = 2.0, sb = r + t, k = build.rule.kFactor
+    // Plate: the hexagon with every side moved in by the setback (apothem − sb).
+    let apothem = R * cos(.pi / 6) - sb, side = 2 * apothem * tan(.pi / 6)
+    let plateArea = 6 * apothem * side / 2
+    let straight = 15 - sb, reach = .pi / 2 * (r + k * t) + straight
+    #expect(abs(mesh.volume - (plateArea * t + 6 * side * (bendSection(r, t, .pi / 2, 16) + straight * t))) < 1e-6)
+    // Blank: plate + six strips as wide as the plate's sides; the corners stay open.
+    #expect(abs(build.flat.area - (plateArea + 6 * side * reach)) < 1e-9)
+    #expect(build.flat.outline.count == 18 && build.flat.bends.count == 6)
+    #expect(MeshValidator.validate(SheetMetalGeometry.flatMesh(build.flat)).isWatertight)
+    // Each wall stands on its side: outer faces at the hexagon's apothem.
+    #expect(abs(mesh.bounds!.max.z - 15) < 1e-9 && abs(mesh.bounds!.max.y - R * cos(.pi / 6)) < 1e-9)
+    // A hole in the middle of side 1's wall, 10 mm up, drilled square to it, unfolds on its strip.
+    let a = Vec2(R * cos(.pi / 3), R * sin(.pi / 3)), b = Vec2(-R * cos(.pi / 3), R * sin(.pi / 3))
+    let mid = (a + b) * 0.5
+    let hole = HoleSpec(centers: [Vec3(mid.x, mid.y, 10)], direction: Vec3(0, -1, 0), fit: .manual, diameter: 5)
+    let (flat, skipped) = build.flat(adding: [hole])
+    #expect(skipped == 0 && flat.holes.count == 1)
+    #expect(abs(flat.holes[0].center.x) < 1e-9 && abs(flat.holes[0].center.y - (apothem + .pi / 2 * (r + k * t) + (10 - sb))) < 1e-9)
+    // A cut on the plate, square to it, comes out as a cut-out.
+    let window = SheetCutout(outline: [Vec3(-5, -5, 0), Vec3(5, -5, 0), Vec3(5, 5, 0), Vec3(-5, 5, 0)], axis: Vec3(0, 0, 1))
+    #expect(build.flat(adding: [], cutouts: [window]).flat.cutouts.count == 1)
+}
+
+@Test func lShapedBaseAndItsInwardCorner() throws {
+    let l = [Vec2(0, 0), Vec2(60, 0), Vec2(60, 30), Vec2(30, 30), Vec2(30, 60), Vec2(0, 60)]
+    // Side 2 ends at the inward corner (point 3): one flange there is possible, with a relief.
+    let one = SheetMetalSpec(material: "dc01", thickness: 1.5, outline: l, sideFlanges: [
+        SheetSideFlange(side: 0, flange: SheetFlange(length: 12)), SheetSideFlange(side: 2, flange: SheetFlange(length: 12)),
+    ])
+    let build = try SheetMetalGeometry.build(one, featureID: UUID())
+    #expect(MeshValidator.validate(build.folded.triangulated().mesh).isWatertight)
+    #expect(build.warnings.contains { $0.contains("rientrante") && $0.contains("scarico") })
+    #expect(!SheetMetalGeometry.selfIntersecting(build.flat.outline))
+    // Both sides of the inward corner: the flanges would overlap.
+    var both = one
+    both.sideFlanges!.append(SheetSideFlange(side: 3, flange: SheetFlange(length: 12)))
+    #expect(throws: SheetMetalError.self) { try SheetMetalGeometry.build(both, featureID: UUID()) }
+    // Bad outlines.
+    let bow = SheetMetalSpec(outline: [Vec2(0, 0), Vec2(40, 40), Vec2(40, 0), Vec2(0, 40)])
+    #expect(throws: SheetMetalError.self) { try SheetMetalGeometry.build(bow, featureID: UUID()) }
+    let missing = SheetMetalSpec(outline: l, sideFlanges: [SheetSideFlange(side: 9, flange: SheetFlange(length: 12))])
+    #expect(throws: SheetMetalError.self) { try SheetMetalGeometry.build(missing, featureID: UUID()) }
+}

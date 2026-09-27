@@ -112,6 +112,27 @@ final class WorkspaceState {
         command = SheetMetalCommand.start(workspace: self, model: model, editing: feature)
     }
 
+    /// LAMIERA from the sketch: the chosen closed shape (or the only one) becomes the sheet's
+    /// base; the sides to bend are clicked on the part. Horizontal sketches only (the sheet lies
+    /// on XY at the sketch's height).
+    func sheetMetalFromSketch(model: DesignModel) {
+        guard let sketch else { return }
+        let plane = sketch.sketch.plane
+        guard abs(abs(plane.normal.z) - 1) < 1e-9 else {
+            model.statusMessage = "La lamiera nasce da uno schizzo orizzontale (piano XY o una faccia in piano)."
+            return
+        }
+        guard let shape = sketch.extrudeCandidate?.profile?.points ?? (sketch.faces.count == 1 ? sketch.faces[0].outline : nil) else {
+            model.statusMessage = "Seleziona il profilo chiuso da usare come base della lamiera."
+            return
+        }
+        let world = shape.map { plane.world($0) }
+        command?.onCancel()
+        exitSketch()
+        showFlat = false
+        command = SheetMetalCommand.start(workspace: self, model: model, outline: world.map { Vec2($0.x, $0.y) }, at: world.first?.z ?? 0)
+    }
+
     func startPattern(model: DesignModel, kind: PatternSpec.Kind) {
         command?.onCancel()
         if sketch != nil { exitSketch() }

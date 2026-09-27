@@ -31,12 +31,30 @@ enum SheetMetalCommand {
         return s.replacingOccurrences(of: ".", with: ",")
     }
 
-    static func start(workspace: WorkspaceState, model: DesignModel, editing feature: Feature? = nil) -> CommandSession {
+    /// The side of a free-form base an edge of the part belongs to (plate side or flange), from
+    /// its faces' names ("…/side-3/…"); nil at a corner between two sides.
+    static func side(of edge: EdgeInfo) -> Int? {
+        let sides = Set(edge.faces.compactMap { face -> Int? in
+            guard let r = face.rawValue.range(of: #"/side-(\d+)"#, options: .regularExpression) else { return nil }
+            return Int(face.rawValue[r].dropFirst("/side-".count))
+        })
+        return sides.count == 1 ? sides.first : nil
+    }
+
+    /// `outline`: a free-form base (from a sketch profile, at height `z`); its flanged sides are
+    /// clicked on the part in the viewport.
+    static func start(workspace: WorkspaceState, model: DesignModel, editing feature: Feature? = nil,
+                      outline: [Vec2]? = nil, at z: Double = 0) -> CommandSession {
         var spec = SheetMetalSpec(material: "dc01", thickness: 1.5, width: 100, depth: 60,
                                   flanges: [.front: SheetFlange(length: 20), .back: SheetFlange(length: 20)])
+        if let outline { spec = SheetMetalSpec(material: "dc01", thickness: 1.5, outline: outline) }
         if let feature, case let .sheetMetal(existing) = feature.kind { spec = existing }
         let original = feature
-        let firstFlange = SheetEdge.allCases.compactMap { spec[$0] }.first ?? SheetFlange(length: 20)
+        let free = spec.outline != nil
+        // One identity for the new part while its panel is open (the sides clicked are on it).
+        let partID = original?.id ?? UUID()
+        var sides = Set((spec.sideFlanges ?? []).map(\.side))
+        let firstFlange = (free ? spec.sideFlanges?.first?.flange : SheetEdge.allCases.compactMap { spec[$0] }.first) ?? SheetFlange(length: 20)
         let differentLengths = Set(SheetEdge.allCases.compactMap { spec[$0]?.length }).count > 1
 
         func thicknessOptions(_ m: SheetMaterial) -> [String] { m.thicknesses.map { mm($0) + " mm" } }
@@ -54,17 +72,21 @@ enum SheetMetalCommand {
             .init(id: "radius", label: "Raggio interno", kind: .length(0.1...200), value: .number(spec.radiusOverride ?? 2),
                   isHidden: spec.radiusOverride == nil),
             .init(id: "rule", label: "", kind: .note(warning: false), value: .flag(false)),
-            .init(id: "width", label: "Larghezza (esterna, X)", kind: .length(5...5000), value: .number(spec.width)),
-            .init(id: "depth", label: "Profondità (esterna, Y)", kind: .length(5...5000), value: .number(spec.depth)),
-            .init(id: "front", label: "Flangia davanti", kind: .toggle, value: .flag(spec.front != nil)),
-            .init(id: "right", label: "Flangia a destra", kind: .toggle, value: .flag(spec.right != nil)),
-            .init(id: "back", label: "Flangia dietro", kind: .toggle, value: .flag(spec.back != nil)),
-            .init(id: "left", label: "Flangia a sinistra", kind: .toggle, value: .flag(spec.left != nil)),
+            .init(id: "width", label: "Larghezza (esterna, X)", kind: .length(5...5000), value: .number(spec.width), isHidden: free),
+            .init(id: "depth", label: "Profondità (esterna, Y)", kind: .length(5...5000), value: .number(spec.depth), isHidden: free),
+            .init(id: "sides", label: "Lati con flangia", kind: .reference(prompt: "Clicca i lati da piegare", maxCount: 2000),
+                  value: .references(sides.sorted().map { "lato \($0 + 1)" }),
+                  help: "Clicca un bordo della base per piegarlo, di nuovo per toglierlo. Negli angoli rientranti va piegato un solo lato.",
+                  isHidden: !free),
+            .init(id: "front", label: "Flangia davanti", kind: .toggle, value: .flag(spec.front != nil), isHidden: free),
+            .init(id: "right", label: "Flangia a destra", kind: .toggle, value: .flag(spec.right != nil), isHidden: free),
+            .init(id: "back", label: "Flangia dietro", kind: .toggle, value: .flag(spec.back != nil), isHidden: free),
+            .init(id: "left", label: "Flangia a sinistra", kind: .toggle, value: .flag(spec.left != nil), isHidden: free),
             .init(id: "length", label: "Altezza flangia", kind: .length(0.5...2000), value: .number(firstFlange.length)),
-            .init(id: "perSide", label: "Altezze diverse per lato", kind: .toggle, value: .flag(differentLengths)),
+            .init(id: "perSide", label: "Altezze diverse per lato", kind: .toggle, value: .flag(differentLengths), isHidden: free),
         ] + SheetEdge.allCases.map { e in
             .init(id: "length-" + e.rawValue, label: "Altezza " + e.label.lowercased(), kind: .length(0.5...2000),
-                  value: .number(spec[e]?.length ?? firstFlange.length), isHidden: !differentLengths || spec[e] == nil)
+                  value: .number(spec[e]?.length ?? firstFlange.length), isHidden: free || !differentLengths || spec[e] == nil)
         } + [
 
             .init(id: "angle", label: "Angolo di piega", kind: .angle(5...135), value: .number(firstFlange.angle),
@@ -116,6 +138,10 @@ enum SheetMetalCommand {
             case 3: flange.lip = SheetLip(length: num("lipLength"), angle: 180)
             default: break
             }
+            if free {
+                s.sideFlanges = sides.sorted().map { SheetSideFlange(side: $0, flange: flange) }
+                return s
+            }
             for e in SheetEdge.allCases {
                 guard flag(e.rawValue) else { s[e] = nil; continue }
                 var own = flange
@@ -141,15 +167,16 @@ enum SheetMetalCommand {
             session.update("materialNote") { $0.label = m.note }
             let auto = { if case let .flag(b)? = f.first(where: { $0.id == "autoRadius" })?.value { b } else { true } }()
             session.update("radius") { $0.isHidden = auto }
-            let anyFlange = SheetEdge.allCases.contains { s[$0] != nil }
-            let perSide = { if case let .flag(b)? = f.first(where: { $0.id == "perSide" })?.value { b } else { false } }()
-            for id in ["angle", "direction", "reference", "perSide", "lip"] { session.update(id) { $0.isHidden = !anyFlange } }
+            let anyFlange = free ? !sides.isEmpty : SheetEdge.allCases.contains { s[$0] != nil }
+            let perSide = !free && { if case let .flag(b)? = f.first(where: { $0.id == "perSide" })?.value { b } else { false } }()
+            for id in ["angle", "direction", "reference", "lip"] { session.update(id) { $0.isHidden = !anyFlange } }
+            session.update("perSide") { $0.isHidden = free || !anyFlange }
             let lipKind = { if case let .index(i)? = f.first(where: { $0.id == "lip" })?.value { i } else { 0 } }()
             session.update("lipLength") { $0.isHidden = !anyFlange || lipKind == 0; $0.label = lipKind == 3 ? "Lunghezza orlo" : "Lunghezza risvolto" }
             session.update("lipAngle") { $0.isHidden = !anyFlange || lipKind == 0 || lipKind == 3 }
             session.update("length") { $0.isHidden = !anyFlange || perSide }
             // Corners exist where a front/back flange meets a side one.
-            let anyCorner = [SheetEdge.front, .back].contains { s[$0] != nil } && [SheetEdge.left, .right].contains { s[$0] != nil }
+            let anyCorner = !free && [SheetEdge.front, .back].contains { s[$0] != nil } && [SheetEdge.left, .right].contains { s[$0] != nil }
             session.update("corners") { $0.isHidden = !anyCorner }
             session.update("gap") { $0.isHidden = !anyCorner || s.cornerStyle == .open }
             for e in SheetEdge.allCases { session.update("length-" + e.rawValue) { $0.isHidden = !perSide || s[e] == nil } }
@@ -185,17 +212,24 @@ enum SheetMetalCommand {
                 return (doc, doc.features[i])
             }
             let count = doc.features.filter { if case .sheetMetal = $0.kind { true } else { false } }.count
-            let f = Feature(name: "Lamiera \(count + 1)", kind: .sheetMetal(s), color: colour(s.material))
+            let f = Feature(id: partID, name: "Lamiera \(count + 1)", kind: .sheetMetal(s), position: Vec3(0, 0, z), color: colour(s.material))
             doc.features.append(f)
             return (doc, f)
         }
 
+        // Free-form base: the sides are clicked on the part (the preview), each click turns one.
+        func finishPicking() {
+            guard free else { return }
+            workspace.onGeoSelectionChange = nil
+            workspace.edgePicking = false
+            workspace.geoSelection = []
+        }
         session = CommandSession(
             title: original == nil ? "Lamiera" : "Modifica \(original!.name)", symbol: "square.stack.3d.down.forward",
             fields: fields,
             onPreview: preview,
             onCommit: { f in
-                defer { workspace.requestPreview(nil) }
+                defer { workspace.requestPreview(nil); finishPicking() }
                 let s = read(f)
                 do { _ = try SheetMetalGeometry.build(s, featureID: UUID()) } catch {
                     model.statusMessage = error.localizedDescription; return
@@ -204,7 +238,27 @@ enum SheetMetalCommand {
                 model.edit(original == nil ? "Nuova lamiera: \(s.summary)" : "Modifica \(feature.name)",
                            selected: .some(feature.id), changed: [feature.id]) { $0 = doc }
             },
-            onCancel: { workspace.requestPreview(nil) })
+            onCancel: { workspace.requestPreview(nil); finishPicking() })
+        if free {
+            workspace.selectionFilter = .edge
+            workspace.edgePicking = true
+            workspace.geoSelection = []
+            workspace.onGeoSelectionChange = { [weak session] in
+                guard let session else { return }
+                let refs = workspace.geoSelection
+                guard !refs.isEmpty else { return }
+                let bodies = (workspace.previewSnapshot?.bodies ?? []) + model.evaluation().bodies.map(\.snapshot)
+                for ref in refs where ref.feature == partID {
+                    guard case let .edge(id) = ref.kind,
+                          let edge = bodies.lazy.compactMap({ $0.edges.first { $0.id == id } }).first,
+                          let k = side(of: edge) else { continue }
+                    if sides.contains(k) { sides.remove(k) } else { sides.insert(k) }
+                }
+                workspace.geoSelection = []
+                session.update("sides") { $0.value = .references(sides.sorted().map { "lato \($0 + 1)" }) }
+                preview(session.fields)
+            }
+        }
         preview(session.fields)
         return session
     }

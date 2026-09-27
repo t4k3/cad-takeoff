@@ -90,6 +90,13 @@ public struct SheetLip: Codable, Equatable, Sendable {
     public var label: String { angle >= 180 - 1e-9 ? "orlo" : "risvolto" }
 }
 
+/// A flange on a side of a free-form base: the side from outline point `side` to the next.
+public struct SheetSideFlange: Codable, Equatable, Sendable {
+    public var side: Int
+    public var flange: SheetFlange
+    public init(side: Int, flange: SheetFlange) { self.side = side; self.flange = flange }
+}
+
 public struct SheetMetalSpec: Codable, Equatable, Sendable {
     /// `SheetMaterial.id`.
     public var material: String
@@ -109,6 +116,11 @@ public struct SheetMetalSpec: Codable, Equatable, Sendable {
     public var corners: SheetCornerStyle?
     /// Clearance between a side wall and the wall it butts against, closed corners (nil = 0.2 mm).
     public var cornerGap: Double?
+    /// Free-form base: the outside footprint (mould lines) as a polygon in the part's XY, either
+    /// winding; nil = the `width` × `depth` rectangle centred on the origin with its four flanges.
+    public var outline: [Vec2]?
+    /// Flanges on the free-form base's straight sides (open corners).
+    public var sideFlanges: [SheetSideFlange]?
 
     public var cornerStyle: SheetCornerStyle { corners ?? .open }
     public var gap: Double { cornerGap ?? 0.2 }
@@ -118,6 +130,16 @@ public struct SheetMetalSpec: Codable, Equatable, Sendable {
         self.material = material; self.thickness = thickness; self.width = width; self.depth = depth
         self.radiusOverride = radiusOverride; self.kOverride = kOverride
         for (e, f) in flanges { self[e] = f }
+    }
+
+    /// A free-form base (its bounding box as width × depth) with flanges on some of its sides.
+    public init(material: String = "dc01", thickness: Double = 1.5, outline: [Vec2], sideFlanges: [SheetSideFlange] = [],
+                radiusOverride: Double? = nil, kOverride: Double? = nil) {
+        let xs = outline.map(\.x), ys = outline.map(\.y)
+        self.init(material: material, thickness: thickness, width: (xs.max() ?? 0) - (xs.min() ?? 0), depth: (ys.max() ?? 0) - (ys.min() ?? 0),
+                  radiusOverride: radiusOverride, kOverride: kOverride)
+        self.outline = outline
+        self.sideFlanges = sideFlanges
     }
 
     public subscript(edge: SheetEdge) -> SheetFlange? {
@@ -144,10 +166,10 @@ public struct SheetMetalSpec: Codable, Equatable, Sendable {
 
     /// "DC01 1,5 mm · 2 flange".
     public var summary: String {
-        let count = SheetEdge.allCases.filter { self[$0] != nil }.count
+        let count = outline != nil ? (sideFlanges ?? []).count : SheetEdge.allCases.filter { self[$0] != nil }.count
         let t = thickness == thickness.rounded() ? String(format: "%.0f", thickness) : String(format: "%g", thickness)
         let short = SheetMaterial.named(material)?.name.components(separatedBy: " (").first ?? material
-        return "\(short) \(t) mm" + (count == 0 ? "" : " · \(count) fless\(count == 1 ? "a" : "e")")
+        return "\(short) \(t) mm" + (count == 0 ? "" : " · \(count) flang\(count == 1 ? "ia" : "e")")
     }
 }
 
@@ -178,7 +200,9 @@ public enum SheetMetalError: Error, LocalizedError, Equatable, Sendable {
 /// Developed blank: outline to cut and bend lines, in the part's XY frame (plate at its place).
 public struct SheetFlatPattern: Equatable, Sendable {
     public struct Bend: Equatable, Sendable {
-        public let edge: SheetEdge
+        /// The side of the rectangular base, or (free-form base) the side's index in its outline.
+        public let edge: SheetEdge?
+        public var side: Int? = nil
         /// Bend (centre) line and the two tangent lines where the bend zone starts and ends.
         public let line: (Vec2, Vec2)
         public let tangents: [(Vec2, Vec2)]
@@ -187,7 +211,7 @@ public struct SheetFlatPattern: Equatable, Sendable {
         public let insideRadius: Double
 
         public static func == (a: Bend, b: Bend) -> Bool {
-            a.edge == b.edge && a.line.0 == b.line.0 && a.line.1 == b.line.1 && a.angle == b.angle
+            a.edge == b.edge && a.side == b.side && a.line.0 == b.line.0 && a.line.1 == b.line.1 && a.angle == b.angle
                 && a.direction == b.direction && a.insideRadius == b.insideRadius
         }
     }
@@ -295,7 +319,9 @@ public struct SheetCutout: Sendable, Equatable {
 /// Where everything is, to map folded points back onto the flat pattern.
 struct SheetLayout: Sendable {
     struct Bent: Sendable {
-        let edge: SheetEdge; let theta: Double; let straight: Double; let allowance: Double; let up: Bool
+        /// The side's tangent line on the plate: start, outward and along directions, length.
+        let origin: Vec2; let out: Vec2; let along: Vec2; let span: Double
+        let theta: Double; let straight: Double; let allowance: Double; let up: Bool
         /// Straight part run on past the side's start/end (closed corners).
         var extStart = 0.0, extEnd = 0.0
         /// The lip at the tip, if any: its bend, straight part, side, and how much shorter than
@@ -303,7 +329,8 @@ struct SheetLayout: Sendable {
         struct Lip: Sendable { let theta: Double; let straight: Double; let allowance: Double; let inward: Bool; let trimStart: Double; let trimEnd: Double }
         var lip: Lip?
     }
-    let x0: Double, x1: Double, y0: Double, y1: Double
+    /// The flat plate between the tangent lines (counter-clockwise).
+    let plate: [Vec2]
     let r: Double, t: Double
     let position: Vec3
     let flanges: [Bent]
@@ -319,16 +346,11 @@ struct SheetLayout: Sendable {
         let q = world - position
         let e = 1e-4
         if only == 0 { return abs(axis.z) > 0.999 ? (Vec2(q.x, q.y), 0) : nil }
-        if only == nil, abs(axis.z) > 0.999, q.x >= x0 - e, q.x <= x1 + e, q.y >= y0 - e, q.y <= y1 + e, !inSheet || (q.z >= -e && q.z <= t + e) {
+        if only == nil, abs(axis.z) > 0.999, onPlate(Vec2(q.x, q.y), within: e), !inSheet || (q.z >= -e && q.z <= t + e) {
             return (Vec2(q.x, q.y), 0)
         }
         for (k, b) in flanges.enumerated() where only == nil || only == k + 1 || only == 101 + k {
-            let (origin, out, along, span): (Vec2, Vec2, Vec2, Double) = switch b.edge {
-            case .front: (Vec2(x0, y0), Vec2(0, -1), Vec2(1, 0), x1 - x0)
-            case .back: (Vec2(x0, y1), Vec2(0, 1), Vec2(1, 0), x1 - x0)
-            case .left: (Vec2(x0, y0), Vec2(-1, 0), Vec2(0, 1), y1 - y0)
-            case .right: (Vec2(x1, y0), Vec2(1, 0), Vec2(0, 1), y1 - y0)
-            }
+            let (origin, out, along, span) = (b.origin, b.out, b.along, b.span)
             let rel = Vec2(q.x - origin.x, q.y - origin.y)
             let u = rel.x * out.x + rel.y * out.y, s = rel.x * along.x + rel.y * along.y
             // Section of the straight part: mid-thickness line from the bend end along d.
@@ -375,10 +397,87 @@ struct SheetLayout: Sendable {
         }
         return nil
     }
+
+    /// Inside the plate or on its border (within `e`).
+    func onPlate(_ p: Vec2, within e: Double) -> Bool {
+        if SketchArrangement.inside(p, plate) { return true }
+        for i in plate.indices {
+            let a = plate[i], b = plate[(i + 1) % plate.count], d = b - a
+            let u = max(0, min(1, (p - a).dot(d) / max(d.dot(d), 1e-18)))
+            if (a + d * u - p).length <= e { return true }
+        }
+        return false
+    }
 }
 
 public enum SheetMetalGeometry {
     static let bendSegments = 16
+
+    /// A flange's straight length, bend allowance and outside setback from the mould line, and
+    /// its lip's; workshop advice goes to `warnings`.
+    struct Bent {
+        let flange: SheetFlange; let theta: Double; let straight: Double; let allowance: Double; let setback: Double
+        /// The lip's bend angle, straight part and allowance (0 without a lip).
+        var lipTheta = 0.0, lipStraight = 0.0, lipAllowance = 0.0
+        /// Flat reach: up to the lip's bend, and in all.
+        var reach: Double { allowance + straight }
+        var total: Double { reach + lipAllowance + lipStraight }
+
+        init(_ f: SheetFlange, name: String, rule: SheetBendRule, warnings: inout [String]) throws {
+            let t = rule.thickness, r = rule.insideRadius
+            // Setback of a bend at a length's far end: to the virtual sharp up to 90°, to the bend's
+            // farthest point beyond (a hem has no sharp).
+            func farSetback(_ theta: Double, _ radius: Double, _ ref: SheetFlangeReference) -> Double {
+                let rr = ref == .inside ? radius : radius + t
+                guard ref != .tangent else { return 0 }
+                return theta <= .pi / 2 + 1e-9 ? tan(theta / 2) * rr : rr
+            }
+            guard f.angle.isFinite, (5...135).contains(f.angle) else {
+                throw SheetMetalError.invalidParameter("\(name): angolo 5–135° dalla posizione piana")
+            }
+            guard f.length.isFinite, (0.1...10_000).contains(f.length) else {
+                throw SheetMetalError.invalidParameter("\(name): lunghezza flangia 0,1–10000 mm")
+            }
+            let theta = f.angle * .pi / 180
+            let outer = tan(theta / 2) * (r + t), inner = tan(theta / 2) * r
+            var straight: Double
+            switch f.reference {
+            case .outside: straight = f.length - outer
+            case .inside: straight = f.length - inner
+            case .tangent: straight = f.length
+            }
+            var lipTheta = 0.0, lipStraight = 0.0
+            if let lip = f.lip {
+                guard lip.angle.isFinite, (5...180).contains(lip.angle) else {
+                    throw SheetMetalError.invalidParameter("\(name): angolo del \(lip.label) 5–180°")
+                }
+                guard lip.length.isFinite, (0.1...10_000).contains(lip.length) else {
+                    throw SheetMetalError.invalidParameter("\(name): lunghezza del \(lip.label) 0,1–10000 mm")
+                }
+                lipTheta = lip.angle * .pi / 180
+                straight -= farSetback(lipTheta, r, f.reference)
+                lipStraight = lip.length - farSetback(lipTheta, r, f.reference)
+                guard lipStraight >= 0.05 else {
+                    throw SheetMetalError.invalidParameter("\(lip.label) \(name) troppo corto: serve più di \(fmt(farSetback(lipTheta, r, f.reference))) mm")
+                }
+                if lip.length < rule.minimumFlange - 1e-9 {
+                    warnings.append("\(lip.label.capitalized) \(name) \(fmt(lip.length)) mm: sotto il minimo piegabile ≈ \(fmt(rule.minimumFlange)) mm con matrice V\(fmt(rule.vDie))")
+                }
+            }
+            guard straight >= 0.05 else {
+                let min = f.reference == .outside ? outer : inner
+                throw SheetMetalError.invalidParameter("flangia \(name) troppo corta: con raggio \(fmt(r)) e spessore \(fmt(t)) serve più di \(fmt(min)) mm")
+            }
+            // Workshop minimum, compared as an outside length.
+            let outsideLength = straight + outer
+            if outsideLength < rule.minimumFlange - 1e-9 {
+                warnings.append("Flangia \(name) \(fmt(outsideLength)) mm (esterna): sotto il minimo piegabile ≈ \(fmt(rule.minimumFlange)) mm con matrice V\(fmt(rule.vDie))")
+            }
+            flange = f; self.theta = theta; self.straight = straight
+            allowance = rule.allowance(angleDegrees: f.angle); setback = outer
+            if let lip = f.lip { self.lipTheta = lipTheta; self.lipStraight = lipStraight; lipAllowance = rule.allowance(angleDegrees: lip.angle) }
+        }
+    }
 
     /// `folded: false` skips the folded solid (rule, flat pattern and warnings only: cheap).
     public static func build(_ spec: SheetMetalSpec, featureID: UUID, position: Vec3 = .zero, folded: Bool = true) throws -> SheetMetalBuild {
@@ -395,70 +494,13 @@ public enum SheetMetalGeometry {
             warnings.append("Spessore \(fmt(t)) mm non standard per \(rule.material.name)")
         }
 
-        // Per flange: straight length, bend allowance and outside setback from the mould line.
-        struct Bent {
-            let edge: SheetEdge; let flange: SheetFlange; let theta: Double; let straight: Double; let allowance: Double; let setback: Double
-            /// The lip's bend angle, straight part and allowance (0 without a lip).
-            var lipTheta = 0.0, lipStraight = 0.0, lipAllowance = 0.0
-            /// Flat reach: up to the lip's bend, and in all.
-            var reach: Double { allowance + straight }
-            var total: Double { reach + lipAllowance + lipStraight }
-        }
-        // Setback of a bend at a length's far end: to the virtual sharp up to 90°, to the bend's
-        // farthest point beyond (a hem has no sharp).
-        func setback(_ theta: Double, _ radius: Double, _ ref: SheetFlangeReference) -> Double {
-            let rr = ref == .inside ? radius : radius + t
-            guard ref != .tangent else { return 0 }
-            return theta <= .pi / 2 + 1e-9 ? tan(theta / 2) * rr : rr
+        if spec.outline != nil {
+            return try buildFree(spec, rule: rule, featureID: featureID, position: position, folded: folded, warnings: warnings)
         }
         var bent: [SheetEdge: Bent] = [:]
         for edge in SheetEdge.allCases {
             guard let f = spec[edge] else { continue }
-            guard f.angle.isFinite, (5...135).contains(f.angle) else {
-                throw SheetMetalError.invalidParameter("\(edge.label.lowercased()): angolo 5–135° dalla posizione piana")
-            }
-            guard f.length.isFinite, (0.1...10_000).contains(f.length) else {
-                throw SheetMetalError.invalidParameter("\(edge.label.lowercased()): lunghezza flangia 0,1–10000 mm")
-            }
-            let theta = f.angle * .pi / 180
-            let outer = tan(theta / 2) * (r + t), inner = tan(theta / 2) * r
-            var straight: Double
-            switch f.reference {
-            case .outside: straight = f.length - outer
-            case .inside: straight = f.length - inner
-            case .tangent: straight = f.length
-            }
-            var lipTheta = 0.0, lipStraight = 0.0
-            if let lip = f.lip {
-                guard lip.angle.isFinite, (5...180).contains(lip.angle) else {
-                    throw SheetMetalError.invalidParameter("\(edge.label.lowercased()): angolo del \(lip.label) 5–180°")
-                }
-                guard lip.length.isFinite, (0.1...10_000).contains(lip.length) else {
-                    throw SheetMetalError.invalidParameter("\(edge.label.lowercased()): lunghezza del \(lip.label) 0,1–10000 mm")
-                }
-                lipTheta = lip.angle * .pi / 180
-                straight -= setback(lipTheta, r, f.reference)
-                lipStraight = lip.length - setback(lipTheta, r, f.reference)
-                guard lipStraight >= 0.05 else {
-                    throw SheetMetalError.invalidParameter("\(lip.label) \(edge.label.lowercased()) troppo corto: serve più di \(fmt(setback(lipTheta, r, f.reference))) mm")
-                }
-                if lip.length < rule.minimumFlange - 1e-9 {
-                    warnings.append("\(lip.label.capitalized) \(edge.label.lowercased()) \(fmt(lip.length)) mm: sotto il minimo piegabile ≈ \(fmt(rule.minimumFlange)) mm con matrice V\(fmt(rule.vDie))")
-                }
-            }
-            guard straight >= 0.05 else {
-                let min = f.reference == .outside ? outer : inner
-                throw SheetMetalError.invalidParameter("flangia \(edge.label.lowercased()) troppo corta: con raggio \(fmt(r)) e spessore \(fmt(t)) serve più di \(fmt(min)) mm")
-            }
-            // Workshop minimum, compared as an outside length.
-            let outsideLength = straight + outer
-            if outsideLength < rule.minimumFlange - 1e-9 {
-                warnings.append("Flangia \(edge.label.lowercased()) \(fmt(outsideLength)) mm (esterna): sotto il minimo piegabile ≈ \(fmt(rule.minimumFlange)) mm con matrice V\(fmt(rule.vDie))")
-            }
-            var b = Bent(edge: edge, flange: f, theta: theta, straight: straight,
-                         allowance: rule.allowance(angleDegrees: f.angle), setback: outer)
-            if let lip = f.lip { b.lipTheta = lipTheta; b.lipStraight = lipStraight; b.lipAllowance = rule.allowance(angleDegrees: lip.angle) }
-            bent[edge] = b
+            bent[edge] = try Bent(f, name: edge.label.lowercased(), rule: rule, warnings: &warnings)
         }
 
         // Inward lips meet over the part's corners: the front/back ones run the whole side, the
@@ -601,14 +643,173 @@ public enum SheetMetalGeometry {
             }
         }
         let flat = SheetFlatPattern(outline: simplified(raw), bends: bends, thickness: t, origin: position)
-        let layout = SheetLayout(x0: x0, x1: x1, y0: y0, y1: y1, r: r, t: t, position: position,
+        let plate = [Vec2(x0, y0), Vec2(x1, y0), Vec2(x1, y1), Vec2(x0, y1)]
+        let layout = SheetLayout(plate: plate, r: r, t: t, position: position,
                                  flanges: SheetEdge.allCases.compactMap { e in bent[e].map { b in
-                                     .init(edge: e, theta: b.theta, straight: b.straight, allowance: b.allowance, up: b.flange.direction == .up,
+                                     let f = edgeFrame(e, x0: x0, x1: x1, y0: y0, y1: y1)
+                                     return .init(origin: Vec2(f.origin.x, f.origin.y), out: Vec2(f.out.x, f.out.y), along: Vec2(f.along.x, f.along.y),
+                                           span: f.span, theta: b.theta, straight: b.straight, allowance: b.allowance, up: b.flange.direction == .up,
                                            extStart: ext[e]?.start ?? 0, extEnd: ext[e]?.end ?? 0,
                                            lip: b.flange.lip.map { l in .init(theta: b.lipTheta, straight: b.lipStraight, allowance: b.lipAllowance, inward: l.inward,
                                                                              trimStart: lipTrim[e]?.start ?? 0, trimEnd: lipTrim[e]?.end ?? 0) })
                                  } })
         return SheetMetalBuild(rule: rule, folded: solid, flat: flat, warnings: warnings, layout: layout)
+    }
+
+    /// A free-form base (`spec.outline`) with flanges on some of its straight sides: each side
+    /// with a flange is set back by its bend, the flange spans the plate's side (open corners:
+    /// at a convex corner the strips part and leave the corner relief). Two flanged sides meeting
+    /// at an inward (reflex) corner would overlap, and are refused.
+    static func buildFree(_ spec: SheetMetalSpec, rule: SheetBendRule, featureID: UUID, position: Vec3, folded: Bool,
+                          warnings initial: [String]) throws -> SheetMetalBuild {
+        var warnings = initial
+        let t = rule.thickness, r = rule.insideRadius
+        var outline = spec.outline ?? []
+        var sides = spec.sideFlanges ?? []
+        let n = outline.count
+        guard (3...2000).contains(n), outline.allSatisfy({ $0.x.isFinite && $0.y.isFinite && abs($0.x) < 1e5 && abs($0.y) < 1e5 }) else {
+            throw SheetMetalError.invalidParameter("contorno della base: da 3 a 2000 punti finiti")
+        }
+        // Counter-clockwise; a side's index follows its points when the winding is turned.
+        if Profile2D.signedArea(outline) < 0 {
+            outline.reverse()
+            sides = sides.map { SheetSideFlange(side: ((n - 2 - $0.side) % n + n) % n, flange: $0.flange) }
+        }
+        guard Profile2D.signedArea(outline) > 1 else { throw SheetMetalError.invalidParameter("base troppo piccola") }
+        for i in 0..<n where (outline[(i + 1) % n] - outline[i]).length < 1e-6 {
+            throw SheetMetalError.invalidParameter("contorno della base con punti ripetuti")
+        }
+        guard !selfIntersecting(outline) else { throw SheetMetalError.invalidParameter("il contorno della base si interseca") }
+        if spec.cornerStyle == .closed { warnings.append("Angoli chiusi solo sulla base rettangolare: qui restano aperti") }
+
+        var bent: [Int: Bent] = [:]
+        for sf in sides {
+            guard (0..<n).contains(sf.side) else { throw SheetMetalError.invalidParameter("flangia su un lato inesistente (\(sf.side + 1))") }
+            guard bent[sf.side] == nil else { throw SheetMetalError.invalidParameter("due flange sul lato \(sf.side + 1)") }
+            bent[sf.side] = try Bent(sf.flange, name: "lato \(sf.side + 1)", rule: rule, warnings: &warnings)
+        }
+        let along = (0..<n).map { (outline[($0 + 1) % n] - outline[$0]).normalized }
+        let out = along.map { Vec2($0.y, -$0.x) }
+        // Corners: a flange on both sides of an inward corner overlaps; one flange there needs a relief.
+        for k in 0..<n {
+            let prev = (k + n - 1) % n
+            let turn = along[prev].cross(along[k])
+            guard turn < -1e-9, bent[prev] != nil || bent[k] != nil else { continue }
+            if bent[prev] != nil, bent[k] != nil {
+                throw SheetMetalError.invalidParameter("flange sui lati \(prev + 1) e \(k + 1): si sovrappongono nell'angolo rientrante")
+            }
+            warnings.append("Angolo rientrante al punto \(k + 1): serve uno scarico per piegare la flangia")
+        }
+
+        // The plate: each side moved in by its setback, corners where the moved sides meet.
+        var plate: [Vec2] = []
+        for k in 0..<n {
+            let prev = (k + n - 1) % n
+            let sp = bent[prev]?.setback ?? 0, sk = bent[k]?.setback ?? 0
+            let a = outline[k] - out[prev] * sp, b = outline[k] - out[k] * sk
+            let denom = along[prev].cross(along[k])
+            if abs(denom) < 1e-9 {
+                guard abs(sp - sk) < 1e-9 else {
+                    throw SheetMetalError.invalidParameter("lati \(prev + 1) e \(k + 1) allineati con flange diverse: uniscili in un lato solo")
+                }
+                plate.append(b)
+            } else {
+                plate.append(a + along[prev] * ((b - a).cross(along[k]) / denom))
+            }
+        }
+        for k in 0..<n where (plate[(k + 1) % n] - plate[k]).dot(along[k]) < 0.1 {
+            throw SheetMetalError.invalidParameter("base troppo piccola per raggio e flange al lato \(k + 1): allarga la lamiera o riduci il raggio")
+        }
+        guard !selfIntersecting(plate) else { throw SheetMetalError.invalidParameter("base troppo piccola per raggio e flange") }
+
+        // Folded: plate ∪ flanges.
+        let prefix = "sheet:\(featureID.uuidString)"
+        var solid = prism(plate, height: t, at: position, prefix: prefix + "/plate")
+        struct Side { let origin: Vec2; let out: Vec2; let along: Vec2; let span: Double }
+        func side(_ k: Int) -> Side {
+            let a = plate[k], b = plate[(k + 1) % n]
+            return Side(origin: a, out: out[k], along: along[k], span: (b - a).length)
+        }
+        for (k, b) in bent.sorted(by: { $0.key < $1.key }) where folded {
+            let f = side(k)
+            let origin = Vec3(f.origin.x, f.origin.y, 0) + position, o = Vec3(f.out.x, f.out.y, 0), al = Vec3(f.along.x, f.along.y, 0)
+            solid = solid.union(flange(b.flange, theta: b.theta, straight: b.straight, r: r, t: t, origin: origin, out: o, along: al,
+                                       span: f.span, prefix: prefix + "/side-\(k)"))
+            if let lip = b.flange.lip {
+                let tip = flangeTip(b.flange, theta: b.theta, straight: b.straight, r: r, t: t)
+                func world(_ p: Vec2) -> Vec3 { origin + o * p.x + Vec3(0, 0, p.y) }
+                let dir = o * tip.d.x + Vec3(0, 0, tip.d.y), inside = o * tip.inner.x + Vec3(0, 0, tip.inner.y)
+                solid = solid.union(flange(SheetFlange(length: lip.length), theta: b.lipTheta, straight: b.lipStraight, r: r, t: t,
+                                           origin: world(lip.inward ? tip.outer : tip.innerFace), out: dir, along: al, span: f.span,
+                                           prefix: prefix + "/side-\(k)/lip", up: lip.inward ? inside : -inside))
+            }
+        }
+
+        // Flat pattern: the plate with a strip out of each flanged side.
+        var raw: [Vec2] = []
+        for k in 0..<n {
+            raw.append(plate[k])
+            if let b = bent[k] {
+                let f = side(k)
+                raw += [f.origin + f.out * b.total, f.origin + f.along * f.span + f.out * b.total]
+            }
+        }
+        var bends: [SheetFlatPattern.Bend] = []
+        for (k, b) in bent.sorted(by: { $0.key < $1.key }) {
+            let f = side(k)
+            func line(_ d: Double) -> (Vec2, Vec2) { (f.origin + f.out * d, f.origin + f.along * f.span + f.out * d) }
+            bends.append(.init(edge: nil, side: k, line: line(b.allowance / 2), tangents: [line(0), line(b.allowance)],
+                               angle: b.flange.angle, direction: b.flange.direction, insideRadius: r))
+            if let lip = b.flange.lip {
+                let dir: SheetBendDirection = lip.inward == (b.flange.direction == .up) ? .up : .down
+                bends.append(.init(edge: nil, side: k, line: line(b.reach + b.lipAllowance / 2), tangents: [line(b.reach), line(b.reach + b.lipAllowance)],
+                                   angle: lip.angle, direction: dir, insideRadius: r))
+            }
+        }
+        let flat = SheetFlatPattern(outline: simplified(raw), bends: bends, thickness: t, origin: position)
+        let layout = SheetLayout(plate: plate, r: r, t: t, position: position, flanges: bent.sorted(by: { $0.key < $1.key }).map { k, b in
+            let f = side(k)
+            return .init(origin: f.origin, out: f.out, along: f.along, span: f.span, theta: b.theta, straight: b.straight,
+                         allowance: b.allowance, up: b.flange.direction == .up,
+                         lip: b.flange.lip.map { l in .init(theta: b.lipTheta, straight: b.lipStraight, allowance: b.lipAllowance,
+                                                           inward: l.inward, trimStart: 0, trimEnd: 0) })
+        })
+        return SheetMetalBuild(rule: rule, folded: solid, flat: flat, warnings: warnings, layout: layout)
+    }
+
+    /// Two sides of a closed polygon that cross or touch (other than neighbours at their shared point).
+    static func selfIntersecting(_ p: [Vec2]) -> Bool {
+        let n = p.count
+        func crosses(_ a: Vec2, _ b: Vec2, _ c: Vec2, _ d: Vec2) -> Bool {
+            let d1 = (b - a).cross(c - a), d2 = (b - a).cross(d - a), d3 = (d - c).cross(a - c), d4 = (d - c).cross(b - c)
+            return ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12))
+        }
+        for i in 0..<n {
+            for j in (i + 2)..<max(i + 2, n) where !(i == 0 && j == n - 1) {
+                if crosses(p[i], p[(i + 1) % n], p[j], p[(j + 1) % n]) { return true }
+            }
+        }
+        return false
+    }
+
+    /// A counter-clockwise polygon extruded by `height`: faces bottom, top and side-k (side k
+    /// from point k to the next).
+    private static func prism(_ poly: [Vec2], height: Double, at position: Vec3, prefix: String) -> CSGSolid {
+        var faces: [CSGFace] = []
+        var polys: [CSGSolid.Polygon] = []
+        func v(_ p: Vec2, _ z: Double) -> Vec3 { Vec3(p.x, p.y, z) + position }
+        faces.append(CSGFace(id: FaceID(rawValue: prefix + "/bottom"), surface: .plane(origin: v(poly[0], 0), normal: Vec3(0, 0, -1)), flipped: false))
+        faces.append(CSGFace(id: FaceID(rawValue: prefix + "/top"), surface: .plane(origin: v(poly[0], height), normal: Vec3(0, 0, 1)), flipped: false))
+        for (a, b, c) in Profile2D(points: poly).triangulate() {
+            polys.append(CSGSolid.Polygon(vertices: [v(poly[a], height), v(poly[b], height), v(poly[c], height)], face: 1))
+            polys.append(CSGSolid.Polygon(vertices: [v(poly[c], 0), v(poly[b], 0), v(poly[a], 0)], face: 0))
+        }
+        for k in poly.indices {
+            let a = poly[k], b = poly[(k + 1) % poly.count], d = (b - a).normalized
+            faces.append(CSGFace(id: FaceID(rawValue: prefix + "/side-\(k)"), surface: .plane(origin: v(a, 0), normal: Vec3(d.y, -d.x, 0)), flipped: false))
+            polys.append(CSGSolid.Polygon(vertices: [v(a, 0), v(b, 0), v(b, height), v(a, height)], face: faces.count - 1))
+        }
+        return CSGSolid(polygons: polys, faces: faces)
     }
 
     /// Flat pattern as a thin solid (for display and 3MF), at the plate's height, holes cut.
@@ -845,7 +1046,7 @@ public enum SheetMetalDXF {
             put(10, number(h.center.x)); put(20, number(h.center.y)); put(30, "0"); put(40, number(h.diameter / 2))
         }
         for b in flat.bends {
-            put(999, "Bend \(b.edge.rawValue) \(b.direction.rawValue) angle_deg=\(number(b.angle)) inside_radius_mm=\(number(b.insideRadius))")
+            put(999, "Bend \(b.edge?.rawValue ?? "side\(b.side ?? 0)") \(b.direction.rawValue) angle_deg=\(number(b.angle)) inside_radius_mm=\(number(b.insideRadius))")
             line(b.line, b.direction == .up ? "BEND_UP" : "BEND_DOWN")
             for tl in b.tangents { line(tl, "BEND_TANGENT") }
         }

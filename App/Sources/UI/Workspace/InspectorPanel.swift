@@ -192,7 +192,11 @@ struct InspectorPanel: View {
                 info("Matrice", "V" + SheetMetalCommand.mm(rule.vDie))
             }
             info("Ingombro", SheetMetalCommand.mm(spec.width) + " × " + SheetMetalCommand.mm(spec.depth) + " mm")
-            info("Flange", SheetEdge.allCases.filter { spec[$0] != nil }.map(\.label).joined(separator: ", ").ifEmpty("nessuna"))
+            if spec.outline != nil {
+                info("Flange", (spec.sideFlanges ?? []).map { "lato \($0.side + 1)" }.joined(separator: ", ").ifEmpty("nessuna"))
+            } else {
+                info("Flange", SheetEdge.allCases.filter { spec[$0] != nil }.map(\.label).joined(separator: ", ").ifEmpty("nessuna"))
+            }
             Button("Modifica lamiera…") {
                 if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) {
                     workspace.startSheetMetal(model: model, editing: f)

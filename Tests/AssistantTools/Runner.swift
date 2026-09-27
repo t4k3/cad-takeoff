@@ -226,6 +226,18 @@ struct AssistantToolsTests {
         let boxInfo = await m.call("scene_info", arguments: [:])
         let badCorners = await edit("add_sheet_metal", ["material": "dc01", "thickness": 1.5, "width": 50, "depth": 50, "corners": "welded"])
         expect(!sheetBox.isError && boxInfo.structured?["edge_closed"]?.bool == true && badCorners.isError, "closed-corner box via tool")
+        // Free-form base: a hexagon with three sides bent; a side number out of range refused.
+        m.newDesign()
+        let hexagon: [JSONValue] = (0..<6).map { k in ["x": .number(50 * cos(Double(k) * .pi / 3)), "y": .number(50 * sin(Double(k) * .pi / 3))] }
+        let freeSheet = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "outline": .array(hexagon),
+                                                      "outline_sides": .array([1, 3, 5]), "flange_length": 15])
+        let freeInfo = await m.call("scene_info", arguments: [:])
+        let listed = await m.call("list_features", arguments: [:])
+        let badSide = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "outline": .array(hexagon), "outline_sides": .array([7]), "flange_length": 15])
+        let mixed = await edit("add_sheet_metal", ["material": "dc01", "thickness": 2, "outline": .array(hexagon), "flange_sides": .array(["front"]), "flange_length": 15])
+        expect(!freeSheet.isError && freeInfo.structured?["edge_closed"]?.bool == true && badSide.isError && mixed.isError,
+               "free-form sheet metal via tool (\(freeSheet.text))")
+        expect(listed.text.contains("outline") || (listed.structured?.jsonString.contains("outline") ?? false), "free-form base listed with its outline")
         print("PASS: \(checks) CAD assistant assertions (geometry, revisions, undo/redo, validation, STL and coloured 3MF)")
     }
 }

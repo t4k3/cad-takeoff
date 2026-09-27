@@ -388,16 +388,21 @@ extension DesignModel: CADToolProvider {
                 value["v_die"] = .number(rule.vDie)
                 value["minimum_flange"] = .number(rule.minimumFlange)
             }
-            var flanges: [String: JSONValue] = [:]
-            for e in SheetEdge.allCases {
-                if let f = s[e] {
-                    var flange: [String: JSONValue] = ["length": .number(f.length), "angle": .number(f.angle),
-                                                       "direction": .string(f.direction.rawValue), "reference": .string(f.reference.rawValue)]
-                    if let lip = f.lip {
-                        flange["lip"] = ["length": .number(lip.length), "angle": .number(lip.angle), "side": .string(lip.inward ? "in" : "out")]
-                    }
-                    flanges[e.rawValue] = .object(flange)
+            func describe(_ f: SheetFlange) -> JSONValue {
+                var flange: [String: JSONValue] = ["length": .number(f.length), "angle": .number(f.angle),
+                                                   "direction": .string(f.direction.rawValue), "reference": .string(f.reference.rawValue)]
+                if let lip = f.lip {
+                    flange["lip"] = ["length": .number(lip.length), "angle": .number(lip.angle), "side": .string(lip.inward ? "in" : "out")]
                 }
+                return .object(flange)
+            }
+            var flanges: [String: JSONValue] = [:]
+            if let outline = s.outline {
+                // Free-form base: its points, and the flanges by side number (1-based, as outline_sides).
+                value["outline"] = .array(outline.map { ["x": .number($0.x), "y": .number($0.y)] })
+                for sf in s.sideFlanges ?? [] { flanges[String(sf.side + 1)] = describe(sf.flange) }
+            } else {
+                for e in SheetEdge.allCases { if let f = s[e] { flanges[e.rawValue] = describe(f) } }
             }
             value["flanges"] = .object(flanges)
             if let build = try? SheetMetalGeometry.build(s, featureID: f.id, position: f.position) {
@@ -535,14 +540,27 @@ extension DesignModel: CADToolProvider {
         guard m.thicknesses.contains(where: { abs($0 - t) < 1e-9 }) else {
             throw CADToolFailure("Spessore non commerciale per \(m.name): usa \(m.thicknesses.map { String($0) }.joined(separator: ", ")) mm.")
         }
-        var spec = SheetMetalSpec(material: m.id, thickness: t, width: try number(args, "width"), depth: try number(args, "depth"))
+        var spec: SheetMetalSpec
+        if let list = args["outline"]?.array {
+            let outline = try list.map { v -> Vec2 in
+                guard let x = v["x"]?.number, let y = v["y"]?.number else { throw CADToolFailure("outline: punti {x,y} in mm.") }
+                return Vec2(x, y)
+            }
+            guard outline.count >= 3 else { throw CADToolFailure("outline: almeno 3 punti.") }
+            spec = SheetMetalSpec(material: m.id, thickness: t, outline: outline)
+        } else {
+            spec = SheetMetalSpec(material: m.id, thickness: t, width: try number(args, "width"), depth: try number(args, "depth"))
+        }
         if args["inside_radius"] != nil { spec.radiusOverride = try number(args, "inside_radius") }
         if args["corners"] != nil {
             guard let style = SheetCornerStyle(rawValue: try string(args, "corners")) else { throw CADToolFailure("corners: open o closed.") }
             spec.corners = style
         }
         if args["corner_gap"] != nil { spec.cornerGap = try number(args, "corner_gap") }
-        if let list = args["flange_sides"]?.array {
+        let sideNumbers = args["outline_sides"]?.array
+        if spec.outline != nil, args["flange_sides"] != nil { throw CADToolFailure("Con outline usa outline_sides (numeri dei lati), non flange_sides.") }
+        if spec.outline == nil, sideNumbers != nil { throw CADToolFailure("outline_sides vale solo con outline.") }
+        if let list = args["flange_sides"]?.array ?? sideNumbers {
             let direction: SheetBendDirection = args["flange_direction"] == nil ? .up
                 : (SheetBendDirection(rawValue: try string(args, "flange_direction")) ?? .up)
             let reference: SheetFlangeReference = args["flange_reference"] == nil ? .outside
@@ -554,9 +572,18 @@ extension DesignModel: CADToolProvider {
                 guard side == "in" || side == "out" else { throw CADToolFailure("lip_side: in o out.") }
                 flange.lip = SheetLip(length: try number(args, "lip_length"), angle: try optionalNumber(args, "lip_angle", 90), inward: side == "in")
             }
-            for side in list {
-                guard let raw = side.string, let e = SheetEdge(rawValue: raw) else { throw CADToolFailure("flange_sides: front, right, back, left.") }
-                spec[e] = flange
+            if let outline = spec.outline {
+                spec.sideFlanges = try list.map { v in
+                    guard let k = v.number, k == k.rounded(), (1...Double(outline.count)).contains(k) else {
+                        throw CADToolFailure("outline_sides: numeri da 1 a \(outline.count).")
+                    }
+                    return SheetSideFlange(side: Int(k) - 1, flange: flange)
+                }
+            } else {
+                for side in list {
+                    guard let raw = side.string, let e = SheetEdge(rawValue: raw) else { throw CADToolFailure("flange_sides: front, right, back, left.") }
+                    spec[e] = flange
+                }
             }
         }
         return spec

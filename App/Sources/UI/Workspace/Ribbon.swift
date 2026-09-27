@@ -258,6 +258,9 @@ struct Ribbon: View {
                 Button { workspace.revolveSketch(model: model) } label: { Label("Rivoluzione", systemImage: "arrow.triangle.2.circlepath") }
                     .disabled(sketch.faces.isEmpty || workspace.command != nil)
                     .help("Fa girare le aree intorno a una linea dello schizzo (meglio di costruzione): alberi, pulegge, perni")
+                Button { workspace.sheetMetalFromSketch(model: model) } label: { Label("Lamiera", systemImage: "square.stack.3d.down.forward") }
+                    .disabled(sketch.faces.isEmpty || workspace.command != nil)
+                    .help("Lamiera con il profilo chiuso come base: poi clicca i lati da piegare")
                 Button { sketch.deleteSelection() } label: { Label("Elimina", systemImage: "trash") }
                     .disabled(sketch.selection == nil)
             }
