@@ -952,11 +952,14 @@ private struct ZoneDetail: View {
     /// The rules as edited here, applied with «Applica» (one command, previewed by the engine
     /// first) or dropped with «Ripristina»; the plane they belong to, and the apply in flight.
     @State private var rules = CircuitModel.ZoneRules()
+    /// The plane's rules the copy started from: edited means different from these (not from the
+    /// plane now, which an undo may have changed under a clean copy).
+    @State private var baseRules = CircuitModel.ZoneRules()
     @State private var rulesPlane: UUID?
     @State private var applying: UUID?
     @State private var refused: String?
 
-    private var edited: Bool { rulesPlane == plane.id && rules != CircuitModel.ZoneRules(plane) }
+    private var edited: Bool { rulesPlane == plane.id && rules != baseRules }
 
     /// The engine's preview of the edited rules (fill, errors), or none when nothing is edited.
     private func preview() {
@@ -967,20 +970,21 @@ private struct ZoneDetail: View {
     /// and this apply (another plane chosen meanwhile is left alone).
     private func apply() {
         guard edited, applying == nil else { return }
-        let token = UUID(), target = rules.applied(to: plane), id = plane.id
+        let token = UUID(), target = rules.applied(to: plane), id = plane.id, wanted = rules
         let checked = circuits.ruleCheck.flatMap { $0.command == .updateZone(target) ? $0.revision : nil }
         applying = token
         Task {
             let ok = await circuits.updateZone(target, expectedRevision: checked)
             guard applying == token, rulesPlane == id else { return }
             applying = nil
-            if ok { refused = nil; circuits.checkRule(nil) }
+            // Applied: that is the base now (edits made meanwhile stay pending against it).
+            if ok { refused = nil; baseRules = wanted; if rules == wanted { circuits.checkRule(nil) } else { preview() } }
             else { refused = circuits.message.replacingOccurrences(of: "Modifica piano di rame non riuscito: ", with: "") }
         }
     }
 
     private func reset(to z: PCBZone) {
-        rules = CircuitModel.ZoneRules(z); rulesPlane = z.id; refused = nil; applying = nil
+        rules = CircuitModel.ZoneRules(z); baseRules = rules; rulesPlane = z.id; refused = nil; applying = nil
     }
 
     var body: some View {
@@ -1012,7 +1016,7 @@ private struct ZoneDetail: View {
             .onAppear { reset(to: plane) }
             .onChange(of: plane.id) { circuits.checkRule(nil); reset(to: plane) }
             // The plane changed elsewhere (undo, another panel): follow it unless edits are pending here.
-            .onChange(of: plane) { if !edited && applying == nil { reset(to: plane) } }
+            .onChange(of: plane) { if !edited && applying == nil && refused == nil { reset(to: plane) } }
         if edited || applying != nil {
             HStack {
                 if let check = circuits.ruleCheck, check.command == .updateZone(rules.applied(to: plane)) {
