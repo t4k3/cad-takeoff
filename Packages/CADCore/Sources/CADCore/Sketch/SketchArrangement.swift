@@ -238,7 +238,25 @@ public enum SketchArrangement {
                 var loop: [Int] = [], e = start
                 while remaining.contains(e) {
                     remaining.remove(e); loop.append(e.a)
-                    guard let options = next[e.b], let n = options.first(where: { remaining.contains(D(a: e.b, b: $0)) }) ?? options.first else { break }
+                    guard let options = next[e.b] else { break }
+                    let open = options.filter { remaining.contains(D(a: e.b, b: $0)) }
+                    // Where two chosen areas touch at a point, two ways lead on: take the first
+                    // clockwise from the way back (the tightest turn), so each area closes on
+                    // itself instead of a figure-eight through the point.
+                    let n: Int
+                    if open.count > 1 {
+                        let v = nodes[e.b], back = nodes[e.a] - v
+                        let a0 = atan2(back.y, back.x)
+                        func clockwise(_ c: Int) -> Double {
+                            let d = nodes[c] - v
+                            var turn = a0 - atan2(d.y, d.x)
+                            while turn <= 1e-12 { turn += 2 * .pi }
+                            return turn
+                        }
+                        n = open.min { clockwise($0) < clockwise($1) }!
+                    } else if let only = open.first ?? options.first {
+                        n = only
+                    } else { break }
                     e = D(a: e.b, b: n)
                 }
                 let pts = points(loop)

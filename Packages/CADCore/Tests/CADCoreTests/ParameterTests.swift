@@ -90,3 +90,21 @@ private func near(_ a: Double, _ b: Double, _ tol: Double = 1e-9) -> Bool { abs(
     _ = try doc.applyParameters()
     #expect(doc.features[0].size("height") == 8)
 }
+
+@Test func areasTouchingAtAPointExtrudeSeparately() throws {
+    // Two overlapping squares: their outer parts touch only where the outlines cross. Picked
+    // together they are two areas (not one figure-eight outline, which could not be extruded).
+    var s = Sketch(name: "S", plane: .xy)
+    s.shapes = [SketchShape(kind: .rectangle(corner: Vec2(0, 0), width: 20, height: 20)),
+                SketchShape(kind: .rectangle(corner: Vec2(10, 10), width: 20, height: 20))]
+    let areas = s.areas(seeds: [Vec2(5, 5), Vec2(25, 25)])
+    #expect(areas.count == 2 && areas.allSatisfy { abs(Profile2D(points: $0.outline).area - 300) < 1e-9 && $0.outline.count == 6 })
+    for a in areas {
+        let f = Feature(name: "E", kind: .extrude(profile: Profile2D(points: a.outline), height: 5))
+        let r = DesignEvaluator.evaluate(CADDocument(features: [f]), revision: "x")
+        #expect(r.issues.isEmpty && abs((r.bodies.first?.mesh.volume ?? 0) - 1500) < 1e-6)
+    }
+    // All three areas together: one outline, the union of the two squares.
+    let all = s.areas(seeds: [Vec2(5, 5), Vec2(15, 15), Vec2(25, 25)])
+    #expect(all.count == 1 && abs(Profile2D(points: all[0].outline).area - 700) < 1e-9)
+}
