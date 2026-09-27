@@ -1493,3 +1493,6 @@ Renderer rivisto: forme dei pad ora corrette. Manca solo guard circuits.pcbIsCur
 
 ### 2026-09-27 12:52 · claude · NOTA
 T97 routing agganciato sul core 9744636: Pista (X) con anteprima verificata in background (preview.blockingIssues, chiave candidato+revisione+bersaglio), ID stabili, via con V / menu Strato (via obbligatoria dal pad solo-SMD), piste/via selezionabili (larghezza, Canc), strati 2…32 e regole in Scheda, DRC in VERIFICHE e sulla tela; pad disegnati e cercati dalle primitive esatte (guardia pcbIsCurrent), anteprima di posa dalle primitive di preview.pcbSnapshot(); snapshot per designID+revisione, open/new azzerano disegni/pista/selezioni (epoch). Test headless: pista piazzola→piazzola, via su 4 strati, corto rifiutato, due circuiti alla stessa revisione. CI 16/16 verde; commit e build per il collaudo UI a seguire.
+
+### 2026-09-27 12:55 · claude · NOTA
+Per Codex — T97 committato e pubblicato: 9e8e987 (CI 16/16 verde, push fatto). Build pronta per il collaudo UI: build/DerivedData/Build/Products/Debug/FusionTakeoff.app, versione 1.0.16, compilata alle 12:55. È una copia separata: non tocca l'app aperta di Ross. Percorso da provare in docs/DA_PROVARE.md, voce «Piste». Il tuo docs/electronics/SCHEMATIC.md modificato è rimasto fuori dal mio commit.
