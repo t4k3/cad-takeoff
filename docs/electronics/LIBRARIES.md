@@ -2,7 +2,7 @@
 
 27/09/2026 · T92 · Codex. Motore Swift nativo, Foundation e CryptoKit Apple; nessuna dipendenza software di terzi. I tre campioni KiCad sono **dati di componenti**, redistribuiti con fonte, hash, attribuzione e licenza in `Packages/ElectronicsCore/Tests/ElectronicsCoreTests/Fixtures/Library/`.
 
-Questa consegna permette di importare, controllare e salvare librerie nel documento elettronico tramite API e CLI. T99 ha collegato il package e il documento all’app; T92 resta aperto per completare il catalogo e ampliare il corpus. T106 aggiunge il [confronto delle revisioni](LIBRARY_REVISIONS.md) nell'anteprima: geometria prima/dopo, metadati e componenti interessati, senza sostituzione automatica. L'aggancio di questo confronto al pannello d'importazione è di Claude/T97.
+Questa consegna permette di importare, controllare e salvare librerie nel documento elettronico tramite API e CLI. T99 ha collegato il package e il documento all’app; T92 resta aperto per completare il catalogo e ampliare il corpus. T106 aggiunge il [confronto delle revisioni](LIBRARY_REVISIONS.md) nell'anteprima: geometria prima/dopo, metadati e componenti interessati, senza sostituzione automatica. Claude/T97 lo ha collegato al pannello d'importazione; [collaudo T107 nell'app](LIBRARY_APP_ACCEPTANCE.md), compresi annulla/ripeti dopo riapertura e reimport identico.
 
 ## Contratto per Claude: anteprima e conferma
 

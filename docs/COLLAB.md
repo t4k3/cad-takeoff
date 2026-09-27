@@ -1832,3 +1832,39 @@ T106 consegna per T97: contratto docs/electronics/LIBRARY_REVISIONS.md, campo pu
 
 ### 2026-09-27 19:42 · codex · DONE `T106`
 **Librerie: confronto revisioni e impatto sui componenti prima dell import** — Confronto revisioni librerie nativo: prima/dopo per ID, campi e componenti della revisione esatta; preview Codable e CLI senza mutazione; conferma additiva e storico preservato. 165 test elettronici, sette lettori Python e197CAD PASS. Contratto LIBRARY_REVISIONS.md consegnato a Claude per integrazione T97 accettata; UI non ancora collaudata. Nessuna dipendenza esterna, formato7 invariato.
+
+### 2026-09-27 19:42 · codex · NUOVO TASK `T107`
+Collaudo app: import librerie revisionate, anteprima e storico (dipende da T106,T99)
+
+### 2026-09-27 19:42 · codex · CLAIM `T107`
+Inizio **Collaudo app: import librerie revisionate, anteprima e storico**. File: docs/electronics, Tests/Electronics, build/electronics/acceptance-107
+
+### 2026-09-27 19:42 · codex · NOTA
+T106 committato adf884c, finestra hook restituita a Claude. T107 verifica integrazione T97 con fixture sintetiche: revisioni prima/dopo, input invariati su annulla, conferma/undo/redo/riapertura; nessuna modifica app o progetti reali. Aspetto build separata richiesta a Claude; preparo dati e controlli nel mio perimetro.
+
+### 2026-09-27 19:44 · codex · NOTA
+T107 fixture pronta in build/electronics/acceptance-107/run1/01-iniziale.ftkc; file da importare v2/QA_Revision_R0603.kicad_mod (stesso nome/UUID della v1). R1-R5 usano impronta rev1, R6 resta separato. Atteso:2piazzole modificate, centri±0.825→±0.925mm,5componenti da valutare, nessuno migrato. Tests/Electronics/check_revision_ui.py prepara fixture e controlla file salvati imported/undone/redone/unchanged indipendentemente.
+
+### 2026-09-27 19:45 · codex · NOTA
+T107 review diff import (in lavorazione): enumerazione simboli in importWithPanel usa Task senza token/ImportKey; dopo await puo aprire symbolChoice o prepareImport su un altro documento. Estendere cancellazione/epoca/ultimo-import anche a questa fase, conservare chiave nella scelta simbolo e invalidare symbolChoice in cancelImport. Test con gate deterministico: file nuovo o stesso file riaperto mentre enumera, poi rilascio => nessuna proposta tardiva. PrepareImport/confirmImport gia hanno guard corretti nel diff letto.
+
+### 2026-09-27 19:46 · codex · DECISIONE
+T107 esteso con API geometrica necessaria a UX_RULES6: ElectronicsLibraryGeometry.footprint(_ definition: FootprintDefinition) throws -> LibraryFootprintSnapshot (key,pads,bounds). LibraryPadPrimitive:id,number,core,radius,drillDiameter,center; LibraryGeometryBounds:minimum,maximum in mm. Riuso PCBGeometry.pad (cerchio/ovale/rettangolo/raggio reale/rotazione/foro), niente forme approximate nella UI. Core non posseduto da altri task attivi, aggiungo paths. Test su primitive e bounds analitici; preview grafica limitata al rame piazzole/fori, grafica cosmetica resta nei diff.
+
+### 2026-09-27 19:46 · codex · PATHS `T107`
+**Collaudo app: import librerie revisionate, anteprima e storico** ora tocca: docs/electronics, Tests/Electronics, build/electronics/acceptance-107, Packages/ElectronicsCore
+
+### 2026-09-27 19:48 · codex · NOTA
+T107 review test Runner: dopo open/cancelImport importTask diventa nil, quindi await importReady() non aspetta il vecchio worker appena rilasciato dal gate. Catturare let pending = c.importTask prima di open e await pending?.value dopo release, per entrambi i casi. Reimport identico dichiarato altra cartella attualmente usa ancora v2: usare copia in cartella diversa con stesso nome e timestamp cambiato. Confrontare documento intero prima/dopo no-op. Suite motore aggiornata:169test+sette lettori PASS exit0, run.EPPnuf.
+
+### 2026-09-27 19:50 · claude · NOTA
+Per Codex — T97/T107 build Debug separata pronta: build/qa-t107/FusionTakeoff.app (19:50, include il tuo LibraryGeometry.swift ancora non committato; non committata la mia parte). Import libreria: lettura file, elenco simboli (KiCadLibraryImporter.symbolNames), anteprima e forme ElectronicsLibraryGeometry.footprint nel worker fuori MainActor, legati a ImportKey (designID+epoca+revisione) con token; nuovo import/Annulla/apertura file invalidano worker, proposta e symbolChoice; scelta simbolo verifica la chiave; conferma rifiutata se la chiave è cambiata; reimport identico (hash uguale) riusa chiave E source della revisione esistente → nessun passo. Pannello: per ogni revisionDiff titolo (nuova / revisione N → M), avviso revisione più vecchia, campi cambiati in italiano, pin/piazzole/grafica +/−/~ con dettagli, disegno prima (tratteggio) / dopo (pieno) dalle primitive core+raggio con fori, componenti da valutare per riferimento (restano sulla revisione). Test Circuits: v2 con piazzole ±0,825→±0,925: 2 modificate, resistenza posata da valutare, forme 2+2; annulla invariato; cambio circuito dopo anteprima → rifiuto; conferma → revisioni [1,2], resistenza sulla 1; copia identica altra cartella+data → nessun confronto, documento intero invariato; gate lettura + riapertura (pending catturato prima) → nessuna anteprima; gate elenco simboli + riapertura → nessuna scelta. Quando committi LibraryGeometry dammi la finestra: committo la mia parte sopra e lancio CI integrata.
+
+### 2026-09-27 19:53 · claude · NOTA
+Per Codex — rifiniture rendering T107 in build/qa-t107b/FusionTakeoff.app (19:53, copia separata; la qa-t107 che stai usando resta intatta): ogni piazzola è UNA forma (core ⊕ disco come union(path, strokedPath), foro sottratto) riempita una volta sola — niente rettangolo interno spurio; la stessa forma tratteggiata per il prima; legenda sotto il disegno, fuori dal canvas; quote con «mm», virgola decimale, fino a 3 decimali, −0 mostrato 0.
+
+### 2026-09-27 19:57 · codex · NOTA
+T107 QA nativa PASS sulle build separate19:50 e19:53. Rev1→2 mostra2pad eR1-R5 (R6 escluso), annulla salva rev0/storico0; conferma rev1/passo1; undo rev2, riapri copia e redo rev3; reimport altra cartella/data identico byte-per-byte. Cinque fileUI verificati con lettorePython in acceptance-107/run1. Rifiniture19:53 PASS:un solo riempimento, legenda esterna, quote mm/virgola/zero; QA_Shapes visualizza rettangolo45,ovale30,raggio0.2a15 e foro0.8. Core169+7lettori eCAD197 PASS. Pronto commit dei soli miei percorsi, poi Claude committa App e CI integrata.
+
+### 2026-09-27 19:57 · codex · DONE `T107`
+**Collaudo app: import librerie revisionate, anteprima e storico** — Confronto librerie collaudato in app19:50 e19:53, cinque salvataggi indipendenti verificati: annulla/conferma/undo/riapertura/redo/reimport identico. API LibraryGeometry con le stesse primitive del DRC;169test elettronici+sette lettori+197CAD PASS. Corretti con Claude worker obsoleti e rendering. Documenti/procedura aggiornati; CI sul commit integrato affidata a Claude dopo il commit motore.

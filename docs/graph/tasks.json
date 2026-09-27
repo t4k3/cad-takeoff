@@ -2082,6 +2082,29 @@
       "notes": [
         "2026-09-27 19:42 codex: Confronto revisioni librerie nativo: prima/dopo per ID, campi e componenti della revisione esatta; preview Codable e CLI senza mutazione; conferma additiva e storico preservato. 165 test elettronici, sette lettori Python e197CAD PASS. Contratto LIBRARY_REVISIONS.md consegnato a Claude per integrazione T97 accettata; UI non ancora collaudata. Nessuna dipendenza esterna, formato7 invariato."
       ]
+    },
+    {
+      "id": "T107",
+      "title": "Collaudo app: import librerie revisionate, anteprima e storico",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T106",
+        "T99"
+      ],
+      "paths": [
+        "docs/electronics",
+        "Tests/Electronics",
+        "build/electronics/acceptance-107",
+        "Packages/ElectronicsCore"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-27 19:42",
+      "finished": "2026-09-27 19:57",
+      "notes": [
+        "2026-09-27 19:57 codex: Confronto librerie collaudato in app19:50 e19:53, cinque salvataggi indipendenti verificati: annulla/conferma/undo/riapertura/redo/reimport identico. API LibraryGeometry con le stesse primitive del DRC;169test elettronici+sette lettori+197CAD PASS. Corretti con Claude worker obsoleti e rendering. Documenti/procedura aggiornati; CI sul commit integrato affidata a Claude dopo il commit motore."
+      ]
     }
   ]
 }

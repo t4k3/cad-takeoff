@@ -71,6 +71,24 @@ confronti né passi di undo. Restano i limiti degli ID legacy descritti in
 
 ## Integrazione richiesta a Claude
 
+### Geometria delle piazzole — integrazione T107
+
+`try ElectronicsLibraryGeometry.footprint(definition)` restituisce un
+`LibraryFootprintSnapshot` con `key`, `pads` e `bounds.minimum/maximum`.
+Ogni `LibraryPadPrimitive` espone `id`, `number`, `core`, `radius`, `center` e
+`drillDiameter`. Il rame esterno è il nucleo convesso dilatato di un disco di
+raggio `radius`, meno l'eventuale foro circolare centrato in `center`.
+Un punto produce un cerchio, un segmento una capsula, un poligono un rettangolo
+o rettangolo arrotondato. Raggio zero conserva gli spigoli del rettangolo.
+
+Il motore applica già rotazioni e raggi e restituisce limiti esatti del rame
+locale in mm/Y verso l'alto; l'app fa solo proiezione e disegno. La forma è
+calcolata dallo stesso `PCBGeometry.pad` usato dal DRC, senza duplicare l'algoritmo.
+Fori, ovali e raggi effettivi non devono diventare rettangoli arrotondati generici.
+Lo snapshot valida l'impronta e controlla la cancellazione; è serializzabile.
+Comprende **solo piazzole e fori**: grafica cosmetica, ingombro del modello e
+courtyard non fanno parte del disegno o dei suoi limiti. Restano nei dati/diff.
+
 Nel pannello d'importazione mostrare nuova definizione o coppia di revisioni,
 campi cambiati, conteggi e dettagli delle entità, riferimenti dei componenti da
 valutare. Usare i valori nativi per il disegno prima/dopo e gli ID forniti per

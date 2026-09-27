@@ -1,5 +1,53 @@
 # Elettronica — prove del motore e dell’app
 
+## T107 — anteprima revisioni nell'app e geometria esatta, 27/09/2026
+
+Integrazione T97 di Claude, motore/QA di Codex. [Procedura ripetibile](LIBRARY_APP_ACCEPTANCE.md),
+[contratto e primitive](LIBRARY_REVISIONS.md). Nessun progetto reale modificato.
+
+Motore: `bash scripts/test-electronics.sh` **169 test Swift e sette lettori Python
+PASS, exit 0**, log `/tmp/ftk-t107-electronics.log`, artefatti `build/electronics/run.EPPnuf`.
+Quattro nuovi test verificano rettangoli con spigoli vivi, ovali, raggio effettivo,
+rotazioni 45°/90° e limiti analitici, foro passante, ID, serializzazione e input
+invalidi. `ElectronicsLibraryGeometry` riusa le primitive del DRC; nessuna formula
+di forma delle piazzole duplicata nell'app.
+Regressione CAD: **197 test PASS, exit 0**, stesso comando con scratch path della
+verifica T106, log `/tmp/ftk-t107-cad.log`. Nessun sorgente CAD modificato da Codex.
+
+Prova nativa sulla build Debug **19:50, 1.0.70 / adf884c+**, copia `build/qa-t107`:
+
+- Anteprima rev1→rev2: due piazzole da ±0,825 a ±0,925 mm, sovrapposizione
+  prima/dopo e componenti R1–R5 da valutare; R6 escluso.
+- Annulla → Salva: revisione 0, nessun passo di storico, documento invariato.
+- Conferma → Salva: revisione 1, un passo, vecchie definizioni, componenti,
+  connessioni e scheda intatti; nuova impronta aggiunta, nessuna istanza migrata.
+- Annulla → Salva: revisione 2, un passo ripetibile. Riapertura della copia
+  salvata → Ripeti → Salva: revisione 3, disegno della conferma ripristinato.
+- Stesso sorgente da altra cartella/data: messaggio di contenuto già presente;
+  conferma e salvataggio **identici byte per byte**, nessun passo aggiunto.
+
+File della UI conservati in `build/electronics/acceptance-107/run1/02-annullato.ftkc`,
+`03-importato.ftkc`, `04-undo.ftkc`, `05-redo.ftkc`, `06-reimport-identico.ftkc`.
+Tutti verificati da `Tests/Electronics/check_revision_ui.py`; `cmp` conferma il no-op.
+Il generatore conserva la baseline separata dai file salvati.
+
+Review corretta da Claude: enumerazione e scelta dei simboli legate a identità,
+epoca e revisione del documento, come la preview; annullamento e nuovo import
+invalidano le risposte tardive. I test del ponte sospendono la lettura con un gate,
+riaprono il file e attendono **il task originario** prima di controllare che non
+ricompaia la proposta. Il reimport identico riusa la provenienza precedente.
+
+Rifiniture visive **PASS sulla build 19:53**, copia `build/qa-t107b`, stessa etichetta
+1.0.70/adf884c+: ogni piazzola riempita una volta senza il rettangolo interno spurio,
+legenda fuori dal disegno, quote in mm con virgola e zero senza segno negativo.
+Fixture `acceptance-107/run2/QA_Shapes.kicad_mod`: rettangolo 45°, ovale 30°,
+rettangolo con raggio 0,2 mm a 15° e piazzola passante Ø2/foro Ø0,8 visualizzati
+correttamente, senza tagli; anteprima annullata.
+
+Questo risultato riguarda il confronto e l'importazione additiva. Migrazione
+guidata delle istanze, grafica cosmetica completa, modelli 3D e catalogo live
+restano fuori da T106/T107; non cambia il formato 7 né la qualificazione produttiva.
+
 ## T106 — confronto delle revisioni di libreria, 27/09/2026
 
 Contratto [LIBRARY_REVISIONS.md](LIBRARY_REVISIONS.md). Confronto nativo prima/dopo

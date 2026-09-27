@@ -20,7 +20,7 @@
 
 Prima consegna implementata e verificata: importazione KiCad di simboli mono-unità e impronte SMD/PTH, sottoinsieme SMD EasyEDA Standard, grafica e provenienza, proposte di pin-map, catalogo CSV offline, comandi di import/creazione dispositivo con anteprima e undo, documento v2 con lettura v1. [Copertura dettagliata](LIBRARIES.md), [prove](VALIDATION.md).
 
-T106 implementa il [confronto delle revisioni](LIBRARY_REVISIONS.md): definizioni ed entità prima/dopo, campi cambiati, componenti agganciati alla revisione precisa. Preview non distruttiva e conferma con un solo passo di storico; nessun aggiornamento automatico dei componenti esistenti. Integrazione dell'anteprima nell'app affidata a Claude/T97.
+T106 implementa il [confronto delle revisioni](LIBRARY_REVISIONS.md): definizioni ed entità prima/dopo, campi cambiati, componenti agganciati alla revisione precisa. Preview non distruttiva e conferma con un solo passo di storico; nessun aggiornamento automatico dei componenti esistenti. Claude/T97 ha integrato l'anteprima nell'app: T107 verifica confronto, annullamento, conferma e storico dopo riapertura, oltre al reimport identico. Primitive geometriche condivise col DRC; [prove e limiti](VALIDATION.md).
 
 T92 resta aperto: mancano adattatore catalogo JLC live documentato/autenticato, prezzi e politiche di aggiornamento, corpus EasyEDA e JLC reale con controllo dei datasheet, migrazione esplicita dei componenti fra revisioni e ampliamento dei formati. Le librerie multi-unità dipendono dal modello E2; padstack avanzati/NPTH dal modello E3. Nessuna promessa di import universale e nessun endpoint privato dedotto.
 
