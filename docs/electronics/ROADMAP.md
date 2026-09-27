@@ -84,6 +84,8 @@ distanze da bordo e altre reti secondo le classi, fori e aree vietate. Connettiv
 tra celle, piste e via; isole senza percorso verso una piazzola rimuovibili, mai collegate
 per il solo UUID del piano. Documento v6 con lettura 1–6 e storico completo. Contratto
 [PCB_ZONES.md](PCB_ZONES.md), **124 test elettronici + cinque lettori + 178 CAD PASS**.
-Claude integra T97; collaudo e misure Release distinti in [VALIDATION.md](VALIDATION.md).
+Claude ha integrato T97 in `ae1a607`, app **1.0.33**, CI **16/16 PASS**, compresi i test
+del ponte app su preview, comandi in background e cancellazione. Collaudo visivo ancora
+da eseguire (controllo delle finestre CUA indisponibile); misure e limiti in [VALIDATION.md](VALIDATION.md).
 Restano termiche, larghezza minima dei colli, archi, stackup dielettrico, shove e DRC completo;
 T95 comprende il successivo rilascio produttivo. Nessuna libreria geometrica esterna aggiunta.

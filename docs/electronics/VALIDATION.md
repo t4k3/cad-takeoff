@@ -21,9 +21,31 @@
   pick + pickZones + snap **p95 0,0234 ms**; Debug **401,49 ms / 0,1812 ms**.
   Misure sintetiche su questo Mac, non garanzie per progetti arbitrari. Worker cancellabili necessari.
 
-Aggancio T97 di Claude e collaudo app in corso. Nessuna prova UI implicita dai test del core.
+Core `ccd15d7`; aggancio T97 di Claude `ae1a607`, build **1.0.33** compilata alle 14:44.
+CI completa **16/16 PASS**, exit 0 e `BUILD SUCCEEDED`: `build/ci/run.XQ0IdU`.
+Anche il test del ponte app `02g-circuiti-app` passa: piano con ID della preview, selezione,
+modifica/spostamento/rimozione, undo, persistenza, comandi del rame fuori dal MainActor,
+blocco dei doppi invii e cancellazione durante il lavoro senza installare il risultato.
+Il worker verifica token, epoca documento e revisione; bozza conservata fino al successo.
+Queste sono prove automatiche del Model dell'app, **non un collaudo visivo**.
+
+Il tentativo di collaudo grafico del 27/09 alle 14:45–14:47 è bloccato dallo strumento CUA:
+`cgWindowNotFound` per il percorso esatto della build, Finder e Claude; reset della sessione
+e nuovo aggancio senza risultato. Nessuna evidenza di difetto di Circuiti da questo errore.
+Non è stata verificata a schermo la build 1.0.33; la fixture UI è rimasta invariata.
+La decodifica dello storico all'apertura è ancora sul MainActor: da spostare in worker
+prima di qualificare file grandi. Undo/redo non ricalcolano il rame nel core.
+
 Limiti espliciti in [PCB_ZONES.md](PCB_ZONES.md): mancano termiche, larghezza minima dei colli,
 priorità tra reti sovrapposte e qualificazione produttiva; il riempimento usa connessioni piene.
+
+Protocollo per la prova UI: copia `build/electronics/run.55mFbj/pcb/zones-ui.ftkc`, inizialmente
+revision6 e sei passi, due R collegate logicamente a GND e pista POWER con classe da 0,75 mm.
+Disegnare piano GND, verificare anteprima/clearance e scomparsa dell'airwire; dividere il rame
+con un'area vietata, verificare il ritorno dell'airwire; annullare/ripetere e salvare/riaprire.
+Controllare i dati del file risultante e la catena before/after con lettore separato.
+Verificare anche annullamento della bozza e ripresa dopo cambio strumento. Questi sono
+passi da eseguire quando il controllo delle finestre torna disponibile, non risultati già acquisiti.
 
 ## 27/09/2026 — T94: classi di rete e aree vietate
 
