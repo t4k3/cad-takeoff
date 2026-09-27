@@ -166,6 +166,7 @@ public enum ElectronicsValidation {
             text(variant.name, "variant"); unique(variant.excludedComponents, variant.name)
             if !Set(variant.excludedComponents).isSubset(of: componentIDs) { add("dangling_variant", variant.name, "Variante con componenti inesistenti.") }
         }
+        issues += ElectronicsSchematic.integrity(design)
         return issues
     }
 
@@ -201,7 +202,8 @@ public enum ElectronicsValidation {
             var issue = ElectronicsIssue("multiple_drivers", net.name, "Più uscite sulla rete: \(subjects.map(\.name).joined(separator: ", ")).")
             issue.subjectIDs = [net.id] + subjects.flatMap { [$0.component, $0.pin] }; issues.append(issue)
         }
-        return issues
+        issues += ElectronicsSchematic.electricalIssues(design, excluding: excluding)
+        return ElectronicsSchematic.locatedIssues(issues, design: design)
     }
 
     public static func requireIntegrity(_ design: ElectronicsDesign) throws {

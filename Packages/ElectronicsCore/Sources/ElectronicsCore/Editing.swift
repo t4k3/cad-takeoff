@@ -3,7 +3,10 @@ import Foundation
 /// Commands carry concrete identities: a preview and its confirmation must reuse the same value.
 public enum ElectronicsCommand: Codable, Equatable, Sendable {
     case library(ElectronicsLibraryCommand)
+    case schematic(SchematicCommand)
     case addComponent(component: CircuitComponent, placement: ComponentPlacement, library: ElectronicsLibrary)
+    case addSchematicComponent(component: CircuitComponent, sheetID: UUID, symbol: SchematicSymbol, library: ElectronicsLibrary)
+    case placeComponent(ComponentPlacement)
     case updateComponent(CircuitComponent)
     case removeComponent(UUID)
     case moveComponent(id: UUID, to: PCBPoint)
@@ -21,7 +24,9 @@ public enum ElectronicsCommand: Codable, Equatable, Sendable {
     public var title: String {
         switch self {
         case .library(let command): command.title
-        case .addComponent: "Inserisci componente"
+        case .schematic(let command): command.title
+        case .addComponent, .addSchematicComponent: "Inserisci componente"
+        case .placeComponent: "Posiziona sul PCB"
         case .updateComponent: "Modifica componente"
         case .removeComponent: "Elimina componente"
         case .moveComponent: "Sposta componente"
@@ -43,6 +48,10 @@ public struct ElectronicsCommandPreview: Sendable {
     public let design: ElectronicsDesign
     public let board: BoardConnectivity
     public let issues: [ElectronicsIssue]
+    /// Build only the visible sheet; the original document is not changed by preview.
+    public func schematicSnapshot(sheetID: UUID) throws -> SchematicSnapshot {
+        try ElectronicsSchematic.snapshot(design: design, revision: baseRevision, sheetID: sheetID)
+    }
 }
 
 public struct ElectronicsPin: Equatable, Sendable {
@@ -64,8 +73,10 @@ extension ElectronicsDocument {
 public enum ElectronicsCommands {
     public static func preview(_ command: ElectronicsCommand, document: ElectronicsDocument,
                                expectedRevision: UInt64) throws -> ElectronicsCommandPreview {
+        try Task.checkCancellation()
         var candidate = document
         try apply(command, to: &candidate, expectedRevision: expectedRevision)
+        try Task.checkCancellation()
         let importIssues: [ElectronicsIssue]
         if case .library(.importLibrary(let bundle)) = command { importIssues = bundle.issues } else { importIssues = [] }
         return try .init(baseRevision: document.revision, design: candidate.design,
@@ -84,6 +95,7 @@ public enum ElectronicsCommands {
         try document.edit(title: command.title, expectedRevision: expectedRevision) { design in
             switch command {
             case .library: break // Dispatched above, preserving exactly one transaction.
+            case .schematic(let edit): try ElectronicsSchematic.mutate(edit, design: &design)
             case let .addComponent(component, placement, library):
                 guard placement.componentID == component.id else {
                     throw failure("placement_component_mismatch", "Il posizionamento appartiene a un altro componente.", [component.id, placement.componentID])
@@ -96,6 +108,19 @@ public enum ElectronicsCommands {
                 try merge(library.devices, into: &design.library.devices, key: \.key)
                 design.components.append(component)
                 design.board.placements.append(placement)
+            case let .addSchematicComponent(component, sheetID, symbol, library):
+                guard symbol.componentID == component.id, !design.components.contains(where: { $0.id == component.id }) else {
+                    throw failure("component_exists", "Componente già presente o simbolo di un altro componente.", [component.id, symbol.componentID])
+                }
+                try merge(library.symbols, into: &design.library.symbols, key: \.key)
+                try merge(library.footprints, into: &design.library.footprints, key: \.key)
+                try merge(library.devices, into: &design.library.devices, key: \.key)
+                design.components.append(component)
+                try ElectronicsSchematic.mutate(.placeSymbol(sheetID: sheetID, symbol: symbol), design: &design)
+            case .placeComponent(let placement):
+                _ = try componentIndex(placement.componentID, in: design)
+                if let i = design.board.placements.firstIndex(where: { $0.componentID == placement.componentID }) { design.board.placements[i] = placement }
+                else { design.board.placements.append(placement) }
             case .updateComponent(let component):
                 let index = try componentIndex(component.id, in: design)
                 // A device change with stale pin references is refused by integrity validation.
@@ -104,7 +129,10 @@ public enum ElectronicsCommands {
                 let index = try componentIndex(id, in: design)
                 design.components.remove(at: index)
                 design.board.placements.removeAll { $0.componentID == id }
-                design.connections.removeAll { $0.pin.componentID == id }
+                design.directConnections.removeAll { $0.pin.componentID == id }
+                if var schema = design.schematic {
+                    ElectronicsSchematic.removeSymbols([id], from: &schema); design.schematic = schema
+                }
                 for i in design.variants.indices { design.variants[i].excludedComponents.removeAll { $0 == id } }
             case let .moveComponent(id, point):
                 let index = try placementIndex(id, in: design)
@@ -130,11 +158,18 @@ public enum ElectronicsCommands {
                 design.nets.append(net)
             case let .renameNet(id, name):
                 let index = try netIndex(id, in: design)
+                if design.nets[index].name != name, design.schematic?.wireNets.contains(where: { $0.netID == id }) == true,
+                   design.schematic?.namedNetIDs.contains(id) == false { design.schematic!.namedNetIDs.append(id) }
                 design.nets[index].name = name
             case .removeNet(let id):
                 let index = try netIndex(id, in: design)
                 design.nets.remove(at: index)
-                design.connections.removeAll { $0.netID == id }
+                design.schematic?.namedNetIDs.removeAll { $0 == id }
+                design.directConnections.removeAll { $0.netID == id }
+                if design.schematic?.sheets.contains(where: { $0.labels.contains { $0.netID == id } }) == true ||
+                    design.schematic?.wireNets.contains(where: { $0.netID == id }) == true {
+                    throw failure("net_used_by_label", "Rete usata dallo schema: rimuovere prima fili ed etichette.", [id])
+                }
             case let .connect(pins, net):
                 try requirePins(pins, in: design)
                 if let existing = design.nets.first(where: { $0.id == net.id }) {
@@ -149,7 +184,16 @@ public enum ElectronicsCommands {
             case .disconnect(let pins):
                 try requirePins(pins, in: design)
                 let selected = Set(pins)
-                design.connections.removeAll { selected.contains($0.pin) }
+                if let schema = design.schematic, schema.sheets.contains(where: { sheet in
+                    sheet.wires.contains { wire in
+                        [wire.start,wire.end].contains { terminal in
+                            if case .pin(let p) = terminal { return selected.contains(p) }; return false
+                        }
+                    } || sheet.labels.contains { label in
+                        if case .pin(let p) = label.terminal { return selected.contains(p) }; return false
+                    }
+                }) { throw failure("pin_used_by_schematic", "Pin collegato nello schema: rimuovere prima il filo o l’etichetta.", pins.flatMap { [$0.componentID,$0.pinID] }) }
+                design.directConnections.removeAll { selected.contains($0.pin) }
             case .markNoConnect(let pins):
                 try requirePins(pins, in: design)
                 guard !design.connections.contains(where: { pins.contains($0.pin) && $0.netID != nil }) else {
@@ -157,6 +201,7 @@ public enum ElectronicsCommands {
                 }
                 replaceConnections(pins, netID: nil, in: &design)
             }
+            try ElectronicsSchematic.reconcile(&design)
         }
     }
 
@@ -222,9 +267,9 @@ public enum ElectronicsCommands {
     private static func replaceConnections(_ pins: [PinReference], netID: UUID?, in design: inout ElectronicsDesign) {
         // Updating in place keeps a repeated command a true no-op, including array ordering.
         for pin in pins {
-            if let index = design.connections.firstIndex(where: { $0.pin == pin }) {
-                design.connections[index].netID = netID
-            } else { design.connections.append(.init(pin: pin, netID: netID)) }
+            if let index = design.directConnections.firstIndex(where: { $0.pin == pin }) {
+                design.directConnections[index].netID = netID
+            } else { design.directConnections.append(.init(pin: pin, netID: netID)) }
         }
     }
     private static func merge<T: Equatable>(_ items: [T], into target: inout [T], key: KeyPath<T, LibraryRevision>) throws {

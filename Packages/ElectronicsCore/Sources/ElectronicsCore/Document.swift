@@ -10,7 +10,7 @@ public struct ElectronicsEdit: Codable, Equatable, Sendable {
 /// The history is persisted. Revision is monotonic even across undo/redo, so assistant calls
 /// cannot reuse a stale revision after an ABA (edit -> undo) transition.
 public struct ElectronicsDocument: Codable, Equatable, Sendable {
-    public private(set) var formatVersion: Int = 2
+    public private(set) var formatVersion: Int = 3
     public private(set) var revision: UInt64 = 0
     public private(set) var design: ElectronicsDesign
     public private(set) var past: [ElectronicsEdit] = []
@@ -62,10 +62,10 @@ public struct ElectronicsDocument: Codable, Equatable, Sendable {
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let inputVersion = try c.decode(Int.self, forKey: .formatVersion)
-        guard (1...2).contains(inputVersion) else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(inputVersion). Aggiornare l’app prima di aprire il file.") }
-        // v1 has no E1 library geometry fields; missing optional fields decode as nil. Always
-        // write v2 so old E0 readers reject the document instead of silently losing those fields.
-        formatVersion = 2
+        guard (1...3).contains(inputVersion) else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(inputVersion). Aggiornare l’app prima di aprire il file.") }
+        // Missing optional library/schema fields decode as nil. Always write v3 so older
+        // readers reject schematic documents instead of silently dropping drawings/history.
+        formatVersion = 3
         revision = try c.decode(UInt64.self, forKey: .revision)
         design = try c.decode(ElectronicsDesign.self, forKey: .design)
         past = try c.decode([ElectronicsEdit].self, forKey: .past)

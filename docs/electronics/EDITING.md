@@ -65,3 +65,7 @@ La libreria iniziale contiene modelli generici nativi: resistenza 0603, condensa
 5. Modificare/ruotare/cambiare lato/eliminare e annullare, salvare `.ftkc`, riaprire e verificare pin e storico.
 
 Schema grafico, routing, DRC completo, primitive render e pick/snap indicizzati non sono compresi in questa prima serie di comandi. I test di questa serie non certificano un PCB producibile. L’interfaccia non deve visualizzare «nessun problema» come sinonimo di completamento del circuito.
+
+## Schema elettrico (secondo traguardo T93)
+
+Il catalogo comprende anche `.schematic(SchematicCommand)`, `.addSchematicComponent(component:sheetID:symbol:library:)` e `.placeComponent(ComponentPlacement)`. Contratto, primitive, pick/snap e regole di connettività in [SCHEMATIC.md](SCHEMATIC.md). Il formato corrente è 3, lettura 1/2/3.

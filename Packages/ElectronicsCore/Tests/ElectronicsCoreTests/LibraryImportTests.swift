@@ -181,20 +181,20 @@ final class LibraryImportTests: XCTestCase {
         XCTAssertEqual(document.revision, 0)
     }
 
-    func testV1MigrationPreservesHistoryAndWritesV2ForOlderReaderSafety() throws {
+    func testV1MigrationPreservesHistoryAndWritesCurrentVersionForOlderReaderSafety() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "assembly", withExtension: "json", subdirectory: "Fixtures"))
         let oldData = try Data(contentsOf: url)
         let old = try XCTUnwrap(JSONSerialization.jsonObject(with: oldData) as? [String: Any])
         XCTAssertEqual(old["formatVersion"] as? Int, 1)
         var document = try ElectronicsDocument.decode(oldData)
-        XCTAssertEqual(document.formatVersion, 2)
+        XCTAssertEqual(document.formatVersion, 3)
         let before = document.design
         try document.edit(title: "Verifica migrazione", expectedRevision: document.revision) { $0.name = "Migrated" }
         document = try ElectronicsDocument.decode(document.encoded())
         try document.undo(expectedRevision: document.revision)
         XCTAssertEqual(document.design, before)
         let saved = try XCTUnwrap(JSONSerialization.jsonObject(with: document.encoded()) as? [String: Any])
-        XCTAssertEqual(saved["formatVersion"] as? Int, 2)
+        XCTAssertEqual(saved["formatVersion"] as? Int, 3)
         XCTAssertEqual(try ElectronicsDocument.decode(document.encoded()), document)
     }
 

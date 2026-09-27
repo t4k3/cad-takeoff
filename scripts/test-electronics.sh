@@ -11,4 +11,6 @@ python3 Tests/Electronics/check_assembly.py "$electronics_run_dir/assembly"
 electronics_bin_dir=$(swift build --package-path Packages/ElectronicsCore --show-bin-path)
 python3 Tests/Electronics/check_library.py "$electronics_bin_dir/electronics-library" \
   Packages/ElectronicsCore/Tests/ElectronicsCoreTests/Fixtures "$electronics_run_dir/library"
+"$electronics_bin_dir/electronics-schematic" "$electronics_run_dir/schematic"
+python3 Tests/Electronics/check_schematic.py "$electronics_run_dir/schematic"
 printf 'Risultati elettronica: %s\n' "$electronics_run_dir"

@@ -8,6 +8,12 @@ public struct ElectronicsStarterComponent: Identifiable, Sendable {
     public let library: ElectronicsLibrary
     public let device: LibraryRevision
 
+    public func schematicCommand(componentID: UUID = UUID(), reference: String, value: String? = nil,
+                                 sheetID: UUID, position: PCBPoint) -> ElectronicsCommand {
+        .addSchematicComponent(component: .init(id: componentID, reference: reference, value: value ?? defaultValue, device: device),
+                               sheetID: sheetID, symbol: .init(componentID: componentID, position: position), library: library)
+    }
+
     public func command(componentID: UUID = UUID(), reference: String, value: String? = nil,
                         position: PCBPoint, side: BoardSide = .top) -> ElectronicsCommand {
         let component = CircuitComponent(id: componentID, reference: reference, value: value ?? defaultValue, device: device, assembly: .manual)

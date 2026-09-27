@@ -1,6 +1,19 @@
 import Foundation
 
 public enum KiCadLibraryImporter {
+    /// Top-level definitions only (nested unit graphics are not library entries).
+    /// Pure, bounded and cancellation-aware, using the same parser as symbol import.
+    public static func symbolNames(_ data: Data) throws -> [String] {
+        var reader = SExpressionReader(try LibraryImportSupport.text(data))
+        let root = try reader.read()
+        guard root.name == "kicad_symbol_lib" else { throw root.invalid("Libreria simboli .kicad_sym richiesta.") }
+        let names = try root.all("symbol").map { try $0.value(1) }
+        guard Set(names).count == names.count, names.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            throw root.invalid("Nomi di simbolo duplicati o vuoti.")
+        }
+        return names.sorted()
+    }
+
     public static func footprint(_ data: Data, context: LibraryImportContext) throws -> LibraryImportResult {
         let original = try LibraryImportSupport.text(data)
         var reader = SExpressionReader(original); let root = try reader.read()

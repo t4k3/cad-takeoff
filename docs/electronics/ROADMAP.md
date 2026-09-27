@@ -24,7 +24,7 @@ T92 resta aperto: mancano adattatore catalogo JLC live documentato/autenticato, 
 
 ## Priorità Circuiti dopo la prova nell’app
 
-Il collegamento T99 da solo ha esposto una scheda nuova priva di strumenti per popolarla. T93 implementa ora il contratto [EDITING.md](EDITING.md): inserire componenti da libreria o modelli generici, connettere pin, modificare scheda e componenti, preview/revisioni e undo. T97 di Claude aggancia Componente/Collega/Scheda/Elimina. Criterio di accettazione congiunto: costruzione da vuoto nell’app, modifica, annullamento, salvataggio e riapertura. T93 completo (schema gerarchico/ERC avanzato) e T94 (piste/DRC) restano successivi; i collegamenti logici visualizzati non sono piste.
+Il collegamento T99 da solo ha esposto una scheda nuova priva di strumenti per popolarla. T93 implementa ora il contratto [EDITING.md](EDITING.md): inserire componenti da libreria o modelli generici, connettere pin, modificare scheda e componenti, preview/revisioni e undo. T97 di Claude aggancia Componente/Collega/Scheda/Elimina. Criterio di accettazione congiunto: costruzione da vuoto nell’app, modifica, annullamento, salvataggio e riapertura. Il secondo traguardo T93 implementa [SCHEMATIC.md](SCHEMATIC.md): schema con fogli, simboli, fili, giunzioni, etichette, rete derivata, snapshot/pick/snap, ERC iniziale e documento v3. 71 test del motore e lettore indipendente passano; Claude integra Schema/PCB nell’app. T93 completo (bus, multisezione, porte/istanze gerarchiche, matrice ERC configurabile) e T94 (piste/DRC) restano aperti; i collegamenti logici visualizzati non sono piste.
 
 ## Primo obiettivo utilizzabile
 

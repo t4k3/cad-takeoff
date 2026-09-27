@@ -1,4 +1,23 @@
-# Elettronica — prove E0/E1
+# Elettronica — prove del motore e dell’app
+
+## T93 — schema elettrico, 27/09/2026
+
+Motore proprietario implementato in `Schematic/`, contratto app in [SCHEMATIC.md](SCHEMATIC.md). Fogli con gerarchia organizzativa, simboli con identità condivisa col PCB, fili/giunzioni espliciti, etichette di rete/alimentazione, NC, anteprime e transazioni; connettività derivata e collegamenti diretti conservati separatamente. Componenti creati nello schema con un solo undo e senza posizione PCB inventata; posa PCB successiva esplicita. Formato 3 con lettura 1/2/3 e storico completo.
+
+| Prova | Evidenza |
+|---|---|
+| `bash scripts/test-electronics.sh` | PASS: 71 test Swift (18 nuovi di schema), CLI import/assemblaggio/schema e tre lettori Python indipendenti. Artefatti `build/electronics/run.kRrlhj`. |
+| Topologia | Ponte cancellato separa due reti; incrocio senza giunzione resta isolato; giunzione esplicita li collega; etichette tra fogli condividono netID; reti nominate diverse rifiutano cortocircuiti. |
+| Comandi | Preview deterministica senza modifiche; simboli mossi/ruotati/specchiati aggiornano estremi fili, PCB invariato; NC e riferimenti mancanti rifiutati; batch fallito non lascia modifiche; rete rinominata non si fonde implicitamente. |
+| Persistenza | Creazione, modifica, undo/redo, codifica comandi, riapertura; catene storico e proiezione netlist incoerenti rifiutate. |
+| Selezione | Primitive semantiche, pin con identità componente+pin, BVH per pick/snap; priorità dei terminali, filtro e griglia solo senza geometria vicina. |
+| Lettore indipendente | Python ricostruisce la connettività dai terminali senza usare la netlist Swift, verifica separazione delle isole, storico, identità PCB e coordinate dei pin dopo trasformazioni. |
+| Import | `symbolNames` usa il parser ufficiale KiCad: definizioni top-level, Unicode e stringhe con parentesi, duplicati/malformati rifiutati. |
+| CAD | 174 test CADCore PASS; nessuna modifica al CADCore da Codex. |
+
+Prestazioni sintetiche, Mac locale, 1000 simboli/9000 primitive, 1000 query pick+snap: misura Release finale snapshot 38,09 ms, p95 query 0,0055 ms, massimo 0,0815 ms; artefatti `build/electronics/schematic-release-final`. In Debug la stessa costruzione completa richiede circa 1259 ms (p95 query 0,048 ms): **snapshot/preview devono essere eseguiti in background e conservati per revisione**, non ricalcolati a ogni hover. Le misure non certificano ogni macchina né progetti reali più complessi; il test CI registra i tempi senza soglia instabile. Rendering dell’app e GPU non misurati da questo benchmark.
+
+Stato app: API consegnate a Claude; integrazione Schema/PCB in T97 in corso, nessuna prova a schermo del nuovo schema ancora attestata. Il precedente collaudo PCB qui sotto resta distinto. Non dichiarare completo E2: bus, porte e istanze gerarchiche riutilizzabili, multisezione e matrice ERC configurabile non sono implementati. L’ERC aggiunto segnala ingressi/alimentazioni senza driver, reti a pin singolo, simboli non posati e giunzioni sospese; non simula il circuito. Routing/DRC/Gerber restano E3/E4.
 
 ## T93 — primi strumenti di costruzione, 27/09/2026
 
@@ -13,7 +32,22 @@ Le API [EDITING.md](EDITING.md) sono implementate e compilano: documento vuoto, 
 | Percorso costruito nei test | Vuoto → due componenti → rete e due pin con un undo → modifica scheda → salvataggio/riapertura → undo/redo con identità e connettività conservate. |
 | Casi di rifiuto | Conflitti di libreria, sigle duplicate, ID/pin mancanti, revisione cambiata dopo preview, reti diverse, NC su pin collegato, angoli/quote invalidi e contorni autointersecanti: documento e storico intatti. |
 
-Questi risultati provano il motore. Il collaudo della nuova UI va registrato separatamente dopo la build T97: la UI precedente è stata osservata, la nuova non è attestata da questi test. I tre modelli generici non sono componenti qualificati presso un produttore. Connessioni logiche, nessun rame sbrogliato, Gerber o approvazione produttiva.
+Questi risultati provano il motore. I tre modelli generici non sono componenti qualificati presso un produttore. Connessioni logiche, nessun rame sbrogliato, Gerber o approvazione produttiva.
+
+### Collaudo UI con Claude T97
+
+Codex ha provato la build locale 1.0.3, compilata alle 10:47, nella finestra separata “Senza titolo”, preservando la precedente app di Ross con modifiche non salvate. Azioni eseguite tramite interfaccia nativa, non chiamate dirette al modello:
+
+- Nuovo circuito → Componente → Resistenza 0603 → due clic sulla scheda → R1 e R2 presenti. Sono disponibili anche condensatore 0603 e connettore 1×02; questi ultimi non sono stati posati in questa prova.
+- Scheda → 80 × 60 × 1,6 mm → conferma → Annulla/Ripeti → riapertura del pannello con 80 × 60. Larghezza zero disabilita OK e mostra l’errore; Annulla lascia intatta la scheda.
+- Ruota R2 → 90°; Lato → sotto; Elimina → un componente; Annulla → due componenti. Ulteriori annullamenti ripristinano il lato sopra e 0°.
+- Salva → Apri `.ftkc`: R1/R2 e storico ripristinati. Il lettore JSON Python conferma il contorno 80 × 60, due componenti, revision 11, tre passi annullabili e tre ripetibili in quel salvataggio intermedio.
+
+Artefatto prodotto dalla UI: `build/electronics/run.QT3tI6/circuiti-verifica-ui.ftkc`. La cartella build è locale e ignorata da Git.
+
+La revisione dell’integrazione ha individuato due difetti, segnalati e presi in carico da Claude: confronto del solo padID fra componenti che condividono la stessa impronta, e identità/revisione non mantenute fra anteprima e conferma. Correzioni nel commit Claude `4fea79a`, build 1.0.6 delle 10:58: prova con clic su R1.1 e R2.1 PASS, appare una rete e un collegamento da sbrogliare; Annulla rimuove entrambi e Ripeti li ripristina. File nuovamente salvato: revisione 14, quattro passi di storico, due componenti, una rete N1 e due connessioni. Lettore JSON Python conferma stesso pinID di libreria e componentID distinti. La CI di Claude `build/ci/run.JHJuEq` riporta 15/15 PASS, incluso test-circuits con regressioni per identità stabile, revisione obsoleta e collegamento fra pin uguali su istanze diverse; log app `BUILD SUCCEEDED`. Il mancato clic iniziale durante l’automazione dipendeva dalla finestra non attiva, risolto aprendola da Finder.
+
+Restano assenti schema gerarchico editabile, routing del rame, DRC geometrico completo, Gerber e integrazione produttiva. Questi strumenti iniziali non completano l’intero T93/T97.
 
 ## E1 — librerie, 27/09/2026
 
@@ -58,8 +92,8 @@ Artefatti generati dall’ultima esecuzione: `build/electronics/run.5S7GAe/assem
 - Transazione fallita senza stato parziale; storico e redo dopo riapertura; edit dopo undo; rifiuto della revisione obsoleta.
 - Revisione di libreria immutabile nello storico; rifiuto di formato futuro e di catena undo alterata.
 
-## Prove che non sono state eseguite e funzioni ancora assenti
+## Limiti della consegna E0 (storico)
 
-Nessuna prova UI elettronica: il package non è ancora collegato all’app. Nessun componente reale scaricato/importato da JLCPCB, KiCad o EasyEDA. Nessuna validazione di asset 3D: sono presenti riferimenti e trasformazioni, non i modelli o un controllo collisioni. Nessun routing, piano di rame, DRC completo o Gerber. Nessun caricamento nel viewer JLCPCB e nessuna produzione fisica.
+Al momento di E0 il package non era collegato all’app e non erano stati importati campioni reali. E1 e il collaudo T93/T97 sopra aggiornano queste due condizioni. Nessuna validazione di asset 3D: sono presenti riferimenti e trasformazioni, non i modelli o un controllo collisioni. Nessun routing, piano di rame, DRC completo o Gerber. Nessun caricamento nel viewer JLCPCB e nessuna produzione fisica.
 
 Il fixture è deliberatamente **sintetico**; identificativi, hash e calibrazioni non autorizzano un acquisto e non dimostrano la correttezza di componenti reali. Lo stato del pacchetto esportato è sempre `fabricationReady: false`.
