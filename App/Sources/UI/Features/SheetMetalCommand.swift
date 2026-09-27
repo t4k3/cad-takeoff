@@ -175,8 +175,10 @@ enum SheetMetalCommand {
             session.update("lipLength") { $0.isHidden = !anyFlange || lipKind == 0; $0.label = lipKind == 3 ? "Lunghezza orlo" : "Lunghezza risvolto" }
             session.update("lipAngle") { $0.isHidden = !anyFlange || lipKind == 0 || lipKind == 3 }
             session.update("length") { $0.isHidden = !anyFlange || perSide }
-            // Corners exist where a front/back flange meets a side one.
-            let anyCorner = !free && [SheetEdge.front, .back].contains { s[$0] != nil } && [SheetEdge.left, .right].contains { s[$0] != nil }
+            // Corners exist where two flanged sides meet (free base: neighbouring sides both bent).
+            let anyCorner = free
+                ? sides.contains { k in sides.contains((k + 1) % max(s.outline?.count ?? 1, 1)) }
+                : [SheetEdge.front, .back].contains { s[$0] != nil } && [SheetEdge.left, .right].contains { s[$0] != nil }
             session.update("corners") { $0.isHidden = !anyCorner }
             session.update("gap") { $0.isHidden = !anyCorner || s.cornerStyle == .open }
             for e in SheetEdge.allCases { session.update("length-" + e.rawValue) { $0.isHidden = !perSide || s[e] == nil } }

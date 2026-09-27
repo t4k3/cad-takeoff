@@ -680,7 +680,6 @@ public enum SheetMetalGeometry {
             throw SheetMetalError.invalidParameter("contorno della base con punti ripetuti")
         }
         guard !selfIntersecting(outline) else { throw SheetMetalError.invalidParameter("il contorno della base si interseca") }
-        if spec.cornerStyle == .closed { warnings.append("Angoli chiusi solo sulla base rettangolare: qui restano aperti") }
 
         var bent: [Int: Bent] = [:]
         for sf in sides {
@@ -703,6 +702,33 @@ public enum SheetMetalGeometry {
                 throw SheetMetalError.invalidParameter("flange sui lati \(prev + 1) e \(k + 1): si sovrappongono nell'angolo rientrante")
             }
             if bent[k] != nil { reliefAtStart.insert(k) } else { reliefAtEnd.insert(prev) }
+        }
+        // Closed corners: where two flanged sides meet square (outward), the longer side's wall
+        // runs on to the other wall's outer face and that one stops `gap` short of it (as in the
+        // rectangular box); only between 90° flanges bent the same way, without lips.
+        var ext: [Int: (start: Double, end: Double)] = [:]
+        if spec.cornerStyle == .closed {
+            let gap = spec.gap
+            guard gap.isFinite, (0...5).contains(gap) else { throw SheetMetalError.invalidParameter("gioco negli angoli 0–5 mm") }
+            for k in 0..<n {
+                let prev = (k + n - 1) % n
+                guard let a = bent[prev], let b = bent[k], along[prev].cross(along[k]) > 1e-9 else { continue }
+                guard abs(along[prev].dot(along[k])) < 1e-6, a.flange.direction == b.flange.direction,
+                      abs(a.flange.angle - 90) < 1e-6, abs(b.flange.angle - 90) < 1e-6, a.flange.lip == nil, b.flange.lip == nil else {
+                    warnings.append("Angolo al punto \(k + 1) lasciato aperto: si chiude solo tra flange a 90° a squadra, piegate nello stesso verso e senza risvolto")
+                    continue
+                }
+                let prevCovers = (outline[k] - outline[prev]).length >= (outline[(k + 1) % n] - outline[k]).length - 1e-9
+                let (cover, butt) = prevCovers ? (a, b) : (b, a)
+                let over = butt.setback, short = cover.setback - t - gap
+                if prevCovers {
+                    ext[prev, default: (0, 0)].end = over
+                    if short > 1e-6 { ext[k, default: (0, 0)].start = short }
+                } else {
+                    ext[k, default: (0, 0)].start = over
+                    if short > 1e-6 { ext[prev, default: (0, 0)].end = short }
+                }
+            }
         }
         if !reliefAtStart.isEmpty || !reliefAtEnd.isEmpty {
             warnings.append("Scarico tondo largo \(fmt(relief)) mm negli angoli rientranti: la flangia si ferma prima dell'angolo")
@@ -768,6 +794,12 @@ public enum SheetMetalGeometry {
                                            origin: world(lip.inward ? tip.outer : tip.innerFace), out: dir, along: al, span: f.span,
                                            prefix: prefix + "/side-\(k)/lip", up: lip.inward ? inside : -inside))
             }
+            // Closed corners: the straight wall runs on past the bend.
+            let e = ext[k] ?? (0, 0)
+            for (from, to, name) in [(-e.start, 0.0, "corner-a"), (f.span, f.span + e.end, "corner-b")] where to - from > 1e-9 {
+                solid = solid.union(flange(b.flange, theta: b.theta, straight: b.straight, r: r, t: t, origin: origin + al * from,
+                                           out: o, along: al, span: to - from, prefix: prefix + "/side-\(k)/" + name, straightOnly: true))
+            }
         }
 
         // Flat pattern: the plate with a strip out of each flanged side.
@@ -776,8 +808,13 @@ public enum SheetMetalGeometry {
             let f = side(k)
             if reliefAtStart.contains(k) { raw += notch(plate[k], f.origin, inward: out[k] * -1) } else { raw.append(plate[k]) }
             if let b = bent[k] {
-                let end = f.origin + f.along * f.span
-                raw += [f.origin + f.out * b.total, end + f.out * b.total, end]
+                let end = f.origin + f.along * f.span, e = ext[k] ?? (0, 0)
+                // A closed corner's run-on: the straight part only (the bend zone leaves a square relief).
+                if e.start > 0 { raw += [f.origin + f.out * b.allowance, f.origin - f.along * e.start + f.out * b.allowance, f.origin - f.along * e.start + f.out * b.total] }
+                else { raw.append(f.origin + f.out * b.total) }
+                if e.end > 0 { raw += [end + f.along * e.end + f.out * b.total, end + f.along * e.end + f.out * b.allowance, end + f.out * b.allowance] }
+                else { raw.append(end + f.out * b.total) }
+                raw.append(end)
                 if reliefAtEnd.contains(k) { raw += notch(end, plate[(k + 1) % n], inward: out[k] * -1) }
             }
         }
@@ -797,7 +834,7 @@ public enum SheetMetalGeometry {
         let layout = SheetLayout(plate: plate, r: r, t: t, position: position, flanges: bent.sorted(by: { $0.key < $1.key }).map { k, b in
             let f = side(k)
             return .init(origin: f.origin, out: f.out, along: f.along, span: f.span, theta: b.theta, straight: b.straight,
-                         allowance: b.allowance, up: b.flange.direction == .up,
+                         allowance: b.allowance, up: b.flange.direction == .up, extStart: ext[k]?.start ?? 0, extEnd: ext[k]?.end ?? 0,
                          lip: b.flange.lip.map { l in .init(theta: b.lipTheta, straight: b.lipStraight, allowance: b.lipAllowance,
                                                            inward: l.inward, trimStart: 0, trimEnd: 0) })
         })

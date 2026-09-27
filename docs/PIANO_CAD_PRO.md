@@ -159,8 +159,8 @@ vista esplosa, misura, sezione dinamica nel viewport; lamiera con risvolti (prof
 a 180°, tavola di piega PDF/DXF con sviluppo quotato e tabelle pieghe e fori; nello sviluppo anche i
 tagli da schizzo (finestre, asole) e le tacche sul bordo; base di forma qualsiasi da un profilo
 dello schizzo con flange (e risvolti) su qualunque lato dritto, scelti col clic sul pezzo, sviluppo
-con pieghe, fori e tagli, scarico tondo negli angoli rientranti. Restano: flange su lati di spigoli
-successivi (una flangia sopra l'altra), trascinamento dei giunti.
+con pieghe, fori e tagli, scarico tondo negli angoli rientranti e angoli chiusi dove due lati
+piegati si incontrano a squadra. Resta: trascinamento dei giunti.
 
 - Giunti (rigido, rotazione, scorrimento) con trascinamento, controllo interferenze, vista esplosa.
 - Lamiera: flangia su qualsiasi spigolo, orli, scarichi tondi.

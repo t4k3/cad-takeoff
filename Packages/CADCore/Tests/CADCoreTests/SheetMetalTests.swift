@@ -405,3 +405,35 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
     let missing = SheetMetalSpec(outline: l, sideFlanges: [SheetSideFlange(side: 9, flange: SheetFlange(length: 12))])
     #expect(throws: SheetMetalError.self) { try SheetMetalGeometry.build(missing, featureID: UUID()) }
 }
+
+@Test func closedCornersOnAFreeBase() throws {
+    // The rectangle as an outline, all four sides, closed: the same box as the rectangular base.
+    var rect = SheetMetalSpec(material: "dc01", thickness: 1.5, width: 120, depth: 80)
+    for e in SheetEdge.allCases { rect[e] = SheetFlange(length: 30) }
+    rect.corners = .closed
+    var free = SheetMetalSpec(material: "dc01", thickness: 1.5, outline: [Vec2(-60, -40), Vec2(60, -40), Vec2(60, 40), Vec2(-60, 40)],
+                              sideFlanges: (0..<4).map { SheetSideFlange(side: $0, flange: SheetFlange(length: 30)) })
+    free.corners = .closed
+    let a = try SheetMetalGeometry.build(rect, featureID: UUID()), b = try SheetMetalGeometry.build(free, featureID: UUID())
+    let ma = a.folded.triangulated().mesh, mb = b.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mb).isWatertight)
+    #expect(abs(ma.volume - mb.volume) < 1e-6 && ma.bounds! == mb.bounds!)
+    #expect(abs(a.flat.area - b.flat.area) < 1e-9 && a.flat.outline.count == b.flat.outline.count && b.warnings.isEmpty)
+    // An L with every side bent up and closed: the square outward corners close, the inward one
+    // cannot have two flanges.
+    let l = [Vec2(0, 0), Vec2(80, 0), Vec2(80, 40), Vec2(40, 40), Vec2(40, 80), Vec2(0, 80)]
+    var box = SheetMetalSpec(material: "dc01", thickness: 1.5, outline: l,
+                             sideFlanges: [0, 1, 4, 5].map { SheetSideFlange(side: $0, flange: SheetFlange(length: 20)) })
+    box.corners = .closed
+    let lb = try SheetMetalGeometry.build(box, featureID: UUID())
+    #expect(MeshValidator.validate(lb.folded.triangulated().mesh).isWatertight)
+    #expect(!SheetMetalGeometry.selfIntersecting(lb.flat.outline))
+    // Closed corners take material: a larger blank than open ones.
+    box.corners = .open
+    #expect(try SheetMetalGeometry.build(box, featureID: UUID()).flat.area < lb.flat.area)
+    // A corner that is not square stays open, said so.
+    var hex = SheetMetalSpec(material: "dc01", thickness: 2, outline: (0..<6).map { k in Vec2(50 * cos(Double(k) * .pi / 3), 50 * sin(Double(k) * .pi / 3)) },
+                             sideFlanges: (0..<6).map { SheetSideFlange(side: $0, flange: SheetFlange(length: 15)) })
+    hex.corners = .closed
+    #expect(try SheetMetalGeometry.build(hex, featureID: UUID()).warnings.contains { $0.contains("lasciato aperto") })
+}
