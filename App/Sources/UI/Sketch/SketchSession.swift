@@ -38,13 +38,13 @@ final class SketchSession {
         var hint: String {
             switch self {
             case .select: "Clicca un'entità (o dentro un profilo) per vederne e modificarne i parametri."
-            case .line: "Clicca i vertici. Clicca sul primo punto per chiudere · Invio termina · Esc annulla."
+            case .line: "Clicca i vertici: si aggancia a punti, linee e cerchi. Clicca il primo punto per chiudere · doppio clic, Invio o Esc per finire."
             case .rectangle: "Clicca il primo angolo, poi l'angolo opposto."
             case .circle: "Clicca il centro, poi un punto sulla circonferenza."
             case .polygon: "Clicca il centro, poi un vertice (o il punto medio di un lato se circoscritto)."
             case .slot: "Clicca il primo centro, il secondo centro, poi la larghezza."
             case .arc: "Clicca l'inizio, la fine, poi un punto dell'arco."
-            case .spline: "Clicca i punti della curva. Clicca sul primo punto per chiuderla · Invio termina · Esc annulla."
+            case .spline: "Clicca i punti della curva. Clicca il primo punto per chiuderla · doppio clic, Invio o Esc per finire."
             case .fillet: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato."
             case .chamfer: "Clicca l'angolo tra due linee: lo taglia una linea alla distanza impostata su entrambi i lati."
             case .trim: "Clicca il pezzo da togliere: si taglia fino alle linee che lo incrociano (in rosso sotto il cursore)."
@@ -108,7 +108,12 @@ final class SketchSession {
     @ObservationIgnored private var applyingUndo = false
     var tool: Tool = .line {
         didSet {
-            if tool != oldValue { pending = []; picked = []; offsetSource = nil; mirrorAxis = nil }
+            if tool != oldValue {
+                // A line or curve being drawn is kept (as Fusion does), not thrown away.
+                if pending.count >= 2, oldValue == .line { commit(.polyline(pending, closed: false)) }
+                if pending.count >= 2, oldValue == .spline { commit(.spline(points: pending, closed: false)) }
+                pending = []; picked = []; offsetSource = nil; mirrorAxis = nil
+            }
             if tool != .select, constraintTool != nil { constraintTool = nil }
         }
     }
@@ -303,13 +308,17 @@ final class SketchSession {
         case .spline:
             if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
                 commit(.spline(points: pending, closed: true))
-            } else if pending.last.map({ dist($0, p) > 1e-6 }) ?? true {
+            } else if let last = pending.last, dist(last, p) < max(vertexSnap * 0.5, 1e-6) {
+                finish()   // the same point again: a double click ends the curve
+            } else {
                 pending.append(p)
             }
         case .line:
             if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
                 commit(.polyline(pending, closed: true))
-            } else if pending.last.map({ dist($0, p) > 1e-6 }) ?? true {
+            } else if let last = pending.last, dist(last, p) < max(vertexSnap * 0.5, 1e-6) {
+                finish()   // the same point again: a double click ends the line
+            } else {
                 pending.append(p)
             }
         case .rectangle:
@@ -348,6 +357,8 @@ final class SketchSession {
         if mirrorAxis != nil { mirrorAxis = nil; return true }
         if constraintTool != nil { constraintTool = nil; return true }
         if selectedConstraint != nil { selectedConstraint = nil; return true }
+        // Esc ends a line or curve keeping what is drawn (the rubber band goes).
+        if pending.count >= 2, tool == .line || tool == .spline { finish(); return true }
         if !pending.isEmpty { pending = []; return true }
         if tool != .select { tool = .select; return true }
         if selection != nil { selection = nil; return true }
@@ -399,11 +410,15 @@ final class SketchSession {
 
     // MARK: Snapping (vertices, midpoints, centres — as in Fusion)
 
-    enum SnapKind { case vertex, midpoint, center }
+    enum SnapKind { case vertex, midpoint, center, intersection, onCurve }
     struct SnapPoint { let point: Vec2; let kind: SnapKind }
 
-    /// What the cursor is snapped to (drawn with Fusion's glyphs: □ vertex, △ midpoint, ○ centre).
+    /// What the cursor is snapped to (drawn with Fusion's glyphs: □ vertex, △ midpoint, ○ centre,
+    /// × intersection, ◇ on a line or circle).
     private(set) var snapped: SnapPoint?
+    /// Alignment with a point already drawn (Fusion's dotted inference lines): the point and
+    /// whether the cursor shares its Y (horizontal) or X (vertical).
+    private(set) var aligned: [(from: Vec2, horizontal: Bool)] = []
     /// Unsnapped cursor, to light up the midpoints of the segments it is close to.
     private(set) var rawCursor: Vec2?
 
@@ -454,6 +469,7 @@ final class SketchSession {
             }
         }
         out += segments.map { .init(point: mid($0.0, $0.1), kind: .midpoint) }
+        out += intersections.map { .init(point: $0, kind: .intersection) }
         out += pending.map { .init(point: $0, kind: .vertex) }
         for line in references {
             guard let a = line.first, let b = line.last else { continue }
@@ -470,18 +486,86 @@ final class SketchSession {
         return out
     }
 
+    /// Where two straight segments of the sketch (or of the part's edges) cross.
+    private var intersections: [Vec2] {
+        if let c = intersectionCache, c.shapes == shapes, c.references == references.count { return c.points }
+        let segs = segments
+        var out: [Vec2] = []
+        if segs.count <= 400 {
+            for i in segs.indices {
+                for j in (i + 1)..<segs.count {
+                    let (a, b) = segs[i], (c, d) = segs[j]
+                    let r = b - a, q = d - c, den = r.cross(q)
+                    guard abs(den) > 1e-12 else { continue }
+                    let t = (c - a).cross(q) / den, u = (c - a).cross(r) / den
+                    // Strictly inside both (their ends are vertices already).
+                    guard t > 1e-6, t < 1 - 1e-6, u > 1e-6, u < 1 - 1e-6 else { continue }
+                    out.append(a + r * t)
+                }
+            }
+        }
+        intersectionCache = (shapes, references.count, out)
+        return out
+    }
+    @ObservationIgnored private var intersectionCache: (shapes: [SketchShape], references: Int, points: [Vec2])?
+
+    /// Nearest point on a line, circle, arc or curve of the sketch or on a part edge, if close.
+    private func onCurve(_ p: Vec2) -> Vec2? {
+        var best: (Vec2, Double)?
+        func consider(_ q: Vec2) { let d = dist(q, p); if d < vertexSnap, d < (best?.1 ?? .infinity) { best = (q, d) } }
+        func onSegment(_ a: Vec2, _ b: Vec2) {
+            let d = b - a, l2 = d.dot(d)
+            guard l2 > 1e-18 else { return }
+            let t = max(0, min(1, (p - a).dot(d) / l2))
+            consider(a + d * t)
+        }
+        for s in shapes {
+            switch s.kind {
+            case let .circle(c, r):
+                if dist(p, c) > 1e-9 { consider(c + (p - c).normalized * r) }
+            case let .arc(c, r, a0, a1):
+                guard dist(p, c) > 1e-9 else { continue }
+                let a = atan2(p.y - c.y, p.x - c.x)
+                if SketchShape.sweep(a0, a) <= SketchShape.sweep(a0, a1) { consider(c + (p - c).normalized * r) }
+            default:
+                let o = s.outline
+                guard o.count >= 2 else { continue }
+                for i in 0..<(s.isClosed ? o.count : o.count - 1) { onSegment(o[i], o[(i + 1) % o.count]) }
+            }
+        }
+        for line in references { for (a, b) in zip(line, line.dropFirst()) { onSegment(a, b) } }
+        return best?.0
+    }
+
     private func snap(_ p: Vec2) -> Vec2 {
         rawCursor = p
-        // Nearest target; at the same distance a vertex wins over a midpoint over a centre.
-        func rank(_ k: SnapKind) -> Double { k == .vertex ? 0 : (k == .midpoint ? 1e-9 : 2e-9) }
+        aligned = []
+        // Nearest point target; at the same distance a vertex wins over a midpoint over a centre.
+        func rank(_ k: SnapKind) -> Double {
+            switch k { case .vertex: 0; case .intersection: 0.5e-9; case .midpoint: 1e-9; case .center: 2e-9; case .onCurve: 3e-9 }
+        }
         if let best = snapPoints.min(by: { dist($0.point, p) + rank($0.kind) < dist($1.point, p) + rank($1.kind) }),
            dist(best.point, p) < vertexSnap {
             snapped = best
             return best.point
         }
+        // Lined up with a point already drawn (the last clicked first, then any vertex or centre).
+        let anchors = pending.reversed() + snapPoints.filter { $0.kind == .vertex || $0.kind == .center }.map(\.point)
+        var q = p
+        let h = anchors.first { abs($0.y - p.y) < vertexSnap * 0.7 && abs($0.x - p.x) > 1e-9 }
+        let v = anchors.first { abs($0.x - p.x) < vertexSnap * 0.7 && abs($0.y - p.y) > 1e-9 }
+        if let h { q.y = h.y; aligned.append((h, true)) }
+        if let v { q.x = v.x; aligned.append((v, false)) }
+        // On a line or circle: slides along it (and keeps an alignment if it can).
+        if let c = onCurve(q) ?? onCurve(p) {
+            snapped = SnapPoint(point: c, kind: .onCurve)
+            aligned = aligned.filter { $0.horizontal ? abs($0.from.y - c.y) < 1e-9 : abs($0.from.x - c.x) < 1e-9 }
+            return c
+        }
         snapped = nil
-        guard snapToGrid else { return p }
-        return Vec2((p.x / gridStep).rounded() * gridStep, (p.y / gridStep).rounded() * gridStep)
+        guard snapToGrid else { return q }
+        // The grid for what is not lined up.
+        return Vec2(v == nil ? (q.x / gridStep).rounded() * gridStep : q.x, h == nil ? (q.y / gridStep).rounded() * gridStep : q.y)
     }
 
     // MARK: Geometry helpers
@@ -671,6 +755,19 @@ final class SketchSession {
             let snapColor = SIMD4<Float>(1, 0.62, 0.2, 1)
             out += cross(c, size: vertexSnap * 1.6, color: snapped == nil ? sketchColor : snapColor)
             if let s = snapped { out += glyph(s.point, s.kind, size: vertexSnap * 0.6, color: snapColor) }
+            // Dotted guide to the point the cursor is lined up with.
+            let guide = SIMD4<Float>(1, 0.62, 0.2, 0.7)
+            for a in aligned {
+                let from = a.from, to = a.horizontal ? Vec2(c.x, from.y) : Vec2(from.x, c.y)
+                let l = dist(from, to), dash = max(vertexSnap * 0.5, 0.1)
+                guard l > 1e-9 else { continue }
+                var t = 0.0
+                while t < l {
+                    let t1 = min(l, t + dash)
+                    out.append((world(from + (to - from) * (t / l), 0.03), world(from + (to - from) * (t1 / l), 0.03), guide))
+                    t += 2 * dash
+                }
+            }
         }
         return out
     }
@@ -687,6 +784,10 @@ final class SketchSession {
         case .vertex: corners = [Vec2(p.x - r, p.y - r), Vec2(p.x + r, p.y - r), Vec2(p.x + r, p.y + r), Vec2(p.x - r, p.y + r)]
         case .midpoint: corners = [Vec2(p.x - r, p.y - r * 0.7), Vec2(p.x + r, p.y - r * 0.7), Vec2(p.x, p.y + r * 1.1)]
         case .center: corners = (0..<12).map { k in let t = Double(k) / 12 * 2 * .pi; return Vec2(p.x + r * cos(t), p.y + r * sin(t)) }
+        case .onCurve: corners = [Vec2(p.x - r, p.y), Vec2(p.x, p.y - r), Vec2(p.x + r, p.y), Vec2(p.x, p.y + r)]
+        case .intersection:
+            return [(world(Vec2(p.x - r, p.y - r), 0.04), world(Vec2(p.x + r, p.y + r), 0.04), color),
+                    (world(Vec2(p.x - r, p.y + r), 0.04), world(Vec2(p.x + r, p.y - r), 0.04), color)]
         }
         return corners.indices.map { i in (world(corners[i], 0.04), world(corners[(i + 1) % corners.count], 0.04), color) }
     }

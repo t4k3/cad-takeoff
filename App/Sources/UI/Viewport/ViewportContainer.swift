@@ -241,13 +241,13 @@ struct ViewportContainer: View {
                 return
             }
             if let pick = sketch.onAxisPick, workspace.command?.activeReference == "axis", let p = sketch.intersect(ray) {
-                sketch.vertexSnap = 8 * viewport.mmPerPoint
+                sketch.vertexSnap = 11 * viewport.mmPerPoint
                 if let ref = sketch.pickRef(sketch.local(p), kinds: [.segment]) { pick(ref) } else { model.statusMessage = "Clicca una linea dello schizzo come asse." }
                 return
             }
             if sketch.pickingRegions, let p = sketch.intersect(ray) { sketch.toggleRegion(at: p); return }
             guard workspace.command == nil, let p = sketch.intersect(ray) else { return }
-            sketch.vertexSnap = 8 * viewport.mmPerPoint
+            sketch.vertexSnap = 11 * viewport.mmPerPoint
             sketch.click(p)
             return
         }
@@ -371,7 +371,7 @@ struct ViewportContainer: View {
     private func dragBegin(_ ray: Ray) -> Bool {
         // Sketch points drag along whatever the constraints leave free.
         if let sketch = workspace.sketch, workspace.command == nil, let p = sketch.intersect(ray) {
-            sketch.vertexSnap = 8 * viewport.mmPerPoint
+            sketch.vertexSnap = 11 * viewport.mmPerPoint
             if sketch.beginDrag(p) { return true }
         }
         guard let m = workspace.manipulator,
@@ -398,7 +398,7 @@ struct ViewportContainer: View {
             if m.isHot != hot { m.isHot = hot }
         }
         if let sketch = workspace.sketch {
-            sketch.vertexSnap = 8 * viewport.mmPerPoint
+            sketch.vertexSnap = 11 * viewport.mmPerPoint
             sketch.hover(ray.flatMap { sketch.intersect($0) }, screen: point)
             return
         }

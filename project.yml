@@ -11,7 +11,7 @@ settings:
     SWIFT_VERSION: "6.0"
     # Written by .githooks/pre-commit at every commit: major.minor stay as set here, the last
     # number is the commit count (also stamped into the built app). Change 0.1 for a new series.
-    MARKETING_VERSION: "0.1.151"
+    MARKETING_VERSION: "0.1.152"
     CURRENT_PROJECT_VERSION: "1"
     # Signed with Ross's Apple Development identity (team 9F8D583GBV): needed for the
     # App Group shared by the app and the ftk-mcp bridge. For TestFlight, archive in Xcode

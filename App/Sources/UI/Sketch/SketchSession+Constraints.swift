@@ -179,7 +179,18 @@ extension SketchSession {
             if linked { continue }
             for other in shapes where other.id != new.id {
                 if let k = (0..<other.segmentCount).first(where: { other.segment($0).map { dist(($0.0 + $0.1) * 0.5, p) < eps } ?? false }) {
-                    out.append(.init(.midpoint(.point(new.id, i), .segment(other.id, k)))); break
+                    out.append(.init(.midpoint(.point(new.id, i), .segment(other.id, k)))); linked = true; break
+                }
+            }
+            if linked { continue }
+            // Snapped onto a line or a circle: it stays on it.
+            for other in shapes where other.id != new.id {
+                if let k = (0..<other.segmentCount).first(where: { other.segment($0).map { distanceToSegment(p, $0.0, $0.1) < eps } ?? false }) {
+                    out.append(.init(.pointOnLine(.point(new.id, i), .segment(other.id, k)))); break
+                }
+                if let c = other.circle(0), abs(dist(p, c.center) - c.radius) < eps {
+                    if case .slot = other.kind { continue }
+                    out.append(.init(.pointOnCircle(.point(new.id, i), .circle(other.id, 0)))); break
                 }
             }
         }

@@ -240,6 +240,7 @@ final class WorkspaceState {
     /// as one undoable step ("Schizzo 1").
     func exitSketch() {
         command?.onCancel(); command = nil
+        sketch?.finish()   // a line still being drawn is kept
         if let edited = sketch?.sketch, let model {
             let before = model.document.sketches.first { $0.id == edited.id }
             if (!edited.shapes.isEmpty || before != nil), before != edited {

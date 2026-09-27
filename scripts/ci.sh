@@ -33,6 +33,7 @@ run_step 02-assistant bash scripts/test-assistant-tools.sh
 run_step 02b-history bash scripts/test-design-history.sh
 run_step 02c-camera bash scripts/test-camera.sh
 run_step 02d-shaders bash scripts/test-shaders.sh
+run_step 02e-sketch bash scripts/test-sketch.sh
 run_step 03-mcp bash scripts/test-mcp-integration.sh
 run_step 04-openai bash scripts/test-openai-provider.sh
 run_step 05-connector python3 -m unittest discover -s Tests/ChatGPTConnector -v
