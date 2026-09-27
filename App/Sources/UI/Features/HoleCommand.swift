@@ -237,12 +237,14 @@ enum HoleCommand {
                 .init(id: "style", label: "Tipo", kind: .choice(styles.map(\.label)), value: .index(styles.firstIndex(of: s.style) ?? 0)),
                 .init(id: "fit", label: "Uso", kind: .choice(fits.map(\.label)), value: .index(fits.firstIndex(of: s.fit) ?? 0),
                       help: "Passaggio vite: la vite scorre. Filettatura indicata: preforo per maschiare o autofilettante. Inserto a caldo: foro per inserti filettati (verifica il produttore)."),
-                .init(id: "size", label: "Vite", kind: .choice(sizes), value: .index(sizes.firstIndex(of: s.size ?? "M3") ?? 2)),
-                .init(id: "dia", label: "Diametro (libero)", kind: .length(0.1...500), value: .number(s.diameter),
-                      help: "Usato solo con «Diametro libero»"),
+                // A free diameter has no screw size; a screw size has no free diameter.
+                .init(id: "size", label: "Vite", kind: .choice(sizes), value: .index(sizes.firstIndex(of: s.size ?? "M3") ?? 2),
+                      isHidden: s.fit == .manual),
+                .init(id: "dia", label: "Diametro", kind: .length(0.1...500), value: .number(s.diameter),
+                      isHidden: s.fit != .manual),
                 .init(id: "through", label: "Passante", kind: .toggle, value: .flag(s.depth == nil)),
                 .init(id: "depth", label: "Profondità", kind: .length(0.1...10000), value: .number(s.depth ?? 10),
-                      help: "Usata quando il foro non è passante"),
+                      isHidden: s.depth == nil),
                 .init(id: "allow", label: "Compensazione stampa", kind: .length(0...2), value: .number(s.printAllowance),
                       help: "Aggiunta ai diametri: le stampanti FDM tendono a stampare i fori più stretti (tipico 0,1–0,3 mm)"),
             ] + ["x", "y", "z"].enumerated().map { i, axis in
@@ -268,8 +270,16 @@ enum HoleCommand {
             return s
         }
 
+        weak var current: CommandSession?
         func preview(_ f: [CommandField]) {
             func num(_ id: String) -> Double { f.first { $0.id == id }?.number ?? 0 }
+            // Only the fields that count for the chosen use and extent.
+            let manual = read(f).fit == .manual
+            let through: Bool = if case let .flag(t)? = f.first(where: { $0.id == "through" })?.value { t } else { false }
+            for (id, hidden) in [("size", manual), ("dia", !manual), ("depth", through)]
+            where f.first(where: { $0.id == id })?.isHidden != hidden {
+                current?.update(id) { $0.isHidden = hidden }
+            }
             if !placement.centers.isEmpty, f.allSatisfy({ $0.validationMessage == nil }) {
                 placement.moveLast(to: Vec3(num("x"), num("y"), num("z")))
             }
@@ -318,6 +328,7 @@ enum HoleCommand {
                 }
             }
         }
+        current = session
         preview(session.fields)
         return session
     }
