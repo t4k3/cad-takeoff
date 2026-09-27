@@ -106,10 +106,11 @@ disegnati a mano.
 ### Settimana 2 (6 – 10 ott) — Solidi di tutti i giorni
 
 **Stato al 27/09 (in anticipo), in attesa della prova di Ross:** fatti Rivoluzione, Guscio,
-estrusione simmetrica e con sformo, Sposta/ruota corpi; raccordi e smussi su tutti gli spigoli ora
-danno solidi chiusi (auto sportiva: da R0,8 a R8), anche lungo cilindri che incontrano un piano.
-Restano: piani/assi di costruzione, «fino a faccia», serie e specchio di feature, raccordo sferico
-d'angolo, superfici esatte come verità.
+estrusione simmetrica e con sformo, Sposta/ruota corpi, piani di schizzo inclinati; raccordi e smussi
+su tutti gli spigoli danno solidi chiusi (auto sportiva: da R0,8 a R8), anche lungo cilindri che
+incontrano un piano; angoli sferici dove tre raccordi si incontrano (come Fusion).
+Restano: piani per tre punti/tangenti, «fino a faccia», serie e specchio di feature, superfici esatte
+come verità del motore.
 - Rivoluzione, guscio, estrusione simmetrica / fino a faccia / rastremata.
 - Piani, assi e punti di costruzione.
 - Raccordi d'angolo (sfera dove si incontrano tre raccordi): niente più solidi aperti.
@@ -123,7 +124,9 @@ d'angolo, superfici esatte come verità.
 **Stato al 27/09:** export STEP AP214 fatto (un solido per corpo con colori; piani, cilindri, coni e
 tori esatti, il resto sfaccettato), verificato con OpenCascade. Tavola tecnica v1 fatta: viste ISO
 primo diedro con linee nascoste, isometrica, quote d'ingombro, diametri e assi, cartiglio; PDF e DXF.
-Restano: quote scelte a mano sulla tavola, sezioni, raccordi dritti esatti nello STEP.
+Vista in sezione A-A con tratteggio. Nello STEP anche le sfere: un box raccordato esce tutto esatto.
+Settimana 4 anticipata in parte: controllo interferenze. Restano: quote scelte a mano sulla tavola,
+giunti e vista esplosa, lamiera avanzata.
 - **Export STEP AP214** scritto da noi: facce analitiche esatte, sfaccettato come riserva.
 - **Disegni tecnici v1:** tavola A4/A3 ISO, viste ortogonali e isometrica, linee nascoste, quote lineari,
   radiali e di foro, cartiglio, export PDF e DXF.
