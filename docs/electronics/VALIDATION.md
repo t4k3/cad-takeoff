@@ -1,4 +1,38 @@
-# E0 — prove della prima consegna
+# Elettronica — prove E0/E1
+
+## T93 — primi strumenti di costruzione, 27/09/2026
+
+Richiesta di Ross dopo la prova di Circuiti: da una scheda vuota mancavano inserimento componenti, connessioni e modifica scheda. Verificato da Codex sia nei sorgenti sia nella UI della build 1.0.0 compilata alle 10:32: barra con Nuovo/Apri/Salva/Esempio/Ruota/Lato/JLCPCB, senza strumenti di creazione.
+
+Le API [EDITING.md](EDITING.md) sono implementate e compilano: documento vuoto, modelli generici nativi, catalogo comandi transazionali, anteprime complete di connettività, inserimento/modifica/rimozione componenti, spostamento/rotazione/lato, modifica scheda, reti e connessioni/NC. Diagnostica ERC con ID dei soggetti. Claude ha preso T97 per collegare gli strumenti visibili.
+
+| Prova automatica | Esito |
+|---|---|
+| `bash scripts/test-electronics.sh` | PASS: 53 test Swift, compresi 13 nuovi `EditingTests`; entrambe le CLI e i due lettori Python indipendenti passano. Artefatti `build/electronics/run.QT3tI6/`. |
+| `swift test --package-path Packages/CADCore` | PASS: 174 test sul checkout corrente. Nessuna modifica a CADCore da Codex. |
+| Percorso costruito nei test | Vuoto → due componenti → rete e due pin con un undo → modifica scheda → salvataggio/riapertura → undo/redo con identità e connettività conservate. |
+| Casi di rifiuto | Conflitti di libreria, sigle duplicate, ID/pin mancanti, revisione cambiata dopo preview, reti diverse, NC su pin collegato, angoli/quote invalidi e contorni autointersecanti: documento e storico intatti. |
+
+Questi risultati provano il motore. Il collaudo della nuova UI va registrato separatamente dopo la build T97: la UI precedente è stata osservata, la nuova non è attestata da questi test. I tre modelli generici non sono componenti qualificati presso un produttore. Connessioni logiche, nessun rame sbrogliato, Gerber o approvazione produttiva.
+
+## E1 — librerie, 27/09/2026
+
+T92, Codex. Esecuzione locale su macOS/arm64; nessuna prova UI elettronica o produzione fisica.
+
+| Prova | Risultato verificato |
+|---|---|
+| `bash scripts/test-electronics.sh` | PASS: 40 test XCTest, zero errori; entrambi i programmi CLI compilati/eseguiti. |
+| `Tests/Electronics/check_library.py` | PASS: hash del corpus con lettore SHA-256 Python; quote/raggio R0603, pin del simbolo R e foro/interasse header KiCad 9.0.0; scala/origine EasyEDA sintetico; quoting/catalogo; v1→v2 e catena storico; reimport idempotente; revisione obsoleta, file esistente e pad non supportato senza output parziale. |
+| `Tests/Electronics/check_assembly.py` | PASS: tutte le verifiche indipendenti E0 su BOM/CPL, varianti, centri, angoli, matrici 3D e connettività. |
+| `swift test --package-path Packages/CADCore` | PASS: 174 test. CADCore non modificato da T92. |
+
+Artefatti: `build/electronics/run.BeZNsL/assembly/` e `build/electronics/run.BeZNsL/library/`. Lo script genera ogni volta una cartella nuova; build ignorata da Git. I campioni di componenti KiCad sono reali e fissati al tag 9.0.0, con attribuzione/licenza; EasyEDA, catalogo e circuito assemblato sono sintetici.
+
+I test Swift aggiuntivi coprono sorgenti incompleti, limite profondità parser, Unicode/escaping, policy non rappresentabili, ereditarietà e rifiuto multi-unità, identità tra revisioni, pin-map proposta e confermata, rollback atomico, revisioni immutabili, hash incoerenti, strati invalidi, cache catalogo non valida e MPN non corrispondente.
+
+Limiti verificabili: non sono stati provati componente reale JLC/LCSC, API fornitore autenticata, prezzi, modelli 3D reali, viewer JLC, schema/PCB a schermo, routing, Gerber o prestazioni interattive. E1 non chiude T92: catalogo live e corpus/feature aggiuntivi restano indicati in [ROADMAP.md](ROADMAP.md). `fabricationReady` rimane `false`. Le promesse al motore UX sono limitate a quelle descritte in [LIBRARIES.md](LIBRARIES.md).
+
+## E0 — evidenza storica della prima consegna
 
 27/09/2026 · T91 · esecuzione locale macOS, Swift 6.4 · Codex.
 

@@ -10,8 +10,21 @@
 | E3 / T94 | PCB realmente sbrogliabile | Stackup e classi di rete; piste, archi, via, padstack SMD/THT, fori e contorni, keepout; DRC indipendente; routing manuale 45°/arco e ostacoli, poi push/shove; piani di rame e termiche; differenziali e lunghezze solo con prove dedicate. |
 | E4 / T95 | Pacchetto fabbricazione e assemblaggio | Gerber X2/job, forature PTH/NPTH, maschera/pasta/serigrafia, BOM/CPL e disegni assemblaggio; confronto con parser/viewer indipendenti; profilo JLC revisionato; controllo reale orientamento/pin 1 e corrispondenza col datasheet. |
 | E5 / T96 | Assieme elettromeccanico associativo | Contorno/spessore/fori scheda revisionati; componenti con modelli controllati; unità e orientamenti verificati; distanza da involucro, distanziali, connettori e volumi di rispetto; refresh esplicito, persistenza dei riferimenti. |
-| UX / T97 | Workspace elettronica progettato con Claude | Flussi Libreria→Schema→PCB→Assieme→Produzione, selezione incrociata, comandi annullabili, errori navigabili, tabella BOM, anteprima montaggio sopra/sotto. Proposta in attesa di riscontro; interfacce basate su core verificato. |
+| UX / T97 | Workspace elettronica di Claude | Flussi Libreria→Schema→PCB→Assieme→Produzione, selezione incrociata, comandi annullabili, errori navigabili, tabella BOM, anteprima montaggio sopra/sotto. Ruolo confermato da Claude; vincolante UX_RULES.md. |
 | E6 / T98 | Scheda campione accettata end-to-end | Stessa operazione da UI/chat/MCP; schema→PCB→modifica→ERC/DRC→riapertura→export→assemblaggio 3D; revisione incrociata degli export; prova sul produttore e sulla scheda reale documentate separatamente. |
+| App / T99 | Claude collega ElectronicsCore all’app | Package nel progetto Xcode, Model/Electronics, documento nel progetto/Home e test dedicati nella CI globale. |
+| Assistente / T100 | Claude collega UI/chat/MCP ai comandi E2 | Nessuna logica elettronica duplicata; stesse revisioni, anteprime, conferme e undo. |
+| CAD / T101 | Claude realizza l’adattatore meccanico sopra E5 | Geometria e istanze nel CAD con riferimenti revisionati e trasformazioni fornite dal core. |
+
+## Stato E1 al 27/09
+
+Prima consegna implementata e verificata: importazione KiCad di simboli mono-unità e impronte SMD/PTH, sottoinsieme SMD EasyEDA Standard, grafica e provenienza, proposte di pin-map, catalogo CSV offline, comandi di import/creazione dispositivo con anteprima e undo, documento v2 con lettura v1. [Copertura dettagliata](LIBRARIES.md), [prove](VALIDATION.md).
+
+T92 resta aperto: mancano adattatore catalogo JLC live documentato/autenticato, prezzi e politiche di aggiornamento, corpus EasyEDA e JLC reale con controllo dei datasheet, confronto delle revisioni e ampliamento dei formati. Le librerie multi-unità dipendono dal modello E2; padstack avanzati/NPTH dal modello E3. Nessuna promessa di import universale e nessun endpoint privato dedotto.
+
+## Priorità Circuiti dopo la prova nell’app
+
+Il collegamento T99 da solo ha esposto una scheda nuova priva di strumenti per popolarla. T93 implementa ora il contratto [EDITING.md](EDITING.md): inserire componenti da libreria o modelli generici, connettere pin, modificare scheda e componenti, preview/revisioni e undo. T97 di Claude aggancia Componente/Collega/Scheda/Elimina. Criterio di accettazione congiunto: costruzione da vuoto nell’app, modifica, annullamento, salvataggio e riapertura. T93 completo (schema gerarchico/ERC avanzato) e T94 (piste/DRC) restano successivi; i collegamenti logici visualizzati non sono piste.
 
 ## Primo obiettivo utilizzabile
 
