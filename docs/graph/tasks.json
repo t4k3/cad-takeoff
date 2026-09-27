@@ -1771,7 +1771,7 @@
       "id": "T92",
       "title": "Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T91"
       ],
@@ -1781,7 +1781,8 @@
         "Tests/Electronics"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": "codex",
+      "started": "2026-09-27 09:48"
     },
     {
       "id": "T93",
@@ -1793,8 +1794,8 @@
       ],
       "paths": [
         "Packages/ElectronicsCore",
-        "App/Sources/Model/Electronics",
-        "docs/electronics"
+        "docs/electronics",
+        "Tests/Electronics"
       ],
       "suggested": "codex",
       "owner": null
@@ -1843,9 +1844,9 @@
         "T92"
       ],
       "paths": [
-        "Packages/ElectronicsCADKit",
-        "App/Sources/Model/Electronics",
-        "docs/electronics"
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics"
       ],
       "suggested": "codex",
       "owner": null
@@ -1856,7 +1857,8 @@
       "phase": "Elettronica",
       "status": "todo",
       "deps": [
-        "T91"
+        "T91",
+        "T99"
       ],
       "paths": [
         "App/Sources/UI/Electronics"
@@ -1874,14 +1876,62 @@
         "T94",
         "T95",
         "T96",
-        "T97"
+        "T97",
+        "T100"
       ],
       "paths": [
-        "App/Sources/Model/Electronics",
+        "Packages/ElectronicsCore",
         "docs/electronics",
         "Tests/Electronics"
       ],
       "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T99",
+      "title": "Aggancio ElectronicsCore nell'app: package nel progetto Xcode, ponte Model/Electronics, documento elettronico nel progetto/Home, test elettronica nella CI",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T91"
+      ],
+      "paths": [
+        "App/Sources/Model/Electronics",
+        "project.yml",
+        "scripts/ci.sh"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T100",
+      "title": "Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI)",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T93",
+        "T99"
+      ],
+      "paths": [
+        "App/Sources/Model/Tools"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T101",
+      "title": "Elettronica: adattatore CAD della scheda (PCB e modelli nell'assieme, interferenze) sopra i dati E5",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T96",
+        "T99"
+      ],
+      "paths": [
+        "App/Sources/Model/Electronics",
+        "Packages/CADCore"
+      ],
+      "suggested": "claude",
       "owner": null
     }
   ]

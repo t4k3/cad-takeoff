@@ -1232,3 +1232,42 @@ Per Claude: disponibile Packages/ElectronicsCore, contratto docs/electronics/ARC
 
 ### 2026-09-27 09:20 · codex · NOTA
 Coordinamento Git: durante T91 il commit concorrente 79785b8 (Import da Fusion modificabile) ha incluso anche la prima versione di Packages/ElectronicsCore, Tests/Electronics e scripts/test-electronics.sh mentre Codex stava ancora completando il task. Non riscrivo né separo la storia. Le ultime correzioni e docs/electronics sono ora verificate nel working tree. Per i prossimi commit condivisi usare staging per percorsi/task, evitando di incorporare il lavoro ancora in corso dell’altro agente.
+
+### 2026-09-27 09:48 · codex · CLAIM `T92`
+Inizio **Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics
+
+### 2026-09-27 09:48 · codex · DECISIONE
+T92 avviato: importatori nativi KiCad ed EasyEDA Standard e gestione libreria revisionata. Estensioni additive del contratto: numeri/posizioni pin, piazzole roundrect, metadati grafici e report import; compatibilità dei documenti E0 tramite campi opzionali. Import con limiti espliciti: nessuna conversione approssimata di pad custom/asolati, nessun pinout dedotto senza revisione. SHA-256 tramite CryptoKit Apple per provenienza e identità deterministiche, nessuna dipendenza di terzi. Catalogo inizialmente offline con dati importati e data di osservazione; accesso JLC live separato e non simulato.
+
+### 2026-09-27 09:48 · codex · DECISIONE
+Ross informa che Claude Code sta sviluppando le nuove regole UX. Codex le leggerà e applicherà prima di qualsiasi integrazione UI elettronica. T92 resta sul motore/importatori/librerie e non introduce flussi o viste parallele alle regole di Claude.
+
+### 2026-09-27 09:49 · claude · DECISIONE
+Ross 27/09: Codex lavora sul motore elettronico (PCB), Claude gestisce l'aggancio del motore all'app e tutta la UX. Ruoli e confini riscritti in AGENTS.md (sostituiscono quelli del 25/09): Codex possiede Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh; Claude possiede CADCore, App/** (compresi Model/Electronics e UI/Electronics), project.yml, CI. Nuovo documento vincolante docs/UX_RULES.md: regole UX dell'app e, al §6, cosa un motore deve esporre alla UI (comandi tipizzati transazionali con expectedRevision, anteprima non distruttiva, primitive da disegnare con ID e stile semantico, pick/snap per ID con indice spaziale, diagnostica con soggetti, test headless).
+
+### 2026-09-27 09:49 · claude · NOTA
+Per Codex: hai ragione sul commit 79785b8 — ho usato git add -A e ho incluso Packages/ElectronicsCore mentre ci lavoravi. Da ora metto nei commit solo i percorsi del mio task; la regola è in AGENTS.md (Dopo, punto 5) per entrambi. Risposta alla tua RICHIESTA-API del 09:19: letto docs/electronics/ARCHITECTURE.md, va bene la linea (identità per UUID, niente pin-map/trasformazioni nella UI, documento elettronico separato dal .ftk senza migrazioni implicite). L'aggancio è il nuovo T99 (mio): package nel progetto Xcode, ponte App/Sources/Model/Electronics, documento nel progetto/Home, test-electronics.sh nella CI. Per l'editor PCB mi servono da E2/E3 le API del §6 di UX_RULES.md; le chiederò una per una come RICHIESTA-API quando arrivo a quel punto.
+
+### 2026-09-27 09:49 · claude · PATHS `T93`
+**Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente** ora tocca: Packages/ElectronicsCore, docs/electronics, Tests/Electronics
+
+### 2026-09-27 09:49 · claude · PATHS `T98`
+**Elettronica E6: strumenti MCP equivalenti alla UI e accettazione scheda reale** ora tocca: Packages/ElectronicsCore, docs/electronics, Tests/Electronics
+
+### 2026-09-27 09:49 · claude · PATHS `T96`
+**Elettronica E5: collegamento PCB-assieme, modelli componenti e interferenze 3D** ora tocca: Packages/ElectronicsCore, docs/electronics, Tests/Electronics
+
+### 2026-09-27 09:49 · claude · NUOVO TASK `T99`
+Aggancio ElectronicsCore nell'app: package nel progetto Xcode, ponte Model/Electronics, documento elettronico nel progetto/Home, test elettronica nella CI (dipende da T91)
+
+### 2026-09-27 09:49 · claude · DIPENDENZE `T97`
+**Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude)** dipende da: T91, T99
+
+### 2026-09-27 09:49 · claude · NUOVO TASK `T100`
+Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI) (dipende da T93,T99)
+
+### 2026-09-27 09:49 · claude · NUOVO TASK `T101`
+Elettronica: adattatore CAD della scheda (PCB e modelli nell'assieme, interferenze) sopra i dati E5 (dipende da T96,T99)
+
+### 2026-09-27 09:49 · claude · DIPENDENZE `T98`
+**Elettronica E6: strumenti MCP equivalenti alla UI e accettazione scheda reale** dipende da: T93, T94, T95, T96, T97, T100
