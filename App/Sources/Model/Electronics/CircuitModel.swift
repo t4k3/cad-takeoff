@@ -108,7 +108,11 @@ final class CircuitModel {
         let url = (given as NSURL).filePathURL ?? given
         let data: Data
         do { data = try Data(contentsOf: url) } catch { throw CircuitEditError(Self.readFailure(url, error)) }
-        let doc = try ElectronicsDocument.decode(data)
+        let doc: ElectronicsDocument
+        do { doc = try ElectronicsDocument.decode(data) } catch is DecodingError {
+            // Another JSON (the panel shows .json too): not a circuit, said so.
+            throw CircuitEditError("«\(url.deletingPathExtension().lastPathComponent)» non è un circuito di CAD Takeoff (.ftkc): scegli un file di circuito.")
+        }
         forgetDrawings()
         document = doc; self.url = url; isDirty = false
         refresh()

@@ -342,6 +342,12 @@ struct CircuitTests {
         do { try sc.open(FileManager.default.temporaryDirectory.appendingPathComponent("sparito-\(UUID().uuidString).ftkc")); check(false, "file mancante aperto?") }
         catch { check(CircuitModel.describe(error).contains("non si trova più") && sc.design == before, "file mancante: motivo in italiano, circuito aperto intatto") }
 
+        let notCircuit = FileManager.default.temporaryDirectory.appendingPathComponent("altro-\(UUID().uuidString).json")
+        try Data(#"{"outline":[]}"#.utf8).write(to: notCircuit)
+        do { try sc.open(notCircuit); check(false, "JSON qualsiasi aperto?") }
+        catch { check(CircuitModel.describe(error).contains("non è un circuito") && sc.design == before, "JSON che non è un circuito: detto in italiano (\(CircuitModel.describe(error)))") }
+        try? FileManager.default.removeItem(at: notCircuit)
+
         // Another document with the same revision: nothing of the previous drawings, route or selection.
         let two = CircuitModel()
         try two.newCircuit(name: "Primo")
