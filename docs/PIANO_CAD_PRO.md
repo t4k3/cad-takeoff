@@ -34,7 +34,7 @@ Livello per area, da 0 (assente) a 5 (come Fusion per l'uso di Ross).
 | **Scambio file** | Export STL, 3MF a colori, DXF sviluppi; import STL/OBJ/3MF; da Fusion interi progetti (mesh) con l'add-in e lo script | 1,5 |
 | **Interfaccia** | Ribbon tipo Fusion, schede dei disegni, Home con progetti e cartelle, menu col tasto destro, frecce ed etichette modificabili, ViewCube | 3 |
 | **Prestazioni** | Booleane per coppie reali di poligoni; assieme da 1 M triangoli aperto in ~3 s in background | 3,5 |
-| **AI** | 25 strumenti (anche export STEP e tavola PDF); chat interna (API) e Claude Desktop (abbonamento) via MCP | 3 |
+| **AI** | 27 strumenti (anche export STEP, tavola PDF, parametri); chat interna (API) e Claude Desktop (abbonamento) via MCP | 3 |
 | **Qualità e distribuzione** | CI, test del motore, TestFlight, GitHub AGPL, versione automatica | 4 |
 
 ## 3. Cosa manca, per area (dal più grave)

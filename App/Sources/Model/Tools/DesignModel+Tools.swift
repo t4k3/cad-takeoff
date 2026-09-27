@@ -30,6 +30,28 @@ extension DesignModel: CADToolProvider {
             case "export_3mf": return try export3MF(args)
             case "export_step": return try exportSTEP(args)
             case "export_drawing": return try exportDrawing(args)
+            case "list_parameters":
+                let values = try? document.parameterValues()
+                return result("\(document.parameters.count) parametri", ["parameters": .array(document.parameters.map { p in
+                    ["name": .string(p.name), "expression": .string(p.expression), "comment": .string(p.comment),
+                     "value": values?[p.name].map { .number($0) } ?? .null] })])
+            case "set_parameters":
+                var list = document.parameters
+                let removed = Set(args["remove"]?.array?.compactMap(\.string) ?? [])
+                list.removeAll { removed.contains($0.name) }
+                for item in args["parameters"]?.array ?? [] {
+                    guard let n = item["name"]?.string, let e = item["expression"]?.string else { throw CADToolFailure("Ogni parametro vuole name ed expression.") }
+                    if let i = list.firstIndex(where: { $0.name == n }) {
+                        list[i].expression = e
+                        if let c = item["comment"]?.string { list[i].comment = c }
+                    } else {
+                        list.append(UserParameter(name: n, expression: e, comment: item["comment"]?.string ?? ""))
+                    }
+                }
+                do { try setParameters(list, title: "Assistente: parametri") } catch { throw CADToolFailure(error.localizedDescription) }
+                let values = try document.parameterValues()
+                return result("Parametri aggiornati", ["changed": true, "parameters": .array(document.parameters.map { p in
+                    ["name": .string(p.name), "expression": .string(p.expression), "value": values[p.name].map { .number($0) } ?? .null] })])
             case "list_project_designs":
                 let paths = projectDesigns?() ?? []
                 return result("\(paths.count) disegni nel progetto", ["designs": .array(paths.map { p in
@@ -571,7 +593,7 @@ extension Feature.Kind {
     /// Features that change or copy bodies made earlier (no mesh of their own to validate).
     var actsOnBodies: Bool {
         switch self {
-        case .pattern, .split, .component: true
+        case .pattern, .split, .component, .shell, .move: true
         default: false
         }
     }
