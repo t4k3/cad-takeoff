@@ -13,6 +13,11 @@ struct AnthropicStreamAssembler {
     }
 
     private var blocks: [Int: Block] = [:]
+    /// Protocol state: a message is complete only with its start, every block closed and its stop.
+    private var started = false
+    private var finished = false
+    private var open = Set<Int>()
+    private var violation: String?
     private(set) var stopReason: String?
     private(set) var stopExplanation: String?
     private(set) var servedModel: String?
@@ -25,11 +30,18 @@ struct AnthropicStreamAssembler {
         guard let type = payload["type"]?.string else { return [] }
         switch type {
         case "message_start":
+            if started { violation = violation ?? "due message_start" }
+            started = true
             servedModel = payload["message"]?["model"]?.string
             inputTokens = Int(payload["message"]?["usage"]?["input_tokens"]?.number ?? 0)
             return servedModel.map { [.servedBy(model: $0)] } ?? []
         case "content_block_start":
-            guard let i = payload["index"]?.number.map(Int.init), let block = payload["content_block"] else { return [] }
+            guard started, !finished, let i = payload["index"]?.number.map(Int.init), let block = payload["content_block"] else {
+                violation = violation ?? "blocco fuori da un messaggio"
+                return []
+            }
+            if blocks[i] != nil { violation = violation ?? "blocco \(i) ripetuto" }
+            open.insert(i)
             switch block["type"]?.string {
             case "text":
                 let t = block["text"]?.string ?? ""
@@ -48,6 +60,7 @@ struct AnthropicStreamAssembler {
             }
         case "content_block_delta":
             guard let i = payload["index"]?.number.map(Int.init), let d = payload["delta"] else { return [] }
+            guard open.contains(i) else { violation = violation ?? "dati per un blocco non aperto"; return [] }
             switch (d["type"]?.string, blocks[i]) {
             case let ("text_delta", .text(t)?):
                 let s = d["text"]?.string ?? ""
@@ -73,12 +86,47 @@ struct AnthropicStreamAssembler {
             let out = Int(payload["usage"]?["output_tokens"]?.number ?? 0)
             outputTokens = out
             return [.usage(input: inputTokens, output: out)]
+        case "content_block_stop":
+            guard let i = payload["index"]?.number.map(Int.init), open.remove(i) != nil else {
+                violation = violation ?? "chiusura di un blocco non aperto"
+                return []
+            }
+            return []
+        case "message_stop":
+            if !started || finished { violation = violation ?? "message_stop fuori posto" }
+            finished = true
+            return []
         case "error":
             streamError = payload["error"]?["message"]?.string ?? "Errore di streaming"
             return []
-        default: // ping, message_stop, content_block_stop
+        default: // ping
             return []
         }
+    }
+
+    /// Why the message cannot be trusted (nil: complete and coherent). Checked before anything of
+    /// it is used: a stream cut short, blocks left open, a stop that contradicts the content, the
+    /// same tool ID twice — never executed.
+    var incompleteness: String? {
+        if let violation { return violation }
+        guard started else { return "risposta vuota" }
+        guard open.isEmpty else { return "blocchi non chiusi" }
+        guard finished else { return "risposta interrotta prima della fine" }
+        guard let stopReason else { return "motivo di fine mancante" }
+        let ids = toolCalls.map(\.id)
+        guard Set(ids).count == ids.count else { return "stesso ID per due chiamate a strumento" }
+        switch stopReason {
+        case "tool_use": return ids.isEmpty ? "fine per strumento senza chiamate" : nil
+        case "end_turn", "stop_sequence": return ids.isEmpty ? nil : "chiamate a strumento con fine «\(stopReason)»"
+        case "refusal", "max_tokens": return nil
+        default: return "fine «\(stopReason)» non gestita"
+        }
+    }
+
+    /// Assistant content blocks for the history, in index order (without tool calls: for a turn
+    /// cut by max_tokens, whose calls are never run and so have no results).
+    var contentBlocksWithoutTools: [JSONValue] {
+        contentBlocks.filter { $0["type"]?.string != "tool_use" }
     }
 
     /// Assistant content blocks for the history, in index order.

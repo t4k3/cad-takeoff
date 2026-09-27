@@ -19,6 +19,8 @@ final class ClaudeProvider: AssistantProvider {
     }
     private(set) var hasKey: Bool
     @ObservationIgnored private var history: [JSONValue] = []
+    /// A new conversation while a turn streams: that turn's answer belongs to the old one.
+    @ObservationIgnored private var conversation = 0
 
     init() {
         modelID = UserDefaults.standard.string(forKey: "assistant.claude.model") ?? Self.models[0].id
@@ -34,7 +36,7 @@ final class ClaudeProvider: AssistantProvider {
         hasKey = Keychain.read(Self.keychainService) != nil
     }
 
-    func reset() { history = [] }
+    func reset() { history = []; conversation += 1 }
 
     func addUserMessage(_ text: String) {
         history.append(["role": "user", "content": [["type": "text", "text": .string(text)]]])
@@ -53,6 +55,7 @@ final class ClaudeProvider: AssistantProvider {
 
     func runTurn(system: String, tools: [ToolSpec], onEvent: @escaping (AssistantEvent) -> Void) async throws -> AssistantStop {
         guard let key = Keychain.read(Self.keychainService) else { throw AssistantError(message: setupHint) }
+        let turnOf = conversation
 
         var body: [String: JSONValue] = [
             "model": .string(modelID),
@@ -100,13 +103,20 @@ final class ClaudeProvider: AssistantProvider {
             if let err = assembler.streamError { throw AssistantError(message: "Claude: \(err)", retryable: true) }
         }
 
+        guard conversation == turnOf else { throw AssistantError(message: "Conversazione ricominciata durante la risposta: nulla eseguito.") }
+        // Fail closed: nothing of an incomplete or incoherent message is used (tools least of all).
+        if let why = assembler.incompleteness {
+            throw AssistantError(message: "Claude: risposta non valida (\(why)); nulla eseguito. Riprova.", retryable: true)
+        }
         let content = assembler.contentBlocks
         switch assembler.stopReason {
         case "refusal":
             // Don't keep a declined turn in the history.
             return .refused(assembler.stopExplanation)
         case "max_tokens":
-            if !content.isEmpty { history.append(["role": "assistant", "content": .array(content)]) }
+            // Its tool calls are never run: kept without them (a call needs its result next turn).
+            let kept = assembler.contentBlocksWithoutTools
+            if !kept.isEmpty { history.append(["role": "assistant", "content": .array(kept)]) }
             return .truncated
         default:
             history.append(["role": "assistant", "content": .array(content)])
