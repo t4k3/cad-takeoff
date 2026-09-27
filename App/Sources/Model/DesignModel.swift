@@ -447,8 +447,15 @@ final class DesignModel {
     func drawingDimensions() -> [ModelDimension] {
         let bodies = evaluation().bodies.filter { $0.isVisible && $0.placement == .identity }
         let shaping = Set(bodies.flatMap { [$0.id] + $0.modifiedBy })
-        let used = Set(document.sketchLinks.filter { shaping.contains($0.featureID) }.map(\.sketchID))
-        return document.sketches.filter { used.contains($0.id) }.flatMap(\.drawingDimensions)
+        let links = document.sketchLinks.filter { shaping.contains($0.featureID) }
+        return document.sketches.filter { s in links.contains { $0.sketchID == s.id } }.flatMap { sketch in
+            // Profiles revolved about an axis: their radii are dimensioned as diameters.
+            let axes = links.filter { $0.sketchID == sketch.id }.compactMap { link -> (Vec2, Vec2)? in
+                guard case let .revolve(spec)? = document.features.first(where: { $0.id == link.featureID })?.kind else { return nil }
+                return (spec.axisStart, spec.axisEnd)
+            }
+            return sketch.drawingDimensions(revolvedAbout: axes)
+        }
     }
 
     /// STEP AP214 of the visible bodies (one solid each, with colours), for suppliers and other CAD.

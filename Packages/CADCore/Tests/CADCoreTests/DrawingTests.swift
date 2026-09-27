@@ -107,3 +107,28 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     let plain = try TechnicalDrawing.make(bodies, info: .init(title: "Piastra"))
     #expect(!plain.texts.map(\.text).contains("40"))
 }
+
+@Test func turnedPartRadiiFromTheAxisBecomeDiameters() throws {
+    // Half profile of a stepped pin on XZ, axis along Z: Ø20 × 30 then Ø12 × 20.
+    let axis = SketchShape(kind: .polyline([Vec2(0, 0), Vec2(0, 50)], closed: false), isConstruction: true)
+    let profile = SketchShape(kind: .polyline([Vec2(0, 0), Vec2(10, 0), Vec2(10, 30), Vec2(6, 30), Vec2(6, 50), Vec2(0, 50)], closed: true))
+    let sketch = Sketch(name: "Profilo", plane: .xz, shapes: [axis, profile], constraints: [
+        SketchConstraint(.horizontalDistance(.point(axis.id, 0), .point(profile.id, 1), 10)),
+        SketchConstraint(.distance(.point(profile.id, 3), .segment(axis.id, 0), 6)),
+        SketchConstraint(.verticalDistance(.point(profile.id, 1), .point(profile.id, 2), 30)),
+    ])
+    let dims = sketch.drawingDimensions(revolvedAbout: [(Vec2(0, 0), Vec2(0, 50))])
+    #expect(dims.map(\.prefix) == ["Ø", "Ø", ""] && dims.map(\.value) == [20, 12, 30])
+    // Drawn across the axis: from x = −10 to +10.
+    if case let .linear(a, b, _) = dims[0].kind { #expect(abs(a.x + 10) < 1e-9 && abs(b.x - 10) < 1e-9) } else { Issue.record("linear") }
+    let spec = RevolveSpec(profile: Profile2D(points: profile.outline), plane: .xz, axisStart: Vec2(0, 0), axisEnd: Vec2(0, 50))
+    let pin = Feature(name: "Perno", kind: .revolve(spec))
+    let bodies = DesignEvaluator.evaluate(CADDocument(features: [pin]), revision: "d").bodies.map { (mesh: $0.mesh, snapshot: $0.snapshot) }
+    let s = try TechnicalDrawing.make(bodies, info: .init(title: "Perno"), dimensions: dims)
+    let texts = s.texts.map(\.text)
+    for t in ["Ø20", "Ø12", "30"] { #expect(texts.contains(t), "\(t)") }
+    // The 30 from the bottom is the step's level dimension already: once.
+    #expect(texts.filter { $0 == "30" }.count == 1)
+    // Ø20 is the overall width seen from the front: no plain 20 there (the side view keeps its own).
+    #expect(texts.filter { $0 == "20" }.count == 1)
+}

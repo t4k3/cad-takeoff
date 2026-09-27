@@ -14,15 +14,21 @@ public struct ModelDimension: Sendable, Equatable {
     /// Normal of the plane it lies in (the sketch's).
     public var normal: Vec3
     public var value: Double
+    /// "Ø" on a turned part's diameter (a radius from the axis, drawn across it).
+    public var prefix: String
 
-    public init(kind: Kind, normal: Vec3, value: Double) {
-        self.kind = kind; self.normal = normal; self.value = value
+    public init(kind: Kind, normal: Vec3, value: Double, prefix: String = "") {
+        self.kind = kind; self.normal = normal; self.value = value; self.prefix = prefix
     }
 }
 
 extension Sketch {
     /// Its driving dimensions (lengths, distances, radii and diameters), in world coordinates.
-    public var drawingDimensions: [ModelDimension] {
+    public var drawingDimensions: [ModelDimension] { drawingDimensions(revolvedAbout: []) }
+
+    /// The same, for a profile revolved about these axes (sketch coordinates): a distance from
+    /// the axis, square to it, is the part's diameter there (Ø, twice the value, across the axis).
+    public func drawingDimensions(revolvedAbout axes: [(Vec2, Vec2)]) -> [ModelDimension] {
         func shape(_ r: SketchRef) -> SketchShape? {
             switch r { case let .point(id, _), let .segment(id, _), let .circle(id, _): shapes.first { $0.id == id } }
         }
@@ -41,7 +47,22 @@ extension Sketch {
         }
         let n = plane.normal
         func linear(_ a: Vec2, _ b: Vec2, along: Vec3?, _ v: Double) -> ModelDimension {
-            ModelDimension(kind: .linear(plane.world(a), plane.world(b), along: along), normal: n, value: v)
+            for axis in axes {
+                let d = axis.1 - axis.0
+                guard d.length > 1e-9 else { continue }
+                let k = d.normalized
+                func onAxis(_ p: Vec2) -> Bool { abs((p - axis.0).cross(k)) < 1e-6 }
+                // Measured square to the axis (its direction, or the line between the points).
+                let m = along.map { Vec2($0.dot(plane.xAxis), $0.dot(plane.yAxis)) } ?? (b - a)
+                guard m.length > 1e-9, abs(m.normalized.dot(k)) < 1e-6 else { continue }
+                let off: Vec2
+                if onAxis(a) { off = b } else if onAxis(b) { off = a } else { continue }
+                // Across the axis: from the point's mirror image to the point.
+                let foot = axis.0 + k * (off - axis.0).dot(k)
+                let mirror = foot * 2 - off
+                return ModelDimension(kind: .linear(plane.world(mirror), plane.world(off), along: along), normal: n, value: 2 * v, prefix: "Ø")
+            }
+            return ModelDimension(kind: .linear(plane.world(a), plane.world(b), along: along), normal: n, value: v)
         }
         return constraints.compactMap { c -> ModelDimension? in
             switch c.kind {
@@ -80,6 +101,7 @@ extension TechnicalDrawing {
         var a: Vec2, b: Vec2
         var side: Side
         var value: Double
+        var prefix = ""
         /// Radius or diameter leaders: centre, point on the round, "R"/"Ø".
         var round: (centre: Vec2, at: Vec2, prefix: String)?
         var isRound: Bool { round != nil }
@@ -89,7 +111,9 @@ extension TechnicalDrawing {
     /// Which of the views (front, top, left) sees each dimension true, and where it goes: along
     /// the sheet above/below or left/right of the view (outside the overall dimensions),
     /// otherwise aligned. Overall sizes (already dimensioned) and repeats are dropped.
-    static func placeDimensions(_ dims: [ModelDimension], views: [View], extents: [(min: Vec2, max: Vec2)], topView: Int) -> [PlacedDimension] {
+    /// `levels`: heights already dimensioned from the bottom in the first view.
+    static func placeDimensions(_ dims: [ModelDimension], views: [View], extents: [(min: Vec2, max: Vec2)], topView: Int,
+                                levels: [Double] = []) -> [PlacedDimension] {
         var out: [PlacedDimension] = []
         for d in dims {
             guard let v = views.indices.first(where: { abs(views[$0].look.normalized.dot(d.normal.normalized)) > 0.999 }) else { continue }
@@ -103,12 +127,16 @@ extension TechnicalDrawing {
                 guard dir.length > 1e-6 else { continue }
                 let u = dir.normalized
                 let side: PlacedDimension.Side
+                let diametral = !d.prefix.isEmpty
                 if abs(u.y) < 1e-6 {
-                    // Overall width of the view: already dimensioned.
-                    if abs(abs(dir.x) - (e.max.x - e.min.x)) < 1e-6 { continue }
+                    // Overall width of the view: already dimensioned (a diameter says more: kept).
+                    if !diametral, abs(abs(dir.x) - (e.max.x - e.min.x)) < 1e-6 { continue }
                     side = v == topView ? .below : .above
                 } else if abs(u.x) < 1e-6 {
-                    if abs(abs(dir.y) - (e.max.y - e.min.y)) < 1e-6 { continue }
+                    if !diametral, abs(abs(dir.y) - (e.max.y - e.min.y)) < 1e-6 { continue }
+                    // A height from the bottom the level dimensions already give.
+                    let y0 = min(a.y, b.y), y1 = max(a.y, b.y)
+                    if v == 0, abs(y0 - e.min.y) < 1e-6, levels.contains(where: { abs($0 - y1) < 1e-6 }) { continue }
                     side = v == 2 ? .right : .left
                 } else {
                     side = .aligned
@@ -116,7 +144,7 @@ extension TechnicalDrawing {
                 // Measured along a direction: the second point slides onto the first's line.
                 let b2 = along == nil ? b : a + dir
                 let (lo, hi) = abs(u.y) < 1e-6 ? (a.x <= b2.x ? (a, b) : (b, a)) : (abs(u.x) < 1e-6 ? (a.y <= b2.y ? (a, b) : (b, a)) : (a, b))
-                let placed = PlacedDimension(view: v, a: lo, b: hi, side: side, value: d.value)
+                let placed = PlacedDimension(view: v, a: lo, b: hi, side: side, value: d.value, prefix: d.prefix)
                 if out.contains(where: { $0.view == v && $0.round == nil && abs($0.value - d.value) < 1e-9
                     && ($0.a - placed.a).length + ($0.b - placed.b).length < 1e-6 }) { continue }
                 out.append(placed)
@@ -135,7 +163,7 @@ extension TechnicalDrawing {
 
     /// A linear dimension between `a` and `b` along `d`, its line at `level` (coordinate along
     /// the unit side `n`), extension lines from the points.
-    static func linear(_ s: inout DrawingSheet, _ a: Vec2, _ b: Vec2, along d: Vec2, side n: Vec2, level: Double, value: Double) {
+    static func linear(_ s: inout DrawingSheet, _ a: Vec2, _ b: Vec2, along d: Vec2, side n: Vec2, level: Double, value: Double, prefix: String = "") {
         let a1 = a + n * (level - a.dot(n)), b1 = b + n * (level - b.dot(n))
         for (p, p1) in [(a, a1), (b, b1)] {
             let reach = level - p.dot(n)
@@ -147,6 +175,6 @@ extension TechnicalDrawing {
         var angle = atan2(d.y, d.x) * 180 / .pi
         if angle > 90 || angle <= -90 { angle += 180 }
         let up = Vec2(-sin(angle * .pi / 180), cos(angle * .pi / 180))
-        s.texts.append(.init(at: (a1 + b1) * 0.5 + up * 1.0, text: number(value), size: 3.5, align: .center, angle: angle))
+        s.texts.append(.init(at: (a1 + b1) * 0.5 + up * 1.0, text: prefix + number(value), size: 3.5, align: .center, angle: angle))
     }
 }

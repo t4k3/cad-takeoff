@@ -70,17 +70,6 @@ public enum TechnicalDrawing {
         // Largest standard scale that fits, trying two layouts: the isometric in a third column,
         // or beside the view from above (second row).
         let gap = 18.0
-        // Sketch dimensions: rows above the front and left views, below the view from above,
-        // columns left of the front view (outside its overall height) and of the view from above,
-        // right of the view from the left. Each row or column 6 mm, the first 8 from the view.
-        let placed = placeDimensions(dimensions, views: [front, top, left], extents: [ef, et, el], topView: 1)
-        func count(_ v: Int, _ side: PlacedDimension.Side) -> Int { placed.filter { d in d.view == v && d.side == side && !d.isRound }.count }
-        func need(_ n: Int, first: Double = 8) -> Double { n == 0 ? 0 : first + 6 * Double(n - 1) + 6 }
-        let marginTop = max(gap, need(max(count(0, .above), count(2, .above))))
-        let marginLeft = max(gap, need(count(0, .left), first: 14), need(count(1, .left)))
-        let marginBelow = max(gap, need(count(1, .below)))
-        let gapLeftIso = max(gap, need(count(2, .right)))
-        let availW = frame.x1 - frame.x0 - marginLeft - 2 * gap - gapLeftIso, availH = frame.y1 - frame.y0 - titleH - marginTop - gap - marginBelow
         let row1 = max(h(ef), h(el))
         // Heights where the part steps (horizontal edges seen from the front): dimensioned from the
         // bottom on the right of the front view, so each needs a little room there.
@@ -93,6 +82,17 @@ public enum TechnicalDrawing {
             return all.count <= 6 ? all : []
         }()
         let levelRoom = levels.isEmpty ? 0.0 : 6 * Double(levels.count) + 4
+        // Sketch dimensions: rows above the front and left views, below the view from above,
+        // columns left of the front view (outside its overall height) and of the view from above,
+        // right of the view from the left. Each row or column 6 mm, the first 8 from the view.
+        let placed = placeDimensions(dimensions, views: [front, top, left], extents: [ef, et, el], topView: 1, levels: levels)
+        func count(_ v: Int, _ side: PlacedDimension.Side) -> Int { placed.filter { d in d.view == v && d.side == side && !d.isRound }.count }
+        func need(_ n: Int, first: Double = 8) -> Double { n == 0 ? 0 : first + 6 * Double(n - 1) + 6 }
+        let marginTop = max(gap, need(max(count(0, .above), count(2, .above))))
+        let marginLeft = max(gap, need(count(0, .left), first: 14), need(count(1, .left)))
+        let marginBelow = max(gap, need(count(1, .below)))
+        let gapLeftIso = max(gap, need(count(2, .right)))
+        let availW = frame.x1 - frame.x0 - marginLeft - 2 * gap - gapLeftIso, availH = frame.y1 - frame.y0 - titleH - marginTop - gap - marginBelow
         let fitColumn = min((availW - levelRoom) / max(w(ef) + w(el) + w(ei), 1e-6), availH / max(row1 + max(h(et), 1), 1e-6))
         let fitRow = min((availW + gap - levelRoom) / max(max(w(ef) + w(el), w(et) + w(ei)), 1e-6), availH / max(row1 + max(h(et), h(ei)), 1e-6))
         let isoBelow = fitRow > fitColumn
@@ -149,8 +149,17 @@ public enum TechnicalDrawing {
         }
         // Overall dimensions: width and height on the front, depth on the view from the left.
         let size = box.max - box.min
-        dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, ef.min.y)), offset: -8, value: size.x)
-        dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.min.x, ef.max.y)), offset: 8, value: size.z)
+        // A turned part's largest diameter already gives its overall size.
+        func covered(_ side: PlacedDimension.Side, _ extent: Double) -> Bool {
+            placed.contains { $0.view == 0 && $0.side == side && !$0.prefix.isEmpty
+                && abs((side == .above ? $0.b.x - $0.a.x : $0.b.y - $0.a.y).magnitude - extent) < 1e-6 }
+        }
+        if !covered(.above, w(ef)) {
+            dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, ef.min.y)), offset: -8, value: size.x)
+        }
+        if !covered(.left, h(ef)) {
+            dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.min.x, ef.max.y)), offset: 8, value: size.z)
+        }
         for (k, z) in levels.enumerated() {
             dimension(&sheet, from: frontAt(Vec2(ef.max.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, z)), offset: -(8 + 6 * Double(k)), value: z - ef.min.y)
         }
@@ -166,12 +175,12 @@ public enum TechnicalDrawing {
                 for (k, d) in row.enumerated() {
                     let step = 6 * Double(k)
                     switch side {
-                    case .above: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, 1), level: hi.y + 8 + step, value: d.value)
-                    case .below: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, -1), level: -(lo.y - 8 - step), value: d.value)
+                    case .above: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, 1), level: hi.y + 8 + step, value: d.value, prefix: d.prefix)
+                    case .below: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, -1), level: -(lo.y - 8 - step), value: d.value, prefix: d.prefix)
                     case .left:
                         let first = v == 0 ? 14.0 : 8.0
-                        linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(-1, 0), level: -(lo.x - first - step), value: d.value)
-                    case .right: linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(1, 0), level: hi.x + 8 + step, value: d.value)
+                        linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(-1, 0), level: -(lo.x - first - step), value: d.value, prefix: d.prefix)
+                    case .right: linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(1, 0), level: hi.x + 8 + step, value: d.value, prefix: d.prefix)
                     case .aligned: break
                     }
                 }
@@ -194,7 +203,7 @@ public enum TechnicalDrawing {
                 let u = (b - a).normalized
                 var n = Vec2(-u.y, u.x)
                 if ((a + b) * 0.5 - middle).dot(n) < 0 { n = n * -1 }
-                linear(&sheet, a, b, along: u, side: n, level: max(a.dot(n), b.dot(n)) + 8, value: d.value)
+                linear(&sheet, a, b, along: u, side: n, level: max(a.dot(n), b.dot(n)) + 8, value: d.value, prefix: d.prefix)
             }
         }
         // Round holes and bosses seen end-on from above: their diameters.
