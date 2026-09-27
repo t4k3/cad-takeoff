@@ -76,3 +76,21 @@ private func solidMesh(_ spec: RevolveSpec, holes: [Profile2D] = []) throws -> M
     // Saved and read back.
     #expect(try CADDocument.decode(doc.encoded()) == doc)
 }
+
+@Test func revolveFollowsItsSketch() throws {
+    let axis = SketchShape(kind: .polyline([Vec2(0, 0), Vec2(0, 50)], closed: false), isConstruction: true)
+    let rect = SketchShape(kind: .rectangle(corner: Vec2(5, 0), width: 5, height: 20))
+    var sketch = Sketch(name: "S", shapes: [axis, rect])
+    let area = sketch.faces[0]
+    let spec = RevolveSpec(profile: Profile2D(points: area.outline), axisStart: Vec2(0, 0), axisEnd: Vec2(0, 50), axisRef: .segment(axis.id, 0))
+    let f = Feature(name: "R", kind: .revolve(spec))
+    var doc = CADDocument(features: [f], sketches: [sketch])
+    doc.sketchLinks = [SketchLink(featureID: f.id, sketchID: sketch.id, shapeID: UUID(), seeds: [area.seed])]
+    // The rectangle gets wider and the axis moves: the revolve follows both.
+    sketch.shapes[1].kind = .rectangle(corner: Vec2(5, 0), width: 10, height: 20)
+    sketch.shapes[0].kind = .polyline([Vec2(-2, 0), Vec2(-2, 50)], closed: false)
+    doc.upsert(sketch)
+    doc.regenerate(from: sketch)
+    guard case let .revolve(s) = doc.features[0].kind else { Issue.record("no revolve"); return }
+    #expect(abs(s.profile.area - 200) < 1e-9 && s.axisStart.x == -2)
+}

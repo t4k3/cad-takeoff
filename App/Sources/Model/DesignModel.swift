@@ -650,3 +650,16 @@ final class DesignModel {
         } catch { statusMessage = "Errore export 3MF: \(error.localizedDescription)" }
     }
 }
+
+extension DesignModel {
+    /// New user parameters, with every dimension and size that uses them re-evaluated and the
+    /// extrusions of the changed sketches regenerated, as one undoable step.
+    func setParameters(_ parameters: [UserParameter], title: String = "Parametri") throws {
+        try edit(title) { doc in
+            doc.parameters = parameters
+            for id in try doc.applyParameters() {
+                if let s = doc.sketches.first(where: { $0.id == id }) { doc.regenerate(from: s) }
+            }
+        }
+    }
+}
