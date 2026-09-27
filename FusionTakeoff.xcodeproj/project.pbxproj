@@ -17,6 +17,7 @@
 		15B9E5F66063E99E492FD242 /* Picking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1E9EAC4951BAF080CE4885 /* Picking.swift */; };
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
+		17FA79E52AB1AF7C7382AC84 /* ThreadCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61621B158A78E63F2CB0D558 /* ThreadCommand.swift */; };
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
 		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
 		276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D04A4DB715945B73E88E2B /* PartColorPicker.swift */; };
@@ -172,6 +173,7 @@
 		5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignModel.swift; sourceTree = "<group>"; };
 		5CAB5E2F59180CD118CF8961 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		5E94E0B183AD74A6A1329FA5 /* AssistantPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPanel.swift; sourceTree = "<group>"; };
+		61621B158A78E63F2CB0D558 /* ThreadCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadCommand.swift; sourceTree = "<group>"; };
 		62D38757828F98D2737425CF /* CADToolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CADToolCatalog.swift; sourceTree = "<group>"; };
 		63320AFB5B8D43EF4528E264 /* PatternCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternCommand.swift; sourceTree = "<group>"; };
 		63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -433,6 +435,7 @@
 				E98CD345010D437D5502B155 /* SheetMetalCommand.swift */,
 				388E65A3410FB91CB09F5B4C /* ShellCommand.swift */,
 				29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */,
+				61621B158A78E63F2CB0D558 /* ThreadCommand.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -849,6 +852,7 @@
 				36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */,
 				5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */,
 				95752245B5189B2C9F1A36A5 /* Theme.swift in Sources */,
+				17FA79E52AB1AF7C7382AC84 /* ThreadCommand.swift in Sources */,
 				363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */,
 				383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */,
 				EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */,
@@ -956,7 +960,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.88;
+				MARKETING_VERSION = 1.0.89;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1020,7 +1024,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.88;
+				MARKETING_VERSION = 1.0.89;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

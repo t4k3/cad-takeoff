@@ -162,6 +162,9 @@ struct InspectorPanel: View {
             if spec.kind == .slider || spec.kind == .cylindrical {
                 DimensionField(title: "Corsa", value: Binding(get: { spec.offset }, set: { var j = spec; j.offset = $0; kind.wrappedValue = .joint(j) }))
             }
+        case let .thread(spec):
+            info("Misura", spec.size ?? "dal diametro")
+            info("Compensazione", String(format: "%.2f mm", spec.printAllowance))
         case let .combine(spec):
             info("Operazione", spec.operation.label)
             info("Obiettivo", model.document.features.first { $0.id == spec.target }?.name ?? "—")

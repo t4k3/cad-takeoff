@@ -80,6 +80,8 @@ enum CADToolValidation {
             do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
         case let .combine(spec):
             do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
+        case let .thread(spec):
+            do { try spec.validate() } catch { throw CADToolFailure(error.localizedDescription) }
         case let .revolve(spec):
             try profile(spec.profile.points)
             do { try spec.validate(holes: feature.holes) } catch { throw CADToolFailure(error.localizedDescription) }

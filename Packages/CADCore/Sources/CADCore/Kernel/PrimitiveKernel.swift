@@ -118,6 +118,9 @@ public enum PrimitiveKernel {
         case let .combine(spec):
             try spec.validate()
             throw KernelError.invalidParameter("combina agisce sui corpi: viene calcolato dal valutatore")
+        case let .thread(spec):
+            try spec.validate()
+            throw KernelError.invalidParameter("il filetto agisce su un corpo: viene calcolato dal valutatore")
         case let .move(spec):
             try spec.validate()
             throw KernelError.invalidParameter("lo spostamento agisce sui corpi: viene calcolato dal valutatore")

@@ -168,7 +168,7 @@ extension DesignModel: CADToolProvider {
                 case let .cylinder(r, h):
                     legal = ["radius", "height"]
                     f.kind = .cylinder(radius: try optionalNumber(args, "radius", r), height: try optionalNumber(args, "height", h))
-                case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split, .combine:
+                case .hole, .chamfer, .sheetMetal, .component, .importedMesh, .pattern, .split, .combine, .thread:
                     legal = []   // re-create with add_hole/add_chamfer/add_sheet_metal or edit in the app
                 case var .joint(spec):
                     legal = ["angle", "offset"]
@@ -409,6 +409,11 @@ extension DesignModel: CADToolProvider {
                 value["flat_size"] = ["x": .number(build.flat.size.width), "y": .number(build.flat.size.height)]
                 value["warnings"] = .array(build.warnings.map { .string($0) })
             }
+        case let .thread(t):
+            value["kind"] = "thread"
+            value["face_id"] = .string(t.face.rawValue)
+            value["size"] = t.size.map { .string($0) } ?? .null
+            value["print_allowance"] = .number(t.printAllowance)
         case let .combine(c):
             value["kind"] = "combine"
             value["operation"] = .string(c.operation.rawValue)
@@ -647,7 +652,7 @@ extension Feature.Kind {
     /// Features that change or copy bodies made earlier (no mesh of their own to validate).
     var actsOnBodies: Bool {
         switch self {
-        case .pattern, .split, .component, .shell, .move, .joint, .combine: true
+        case .pattern, .split, .component, .shell, .move, .joint, .combine, .thread: true
         default: false
         }
     }

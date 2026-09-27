@@ -168,6 +168,11 @@ final class WorkspaceState {
         if sketch != nil { exitSketch() }
         command = MoveCommand.start(workspace: self, model: model)
     }
+    func startThread(model: DesignModel) {
+        command?.onCancel()
+        if sketch != nil { exitSketch() }
+        command = ThreadCommand.start(workspace: self, model: model)
+    }
     func startCombine(model: DesignModel) {
         command?.onCancel()
         if sketch != nil { exitSketch() }
@@ -399,6 +404,10 @@ final class WorkspaceState {
             command = JointCommand.edit(f, model: model, workspace: self)
             return
         }
+        if let f = model.document.features.first(where: { $0.id == id }), case .thread = f.kind {
+            command = ThreadCommand.start(workspace: self, model: model, editing: f)
+            return
+        }
         if let f = model.document.features.first(where: { $0.id == id }), case .combine = f.kind {
             command = CombineCommand.start(workspace: self, model: model, editing: f)
             return
@@ -437,6 +446,7 @@ extension Feature.Kind {
         case .move: "arrow.up.and.down.and.arrow.left.and.right"
         case .joint: "link"
         case .combine: "square.on.square.intersection.dashed"
+        case .thread: "screwdriver"
         }
     }
 
@@ -457,6 +467,7 @@ extension Feature.Kind {
         case .move: "Sposta"
         case .joint: "Giunto"
         case .combine: "Combina"
+        case .thread: "Filetto"
         }
     }
 }

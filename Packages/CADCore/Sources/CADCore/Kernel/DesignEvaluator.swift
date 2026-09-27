@@ -181,6 +181,20 @@ public enum DesignEvaluator {
                 bodies[b] = moved(w, by: motion, feature: feature.id, revision: revision)
                 continue
             }
+            if case let .thread(spec) = feature.kind {
+                guard let i = bodies.firstIndex(where: { $0.snapshot.faces.contains { $0.id == spec.face } }) else {
+                    issues.append(.init(featureID: feature.id, message: "Filetto: la faccia scelta non esiste più (la geometria è cambiata)."))
+                    continue
+                }
+                do {
+                    let tool = try ThreadGeometry.tool(spec, snapshot: bodies[i].snapshot, featureID: feature.id)
+                    let solid = solidOf(bodies[i]).subtracting(tool)
+                    if solid.isEmpty { bodies.remove(at: i) } else { bodies[i] = rebuilt(bodies[i], solid, by: feature.id, revision: revision) }
+                } catch {
+                    issues.append(.init(featureID: feature.id, message: error.localizedDescription))
+                }
+                continue
+            }
             if case let .combine(spec) = feature.kind {
                 do { try spec.validate() } catch {
                     issues.append(.init(featureID: feature.id, message: error.localizedDescription)); continue

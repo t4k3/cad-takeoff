@@ -203,3 +203,10 @@ da Fusion, cronologia delle versioni dei file, poi eventualmente simulazione e C
 - Un passo alla volta, ognuno committato con test (+1 alla versione a ogni commit), CI verde, push.
 - Venerdì: build TestFlight e nota di rilascio breve per Ross.
 - Il criterio di fine mese (sezione 1) è la misura del risultato, non il numero di funzioni.
+
+### 27/09 sera — richieste di Ross dalle prove
+- Estrudi in SOLIDO (profili di qualsiasi schizzo o facce del pezzo; nello schizzo solo il suo
+  contenuto), direzione oltre lo zero, zone che si toccano in un punto.
+- Foro: con «Diametro libero» niente vite; **filetto modellato** ISO nel foro; comando **Filetto**
+  su qualsiasi faccia cilindrica: esterno su un perno (vite), interno sulla parete di un foro,
+  con compensazione di stampa. Stampabili (STL/3MF), in STEP come faccette.

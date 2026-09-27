@@ -110,6 +110,8 @@ struct Ribbon: View {
         ToolGroup("LAVORA") {
             Button { workspace.startHole(model: model) } label: { Label("Foro", systemImage: "circle.circle") }
                 .help("Fori semplici, lamati o svasati, per viti, filettature o inserti a caldo: clicca su una faccia piana")
+            Button { workspace.startThread(model: model) } label: { Label("Filetto", systemImage: "screwdriver") }
+                .help("Filetto ISO modellato su una faccia cilindrica: un perno (vite) o la parete di un foro (madrevite), stampabile")
         }
         ToolGroup("MODIFICA") {
             Button { workspace.startPattern(model: model, kind: .rectangular) } label: { Label("Serie", systemImage: "square.grid.3x3") }
