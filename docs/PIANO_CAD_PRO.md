@@ -94,8 +94,8 @@ su un pezzo reale. Ogni consegna ha test automatici sul motore.
 libertà, quote sul canvas, vincoli automatici, profili a regioni, archi, raccordo e smusso 2D, Taglia,
 Estendi, Offset (anche di catene raccordate), Specchio con vincolo Simmetrico, Parametri utente ed
 espressioni (quote dello schizzo e misure di box, cilindro, estrusione). Cambiare una quota muove solo
-la geometria che la riguarda. Resta da fare: spline, vincolo tangente automatico tra linea e arco
-disegnati a mano.
+la geometria che la riguarda. Poi anche spline e tangenza automatica tra archi e linee: settimana 1
+completa.
 - Risolutore di vincoli nostro (Newton–Raphson smorzato con analisi dei gradi di libertà), vincoli
   automatici mentre si disegna (orizzontale, verticale, coincidente, tangente), colore dello stato:
   blu = libero, nero = vincolato.
