@@ -38,7 +38,12 @@ final class ProjectLibrary {
     private(set) var savedRevision: String?
     var lastError: String?
 
-    init() { restoreRoot() }
+    init() {
+        let first = Tab()
+        tabs = [first]
+        activeTab = first.id
+        restoreRoot()
+    }
 
     // MARK: Root folder (sandbox: security-scoped bookmark)
 
@@ -235,7 +240,9 @@ final class ProjectLibrary {
 
     /// Open designs in tab order; the shown one is `activeTab` (its live state is in the model and
     /// in `currentURL`/`savedRevision`).
-    private(set) var tabs: [Tab] = [Tab()]
+    private(set) var tabs: [Tab]
+    /// The launch tab is the active one from the start: left nil, the X (and ⌘W) of the only tab
+    /// took it for another tab, tried to switch to it and did nothing.
     private(set) var activeTab: Tab.ID?
 
     private var activeIndex: Int {
@@ -278,6 +285,7 @@ final class ProjectLibrary {
     /// The tab's X: asks to save changes, then shows the neighbour (or the Home when it was the last).
     func closeTab(_ id: Tab.ID, model: DesignModel) {
         guard model.loading == nil else { return }
+        _ = activeIndex   // no active tab yet: the first
         if id != activeTab { activate(id, model: model) }
         guard id == activeTab, confirmDiscard(model) else { return }
         let i = activeIndex
