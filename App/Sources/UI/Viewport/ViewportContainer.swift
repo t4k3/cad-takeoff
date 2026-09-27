@@ -196,10 +196,17 @@ struct ViewportContainer: View {
                   onDragMove: { ray in
                       if let sketch = workspace.sketch, sketch.dragRef != nil {
                           if let p = sketch.intersect(ray) { sketch.drag(p) }
+                      } else if let j = workspace.jointDrag {
+                          if let doc = j.move(ray, model: model) { workspace.requestPreview(doc); model.statusMessage = j.label }
                       } else { workspace.manipulator?.drag(ray) }
                   },
                   onDragEnd: {
-                      if let sketch = workspace.sketch, sketch.dragRef != nil { sketch.endDrag() } else { workspace.manipulator?.endDrag() }
+                      if let sketch = workspace.sketch, sketch.dragRef != nil { sketch.endDrag() }
+                      else if let j = workspace.jointDrag {
+                          workspace.jointDrag = nil
+                          workspace.requestPreview(nil)
+                          j.commit(model: model)
+                      } else { workspace.manipulator?.endDrag() }
                   },
                   onKey: handleKey,
                   onContextMenu: contextMenu,
@@ -389,9 +396,17 @@ struct ViewportContainer: View {
             sketch.vertexSnap = 11 * viewport.mmPerPoint
             if sketch.beginDrag(p) { return true }
         }
-        guard let m = workspace.manipulator,
-              m.hits(ray, length: arrowLength, tolerance: viewport.screenTolerance(10)) else { return false }
-        m.beginDrag(ray, viewDirection: viewport.camera.forward)
+        if let m = workspace.manipulator, m.hits(ray, length: arrowLength, tolerance: viewport.screenTolerance(10)) {
+            m.beginDrag(ray, viewDirection: viewport.camera.forward)
+            return true
+        }
+        // The selected part, if a joint lets it move: it turns or slides with the mouse (⌥: a
+        // cylindrical joint slides). Anything else orbits the view.
+        guard workspace.command == nil, workspace.sketch == nil, workspace.selectionFilter == .body,
+              let selected = model.selection, viewport.pick(ray) == selected,
+              let drag = JointDrag(body: selected, ray: ray, model: model, slide: NSEvent.modifierFlags.contains(.option)) else { return false }
+        workspace.jointDrag = drag
+        model.statusMessage = drag.label
         return true
     }
 

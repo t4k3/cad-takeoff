@@ -160,7 +160,8 @@ a 180°, tavola di piega PDF/DXF con sviluppo quotato e tabelle pieghe e fori; n
 tagli da schizzo (finestre, asole) e le tacche sul bordo; base di forma qualsiasi da un profilo
 dello schizzo con flange (e risvolti) su qualunque lato dritto, scelti col clic sul pezzo, sviluppo
 con pieghe, fori e tagli, scarico tondo negli angoli rientranti e angoli chiusi dove due lati
-piegati si incontrano a squadra. Resta: trascinamento dei giunti.
+piegati si incontrano a squadra; trascinamento dei giunti (il pezzo selezionato gira o scorre
+seguendo il mouse). Settimana 4 completa.
 
 - Giunti (rigido, rotazione, scorrimento) con trascinamento, controllo interferenze, vista esplosa.
 - Lamiera: flangia su qualsiasi spigolo, orli, scarichi tondi.

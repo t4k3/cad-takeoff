@@ -39,6 +39,8 @@
 		4AAB9328171BF27718973609 /* ViewportRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */; };
 		4AF0F80F02AFC0EADE2DC571 /* CADToolCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D38757828F98D2737425CF /* CADToolCatalog.swift */; };
 		4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB8505013537F19DABD1503A /* CADToolValidation.swift */; };
+		52FCA1C625DC2574CBAD75F6 /* JointDrag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0BB7CA7969F5BD659BC413 /* JointDrag.swift */; };
+		53B22475BB354319FB475D97 /* CircuitModel+Zones.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD2A927FBE8EEC2336A952B /* CircuitModel+Zones.swift */; };
 		5A5FE040EE1622D222CE7B85 /* CircuitModel+Schematic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A22EDDA6CFE7BB109C9224B /* CircuitModel+Schematic.swift */; };
 		5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BB2CC5B625AFE33908AA5 /* StatusBar.swift */; };
 		5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */; };
@@ -153,6 +155,7 @@
 		4A1E9EAC4951BAF080CE4885 /* Picking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picking.swift; sourceTree = "<group>"; };
 		4A22EDDA6CFE7BB109C9224B /* CircuitModel+Schematic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CircuitModel+Schematic.swift"; sourceTree = "<group>"; };
 		4CE13560ABCD7C97EACB57FC /* ChatGPTSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTSetupView.swift; sourceTree = "<group>"; };
+		4DD2A927FBE8EEC2336A952B /* CircuitModel+Zones.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CircuitModel+Zones.swift"; sourceTree = "<group>"; };
 		5018C0134761E9A7DB53FF11 /* SketchSession+Edit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SketchSession+Edit.swift"; sourceTree = "<group>"; };
 		542BB2CC5B625AFE33908AA5 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
 		54EE962FA7CFBEA7427A80E8 /* JointCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JointCommand.swift; sourceTree = "<group>"; };
@@ -181,6 +184,7 @@
 		8F95BC8662BF24C8B33D5708 /* SketchInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchInspector.swift; sourceTree = "<group>"; };
 		916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolBridge.swift; sourceTree = "<group>"; };
 		943EB272622A8A5AAC6E74FB /* MatrixMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixMath.swift; sourceTree = "<group>"; };
+		9B0BB7CA7969F5BD659BC413 /* JointDrag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JointDrag.swift; sourceTree = "<group>"; };
 		A540789F432133B207D141A0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		ADF9849BD6F001008766D793 /* PressPullCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressPullCommand.swift; sourceTree = "<group>"; };
 		B072E2898F0A20B8861C13F8 /* GeoSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoSelection.swift; sourceTree = "<group>"; };
@@ -381,6 +385,7 @@
 				1910760B5F8D7EDB7F9D1502 /* CircuitModel+PCB.swift */,
 				0D7E4062145A9A8EA45189EC /* CircuitModel+Rules.swift */,
 				4A22EDDA6CFE7BB109C9224B /* CircuitModel+Schematic.swift */,
+				4DD2A927FBE8EEC2336A952B /* CircuitModel+Zones.swift */,
 			);
 			path = Electronics;
 			sourceTree = "<group>";
@@ -393,6 +398,7 @@
 				0B64F683EF67CA5B65DCDA84 /* ExplodeCommand.swift */,
 				FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */,
 				54EE962FA7CFBEA7427A80E8 /* JointCommand.swift */,
+				9B0BB7CA7969F5BD659BC413 /* JointDrag.swift */,
 				D067A2E9C4BB917828D77F92 /* MoveCommand.swift */,
 				63320AFB5B8D43EF4528E264 /* PatternCommand.swift */,
 				ADF9849BD6F001008766D793 /* PressPullCommand.swift */,
@@ -754,6 +760,7 @@
 				99BD3748892C2F30C9DCB2D8 /* CircuitModel+PCB.swift in Sources */,
 				31399CA1BDEC34626648EB0E /* CircuitModel+Rules.swift in Sources */,
 				5A5FE040EE1622D222CE7B85 /* CircuitModel+Schematic.swift in Sources */,
+				53B22475BB354319FB475D97 /* CircuitModel+Zones.swift in Sources */,
 				373A61520DDA32DF06C8685D /* CircuitModel.swift in Sources */,
 				6B565AFFC0F914F50DE7ED6C /* CircuitSchematicView.swift in Sources */,
 				FB1220EDBC0CC9BCE61EE67E /* CircuitWorkspace.swift in Sources */,
@@ -777,6 +784,7 @@
 				6391BD7137C19D938C85F761 /* HomeView.swift in Sources */,
 				BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */,
 				05AF0F631125314979E5EABA /* JointCommand.swift in Sources */,
+				52FCA1C625DC2574CBAD75F6 /* JointDrag.swift in Sources */,
 				BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */,
 				5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */,
 				9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */,
@@ -912,7 +920,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.30;
+				MARKETING_VERSION = 1.0.31;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -976,7 +984,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.30;
+				MARKETING_VERSION = 1.0.31;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -48,6 +48,9 @@ sono le prove a mano, sull'interfaccia.
 - [ ] Un pezzo semplice (schizzo quotato + estrusione + raccordo): «Esporta per CAD Takeoff», aprilo qui. Nella barra di stato: «Da Fusion: N corpi modificabili…». Doppio clic sullo schizzo: quote e vincoli ci sono; cambia un parametro in «Parametri».
 - [ ] Rilancia lo script «Importa progetto in CAD Takeoff» su «025 RobotVolley»: riesporta tutto (i vecchi .ftk senza cronologia non vengono saltati). Mandami import-fusion.txt e i messaggi «non convertiti» dei pezzi che ti servono.
 
+## Giunti trascinabili
+- [ ] Assieme con un giunto di Rotazione: clic sul pezzo che si muove (selezionato), poi trascinalo: gira attorno all'asse seguendo il mouse (gradi interi, valore nella barra in basso); al rilascio un passo solo di ⌘Z. Scorrimento: scorre lungo l'asse. Cilindrico: gira, con ⌥ premuto scorre. Trascinare altrove (o un pezzo non selezionato) gira la vista come sempre.
+
 ## Lamiera a base libera
 - [ ] Schizzo sul piano XY → un profilo chiuso (esagono, forma a L…) → CREA › **Lamiera**: esce la base piana; clicca i bordi da piegare (di nuovo per toglierli), altezza/angolo/risvolto come sempre → OK. LAMIERA › Sviluppo: la sagoma stesa con le pieghe. Due lati piegati che si incontrano in un angolo rientrante: messaggio che si sovrappongono. Un solo lato piegato che finisce in un angolo rientrante (la L): la flangia si ferma uno spessore prima e nello sviluppo c'è la fessura con il fondo tondo che la stacca dalla base.
 

@@ -42,6 +42,8 @@ final class WorkspaceState {
 
     /// Drag arrow of the open command (chamfer distance/radius), if any.
     var manipulator: DistanceManipulator?
+    /// A jointed part being dragged (turns or slides on its joint).
+    @ObservationIgnored var jointDrag: JointDrag?
 
     // MARK: Command preview (computed off the main thread; the newest request wins)
 
