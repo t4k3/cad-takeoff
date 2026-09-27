@@ -138,9 +138,10 @@ spostare o aggiungere a mano quote sulla tavola.
 ### Settimana 4 (20 – 24 ott) — Assiemi e lamiera
 
 **Stato al 27/09:** fatti controllo interferenze, giunti (rigido, rotazione, scorrimento, cilindrico),
-vista esplosa, misura; lamiera con risvolti (profilo a C e a Z) e orli a 180°, tavola di piega PDF/DXF
-con sviluppo quotato e tabelle pieghe e fori. Restano: flangia su spigolo qualsiasi, scarichi tondi,
-sezione dinamica, trascinamento dei giunti.
+vista esplosa, misura, sezione dinamica nel viewport; lamiera con risvolti (profilo a C e a Z) e orli
+a 180°, tavola di piega PDF/DXF con sviluppo quotato e tabelle pieghe e fori; nello sviluppo anche i
+tagli da schizzo (finestre, asole) e le tacche sul bordo. Restano: flangia su spigolo qualsiasi,
+scarichi tondi, trascinamento dei giunti.
 
 - Giunti (rigido, rotazione, scorrimento) con trascinamento, controllo interferenze, vista esplosa.
 - Lamiera: flangia su qualsiasi spigolo, orli, scarichi tondi.
