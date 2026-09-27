@@ -167,6 +167,12 @@ tool.physicalProperties = types.SimpleNamespace(volume=1.0)
 tool.boundingBox = types.SimpleNamespace(minPoint=P3(0, 0, 0), maxPoint=P3(1, 1, 1))
 combine = Obj("CombineFeature", name="Combina1", targetBody=base, toolBodies=Coll([tool]), operation=1, isKeepToolBodies=True)
 timeline.append(types.SimpleNamespace(entity=combine, isSuppressed=False, isRolledBack=False))
+# A pattern of a body (the tool, 1 cm, measured as it was before), one copy 3 cm along X.
+body_pattern = Obj("RectangularPatternFeature", name="Serie2", inputEntities=Coll([Obj("BRepBody", name="Utensile",
+                   physicalProperties=tool.physicalProperties, boundingBox=tool.boundingBox)]),
+                   patternElements=Coll([types.SimpleNamespace(transform=Shift(0.0), isSuppressed=False),
+                                         types.SimpleNamespace(transform=Shift(3.0), isSuppressed=False)]))
+timeline.append(types.SimpleNamespace(entity=body_pattern, isSuppressed=False, isRolledBack=False))
 root = types.SimpleNamespace(
     bRepBodies=[base, Body("Nascosto", cube(9, 9, 9, 1), Colour(0, 0, 0), visible=False)],
     allOccurrences=[types.SimpleNamespace(name="Perno:1", isLightBulbOn=True,
@@ -179,6 +185,7 @@ extrude.parentComponent = root
 hole.parentComponent = root
 pattern.parentComponent = root
 combine.parentComponent = root
+body_pattern.parentComponent = root
 fusion.Design = types.SimpleNamespace(cast=lambda p: p)
 app = types.SimpleNamespace(
     activeProduct=design, activeDocument=types.SimpleNamespace(name="Staffa v3"),
@@ -213,4 +220,8 @@ cb = feats[3]
 assert cb["type"] == "combine" and cb["operation"] == "cut" and cb["keepTools"] is True, cb
 assert abs(cb["toolBodies"][0]["volume"] - 1000) < 1e-6 and cb["targetBody"]["name"] == "Base", cb
 assert [round(v, 6) for v in cb["toolBodies"][0]["max"]] == [10, 0, 10], cb
+# The body pattern: the body measured, one copy 30 mm along X.
+bp = feats[4]
+assert bp["type"] == "pattern" and bp["inputKind"] == "BRepBody" and bp["inputs"] == [], bp
+assert abs(bp["inputBodies"][0]["volume"] - 1000) < 1e-6 and [round(v, 6) for v in bp["transforms"][0][0]] == [1, 0, 0, 30], bp
 print("fake Fusion export:", path)

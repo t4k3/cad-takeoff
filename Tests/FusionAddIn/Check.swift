@@ -25,6 +25,8 @@ import Foundation
         expect(doc.importReport?.hasPrefix("Da Fusion: 1 corpo modificabile, 1 come mesh") == true
                && doc.importReport?.contains("Serie1: 1 copie") == true
                && doc.importReport?.contains("Combina1: corpo") == true, "report: \(doc.importReport ?? "none")")
+        // Serie2 copies a body that is not among ours (its tool was never rebuilt): said, not guessed.
+        expect(doc.importReport?.contains("Serie2: corpo «Utensile»") == true, "body pattern reported: \(doc.importReport ?? "none")")
         // The hole and its pattern copy: counterbored, sizes from Fusion's parameters.
         let holeSpecs = doc.features.compactMap { f -> HoleSpec? in if case let .hole(s) = f.kind { s } else { nil } }
         expect(holeSpecs.count == 2 && holeSpecs.allSatisfy { $0.style == .counterbore && $0.headDiameter == 8 && $0.counterboreDepth == 2 },

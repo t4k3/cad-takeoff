@@ -54,14 +54,34 @@ public struct PatternSpec: Codable, Sendable, Equatable {
     public var offset: Double
     /// Join the copies to the original body instead of making a new one.
     public var join: Bool
+    /// Copies at given places instead of the kind's grid, circle or plane (a pattern of bodies
+    /// from Fusion): each a rigid motion as 12 numbers, rows of rotation | translation (mm).
+    public var placements: [[Double]]?
 
     public init(body: UUID, kind: Kind, countX: Int = 3, spacingX: Double = 30, countY: Int = 1, spacingY: Double = 30,
-                count: Int = 6, angle: Double = 360, center: Vec3 = .zero, plane: MirrorPlane = .yz, offset: Double = 0, join: Bool = false) {
+                count: Int = 6, angle: Double = 360, center: Vec3 = .zero, plane: MirrorPlane = .yz, offset: Double = 0, join: Bool = false,
+                placements: [[Double]]? = nil) {
         self.body = body; self.kind = kind; self.countX = countX; self.spacingX = spacingX; self.countY = countY; self.spacingY = spacingY
         self.count = count; self.angle = angle; self.center = center; self.plane = plane; self.offset = offset; self.join = join
+        self.placements = placements
     }
 
     public func validate() throws {
+        if let placements {
+            guard !placements.isEmpty, placements.count <= 400, placements.allSatisfy({ $0.count == 12 && $0.allSatisfy(\.isFinite) }) else {
+                throw KernelError.invalidParameter("serie: posizioni delle copie non valide")
+            }
+            // Rotations (or reflections) only: orthonormal columns, all turned the same way.
+            let columns = placements.map { m in [Vec3(m[0], m[4], m[8]), Vec3(m[1], m[5], m[9]), Vec3(m[2], m[6], m[10])] }
+            let rigid = columns.allSatisfy { c in
+                (0..<3).allSatisfy { i in (0..<3).allSatisfy { j in abs(c[i].dot(c[j]) - (i == j ? 1 : 0)) < 1e-6 } }
+            }
+            let dets = columns.map { $0[0].cross($0[1]).dot($0[2]) }
+            guard rigid, dets.allSatisfy({ ($0 > 0) == (dets[0] > 0) }) else {
+                throw KernelError.invalidParameter("serie: le copie devono essere spostate senza deformarle")
+            }
+            return
+        }
         switch kind {
         case .rectangular:
             guard (1...100).contains(countX), (1...100).contains(countY), countX * countY >= 2, countX * countY <= 400,
@@ -77,6 +97,17 @@ public struct PatternSpec: Codable, Sendable, Equatable {
 
     /// Rigid motions of the copies (the original excluded); `reflect` for the mirror.
     public func transforms() -> (copies: [(point: (Vec3) -> Vec3, direction: (Vec3) -> Vec3)], reflect: Bool) {
+        if let placements {
+            let copies = placements.map { m -> (point: (Vec3) -> Vec3, direction: (Vec3) -> Vec3) in
+                let direction: (Vec3) -> Vec3 = { v in Vec3(m[0] * v.x + m[1] * v.y + m[2] * v.z, m[4] * v.x + m[5] * v.y + m[6] * v.z,
+                                                             m[8] * v.x + m[9] * v.y + m[10] * v.z) }
+                let shift = Vec3(m[3], m[7], m[11])
+                return ({ direction($0) + shift }, direction)
+            }
+            let m = placements.first ?? []
+            let mirrored = m.count == 12 && Vec3(m[0], m[4], m[8]).cross(Vec3(m[1], m[5], m[9])).dot(Vec3(m[2], m[6], m[10])) < 0
+            return (copies, mirrored)
+        }
         switch kind {
         case .rectangular:
             var out: [(point: (Vec3) -> Vec3, direction: (Vec3) -> Vec3)] = []

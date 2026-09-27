@@ -129,6 +129,11 @@ struct InspectorPanel: View {
                 if let f = model.document.features.first(where: { $0.kind == kind.wrappedValue }) { workspace.editFeature(f.id, model: model) }
             }
             .controlSize(.small)
+        case let .pattern(p) where p.placements != nil:
+            // Copies placed where Fusion put them (no grid or circle to edit).
+            info("Tipo", "Copie al loro posto (da Fusion)")
+            info("Copia di", model.document.features.first { $0.id == p.body }?.name ?? "—")
+            info("Copie", "\(p.placements?.count ?? 0)")
         case let .pattern(p):
             info("Tipo", p.kind.label)
             info("Copia di", model.document.features.first { $0.id == p.body }?.name ?? "—")

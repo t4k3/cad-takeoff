@@ -180,6 +180,8 @@ public struct FusionTimeline: Codable, Sendable, Equatable {
         public var targetBody: Body?
         public var toolBodies: [Body]?
         public var keepTools: Bool?
+        /// Pattern / mirror of bodies: the bodies copied as they were just before it.
+        public var inputBodies: [Body]?
 
         public init(type: String, name: String, operation: String? = nil, profiles: [String]? = nil, extent: Extent? = nil, axis: Axis? = nil,
                     angle: Double? = nil, angleExpression: String? = nil, edges: [[[Double]]]? = nil, size: Double? = nil,

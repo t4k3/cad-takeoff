@@ -309,7 +309,7 @@ final class WorkspaceState {
             command = SplitCommand.start(workspace: self, model: model, editing: f)
             return
         }
-        if let f = model.document.features.first(where: { $0.id == id }), case let .pattern(p) = f.kind {
+        if let f = model.document.features.first(where: { $0.id == id }), case let .pattern(p) = f.kind, p.placements == nil {
             command = PatternCommand.start(workspace: self, model: model, kind: p.kind, editing: f)
             return
         }

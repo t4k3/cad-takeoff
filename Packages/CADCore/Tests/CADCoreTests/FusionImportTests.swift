@@ -247,3 +247,36 @@ private func bracket(_ extent: F.Extent, lo: Double, hi: Double) -> FusionTimeli
     let (_, r2) = FusionImport.convert(lost, meshes: [])
     #expect(r2.skipped.contains { $0.contains("Combina1") && $0.contains("Altro") })
 }
+
+@Test func fusionPatternOfBodiesMakesEachCopyABody() throws {
+    // A 10 × 10 × 5 block, patterned as a body: two copies 20 and 40 mm along X, then mirrored
+    // across the plane x = −10 (each copy a body of its own, as in Fusion).
+    func square(_ p: String) -> [F.Curve] {
+        (1...4).map { k in F.Curve(type: "line", id: "\(p)l\(k)", start: "\(p)\(k)", end: "\(p)\(k % 4 + 1)") }
+    }
+    let pts = [F.Point(id: "a1", x: 0, y: 0), F.Point(id: "a2", x: 10, y: 0), F.Point(id: "a3", x: 10, y: 10), F.Point(id: "a4", x: 0, y: 10)]
+    let sketch = F.Sketch(id: "S1", name: "Schizzo1", points: pts, curves: square("a"), profiles: [F.Profile(id: "PA", area: 100, min: [0, 0], max: [10, 10])])
+    let block = F.Body(name: "Blocco", volume: 500, min: [0, 0, 0], max: [10, 10, 5])
+    var pattern = F.Feature(type: "pattern", name: "Serie1")
+    pattern.inputKind = "BRepBody"; pattern.inputs = []; pattern.inputBodies = [block]
+    pattern.transforms = [[[1, 0, 0, 20], [0, 1, 0, 0], [0, 0, 1, 0]], [[1, 0, 0, 40], [0, 1, 0, 0], [0, 0, 1, 0]]]
+    var mirror = F.Feature(type: "mirror", name: "Specchio1")
+    mirror.inputKind = "BRepBody"; mirror.inputs = []; mirror.inputBodies = [block]
+    mirror.transforms = [[[-1, 0, 0, -20], [0, 1, 0, 0], [0, 0, 1, 0]]]
+    let t = FusionTimeline(sketches: [sketch],
+                           features: [F.Feature(type: "extrude", name: "Estrusione1", operation: "newBody", profiles: ["S1/PA"], extent: F.Extent(type: "distance", distance: 5)),
+                                      pattern, mirror],
+                           bodies: [block, F.Body(name: "Blocco (1)", volume: 500, min: [20, 0, 0], max: [30, 10, 5]),
+                                    F.Body(name: "Blocco (2)", volume: 500, min: [40, 0, 0], max: [50, 10, 5]),
+                                    F.Body(name: "Blocco (3)", volume: 500, min: [-30, 0, 0], max: [-20, 10, 5])])
+    let (doc, report) = FusionImport.convert(t, meshes: [])
+    #expect(report.skipped.isEmpty && report.editable.count == 4 && report.meshes.isEmpty, "\(report.summary)")
+    let (bodies, issues) = DesignEvaluator.evaluate(doc, revision: "p")
+    #expect(issues.isEmpty && bodies.count == 4, "\(issues)")
+    #expect(bodies.allSatisfy { abs($0.mesh.volume - 500) < 1e-6 && MeshValidator.validate($0.mesh).isWatertight })
+    // A deformation is refused, not applied.
+    var sheared = PatternSpec(body: UUID(), kind: .rectangular, placements: [[1, 0.5, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]])
+    #expect(throws: KernelError.self) { try sheared.validate() }
+    sheared.placements = [[1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0]]
+    #expect((try? sheared.validate()) != nil)
+}

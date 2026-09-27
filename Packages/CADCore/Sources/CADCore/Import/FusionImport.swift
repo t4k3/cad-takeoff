@@ -459,7 +459,8 @@ public enum FusionImport {
     /// put it — holes with their centres moved, extrusions and revolves on their plane moved (and
     /// still following their sketch). Count and spacing are not editable here: said in the report.
     static func addCopies(_ f: FusionTimeline.Feature, doc: inout CADDocument, notes: inout [String]) throws {
-        if let other = f.inputKind { throw Skip("serie di \(other == "BRepBody" ? "corpi" : other) non ancora convertita") }
+        if f.inputKind == "BRepBody" { return try addBodyCopies(f, doc: &doc, notes: &notes) }
+        if let other = f.inputKind { throw Skip("serie di \(other) non ancora convertita") }
         guard let names = f.inputs, !names.isEmpty, let transforms = f.transforms, !transforms.isEmpty else { throw Skip("serie senza elementi") }
         let sources = doc.features.filter { names.contains($0.name) }
         guard !sources.isEmpty else { throw Skip("le feature ripetute non sono state convertite") }
@@ -531,6 +532,29 @@ public enum FusionImport {
         }
         guard let target = body ?? bodies.last?.id else { throw Skip("corpo da svuotare non trovato") }
         doc.timeline.append(TimelineItem(.feature(Feature(name: f.name, kind: .shell(ShellSpec(body: target, thickness: t, openFaces: open))))))
+    }
+
+    /// A pattern or mirror of bodies: the bodies found among the rebuilt ones (volume and extent
+    /// just before it); each copy a body of its own at Fusion's place, as Fusion makes them.
+    static func addBodyCopies(_ f: FusionTimeline.Feature, doc: inout CADDocument, notes: inout [String]) throws {
+        guard let inputs = f.inputBodies, !inputs.isEmpty, let transforms = f.transforms, !transforms.isEmpty else { throw Skip("serie di corpi senza elementi") }
+        let built = DesignEvaluator.evaluate(doc, revision: "fusion-body-pattern").bodies
+        var used = Set<UUID>(), sources: [UUID] = []
+        for b in inputs {
+            guard let hit = built.first(where: { !used.contains($0.id) && same(b, $0.mesh) }) else { throw Skip("corpo «\(b.name)» da ripetere non ritrovato") }
+            used.insert(hit.id); sources.append(hit.id)
+        }
+        var copies = 0
+        for (k, t) in transforms.enumerated() {
+            guard t.count == 3, t.allSatisfy({ $0.count == 4 }) else { throw Skip("posizione della copia non valida") }
+            for source in sources {
+                let spec = PatternSpec(body: source, kind: .rectangular, placements: [t.flatMap { $0 }])
+                let colour = doc.features.first { $0.id == source }?.color ?? .defaultColor
+                doc.timeline.append(TimelineItem(.feature(Feature(name: "\(f.name) (copia \(k + 1))", kind: .pattern(spec), color: colour))))
+                copies += 1
+            }
+        }
+        notes.append("\(f.name): \(copies) copie di corpi al loro posto")
     }
 
     /// Combina: the target and tool bodies found among the ones rebuilt so far by their volume

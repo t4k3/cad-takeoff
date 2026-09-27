@@ -300,7 +300,7 @@ class HistoryReader:
                 elif k in ("ExtrudeFeature", "RevolveFeature", "HoleFeature"):
                     self.read_feature(entity, k)
                 elif k in ("RectangularPatternFeature", "CircularPatternFeature", "PathPatternFeature", "MirrorFeature"):
-                    self.read_pattern(entity, k)
+                    self.read_pattern(entity, k, item)
                 elif k in ("ConstructionPlane", "ConstructionAxis", "ConstructionPoint", "Occurrence", "JointOrigin",
                            "Joint", "AsBuiltJoint", "RigidGroup"):
                     continue
@@ -540,16 +540,20 @@ class HistoryReader:
             if key in sizes and (key != "counterboreDepth" or style == "counterbore") and (key != "headDiameter" or style != "simple"):
                 entry[key] = sizes[key]
 
-    def read_pattern(self, f, k):
-        """A pattern or mirror of features: which ones (by name) and every copy's placement in
-        the world (3×4, rotation and translation, mm); bodies patterned are not converted yet."""
+    def read_pattern(self, f, k, item=None):
+        """A pattern or mirror of features (by name) or of bodies (measured as they were just
+        before it, to be found among the rebuilt ones), and every copy's placement in the world
+        (3×4, rotation and translation, mm)."""
         entry = {"type": "mirror" if k == "MirrorFeature" else "pattern", "name": f.name}
         frame = self.frame_of(f.parentComponent)
-        inputs = []
+        inputs, bodies = [], []
         try:
             ents = f.inputEntities
             for i in range(ents.count):
                 e = ents.item(i)
+                if kind(e) == "BRepBody":
+                    bodies.append(e)
+                    continue
                 if not kind(e).endswith("Feature"):
                     entry["inputKind"] = kind(e)
                     break
@@ -557,6 +561,39 @@ class HistoryReader:
         except Exception:
             entry["inputKind"] = "unknown"
         entry["inputs"] = inputs
+        if bodies and "inputKind" not in entry:
+            if inputs:
+                entry["inputKind"] = "corpi e feature insieme"
+            elif frame is not None:
+                entry["inputKind"] = "BRepBody"
+                measured = []
+                rolled = False
+                try:
+                    if item is not None:
+                        item.rollTo(True)
+                        rolled = True
+                except Exception:
+                    pass
+                try:
+                    # Read again after rolling back: the bodies as they were before the pattern.
+                    try:
+                        ents = f.inputEntities
+                        bodies = [ents.item(i) for i in range(ents.count) if kind(ents.item(i)) == "BRepBody"]
+                    except Exception:
+                        pass
+                    for b in bodies:
+                        info = bodies_info(b, b.name, frame, None)
+                        if info is None:
+                            entry["inputKind"] = "corpi non misurabili"
+                            break
+                        measured.append(info)
+                finally:
+                    if rolled:
+                        try:
+                            self.design.timeline.moveToEnd()
+                        except Exception:
+                            pass
+                entry["inputBodies"] = measured
         transforms = []
         try:
             if frame is None:

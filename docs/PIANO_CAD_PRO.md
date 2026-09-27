@@ -105,7 +105,8 @@ se differisce, entra la mesh al suo posto: niente si perde e niente è sbagliato
    misure (i cilindri di un foro riconosciuti insieme), serie e specchi di fori, estrusioni e
    rivoluzioni (copie al loro posto, legate allo schizzo). **Combina** (unisci, taglia, interseca,
    mantieni strumenti) è ora anche un passo di CAD Takeoff: i corpi si ritrovano per volume e
-   ingombro com'erano subito prima. Restano: sformo, serie di corpi, loft/sweep (come mesh).
+   ingombro com'erano subito prima. **Serie e specchi di corpi**: ogni copia un corpo a sé al posto
+   di Fusion (verificato come gli altri). Restano: sformo, loft/sweep (come mesh).
 3. Componenti usati più volte e giunti dell'assieme; poi riaprire in CAD Takeoff un file già
    convertito e riesportato da Fusion senza perdere le modifiche fatte qui.
 
