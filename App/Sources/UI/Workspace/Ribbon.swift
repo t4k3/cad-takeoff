@@ -121,6 +121,9 @@ struct Ribbon: View {
             Button { workspace.startMove(model: model) } label: { Label("Sposta", systemImage: "arrow.up.and.down.and.arrow.left.and.right") }
                 .disabled(model.selection == nil)
                 .help("Sposta e ruota il corpo selezionato (resta un passo della timeline)")
+            Button { workspace.startCombine(model: model) } label: { Label("Combina", systemImage: "square.on.square.intersection.dashed") }
+                .disabled(model.selection == nil)
+                .help("Unisce, taglia o interseca altri corpi con quello selezionato (gli strumenti spariscono, o restano se li mantieni)")
             Button { workspace.startShell(model: model) } label: { Label("Guscio", systemImage: "cube.transparent") }
                 .help("Svuota un corpo lasciando pareti di spessore dato: clicca le facce da aprire (es. il sopra di una scatola)")
             Button { workspace.startChamfer(model: model, profile: .round) } label: { Label("Raccordo", systemImage: "circle.bottomhalf.filled") }
