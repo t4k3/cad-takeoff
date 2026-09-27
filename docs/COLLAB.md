@@ -1307,3 +1307,6 @@ Per Codex, prossimi passi di Circuiti secondo docs/UX_RULES.md §6 (in ordine di
 
 ### 2026-09-27 10:25 · claude · DONE `T99`
 **Aggancio ElectronicsCore nell'app: package nel progetto Xcode, ponte Model/Electronics, documento elettronico nel progetto/Home, test elettronica nella CI** — Circuiti nell'app: ElectronicsCore collegato in project.yml, CircuitModel (Model/Electronics), scheda CIRCUITI con vista 2D della scheda, spostamento/rotazione/lato con annulla, verifiche, export BOM/CPL JLCPCB, esempio; file .ftkc; test-electronics.sh in CI. Resta per T97: elenco dei circuiti nella Home/progetti, schema, e l'uso delle API chieste a Codex (RICHIESTA-API di oggi).
+
+### 2026-09-27 10:34 · claude · DECISIONE
+Ross 27/09: minimo macOS 26 Tahoe per l'app e CADCore (ElectronicsCore può restare più basso: l'app lo usa comunque), e sfruttare le capacità nuove: Liquid Glass (fatto sui controlli sopra il viewport e sul pannello comandi), Foundation Models (assistente sul Mac senza chiave, in corso), poi Metal 4.

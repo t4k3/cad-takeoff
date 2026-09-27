@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CADCore",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS("26.0")],
     products: [.library(name: "CADCore", targets: ["CADCore"])],
     targets: [
         // Geometry is heavy numeric code: optimised even in Debug builds (10× faster booleans

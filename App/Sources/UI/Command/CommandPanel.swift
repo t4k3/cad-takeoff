@@ -48,10 +48,10 @@ struct CommandPanel: View {
             .padding(10)
         }
         .frame(width: 300)
-        .background(Theme.Palette.panelRaised, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.Palette.separator))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .shadow(color: .black.opacity(0.25), radius: 14, y: 4)
+        // Liquid Glass over the viewport (macOS 26), tinted with the panel colour so the fields
+        // stay easy to read over any part.
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .glassEffect(.regular.tint(Theme.Palette.panelRaised.opacity(0.55)), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     @ViewBuilder

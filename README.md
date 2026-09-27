@@ -35,7 +35,7 @@ without paying rent on their own work.
 
 ## Build
 
-Requirements: macOS 14+, Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen)
+Requirements: macOS 26 Tahoe or later, Xcode 26+, [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 (`brew install xcodegen`).
 
 ```bash

@@ -21,7 +21,7 @@ revisione; le funzioni avanzano per fasi, mantenendo tutti i requisiti nel grafo
 
 ## Base presente nello snapshot T00
 
-- Progetto `FusionTakeoff.xcodeproj`, generato da `project.yml`, Swift 6, macOS 14+.
+- Progetto `FusionTakeoff.xcodeproj`, generato da `project.yml`, Swift 6, macOS 26+.
 - `CADCore` separato dalla UI e verificabile con Swift Package Manager.
 - Profili 2D, triangolazione ed estrusione; box, cilindro, esempio esagonale.
 - Elenco di feature con quote e traslazione; anteprima SceneKit.
