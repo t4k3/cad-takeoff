@@ -1,5 +1,6 @@
 #!/bin/bash
-# Version +1 at every commit (Ross): MARKETING_VERSION = <major>.<minor>.<commits including this one>,
+# Version +1 at every commit (Ross): MARKETING_VERSION = <major>.<minor>.<commits since the series
+# began (FTK_SERIES_START in project.yml: the commit count of its x.y.0)>,
 # written into project.yml and the generated Xcode project inside the commit itself, so Xcode's
 # General tab, the built app and the status bar all show the same number.
 # Enable once per clone: git config core.hooksPath .githooks
@@ -7,7 +8,8 @@ set -e
 cd "$(git rev-parse --show-toplevel)"
 count=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
 base=$(grep -m1 'MARKETING_VERSION:' project.yml | sed -E 's/.*"([0-9]+)\.([0-9]+).*/\1.\2/')
-version="$base.$count"
+start=$(grep -m1 'FTK_SERIES_START:' project.yml | sed -E 's/.*"([0-9]+)".*/\1/')
+version="$base.$(( count - ${start:-0} ))"
 sed -i '' -E "s/(MARKETING_VERSION: )\"[0-9.]+\"/\1\"$version\"/" project.yml
 if command -v xcodegen >/dev/null; then xcodegen generate --quiet; fi
 git add project.yml FusionTakeoff.xcodeproj/project.pbxproj

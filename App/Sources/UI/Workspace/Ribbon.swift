@@ -6,6 +6,7 @@ struct Ribbon: View {
     @Environment(DesignModel.self) private var model
     @Environment(WorkspaceState.self) private var workspace
     @Environment(ProjectLibrary.self) private var library
+    @Environment(CircuitModel.self) private var circuits
     /// The sketch constraints' list (VINCOLI › Vincoli).
     @State private var showConstraints = false
 
@@ -58,6 +59,7 @@ struct Ribbon: View {
                     case .sketch: if workspace.sketch != nil { sketchTools } else { solidTools }
                     case .sheetMetal: sheetMetalTools
                     case .print: printTools
+                    case .circuits: circuitTools
                     }
                     Spacer(minLength: 0)
                 }
@@ -271,6 +273,35 @@ struct Ribbon: View {
             Text("Disegna un profilo sul piano XY e trasformalo in un solido con Estrudi.")
                 .font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
                 .frame(height: 50).padding(.leading, 8)
+        }
+    }
+
+    /// CIRCUITI: the circuit file, moving parts, manufacturing (the engine is Codex's
+    /// ElectronicsCore; schematic and routing come as it grows).
+    @ViewBuilder private var circuitTools: some View {
+        ToolGroup("CIRCUITO") {
+            Button { if circuits.confirmDiscard() { try? circuits.newCircuit() } } label: { Label("Nuovo", systemImage: "plus.square") }
+                .help("Nuovo circuito: scheda 50 × 30 mm")
+            Button { circuits.openWithPanel() } label: { Label("Apri", systemImage: "folder") }
+                .help("Apri un circuito (.ftkc)")
+            Button { circuits.saveWithPanel() } label: { Label("Salva", systemImage: "square.and.arrow.down") }
+                .disabled(circuits.document == nil)
+                .help("Salva il circuito (.ftkc)")
+            Button { circuits.openExample() } label: { Label("Esempio", systemImage: "sparkles") }
+                .help("Il circuito di prova del motore (componenti fittizi, da non ordinare)")
+        }
+        ToolGroup("COMPONENTE") {
+            Button { if let c = circuits.selection { circuits.rotate(c) } } label: { Label("Ruota", systemImage: "rotate.right") }
+                .disabled(circuits.selection == nil)
+                .help("Ruota di 90° il componente selezionato (R)")
+            Button { if let c = circuits.selection { circuits.flip(c) } } label: { Label("Lato", systemImage: "arrow.up.arrow.down.square") }
+                .disabled(circuits.selection == nil)
+                .help("Porta il componente sull'altro lato della scheda (F)")
+        }
+        ToolGroup("PRODUZIONE") {
+            Button { circuits.exportJLCWithPanel() } label: { Label("JLCPCB", systemImage: "shippingbox") }
+                .disabled(circuits.document == nil)
+                .help("BOM e CPL per il montaggio JLCPCB (CSV). Il motore blocca l'export se manca qualcosa e dice cosa.")
         }
     }
 

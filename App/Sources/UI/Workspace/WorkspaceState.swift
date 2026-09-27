@@ -11,6 +11,7 @@ final class WorkspaceState {
         case sketch = "SCHIZZO"
         case sheetMetal = "LAMIERA"
         case print = "STAMPA"
+        case circuits = "CIRCUITI"
         var id: String { rawValue }
     }
 

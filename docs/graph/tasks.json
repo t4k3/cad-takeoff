@@ -1771,18 +1771,23 @@
       "id": "T92",
       "title": "Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB",
       "phase": "Elettronica",
-      "status": "in_progress",
+      "status": "todo",
       "deps": [
         "T91"
       ],
       "paths": [
         "Packages/ElectronicsCore",
         "docs/electronics",
-        "Tests/Electronics"
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
       ],
       "suggested": "codex",
-      "owner": "codex",
-      "started": "2026-09-27 09:48"
+      "owner": null,
+      "started": "2026-09-27 10:19",
+      "notes": [
+        "2026-09-27 10:07 codex: Prima consegna E1 implementata e verificata (40 test elettronica, CLI con lettori Python indipendenti, 174 test CAD): importatori nativi KiCad simboli mono-unità/impronte SMD-PTH, subset SMD EasyEDA Standard; geometria e provenienza; catalogo CSV offline, identità MPN esatta, cache validata; comandi preview/apply, pin-map proposta, undo persistente; documento v2 legge v1. Contratto completo e limiti in docs/electronics/LIBRARIES.md. T92 NON completo: proseguire con corpus EasyEDA/JLC reale e verifica datasheet, catalogo JLC live tramite API documentata/autenticata, prezzi/aggiornamento e confronto revisioni. Multisezione e padstack avanzati richiedono E2/E3. Non dichiarare UI o produzione pronte. Claude ha confermato proprietà di app/UX/aggancio e ricevuto i riferimenti tramite COLLAB.",
+        "2026-09-27 10:19 codex: Aggiornamento di coordinamento: registrati nome CIRCUITI e requisito futuro italiano/inglese/cinese nel COLLAB, con richiesta a Claude per UX_RULES/app e indirizzo per diagnostica localizzabile del motore. Nessuna modifica a codice o API in questo passaggio; resta valida la consegna E1 e il collaudo del precedente handoff delle 10:07. T92 ancora da completare per corpus reale/catalogo live/prezzi/confronto revisioni."
+      ]
     },
     {
       "id": "T93",
@@ -1891,7 +1896,7 @@
       "id": "T99",
       "title": "Aggancio ElectronicsCore nell'app: package nel progetto Xcode, ponte Model/Electronics, documento elettronico nel progetto/Home, test elettronica nella CI",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "done",
       "deps": [
         "T91"
       ],
@@ -1901,7 +1906,12 @@
         "scripts/ci.sh"
       ],
       "suggested": "claude",
-      "owner": null
+      "owner": "claude",
+      "started": "2026-09-27 10:20",
+      "finished": "2026-09-27 10:25",
+      "notes": [
+        "2026-09-27 10:25 claude: Circuiti nell'app: ElectronicsCore collegato in project.yml, CircuitModel (Model/Electronics), scheda CIRCUITI con vista 2D della scheda, spostamento/rotazione/lato con annulla, verifiche, export BOM/CPL JLCPCB, esempio; file .ftkc; test-electronics.sh in CI. Resta per T97: elenco dei circuiti nella Home/progetti, schema, e l'uso delle API chieste a Codex (RICHIESTA-API di oggi)."
+      ]
     },
     {
       "id": "T100",

@@ -27,6 +27,7 @@
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */; };
 		36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */; };
+		373A61520DDA32DF06C8685D /* CircuitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5F02CE2EF0AEDD8D86251 /* CircuitModel.swift */; };
 		383B754E66B67F0BAE275228 /* TimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DE039BD31C92AE427C66E /* TimelineBar.swift */; };
 		3AC54D45E3D318B30B845B0B /* ProjectLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 642773DA2D59B0B1CE8A43A0 /* ProjectLibrary.swift */; };
 		3B556AEB2AA490F04E2ACC8F /* MoveCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = D067A2E9C4BB917828D77F92 /* MoveCommand.swift */; };
@@ -38,6 +39,7 @@
 		4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB8505013537F19DABD1503A /* CADToolValidation.swift */; };
 		5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BB2CC5B625AFE33908AA5 /* StatusBar.swift */; };
 		5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */; };
+		5FBABD8617F13347CE64DDA1 /* ElectronicsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 94BE0555CADC49A52D81E724 /* ElectronicsCore */; };
 		632024767AA11693D6157405 /* fusion_history.py in Resources */ = {isa = PBXBuildFile; fileRef = 3770472710CAC4D5EE4F671D /* fusion_history.py */; };
 		6391BD7137C19D938C85F761 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ACF2F56948E53B401DAEA56 /* HomeView.swift */; };
 		6A10CC336BAEA35811826D10 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069D2799753CD573213F79CB /* AppVersion.swift */; };
@@ -87,6 +89,8 @@
 		EC1229347F2E68CB13809EA2 /* ToolBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 916C7BCF2D3CEE602A6F6315 /* ToolBridge.swift */; };
 		F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */; };
 		F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943EB272622A8A5AAC6E74FB /* MatrixMath.swift */; };
+		FB1220EDBC0CC9BCE61EE67E /* CircuitWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0431B3B1382987169BEB697A /* CircuitWorkspace.swift */; };
+		FB69304B1841695A656592CD /* Esempio circuito.ftkc in Resources */ = {isa = PBXBuildFile; fileRef = F52A8C1E9BF15F48F6FB5FA8 /* Esempio circuito.ftkc */; };
 		FE2BFC396A55BAC42977CD69 /* HoleCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */; };
 		FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */ = {isa = PBXBuildFile; fileRef = 3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */; };
 /* End PBXBuildFile section */
@@ -118,6 +122,7 @@
 /* Begin PBXFileReference section */
 		00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FusionTakeoffApp.swift; sourceTree = "<group>"; };
 		01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGPTConnector.swift; sourceTree = "<group>"; };
+		0431B3B1382987169BEB697A /* CircuitWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircuitWorkspace.swift; sourceTree = "<group>"; };
 		069D2799753CD573213F79CB /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersion.swift; sourceTree = "<group>"; };
 		0B64F683EF67CA5B65DCDA84 /* ExplodeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplodeCommand.swift; sourceTree = "<group>"; };
 		0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStream.swift; sourceTree = "<group>"; };
@@ -156,6 +161,7 @@
 		674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorPanel.swift; sourceTree = "<group>"; };
 		6AE9B4B0B09E1D3297102FD0 /* SketchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchStore.swift; sourceTree = "<group>"; };
 		6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
+		757F7069AB30F77F4CFBE67F /* ElectronicsCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ElectronicsCore; path = Packages/ElectronicsCore; sourceTree = SOURCE_ROOT; };
 		7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanelPreviews.swift; sourceTree = "<group>"; };
 		86A604770FA67CFFA12BACDB /* ViewCube.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCube.swift; sourceTree = "<group>"; };
 		891E4E944492E6539912AE18 /* MCPHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHost.swift; sourceTree = "<group>"; };
@@ -191,10 +197,12 @@
 		EB6B876F0661B437E6E2EEA8 /* OpenAIStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIStream.swift; sourceTree = "<group>"; };
 		ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettings.swift; sourceTree = "<group>"; };
 		EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalHTTPTransport.swift; sourceTree = "<group>"; };
+		F1A5F02CE2EF0AEDD8D86251 /* CircuitModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircuitModel.swift; sourceTree = "<group>"; };
 		F2A9B625C6D5BB0B98229004 /* ClaudeDesktopSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeDesktopSetup.swift; sourceTree = "<group>"; };
 		F40BA080C6FA5B579B4B966B /* ViewportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportRenderer.swift; sourceTree = "<group>"; };
 		F4162A22E891E76FD9B0E6CA /* BrowserPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserPanel.swift; sourceTree = "<group>"; };
 		F5210093687F0306F5DD6656 /* ParametersSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametersSheet.swift; sourceTree = "<group>"; };
+		F52A8C1E9BF15F48F6FB5FA8 /* Esempio circuito.ftkc */ = {isa = PBXFileReference; path = "Esempio circuito.ftkc"; sourceTree = "<group>"; };
 		F565E8DD894590B674296FD8 /* ChamferCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChamferCommand.swift; sourceTree = "<group>"; };
 		F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailRenderer.swift; sourceTree = "<group>"; };
 		FA91E1AA38E2315A59B0A4AF /* HoleCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoleCommand.swift; sourceTree = "<group>"; };
@@ -208,6 +216,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DCFE43EEC46D1E81506AAC2D /* CADCore in Frameworks */,
+				5FBABD8617F13347CE64DDA1 /* ElectronicsCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -243,6 +252,7 @@
 				5CAB5E2F59180CD118CF8961 /* .gitkeep */,
 				D65234D73DDB270D86ADBB51 /* Assets.xcassets */,
 				63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */,
+				BB3D9C4A6645731EFE0419A5 /* Circuiti */,
 				E4B1A91129EF63A88EF293AD /* FusionAddIn */,
 			);
 			path = Resources;
@@ -270,10 +280,19 @@
 			path = Sketch;
 			sourceTree = "<group>";
 		};
+		43EAA6447D566CA8D86F3361 /* Electronics */ = {
+			isa = PBXGroup;
+			children = (
+				0431B3B1382987169BEB697A /* CircuitWorkspace.swift */,
+			);
+			path = Electronics;
+			sourceTree = "<group>";
+		};
 		44C6B64A6339651A73120B39 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
 				8A79D033E48D1FC6B0898162 /* CADCore */,
+				757F7069AB30F77F4CFBE67F /* ElectronicsCore */,
 			);
 			path = Packages;
 			sourceTree = "<group>";
@@ -315,6 +334,7 @@
 				F1472CEAADDAA3A83F7D7939 /* Commands */,
 				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
+				43EAA6447D566CA8D86F3361 /* Electronics */,
 				7A8C1A0EDA4C545CE9572D01 /* Features */,
 				7C49791EA814007E5DEA23D0 /* Home */,
 				AFDE5F6EC0E12C1023FBFC61 /* Previews */,
@@ -341,6 +361,14 @@
 				ECA78FC8697B5F2DF68671D9 /* AssistantSettings.swift */,
 			);
 			path = Assistant;
+			sourceTree = "<group>";
+		};
+		79EE699ACBBB6969A0CAA525 /* Electronics */ = {
+			isa = PBXGroup;
+			children = (
+				F1A5F02CE2EF0AEDD8D86251 /* CircuitModel.swift */,
+			);
+			path = Electronics;
 			sourceTree = "<group>";
 		};
 		7A8C1A0EDA4C545CE9572D01 /* Features */ = {
@@ -435,6 +463,14 @@
 			path = Previews;
 			sourceTree = "<group>";
 		};
+		BB3D9C4A6645731EFE0419A5 /* Circuiti */ = {
+			isa = PBXGroup;
+			children = (
+				F52A8C1E9BF15F48F6FB5FA8 /* Esempio circuito.ftkc */,
+			);
+			path = Circuiti;
+			sourceTree = "<group>";
+		};
 		CA34383F3429FF051303E38A /* OpenAI */ = {
 			isa = PBXGroup;
 			children = (
@@ -471,6 +507,7 @@
 			isa = PBXGroup;
 			children = (
 				5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */,
+				79EE699ACBBB6969A0CAA525 /* Electronics */,
 				9471C69835015BE9175391CA /* Tools */,
 			);
 			path = Model;
@@ -573,6 +610,7 @@
 			name = FusionTakeoff;
 			packageProductDependencies = (
 				DDA8176070A4C4FA3CF13B40 /* CADCore */,
+				94BE0555CADC49A52D81E724 /* ElectronicsCore */,
 			);
 			productName = FusionTakeoff;
 			productReference = BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */;
@@ -626,6 +664,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				3B7839F5FE281FB6DCC3C3EB /* XCLocalSwiftPackageReference "Packages/CADCore" */,
+				B761BA4743B7DE1F3F5B2A6F /* XCLocalSwiftPackageReference "Packages/ElectronicsCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
@@ -645,6 +684,7 @@
 				CE170F2CBCC50AEF128AC113 /* Assets.xcassets in Resources */,
 				871A00C58DD6D28ADF201C37 /* CADTakeoffImportProject.manifest in Resources */,
 				143812546439D97F9A094225 /* CADTakeoffImportProject.py in Resources */,
+				FB69304B1841695A656592CD /* Esempio circuito.ftkc in Resources */,
 				829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */,
 				FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */,
 				00F4B54DB5EC90153C2FA6BE /* PrivacyInfo.xcprivacy in Resources */,
@@ -672,7 +712,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "plist=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\ncommit=$(git -C \"$SRCROOT\" rev-parse --short HEAD 2>/dev/null || echo \"sconosciuto\")\nif [ -n \"$(git -C \"$SRCROOT\" status --porcelain --untracked-files=no 2>/dev/null)\" ]; then commit=\"$commit+\"; fi\nstamp=$(date \"+%Y-%m-%d %H:%M\")\n# Version = MARKETING_VERSION's major.minor + the number of commits: every change\n# committed is +1 (0.1.87 → 0.1.88), never edited by hand.\ncount=$(git -C \"$SRCROOT\" rev-list --count HEAD 2>/dev/null || echo 0)\nversion=\"$(echo \"$MARKETING_VERSION\" | cut -d. -f1-2).$count\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $version\" \"$plist\"\nfor pair in \"FTKCommit:$commit\" \"FTKBuildDate:$stamp\"; do\n  key=${pair%%:*}; value=${pair#*:}\n  /usr/libexec/PlistBuddy -c \"Set :$key $value\" \"$plist\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Add :$key string $value\" \"$plist\"\ndone\n";
+			shellScript = "plist=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\ncommit=$(git -C \"$SRCROOT\" rev-parse --short HEAD 2>/dev/null || echo \"sconosciuto\")\nif [ -n \"$(git -C \"$SRCROOT\" status --porcelain --untracked-files=no 2>/dev/null)\" ]; then commit=\"$commit+\"; fi\nstamp=$(date \"+%Y-%m-%d %H:%M\")\n# Version = MARKETING_VERSION's major.minor + the commits since the series began: every\n# change committed is +1 (1.0.0 → 1.0.1), never edited by hand.\ncount=$(git -C \"$SRCROOT\" rev-list --count HEAD 2>/dev/null || echo 0)\nversion=\"$(echo \"$MARKETING_VERSION\" | cut -d. -f1-2).$(( count - ${FTK_SERIES_START:-0} ))\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $version\" \"$plist\"\nfor pair in \"FTKCommit:$commit\" \"FTKBuildDate:$stamp\"; do\n  key=${pair%%:*}; value=${pair#*:}\n  /usr/libexec/PlistBuddy -c \"Set :$key $value\" \"$plist\" 2>/dev/null || /usr/libexec/PlistBuddy -c \"Add :$key string $value\" \"$plist\"\ndone\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -695,6 +735,8 @@
 				9E390BBDAE0C6659CE5ECBC6 /* ChamferCommand.swift in Sources */,
 				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
 				B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */,
+				373A61520DDA32DF06C8685D /* CircuitModel.swift in Sources */,
+				FB1220EDBC0CC9BCE61EE67E /* CircuitWorkspace.swift in Sources */,
 				89CEEC9622670A06965A014E /* ClaudeDesktopSetup.swift in Sources */,
 				E91C000FA839F7AAD962F2CD /* ClaudeProvider.swift in Sources */,
 				3F9B6C39C986BB88C4B7E079 /* CommandPanel.swift in Sources */,
@@ -834,6 +876,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				FTK_SERIES_START = 164;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -849,7 +892,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.163;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -903,6 +946,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				FTK_SERIES_START = 164;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -912,7 +956,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.163;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1013,9 +1057,17 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/CADCore;
 		};
+		B761BA4743B7DE1F3F5B2A6F /* XCLocalSwiftPackageReference "Packages/ElectronicsCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ElectronicsCore;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		94BE0555CADC49A52D81E724 /* ElectronicsCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ElectronicsCore;
+		};
 		DDA8176070A4C4FA3CF13B40 /* CADCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CADCore;

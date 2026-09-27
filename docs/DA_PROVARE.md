@@ -47,3 +47,9 @@ sono le prove a mano, sull'interfaccia.
 - [ ] Reinstalla il plug-in dall'app (Home › «Installa add-in…»): copia anche `fusion_history.py`. In Fusion riavvia l'aggiunta.
 - [ ] Un pezzo semplice (schizzo quotato + estrusione + raccordo): «Esporta per CAD Takeoff», aprilo qui. Nella barra di stato: «Da Fusion: N corpi modificabili…». Doppio clic sullo schizzo: quote e vincoli ci sono; cambia un parametro in «Parametri».
 - [ ] Rilancia lo script «Importa progetto in CAD Takeoff» su «025 RobotVolley»: riesporta tutto (i vecchi .ftk senza cronologia non vengono saltati). Mandami import-fusion.txt e i messaggi «non convertiti» dei pezzi che ti servono.
+
+## Circuiti (1.0.0)
+- [ ] Scheda **CIRCUITI** › Esempio: scheda verde, piazzole oro (sopra) e blu (sotto), sigle, linee bianche dei collegamenti da sbrogliare; passa sulle piazzole: la rete si accende in arancio.
+- [ ] Trascina un componente (anteprima dal vivo, collegamenti che seguono), R ruota, F cambia lato; ⌘Z annulla una mossa alla volta.
+- [ ] VERIFICHE a destra: clic su un problema → seleziona il componente. PRODUZIONE › JLCPCB: se manca qualcosa il messaggio dice cosa (l'esempio ha componenti fittizi: non ordinare).
+- [ ] Nuovo / Salva / Apri (.ftkc); chiudendo con modifiche chiede se salvare.

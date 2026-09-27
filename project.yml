@@ -10,8 +10,11 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     # Written by .githooks/pre-commit at every commit: major.minor stay as set here, the last
-    # number is the commit count (also stamped into the built app). Change 0.1 for a new series.
-    MARKETING_VERSION: "0.1.163"
+    # number counts the commits since the series began (also stamped into the built app).
+    # New series (Ross, 27/09: 1.0.0 with «Circuiti»): set major.minor here and FTK_SERIES_START
+    # to the commit count the series' first commit will have (git rev-list --count HEAD + 1).
+    MARKETING_VERSION: "1.0.0"
+    FTK_SERIES_START: "164"
     CURRENT_PROJECT_VERSION: "1"
     # Signed with Ross's Apple Development identity (team 9F8D583GBV): needed for the
     # App Group shared by the app and the ftk-mcp bridge. For TestFlight, archive in Xcode
@@ -23,6 +26,9 @@ settings:
 packages:
   CADCore:
     path: Packages/CADCore
+  # «Circuiti»: the electronics engine (Codex, docs/electronics).
+  ElectronicsCore:
+    path: Packages/ElectronicsCore
 targets:
   FusionTakeoff:
     type: application
@@ -32,6 +38,8 @@ targets:
       - App/Resources
     dependencies:
       - package: CADCore
+      - package: ElectronicsCore
+        product: ElectronicsCore
       # MCP bridge shipped inside the app: Contents/MacOS/ftk-mcp (Claude Desktop, ChatGPT tunnel).
       - target: ftk-mcp
         embed: true
@@ -56,6 +64,11 @@ targets:
             UTTypeConformsTo: [public.json]
             UTTypeTagSpecification:
               public.filename-extension: [ftk]
+          - UTTypeIdentifier: com.takeoff.fusiontakeoff.circuit
+            UTTypeDescription: CAD Takeoff Circuito
+            UTTypeConformsTo: [public.json]
+            UTTypeTagSpecification:
+              public.filename-extension: [ftkc]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff
@@ -73,10 +86,10 @@ targets:
           commit=$(git -C "$SRCROOT" rev-parse --short HEAD 2>/dev/null || echo "sconosciuto")
           if [ -n "$(git -C "$SRCROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]; then commit="$commit+"; fi
           stamp=$(date "+%Y-%m-%d %H:%M")
-          # Version = MARKETING_VERSION's major.minor + the number of commits: every change
-          # committed is +1 (0.1.87 → 0.1.88), never edited by hand.
+          # Version = MARKETING_VERSION's major.minor + the commits since the series began: every
+          # change committed is +1 (1.0.0 → 1.0.1), never edited by hand.
           count=$(git -C "$SRCROOT" rev-list --count HEAD 2>/dev/null || echo 0)
-          version="$(echo "$MARKETING_VERSION" | cut -d. -f1-2).$count"
+          version="$(echo "$MARKETING_VERSION" | cut -d. -f1-2).$(( count - ${FTK_SERIES_START:-0} ))"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist"
           for pair in "FTKCommit:$commit" "FTKBuildDate:$stamp"; do
             key=${pair%%:*}; value=${pair#*:}

@@ -7,6 +7,7 @@ struct WorkspaceView: View {
     @Environment(DesignModel.self) private var model
     @Environment(ProjectLibrary.self) private var library
     @Environment(SketchStore.self) private var sketches
+    @Environment(CircuitModel.self) private var circuits
     @State private var workspace = WorkspaceState()
     @State private var viewport = ViewportState()
 
@@ -16,19 +17,26 @@ struct WorkspaceView: View {
             Ribbon()
             Divider()
             HStack(spacing: 0) {
+                if workspace.tab == .circuits {
+                    // CIRCUITI: the board and its checks instead of the 3D workspace.
+                    CircuitWorkspace()
+                } else {
                 if workspace.showBrowser {
                     BrowserPanel().frame(width: Theme.Metrics.browserWidth)
                     Divider()
                 }
                 ViewportContainer(viewport: viewport)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if workspace.showInspector {
+                }
+                if workspace.showInspector, workspace.tab != .circuits {
                     Divider()
                     SidePanel().frame(width: Theme.Metrics.inspectorWidth + 60)
                 }
             }
-            Divider()
-            TimelineBar()
+            if workspace.tab != .circuits {
+                Divider()
+                TimelineBar()
+            }
             Divider()
             StatusBar()
         }
@@ -51,7 +59,13 @@ struct WorkspaceView: View {
         .sheet(isPresented: $workspace.showParameters) { ParametersSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showInterference) { InterferenceSheet().environment(workspace) }
         .environment(workspace)
+        // ⌘Z in CIRCUITI undoes the circuit's steps; elsewhere the design's (or the sketch's).
+        .onChange(of: workspace.tab) { old, new in
+            if new == .circuits { model.localUndoTarget = circuits }
+            else if old == .circuits, model.localUndoTarget === circuits { model.localUndoTarget = nil }
+        }
         .onAppear {
+            circuits.report = { [weak model] in model?.statusMessage = $0 }
             workspace.sketchStore = sketches; workspace.model = model
             model.finishPendingEdits = { [weak workspace] in
                 if workspace?.sketch != nil { workspace?.exitSketch() }
