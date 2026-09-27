@@ -690,6 +690,15 @@ struct ViewportContainer: View {
         var out: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] = []
         for sk in sketchStore.sketches where sk.isVisible && sk.id != editing {
             for shape in sk.shapes {
+                if case let .polyline(p, _) = shape.kind, p.count == 1 {
+                    // A sketch point: a cross in its plane, a constant size on screen.
+                    let q = p[0], r = 5 * viewport.mmPerPoint
+                    func w(_ v: Vec2) -> SIMD3<Float> { let x = sk.plane.world(v); return SIMD3(Float(x.x), Float(x.y), Float(x.z) + 0.02) }
+                    let strong = SIMD4<Float>(0.35, 0.69, 1, 0.95)
+                    out.append((w(Vec2(q.x - r, q.y)), w(Vec2(q.x + r, q.y)), strong))
+                    out.append((w(Vec2(q.x, q.y - r)), w(Vec2(q.x, q.y + r)), strong))
+                    continue
+                }
                 let pts = shape.outline.map { sk.plane.world($0) }.map { SIMD3(Float($0.x), Float($0.y), Float($0.z) + 0.02) }
                 guard pts.count >= 2 else { continue }
                 for i in 0..<(shape.isClosed ? pts.count : pts.count - 1) {
