@@ -24,6 +24,7 @@
 		2E9E1A85449505E8EE29A665 /* SketchSession+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */; };
 		2F1583AA3117428454D4F36B /* UndoRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E853D121D28F163F7809FD /* UndoRouter.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
+		304D04CD63C2FE7DF6E093BD /* DrawingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B14495155DD83797A3825D23 /* DrawingWindow.swift */; };
 		31399CA1BDEC34626648EB0E /* CircuitModel+Rules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7E4062145A9A8EA45189EC /* CircuitModel+Rules.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */; };
@@ -189,6 +190,7 @@
 		ADF9849BD6F001008766D793 /* PressPullCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressPullCommand.swift; sourceTree = "<group>"; };
 		B072E2898F0A20B8861C13F8 /* GeoSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoSelection.swift; sourceTree = "<group>"; };
 		B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SketchSession+Constraints.swift"; sourceTree = "<group>"; };
+		B14495155DD83797A3825D23 /* DrawingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingWindow.swift; sourceTree = "<group>"; };
 		B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
 		BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */ = {isa = PBXFileReference; path = CADTakeoffImportProject.manifest; sourceTree = "<group>"; };
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
@@ -272,6 +274,14 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		380715AF1B4BA8FF0C739174 /* Drawing */ = {
+			isa = PBXGroup;
+			children = (
+				B14495155DD83797A3825D23 /* DrawingWindow.swift */,
+			);
+			path = Drawing;
+			sourceTree = "<group>";
+		};
 		39B53D46C97E3206C9264EE3 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -349,6 +359,7 @@
 				F1472CEAADDAA3A83F7D7939 /* Commands */,
 				7FE45933726A07271F041C97 /* Connectors */,
 				5DB1C90B5FC83D575038CE3E /* DesignSystem */,
+				380715AF1B4BA8FF0C739174 /* Drawing */,
 				43EAA6447D566CA8D86F3361 /* Electronics */,
 				7A8C1A0EDA4C545CE9572D01 /* Features */,
 				7C49791EA814007E5DEA23D0 /* Home */,
@@ -775,6 +786,7 @@
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */,
 				F5D93FEA053AC74BB3070910 /* DistanceManipulator.swift in Sources */,
+				304D04CD63C2FE7DF6E093BD /* DrawingWindow.swift in Sources */,
 				3F353536F6FC56921AE033E2 /* ExplodeCommand.swift in Sources */,
 				05EB1442F7FB9DCAABC5FE1B /* FeatureCommands.swift in Sources */,
 				AAA7D793F67B8581E3683698 /* FusionAddInInstaller.swift in Sources */,
@@ -920,7 +932,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.39;
+				MARKETING_VERSION = 1.0.40;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -984,7 +996,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.39;
+				MARKETING_VERSION = 1.0.40;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

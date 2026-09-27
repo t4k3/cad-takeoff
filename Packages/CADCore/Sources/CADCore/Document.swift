@@ -378,6 +378,8 @@ public struct CADDocument: Codable, Sendable, Equatable {
     public var sketchLinks: [SketchLink] = []
     /// User parameters (Fusion's «Parametri»), used by dimension and size expressions.
     public var parameters: [UserParameter] = []
+    /// The technical drawing's own changes (dimensions added, moved, taken off).
+    public var drawing = DrawingAnnotations()
     /// What an import did (e.g. how much of a Fusion design came in editable); not saved.
     public var importReport: String?
 
@@ -451,13 +453,14 @@ public struct CADDocument: Codable, Sendable, Equatable {
 
     // MARK: Coding (v2, with v1 migration)
 
-    private enum CodingKeys: String, CodingKey { case version, timeline, rollback, sketchLinks, features, sketches, parameters }
+    private enum CodingKeys: String, CodingKey { case version, timeline, rollback, sketchLinks, features, sketches, parameters, drawing }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let fileVersion = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
         sketchLinks = try c.decodeIfPresent([SketchLink].self, forKey: .sketchLinks) ?? []
         parameters = try c.decodeIfPresent([UserParameter].self, forKey: .parameters) ?? []
+        drawing = try c.decodeIfPresent(DrawingAnnotations.self, forKey: .drawing) ?? DrawingAnnotations()
         if let tl = try c.decodeIfPresent([TimelineItem].self, forKey: .timeline) {
             timeline = tl
             rollback = try c.decodeIfPresent(Int.self, forKey: .rollback)
@@ -481,6 +484,7 @@ public struct CADDocument: Codable, Sendable, Equatable {
         try c.encodeIfPresent(rollback, forKey: .rollback)
         if !sketchLinks.isEmpty { try c.encode(sketchLinks, forKey: .sketchLinks) }
         if !parameters.isEmpty { try c.encode(parameters, forKey: .parameters) }
+        if !drawing.isEmpty { try c.encode(drawing, forKey: .drawing) }
     }
 
     /// v1 had no global order: each sketch goes right before the first solid made from it.

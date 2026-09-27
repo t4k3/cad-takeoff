@@ -58,6 +58,7 @@ struct WorkspaceView: View {
         .sheet(isPresented: $workspace.showBOM) { BOMSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showParameters) { ParametersSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showInterference) { InterferenceSheet().environment(workspace) }
+        .sheet(isPresented: Binding(get: { model.showDrawing }, set: { model.showDrawing = $0 })) { DrawingWindow() }
         .environment(workspace)
         // ⌘Z in CIRCUITI undoes the circuit's steps; elsewhere the design's (or the sketch's).
         .onChange(of: workspace.tab) { old, new in

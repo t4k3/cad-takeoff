@@ -14,6 +14,11 @@ public struct DrawingSheet: Sendable {
     public var texts: [Text] = []
     /// Filled triangles (arrowheads).
     public var arrows: [[Vec2]] = []
+    /// For editing on screen (not written to PDF/DXF): the orthographic views as placed, the
+    /// points dimensions snap to, and every dimension drawn.
+    public var views: [ViewPlacement] = []
+    public var snapPoints: [SnapPoint] = []
+    public var marks: [DimensionMark] = []
 }
 
 public enum SheetFormat: String, CaseIterable, Sendable {
@@ -45,8 +50,10 @@ public enum TechnicalDrawing {
     /// `section`: the front view is the section A–A through the middle of the part (hatched cut
     /// faces, no hidden lines), with the cutting line in the view from above.
     /// `dimensions`: the sketches' dimensions, each shown in the view that sees it true.
+    /// `annotations`: the user's own dimensions, and automatic ones moved or taken off.
     public static func make(_ bodies: [(mesh: Mesh, snapshot: BodySnapshot)], info: Info, format: SheetFormat = .a4,
-                            section: Bool = false, dimensions: [ModelDimension] = []) throws -> DrawingSheet {
+                            section: Bool = false, dimensions: [ModelDimension] = [],
+                            annotations: DrawingAnnotations = DrawingAnnotations()) throws -> DrawingSheet {
         let model = Model(bodies)
         guard let box = model.bounds else { throw KernelError.invalidParameter("disegno: nessun corpo visibile") }
         let (W, H) = format.size
@@ -111,9 +118,22 @@ public enum TechnicalDrawing {
         let leftAt = place(left, el, at: Vec2(colLeft, rowTop))
         let topAt = place(top, et, at: Vec2(colFront, rowTop - gap - h(et) * scale))
         let isoAt = place(iso, ei, at: isoBelow ? Vec2(colIso, rowTop - gap - h(ei) * scale) : Vec2(colIso, rowTop + (row1 - h(ei)) * scale))
-        for (v, at) in [(front, frontAt), (left, leftAt), (top, topAt), (iso, isoAt)] where !(section && v.look == front.look) {
+        sheet.views = [
+            .init(view: .front, origin: Vec2(colFront, rowTop), extentMin: ef.min, extentMax: ef.max, scale: scale),
+            .init(view: .top, origin: Vec2(colFront, rowTop - gap - h(et) * scale), extentMin: et.min, extentMax: et.max, scale: scale),
+            .init(view: .left, origin: Vec2(colLeft, rowTop), extentMin: el.min, extentMax: el.max, scale: scale),
+        ]
+        var snapKeys = Set<SIMD3<Int64>>()
+        func snap(_ view: DrawingDimension.View, _ p: Vec2, _ at: (Vec2) -> Vec2) {
+            let k = SIMD3(Int64(DrawingDimension.View.allCases.firstIndex(of: view)!), Int64((p.x * 1000).rounded()), Int64((p.y * 1000).rounded()))
+            if snapKeys.insert(k).inserted { sheet.snapPoints.append(.init(view: view, local: p, at: at(p))) }
+        }
+        let ortho: [(View, (Vec2) -> Vec2, DrawingDimension.View?)] = [(front, frontAt, .front), (left, leftAt, .left), (top, topAt, .top), (iso, isoAt, nil)]
+        for (v, at, name) in ortho where !(section && v.look == front.look) {
             for seg in model.edges(for: v, hidden: v.look != iso.look) {
                 sheet.lines.append(.init(a: at(seg.a), b: at(seg.b), style: seg.visible ? .visible : .hidden))
+                // Dimensions snap to the visible edges' ends and middles.
+                if let name, seg.visible { for p in [seg.a, seg.b, (seg.a + seg.b) * 0.5] { snap(name, p, at) } }
             }
         }
         if section {
@@ -132,6 +152,7 @@ public enum TechnicalDrawing {
             let cutModel = Model(cut)
             for seg in cutModel.edges(for: front, hidden: false) where seg.visible {
                 sheet.lines.append(.init(a: frontAt(seg.a), b: frontAt(seg.b), style: .visible))
+                for p in [seg.a, seg.b, (seg.a + seg.b) * 0.5] { snap(.front, p, frontAt) }
             }
             for h in cutModel.hatch(plane: yc, view: front, spacing: 2.5 / scale) {
                 sheet.lines.append(.init(a: frontAt(h.0), b: frontAt(h.1), style: .thin))
@@ -154,16 +175,25 @@ public enum TechnicalDrawing {
             placed.contains { $0.view == 0 && $0.side == side && !$0.prefix.isEmpty
                 && abs((side == .above ? $0.b.x - $0.a.x : $0.b.y - $0.a.y).magnitude - extent) < 1e-6 }
         }
+        // Each automatic dimension has a key: the user may move it (its distance) or take it off.
+        let hidden = Set(annotations.hidden)
+        func auto(_ key: String, from a: Vec2, to b: Vec2, offset: Double, value: Double) {
+            guard !hidden.contains(key) else { return }
+            let moved = annotations.moved[key] ?? 0
+            let o = offset < 0 ? offset - moved : offset + moved
+            dimension(&sheet, from: a, to: b, offset: o.magnitude < 2 ? (offset < 0 ? -2 : 2) : o, value: value, key: key)
+        }
         if !covered(.above, w(ef)) {
-            dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, ef.min.y)), offset: -8, value: size.x)
+            auto("auto/width", from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, ef.min.y)), offset: -8, value: size.x)
         }
         if !covered(.left, h(ef)) {
-            dimension(&sheet, from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.min.x, ef.max.y)), offset: 8, value: size.z)
+            auto("auto/height", from: frontAt(Vec2(ef.min.x, ef.min.y)), to: frontAt(Vec2(ef.min.x, ef.max.y)), offset: 8, value: size.z)
         }
         for (k, z) in levels.enumerated() {
-            dimension(&sheet, from: frontAt(Vec2(ef.max.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, z)), offset: -(8 + 6 * Double(k)), value: z - ef.min.y)
+            auto("auto/level/" + keyNumber(z - ef.min.y), from: frontAt(Vec2(ef.max.x, ef.min.y)), to: frontAt(Vec2(ef.max.x, z)),
+                 offset: -(8 + 6 * Double(k)), value: z - ef.min.y)
         }
-        dimension(&sheet, from: leftAt(Vec2(el.min.x, el.min.y)), to: leftAt(Vec2(el.max.x, el.min.y)), offset: -8, value: size.y)
+        auto("auto/depth", from: leftAt(Vec2(el.min.x, el.min.y)), to: leftAt(Vec2(el.max.x, el.min.y)), offset: -8, value: size.y)
         // The sketches' dimensions, stacked outwards (shorter ones nearer the view).
         let viewAt = [frontAt, topAt, leftAt], viewExtent = [ef, et, el]
         for v in 0..<3 where !(section && v == 0) {
@@ -173,14 +203,16 @@ public enum TechnicalDrawing {
                 let row: [PlacedDimension] = placed.filter { d in d.view == v && d.side == side && !d.isRound }
                     .sorted { d, e in d.span < e.span }
                 for (k, d) in row.enumerated() {
-                    let step = 6 * Double(k)
+                    let key = sketchKey(d)
+                    guard !hidden.contains(key) else { continue }
+                    let step = 6 * Double(k) + (annotations.moved[key] ?? 0)
                     switch side {
-                    case .above: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, 1), level: hi.y + 8 + step, value: d.value, prefix: d.prefix)
-                    case .below: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, -1), level: -(lo.y - 8 - step), value: d.value, prefix: d.prefix)
+                    case .above: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, 1), level: hi.y + 8 + step, value: d.value, prefix: d.prefix, key: key)
+                    case .below: linear(&sheet, at(d.a), at(d.b), along: Vec2(1, 0), side: Vec2(0, -1), level: -(lo.y - 8 - step), value: d.value, prefix: d.prefix, key: key)
                     case .left:
                         let first = v == 0 ? 14.0 : 8.0
-                        linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(-1, 0), level: -(lo.x - first - step), value: d.value, prefix: d.prefix)
-                    case .right: linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(1, 0), level: hi.x + 8 + step, value: d.value, prefix: d.prefix)
+                        linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(-1, 0), level: -(lo.x - first - step), value: d.value, prefix: d.prefix, key: key)
+                    case .right: linear(&sheet, at(d.a), at(d.b), along: Vec2(0, 1), side: Vec2(1, 0), level: hi.x + 8 + step, value: d.value, prefix: d.prefix, key: key)
                     case .aligned: break
                     }
                 }
@@ -189,6 +221,8 @@ public enum TechnicalDrawing {
             let middle = (lo + hi) * 0.5
             for d in placed where d.view == v && d.side == .aligned {
                 let a = at(d.a), b = at(d.b)
+                let key = sketchKey(d)
+                guard !hidden.contains(key) else { continue }
                 if let round = d.round {
                     let centre = at(round.centre), tip = at(round.at)
                     var dir = (tip - centre).normalized
@@ -203,12 +237,29 @@ public enum TechnicalDrawing {
                 let u = (b - a).normalized
                 var n = Vec2(-u.y, u.x)
                 if ((a + b) * 0.5 - middle).dot(n) < 0 { n = n * -1 }
-                linear(&sheet, a, b, along: u, side: n, level: max(a.dot(n), b.dot(n)) + 8, value: d.value, prefix: d.prefix)
+                linear(&sheet, a, b, along: u, side: n, level: max(a.dot(n), b.dot(n)) + 8 + (annotations.moved[key] ?? 0),
+                       value: d.value, prefix: d.prefix, key: key)
             }
+        }
+        // The user's own dimensions, in the view they were taken in.
+        for d in annotations.dimensions {
+            guard let place = sheet.views.first(where: { $0.view == d.view }) else { continue }
+            let a = place.sheet(d.a), b = place.sheet(d.b)
+            let sign = d.offset < 0 ? -1.0 : 1.0, gap = max(abs(d.offset), 2)
+            let along: Vec2, n: Vec2
+            switch d.direction {
+            case .horizontal: along = Vec2(1, 0); n = Vec2(0, sign)
+            case .vertical: along = Vec2(0, 1); n = Vec2(sign, 0)
+            case .aligned:
+                let u = (b - a).length > 1e-9 ? (b - a).normalized : Vec2(1, 0)
+                along = u; n = Vec2(-u.y, u.x) * sign
+            }
+            linear(&sheet, a, b, along: along, side: n, level: max(a.dot(n), b.dot(n)) + gap, value: d.value, key: "manual/" + d.id.uuidString, manual: d.id)
         }
         // Round holes and bosses seen end-on from above: their diameters.
         // Centre lines: a cross on every circle seen end-on in the top view.
         let circles = model.circles(for: top)
+        for c in circles { snap(.top, c.centre, topAt) }
         for c in circles {
             let centre = topAt(c.centre), r = c.radius * scale + 2
             sheet.lines.append(.init(a: centre - Vec2(r, 0), b: centre + Vec2(r, 0), style: .center))
@@ -534,7 +585,7 @@ public enum TechnicalDrawing {
     }
 
     /// Linear dimension between two sheet points, its line `offset` mm to the left of a→b.
-    static func dimension(_ s: inout DrawingSheet, from a: Vec2, to b: Vec2, offset: Double, value: Double) {
+    static func dimension(_ s: inout DrawingSheet, from a: Vec2, to b: Vec2, offset: Double, value: Double, key: String? = nil) {
         let d = (b - a).normalized, n = Vec2(-d.y, d.x) * (offset < 0 ? -1 : 1)
         let o = abs(offset)
         let a1 = a + n * o, b1 = b + n * o
@@ -548,6 +599,7 @@ public enum TechnicalDrawing {
         // Text above its line, as read (ISO 129).
         let up = Vec2(-sin(angle * .pi / 180), cos(angle * .pi / 180))
         s.texts.append(.init(at: (a1 + b1) * 0.5 + up * 1.0, text: number(value), size: 3.5, align: .center, angle: angle))
+        if let key { s.marks.append(.init(key: key, manual: nil, line: (a1, b1), text: (a1 + b1) * 0.5 + up * 2.5, side: n)) }
     }
 
     static func titleBlock(_ s: inout DrawingSheet, x1: Double, y0: Double, width: Double, height: Double, info: Info, scale: String, format: SheetFormat) {

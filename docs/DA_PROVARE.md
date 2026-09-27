@@ -48,6 +48,9 @@ sono le prove a mano, sull'interfaccia.
 - [ ] Un pezzo semplice (schizzo quotato + estrusione + raccordo): «Esporta per CAD Takeoff», aprilo qui. Nella barra di stato: «Da Fusion: N corpi modificabili…». Doppio clic sullo schizzo: quote e vincoli ci sono; cambia un parametro in «Parametri».
 - [ ] Rilancia lo script «Importa progetto in CAD Takeoff» su «025 RobotVolley»: riesporta tutto (i vecchi .ftk senza cronologia non vengono saltati). Mandami import-fusion.txt e i messaggi «non convertiti» dei pezzi che ti servono.
 
+## Tavola a schermo
+- [ ] ⇧⌘P (o CREA/ESPORTA › Tavola): si apre la tavola come verrà stampata. Quota (D): clic su un estremo o metà di uno spigolo (i punti agganciabili si accendono), clic su un secondo punto della stessa vista, poi clic sopra/sotto (quota orizzontale), a lato (verticale) o in mezzo / con ⌥ (allineata). Seleziona: clic su una quota, trascinala per allontanarla o avvicinarla, Canc la toglie (una automatica torna con «Ripristina quote automatiche»). ⌘Z annulla. Esporta… → PDF o DXF con le stesse quote; chiudi e riapri il disegno: le quote restano.
+
 ## Giunti trascinabili
 - [ ] Assieme con un giunto di Rotazione: clic sul pezzo che si muove (selezionato), poi trascinalo: gira attorno all'asse seguendo il mouse (gradi interi, valore nella barra in basso); al rilascio un passo solo di ⌘Z. Scorrimento: scorre lungo l'asse. Cilindrico: gira, con ⌥ premuto scorre. Trascinare altrove (o un pezzo non selezionato) gira la vista come sempre.
 

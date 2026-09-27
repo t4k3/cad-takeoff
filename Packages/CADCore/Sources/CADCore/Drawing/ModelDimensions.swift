@@ -171,7 +171,8 @@ extension TechnicalDrawing {
 
     /// A linear dimension between `a` and `b` along `d`, its line at `level` (coordinate along
     /// the unit side `n`), extension lines from the points.
-    static func linear(_ s: inout DrawingSheet, _ a: Vec2, _ b: Vec2, along d: Vec2, side n: Vec2, level: Double, value: Double, prefix: String = "") {
+    static func linear(_ s: inout DrawingSheet, _ a: Vec2, _ b: Vec2, along d: Vec2, side n: Vec2, level: Double, value: Double, prefix: String = "",
+                       key: String? = nil, manual: UUID? = nil) {
         let a1 = a + n * (level - a.dot(n)), b1 = b + n * (level - b.dot(n))
         for (p, p1) in [(a, a1), (b, b1)] {
             let reach = level - p.dot(n)
@@ -184,5 +185,12 @@ extension TechnicalDrawing {
         if angle > 90 || angle <= -90 { angle += 180 }
         let up = Vec2(-sin(angle * .pi / 180), cos(angle * .pi / 180))
         s.texts.append(.init(at: (a1 + b1) * 0.5 + up * 1.0, text: prefix + number(value), size: 3.5, align: .center, angle: angle))
+        if let key { s.marks.append(.init(key: key, manual: manual, line: (a1, b1), text: (a1 + b1) * 0.5 + up * 2.5, side: n)) }
     }
+
+    /// A stable key for a sketch dimension (its view and measured points), to move or hide it.
+    static func sketchKey(_ d: PlacedDimension) -> String {
+        "sketch/\(d.view)/" + [d.a.x, d.a.y, d.b.x, d.b.y].map(keyNumber).joined(separator: ",")
+    }
+    static func keyNumber(_ v: Double) -> String { String(format: "%.3f", locale: Locale(identifier: "en_US_POSIX"), v) }
 }

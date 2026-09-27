@@ -427,9 +427,9 @@ struct Ribbon: View {
             Button { model.exportSTEPWithPanel() } label: { Label("STEP", systemImage: "shippingbox") }
                 .disabled(model.document.features.isEmpty)
                 .help("Esporta in STEP AP214 (mm): un solido per corpo, con i colori — per fornitori, CNC e altri CAD")
-            Button { model.exportDrawingWithPanel() } label: { Label("Tavola", systemImage: "doc.richtext") }
+            Button { model.showDrawing = true } label: { Label("Tavola", systemImage: "doc.richtext") }
                 .disabled(model.document.features.isEmpty)
-                .help("Tavola tecnica ISO (primo diedro): viste con linee nascoste, isometrica, quote d'ingombro e diametri, cartiglio — PDF o DXF (⇧⌘P)")
+                .help("Tavola tecnica ISO (primo diedro) a schermo: aggiungi, sposta o togli quote, poi PDF o DXF (⇧⌘P)")
         }
     }
 }

@@ -144,8 +144,10 @@ tori esatti, il resto sfaccettato), verificato con OpenCascade. Tavola tecnica v
 primo diedro con linee nascoste, isometrica, quote d'ingombro, diametri e assi, cartiglio; PDF e DXF.
 Vista in sezione A-A con tratteggio. Nello STEP anche le sfere: un box raccordato esce tutto esatto.
 Settimana 4 anticipata in parte: controllo interferenze. Poi le quote messe negli schizzi finiscono
-sulla tavola, nella vista che vede lo schizzo in vero (senza ripetere quelle d'ingombro). Resta:
-spostare o aggiungere a mano quote sulla tavola.
+sulla tavola, nella vista che vede lo schizzo in vero (senza ripetere quelle d'ingombro). Poi la tavola a
+schermo (TAVOLA, ⇧⌘P): quote aggiunte a mano tra due punti di una vista (orizzontali, verticali,
+allineate), quote trascinate più in fuori o più in dentro, quote automatiche tolte e ripristinabili,
+tutto salvato nel disegno e nel PDF/DXF. Settimana 3 completa.
 - **Export STEP AP214** scritto da noi: facce analitiche esatte, sfaccettato come riserva.
 - **Disegni tecnici v1:** tavola A4/A3 ISO, viste ortogonali e isometrica, linee nascoste, quote lineari,
   radiali e di foro, cartiglio, export PDF e DXF.

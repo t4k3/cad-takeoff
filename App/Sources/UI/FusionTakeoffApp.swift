@@ -61,7 +61,8 @@ struct FusionTakeoffApp: App {
                 Button("Esporta STL…") { model.exportSTLWithPanel() }.keyboardShortcut("e")
                 Button("Esporta 3MF (con colori)…") { model.export3MFWithPanel() }.keyboardShortcut("e", modifiers: [.command, .shift])
                 Button("Esporta STEP…") { model.exportSTEPWithPanel() }
-                Button("Tavola tecnica (PDF/DXF)…") { model.exportDrawingWithPanel() }.keyboardShortcut("p", modifiers: [.command, .shift])
+                Button("Tavola tecnica…") { model.showDrawing = true }.keyboardShortcut("p", modifiers: [.command, .shift])
+                    .disabled(model.document.features.isEmpty)
             }
         }
         Settings {

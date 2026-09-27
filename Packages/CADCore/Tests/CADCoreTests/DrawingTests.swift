@@ -161,3 +161,49 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     #expect(texts.contains("10") && texts.contains("30") && !texts.contains("50,0"))
     #expect(texts.contains("1:1") || texts.contains("1:2"))
 }
+
+@Test func dimensionsAddedMovedAndHiddenByHand() throws {
+    // An L block: 60 wide, 20 deep, 30 tall with a 30 × 15 step on top.
+    let base = Feature(name: "Base", kind: .box(width: 60, depth: 20, height: 15))
+    let step = Feature(name: "Gradino", kind: .box(width: 30, depth: 20, height: 15), position: Vec3(-15, 0, 15))
+    let bodies = DesignEvaluator.evaluate(CADDocument(features: [base, step]), revision: "d").bodies.map { (mesh: $0.mesh, snapshot: $0.snapshot) }
+    let info = TechnicalDrawing.Info(title: "Gradino", date: Date(timeIntervalSince1970: 0))
+    let plain = try TechnicalDrawing.make(bodies, info: info)
+    // Views placed, snap points on the visible edges, the automatic dimensions marked by key.
+    #expect(plain.views.map(\.view) == [.front, .top, .left])
+    let front = plain.views[0]
+    let snaps = plain.snapPoints.filter { $0.view == .front }
+    #expect(snaps.contains { ($0.local - Vec2(0, 30)).length < 1e-6 } && snaps.contains { ($0.local - Vec2(30, 15)).length < 1e-6 })
+    #expect(snaps.allSatisfy { ($0.at - front.sheet($0.local)).length < 1e-9 })
+    let keys = Set(plain.marks.map(\.key))
+    #expect(keys.contains("auto/width") && keys.contains("auto/height") && keys.contains("auto/depth"))
+
+    // By hand, in the front view: the step's width (horizontal, 15 mm above) and the diagonal
+    // across it (aligned).
+    let top = snaps.first { ($0.local - Vec2(-30, 30)).length < 1e-6 }?.local ?? Vec2(-30, 30)
+    let stepEnd = Vec2(0, 30), corner = Vec2(0, 15)
+    let width = DrawingDimension(view: .front, a: top, b: stepEnd, direction: .horizontal, offset: 15)
+    let diagonal = DrawingDimension(view: .front, a: top, b: corner, direction: .aligned, offset: 6)
+    #expect(width.value == 30 && abs(diagonal.value - (30 * 30 + 15 * 15).squareRoot()) < 1e-9)
+    var notes = DrawingAnnotations(dimensions: [width, diagonal])
+    let s = try TechnicalDrawing.make(bodies, info: info, annotations: notes)
+    #expect(s.texts.contains { $0.text == "30" } && s.texts.contains { $0.text == "33,54" })
+    let mark = s.marks.first { $0.manual == width.id }!
+    // Its line 15 mm (sheet) above the higher point, across the two points.
+    #expect(abs(mark.line.0.y - (front.sheet(top).y + 15)) < 1e-9 && abs(mark.line.0.x - front.sheet(top).x) < 1e-9)
+    #expect(mark.side == Vec2(0, 1) && mark.distance(to: mark.text) < 1e-9)
+    // An automatic one moved 10 mm further out, another taken off.
+    notes.moved["auto/width"] = 10
+    notes.hidden = ["auto/depth"]
+    let t = try TechnicalDrawing.make(bodies, info: info, annotations: notes)
+    let before = plain.marks.first { $0.key == "auto/width" }!, after = t.marks.first { $0.key == "auto/width" }!
+    #expect(abs((after.line.0 - before.line.0).dot(before.side) - 10) < 1e-9)
+    #expect(!t.marks.contains { $0.key == "auto/depth" } && !t.texts.contains { $0.text == "20" && $0.angle == 0 && false })
+    #expect(onSheet(t))
+    // Saved with the design.
+    var doc = CADDocument(features: [base, step])
+    doc.drawing = notes
+    let back = try CADDocument.decode(doc.encoded())
+    #expect(back.drawing == notes)
+    #expect(try CADDocument.decode(CADDocument(features: [base]).encoded()).drawing.isEmpty)
+}
