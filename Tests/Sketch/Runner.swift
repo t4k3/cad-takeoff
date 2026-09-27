@@ -70,6 +70,29 @@ struct SketchTests {
         face.hover(at(30.4, 0.3), screen: nil)
         check(face.snapped?.kind == .midpoint && near(face.cursor, 30, 0), "punto medio del bordo intero della faccia")
 
+        // A hole's rim split in two half circles (as the booleans leave it), and a rounded corner:
+        // no snapping onto their chord points; the middle of the arc and the centres snap.
+        let round = SketchSession(sketch: Sketch(name: "Fori"))
+        round.vertexSnap = 1
+        func arc(_ c: Vec2, _ r: Double, _ from: Double, _ to: Double) -> [Vec2] {
+            (0...32).map { k in let t = from + (to - from) * Double(k) / 32; return c + Vec2(cos(t), sin(t)) * r }
+        }
+        round.references = [arc(Vec2(0, 0), 10, 0, .pi), arc(Vec2(0, 0), 10, .pi, 2 * .pi), arc(Vec2(50, 0), 8, 0, .pi / 2)]
+        round.tool = .line
+        let chord = Vec2(cos(.pi * 3 / 32), sin(.pi * 3 / 32)) * 10
+        round.hover(at(chord.x + 0.05, chord.y + 0.05), screen: nil)
+        check(round.snapped?.kind != .vertex, "niente aggancio sui punti delle corde di un foro")
+        round.hover(at(0.3, -0.4), screen: nil)
+        check(round.snapped?.kind == .center && near(round.cursor, 0, 0), "centro del foro diviso in due metà")
+        let middle = Vec2(50, 0) + Vec2(cos(.pi / 4), sin(.pi / 4)) * 8
+        round.hover(at(middle.x + 0.3, middle.y + 0.2), screen: nil)
+        check(round.snapped?.kind == .midpoint && near(round.cursor, middle.x, middle.y), "metà dell'arco del raccordo")
+        round.hover(at(50.2, 0.9), screen: nil)
+        check(round.snapped?.kind == .center && near(round.cursor, 50, 0), "centro del raccordo")
+        // With the cursor on an edge a little off its middle, the midpoint wins over sliding along it.
+        face.hover(at(31.2, 0), screen: nil)
+        check(face.snapped?.kind == .midpoint, "il punto medio si prende anche stando sulla linea")
+
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
         print("OK: schizzo — agganci e fine linea")
     }

@@ -449,13 +449,53 @@ final class SketchSession {
                 for i in 0..<(s.isClosed ? o.count : o.count - 1) { out.append((o[i], o[(i + 1) % o.count])) }
             }
         }
-        for line in references {
-            guard line.count >= 2 else { continue }
-            let closed = dist(line.first!, line.last!) < 1e-6
-            if closed, line.count > 8 { continue }   // circle rims: centre snap only
-            for (a, b) in zip(line, line.dropFirst()) { out.append((a, b)) }
-        }
+        // Straight part edges only (curved ones are chains of short chords: their own snaps below).
+        for line in references where line.count == 2 { out.append((line[0], line[1])) }
         return out
+    }
+
+    /// Snaps of the part's edges on the sketch plane: a straight edge's ends (its midpoint comes
+    /// with the segments); a round one's ends, the middle of its length and its centre; a whole
+    /// circle's centre and quarter points. Never the points of the chords a curve is drawn with.
+    private var referenceSnaps: [SnapPoint] {
+        if let c = referenceSnapCache, c.lines == references { return c.points }
+        var out: [SnapPoint] = []
+        for line in references {
+            guard let a = line.first, let b = line.last else { continue }
+            let closed = line.count > 3 && dist(a, b) < 1e-6
+            let pts = closed ? Array(line.dropLast()) : line
+            if closed {
+                let c = Vec2(pts.map(\.x).reduce(0, +) / Double(pts.count), pts.map(\.y).reduce(0, +) / Double(pts.count))
+                out.append(.init(point: c, kind: .center))
+                out += stride(from: 0, to: pts.count, by: max(1, pts.count / 4)).map { .init(point: pts[$0], kind: .vertex) }
+                continue
+            }
+            out += [.init(point: a, kind: .vertex), .init(point: b, kind: .vertex)]
+            guard pts.count > 2 else { continue }
+            // Middle of the length.
+            let lengths = zip(pts, pts.dropFirst()).map { dist($0, $1) }
+            var half = lengths.reduce(0, +) / 2
+            for (k, l) in lengths.enumerated() {
+                if half <= l, l > 0 { out.append(.init(point: pts[k] + (pts[k + 1] - pts[k]) * (half / l), kind: .midpoint)); break }
+                half -= l
+            }
+            // An arc: the circle through its ends and middle point, if all its points lie on it.
+            let m = pts[pts.count / 2]
+            if let c = Self.circumcentre(a, m, b) {
+                let r = dist(c, a)
+                if r < 1e6, pts.allSatisfy({ abs(dist($0, c) - r) < max(1e-3 * r, 1e-6) }) { out.append(.init(point: c, kind: .center)) }
+            }
+        }
+        referenceSnapCache = (references, out)
+        return out
+    }
+    @ObservationIgnored private var referenceSnapCache: (lines: [[Vec2]], points: [SnapPoint])?
+
+    static func circumcentre(_ a: Vec2, _ b: Vec2, _ c: Vec2) -> Vec2? {
+        let d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))
+        guard abs(d) > 1e-12 else { return nil }
+        let a2 = a.dot(a), b2 = b.dot(b), c2 = c.dot(c)
+        return Vec2((a2 * (b.y - c.y) + b2 * (c.y - a.y) + c2 * (a.y - b.y)) / d, (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d)
     }
 
     private var snapPoints: [SnapPoint] {
@@ -486,18 +526,7 @@ final class SketchSession {
         out += segments.map { .init(point: mid($0.0, $0.1), kind: .midpoint) }
         out += intersections.map { .init(point: $0, kind: .intersection) }
         out += pending.map { .init(point: $0, kind: .vertex) }
-        for line in references {
-            guard let a = line.first, let b = line.last else { continue }
-            let closed = dist(a, b) < 1e-6
-            let pts = closed ? Array(line.dropLast()) : line
-            if closed, pts.count > 8 {
-                let c = Vec2(pts.map(\.x).reduce(0, +) / Double(pts.count), pts.map(\.y).reduce(0, +) / Double(pts.count))
-                out.append(.init(point: c, kind: .center))
-                out += stride(from: 0, to: pts.count, by: max(1, pts.count / 4)).map { .init(point: pts[$0], kind: .vertex) }
-            } else {
-                out += pts.map { .init(point: $0, kind: .vertex) }
-            }
-        }
+        out += referenceSnaps
         return out
     }
 
@@ -559,8 +588,10 @@ final class SketchSession {
         func rank(_ k: SnapKind) -> Double {
             switch k { case .vertex: 0; case .intersection: 0.5e-9; case .midpoint: 1e-9; case .center: 2e-9; case .onCurve: 3e-9 }
         }
+        // Points catch from a little farther than lines do, so a midpoint or a centre is easy to
+        // take even with the cursor on the line.
         if let best = snapPoints.min(by: { dist($0.point, p) + rank($0.kind) < dist($1.point, p) + rank($1.kind) }),
-           dist(best.point, p) < vertexSnap {
+           dist(best.point, p) < vertexSnap * 1.4 {
             snapped = best
             return best.point
         }
