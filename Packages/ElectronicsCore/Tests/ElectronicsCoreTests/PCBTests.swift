@@ -38,7 +38,7 @@ final class PCBTests: XCTestCase {
         try apply(command,&d)
         XCTAssertEqual(d.design,preview.design); XCTAssertEqual(d.past.count,1)
         d = try ElectronicsDocument.decode(d.encoded())
-        XCTAssertEqual(d.formatVersion,4)
+        XCTAssertEqual(d.formatVersion,5)
         try apply(.pcb(.removeTrack(id(30))),&d)
         XCTAssertEqual(try ElectronicsConnectivity.snapshot(d.design).airwires.count,2)
         try d.undo(expectedRevision:d.revision)
@@ -171,12 +171,12 @@ final class PCBTests: XCTestCase {
     func testMigrationFromOldFormatsAndUnsupportedFuturePreservesHistory() throws {
         let d = try fixture()
         var json = try XCTUnwrap(JSONSerialization.jsonObject(with:d.encoded()) as? [String:Any])
-        for version in 1...3 {
+        for version in 1...4 {
             json["formatVersion"] = version
             let old = try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject:json))
-            XCTAssertEqual(old.formatVersion,4); XCTAssertEqual(old.design,d.design)
+            XCTAssertEqual(old.formatVersion,5); XCTAssertEqual(old.design,d.design)
         }
-        json["formatVersion"] = 5
+        json["formatVersion"] = 6
         assertFailure("unsupported_version") { _ = try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject:json)) }
     }
     func testSchematicWireDeletionRetainsCopperNetAndReportsDisconnectedPads() throws {

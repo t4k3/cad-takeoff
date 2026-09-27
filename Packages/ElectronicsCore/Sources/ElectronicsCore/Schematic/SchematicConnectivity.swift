@@ -135,6 +135,10 @@ public enum ElectronicsSchematic {
         for label in labels { groupLabels[root(label.terminal), default: []].append(label) }
         let oldMapping = Dictionary(uniqueKeysWithValues: schematic.wireNets.map { ($0.wireID, $0.netID) })
         let oldGenerated = Set(schematic.generatedNetIDs)
+        var classesByNet: [UUID: Set<UUID>] = [:]
+        for c in design.board.copper?.netClasses ?? [] {
+            for net in c.netIDs { classesByNet[net, default: []].insert(c.id) }
+        }
         var connections = Dictionary(uniqueKeysWithValues: schematic.directConnections.map { ($0.pin, $0) })
         var mapping: [SchematicWireNet] = [], generated: Set<UUID> = [], used: Set<UUID> = []
         // Groups with labels/direct bindings go first, so their explicitly chosen IDs win.
@@ -174,6 +178,19 @@ public enum ElectronicsSchematic {
                     design.nets.append(.init(id: id, name: "N\(i)"))
                 }
             }
+            // Splitting a generated net must not silently relax its PCB constraints.
+            // Merging differently classified nets requires an explicit reassignment first.
+            let inheritedClasses = Set((members.compactMap { oldMapping[$0.id] } + [netID])
+                .flatMap { classesByNet[$0] ?? [] })
+            guard inheritedClasses.count <= 1 else {
+                throw error("schematic_net_class_conflict", "Il filo unisce reti con classi diverse: assegnare esplicitamente una classe comune prima di unirle.",
+                            inheritedClasses.sorted { $0.uuidString < $1.uuidString } + [netID])
+            }
+            if let classID = inheritedClasses.first,
+               let i = design.board.copper?.netClasses.firstIndex(where: { $0.id == classID }),
+               design.board.copper!.netClasses[i].netIDs.contains(netID) == false {
+                design.board.copper!.netClasses[i].netIDs.append(netID)
+            }
             if oldGenerated.contains(netID) { generated.insert(netID) }
             used.insert(netID)
             mapping += members.map { .init(wireID: $0.id, netID: netID) }
@@ -185,7 +202,8 @@ public enum ElectronicsSchematic {
                 connections[pin] = .init(pin: pin, netID: netID)
             }
         }
-        let explicitlyUsed = Set(schematic.directConnections.compactMap(\.netID) + labels.map(\.netID) + schematic.namedNetIDs).union(design.board.copper?.netIDs ?? [])
+        let explicitlyUsed = Set(schematic.directConnections.compactMap(\.netID) + labels.map(\.netID) + schematic.namedNetIDs)
+            .union(design.board.copper?.netIDs ?? []).union(design.board.copper?.classifiedNetIDs ?? [])
         design.nets.removeAll { oldGenerated.contains($0.id) && !used.contains($0.id) && !explicitlyUsed.contains($0.id) }
         generated.formUnion(oldGenerated.intersection(explicitlyUsed))
         schematic.generatedNetIDs = generated.sorted { $0.uuidString < $1.uuidString }
@@ -200,7 +218,7 @@ public enum ElectronicsSchematic {
             try requireStructure(design, schema)
             var rebuilt = design; try reconcile(&rebuilt)
             guard rebuilt.connections == design.connections, rebuilt.nets == design.nets,
-                  rebuilt.schematic == schema else {
+                  rebuilt.schematic == schema, rebuilt.board.copper == design.board.copper else {
                 throw error("stale_schematic_connectivity", "Le connessioni salvate non corrispondono allo schema: ricostruire tramite i comandi del motore.", [])
             }
             return []

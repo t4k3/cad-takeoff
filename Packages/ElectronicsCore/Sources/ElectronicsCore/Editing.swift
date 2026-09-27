@@ -191,6 +191,9 @@ public enum ElectronicsCommands {
                 }
                 let index = try netIndex(id, in: design)
                 design.nets.remove(at: index)
+                if design.board.copper != nil {
+                    for i in design.board.copper!.netClasses.indices { design.board.copper!.netClasses[i].netIDs.removeAll { $0 == id } }
+                }
                 design.schematic?.namedNetIDs.removeAll { $0 == id }
                 design.directConnections.removeAll { $0.netID == id }
                 if design.schematic?.sheets.contains(where: { $0.labels.contains { $0.netID == id } }) == true ||

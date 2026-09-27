@@ -45,10 +45,25 @@ public struct PCBCopper: Codable, Equatable, Sendable {
     public var rules: PCBDesignRules
     public var tracks: [PCBTrack]
     public var vias: [PCBVia]
-    public init(layerCount: Int = 2, rules: PCBDesignRules = .init(), tracks: [PCBTrack] = [], vias: [PCBVia] = []) {
+    public var netClasses: [PCBNetClass]
+    public var keepouts: [PCBKeepout]
+    public init(layerCount: Int = 2, rules: PCBDesignRules = .init(), tracks: [PCBTrack] = [], vias: [PCBVia] = [],
+                netClasses: [PCBNetClass] = [], keepouts: [PCBKeepout] = []) {
         self.layerCount = layerCount; self.rules = rules; self.tracks = tracks; self.vias = vias
+        self.netClasses = netClasses; self.keepouts = keepouts
     }
     public var netIDs: Set<UUID> { Set(tracks.map(\.netID) + vias.map(\.netID)) }
+    public var classifiedNetIDs: Set<UUID> { Set(netClasses.flatMap(\.netIDs)) }
+    private enum CodingKeys: String, CodingKey { case layerCount, rules, tracks, vias, netClasses, keepouts }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        layerCount = try c.decode(Int.self, forKey: .layerCount)
+        rules = try c.decode(PCBDesignRules.self, forKey: .rules)
+        tracks = try c.decode([PCBTrack].self, forKey: .tracks)
+        vias = try c.decode([PCBVia].self, forKey: .vias)
+        netClasses = try c.decodeIfPresent([PCBNetClass].self, forKey: .netClasses) ?? []
+        keepouts = try c.decodeIfPresent([PCBKeepout].self, forKey: .keepouts) ?? []
+    }
 }
 
 public enum PCBItem: Codable, Hashable, Sendable {
@@ -81,12 +96,20 @@ public indirect enum PCBCommand: Codable, Equatable, Sendable {
     case addTrack(PCBTrack), updateTrack(PCBTrack), removeTrack(UUID)
     case addVia(PCBVia), updateVia(PCBVia), removeVia(UUID)
     case configure(layerCount: Int, rules: PCBDesignRules)
+    case addNetClass(PCBNetClass), updateNetClass(PCBNetClass), removeNetClass(UUID)
+    case assignNetClass(netIDs: [UUID], classID: UUID?)
+    case addKeepout(PCBKeepout), updateKeepout(PCBKeepout), removeKeepout(UUID)
+    case moveKeepout(id: UUID, offset: PCBPoint)
     case batch([PCBCommand])
     public var title: String {
         switch self {
         case .addTrack: "Traccia pista"; case .updateTrack: "Modifica pista"; case .removeTrack: "Elimina pista"
         case .addVia: "Inserisci via"; case .updateVia: "Modifica via"; case .removeVia: "Elimina via"
         case .configure: "Regole del PCB"; case .batch: "Modifica rame"
+        case .addNetClass: "Crea classe di rete"; case .updateNetClass: "Modifica classe di rete"
+        case .removeNetClass: "Elimina classe di rete"; case .assignNetClass: "Assegna classe di rete"
+        case .addKeepout: "Crea area vietata"; case .updateKeepout: "Modifica area vietata"
+        case .removeKeepout: "Elimina area vietata"; case .moveKeepout: "Sposta area vietata"
         }
     }
 }

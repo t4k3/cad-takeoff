@@ -20,7 +20,7 @@ Codex possiede il core elettronico, i formati, i controlli e il contratto funzio
 | `DeviceDefinition` | Simbolo e impronta in revisioni esatte, mappatura esplicita pin→piazzole, produttore/MPN e identificativo JLC opzionale. |
 | `ElectronicsLibrary` | Snapshot incluso nel documento: riaprire non dipende da cataloghi online aggiornati. |
 | `ElectronicsDesign` | Componenti, reti, collegamenti/NC espliciti, contorno scheda, posizionamenti e varianti di montaggio. |
-| `ElectronicsDocument` | Scrittura formato 4, lettura 1/2/3/4; schema e rame opzionali, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
+| `ElectronicsDocument` | Scrittura formato 5, lettura 1/2/3/4/5; schema e rame opzionali, classi di rete e aree vietate, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
 | `ElectronicsValidation.integrity` | Identità duplicate, riferimenti/revisioni mancanti, pin-map, contorno semplice, quote/angoli finiti, piazzole e fori coerenti. |
 | `ElectronicsValidation.electrical` | Prime verifiche: pin senza connessione/NC, pin NC collegati, uscite multiple sulla rete. Non è ERC completo. |
 | `ElectronicsConnectivity.snapshot` | Piazzole in coordinate PCB con rete associata; collegamenti ancora da sbrogliare fra isole fisiche, deterministici tramite albero minimo; piste/via provengono dai comandi PCB. |

@@ -16,7 +16,7 @@ def close(a, b):
     return math.dist(a, b) < 1e-9
 
 doc = read('routed.ftkc')
-assert doc['formatVersion'] == 4
+assert doc['formatVersion'] == 5
 for name in ('routed.ftkc', 'without-via.ftkc', 'undo.ftkc', 'redo.ftkc'):
     f = read(name)
     assert f['past'][-1]['after'] == f['design']
@@ -77,3 +77,74 @@ assert bad['layer'] == tracks[0]['layer'] and bad['netID'] != tracks[0]['netID']
 assert any(i['code'] == 'pcb_short' and bad['id'] in i['subjectIDs'] for i in read('collision-issues.json'))
 assert bad['id'] not in {t['id'] for t in copper['tracks']}
 print('PASS independent PCB reader: pad transforms, layer continuity, via drill/ring, short geometry, atomic history.')
+
+# Second fixture: independently check design constraints and polygon exclusion.
+rules_doc = read('rules.ftkc')
+assert rules_doc['formatVersion'] == 5
+rules_copper = rules_doc['design']['board']['copper']
+classes = rules_copper['netClasses']
+assert len(classes) == 1 and classes[0]['name'] == 'Potenza'
+power = classes[0]
+area = rules_copper['keepouts'][0]
+assert area['layers'] == [0] and all(area[k] for k in ('tracks','vias','pads'))
+assert {point(p) for p in area['outline']} == {(18,8),(22,8),(22,12),(18,12)}
+resolved = read('rules-resolved.json')[0]
+assert resolved['classID'] == power['id']
+assert resolved['rules']['minimumTrackWidth'] == 0.6
+assert resolved['routing']['trackWidth'] == 0.6
+assert resolved['routing']['viaDrill'] == 0.4
+assert math.isclose(resolved['routing']['viaDiameter'], 0.8)
+assert len(rules_copper['tracks']) == 3
+assert not any(i['severity'] == 'error' for i in read('rules-snapshot.json')['issues'])
+assert read('rules-snapshot.json')['keepouts'] == [area]
+
+def projected_distance(p, a, b):
+    vx,vy = b[0]-a[0],b[1]-a[1]
+    if vx == vy == 0: return math.dist(p,a)
+    t = min(1,max(0,((p[0]-a[0])*vx+(p[1]-a[1])*vy)/(vx*vx+vy*vy)))
+    return math.dist(p,(a[0]+t*vx,a[1]+t*vy))
+
+def rectangle_distance(a, b):
+    # Independent analytic test for this orthogonal fixture, not the Swift DRC.
+    if a[1] == b[1]:
+        dx = max(18-max(a[0],b[0]),min(a[0],b[0])-22,0)
+        dy = max(8-a[1],a[1]-12,0)
+    else:
+        assert a[0] == b[0]
+        dx = max(18-a[0],a[0]-22,0)
+        dy = max(8-max(a[1],b[1]),min(a[1],b[1])-12,0)
+    return math.hypot(dx,dy)
+
+for t in rules_copper['tracks']:
+    if t['netID'] in power['netIDs']: assert t['width'] >= power['constraints']['minimumTrackWidth']
+    if t['layer'] in area['layers']:
+        vertices = list(map(point,t['points']))
+        assert all(rectangle_distance(a,b) > t['width']/2 for a,b in zip(vertices,vertices[1:]))
+bottom = next(t for t in rules_copper['tracks'] if t['layer'] == 1)
+assert rectangle_distance(*map(point,bottom['points'])) == 0  # allowed only because of layer
+
+for name,code in [('clearance','pcb_clearance'),('width','pcb_track_width'),('keepout','pcb_keepout'),('via','pcb_keepout')]:
+    preview = read(f'rule-preview-{name}.json')
+    assert preview['canApply'] is False
+    assert any(i['code'] == code for i in preview['issues'])
+    pc = preview['design']['board']['copper']
+    if name == 'clearance':
+        t = pc['tracks'][-1]
+        gap = projected_distance(point(t['points'][0]),*map(point,pc['tracks'][0]['points'])) - (t['width']+pc['tracks'][0]['width'])/2
+        assert gap > rules_copper['rules']['clearance'] and gap < power['constraints']['clearance']
+    elif name == 'width':
+        assert pc['tracks'][-1]['width'] < power['constraints']['minimumTrackWidth']
+    elif name == 'keepout':
+        assert rectangle_distance(*map(point,pc['tracks'][-1]['points'])) == 0
+    else:
+        assert point(pc['vias'][-1]['position']) == (20,10)
+    invalid_id = (pc['vias'][-1] if name == 'via' else pc['tracks'][-1])['id']
+    assert invalid_id not in {t['id'] for t in rules_copper['tracks']+rules_copper['vias']}
+for name in ('rules.ftkc','rules-undo.ftkc','rules-redo.ftkc'):
+    item = read(name)
+    assert all(a['after'] == b['before'] for a,b in zip(item['past'],item['past'][1:]))
+    assert item['past'][-1]['after'] == item['design']
+    if item['future']: assert item['future'][-1]['before'] == item['design']
+assert len(read('rules-undo.ftkc')['design']['board']['copper']['tracks']) == 1
+assert read('rules-redo.ftkc')['design'] == rules_doc['design']
+print('PASS independent PCB rules reader: class dimensions, stricter pair clearance, keepout geometry, layers, rejected edits and persistent history.')

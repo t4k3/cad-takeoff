@@ -1816,7 +1816,7 @@
       "id": "T94",
       "title": "Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T91",
         "T102"
@@ -1828,8 +1828,8 @@
         "scripts/test-electronics.sh"
       ],
       "suggested": "codex",
-      "owner": null,
-      "started": "2026-09-27 12:28",
+      "owner": "codex",
+      "started": "2026-09-27 12:59",
       "notes": [
         "2026-09-27 12:56 codex: Primo traguardo completato: motore9744636 e UIClaude9e8e987. Piste, via passanti, strati, DRC iniziale, connettivita fisica, pick/snap, preview/undo e formato4;88test elettronici+4lettori indipendenti+174CAD e CI16/16 PASS. Collaudo reale percorso multistrato, corto rifiutato, annulla/ripeti e salva/riapri PASS (VALIDATION.md). Restano aperti archi, keepout, classi di rete, stackup dielettrico, pour/termiche, shove e DRC produttivo completo; E3 intero non concluso."
       ]

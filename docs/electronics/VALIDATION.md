@@ -1,5 +1,30 @@
 # Elettronica — prove del motore e dell’app
 
+## 27/09/2026 — T94: classi di rete e aree vietate
+
+- Suite elettronica: **106 test Swift PASS**, 18 nuovi sulle regole; quattro lettori
+  Python indipendenti PASS. Processo `bash scripts/test-electronics.sh` exit 0,
+  artefatti `build/electronics/run.7d8g5T/`.
+- Test: minimi globali non aggirabili, preferenze risolte, DRC su larghezza/fori/anello,
+  clearance più severa fra reti anche nell'indice spaziale; assegnazioni esclusive,
+  classe ereditata su split e merge di classi diverse rifiutato; keepout concavo,
+  tangenza/larghezza, strati e tipi, pad ruotati e sul fondo, esclusione del foro vuoto;
+  comandi atomici, ID, snapshot immutabile, pick/snap, formato4→5 e storico completo.
+- La CLI `electronics-pcb` produce `rules.ftkc`, preview rifiutate, snapshot, valori
+  risolti, undo/redo. Il lettore Python ricalcola larghezze, distanza di due tracce,
+  distanza dal rettangolo e filtro degli strati senza chiamare il DRC Swift; verifica
+  anche che i quattro tentativi rifiutati non siano nel documento e la catena storica.
+- CADCore: **177 test PASS**, exit 0. Comprende il lavoro lamiera contemporaneo di
+  Claude, letto e testato senza modificare i suoi sorgenti.
+- Release: `build/electronics/pcb-rules-release-20260927-1309/`: 2.000 aree,
+  snapshot 1,31 ms; query combinate pick+snap p95 0,0047 ms. Corpus sintetico di
+  rettangoli distribuiti, non garanzia su ogni progetto. Snapshot/preview restano
+  cancellabili in background; la risoluzione completa delle regole non va fatta a ogni hover.
+
+Integrazione UI T97 in corso, da registrare dopo prova nell'app. Contratto e limiti in
+[PCB_RULES.md](PCB_RULES.md): nessun piano di rame, Gerber, collaudo del produttore o
+scheda fisica. Le prove PCB precedenti sotto restano riferite alle rispettive build.
+
 ## 27/09/2026 — T94: motore del rame e DRC iniziale
 
 - `bash scripts/test-electronics.sh`: **88 test Swift PASS**, 17 nuovi test PCB;

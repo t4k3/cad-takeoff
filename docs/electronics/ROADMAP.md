@@ -59,3 +59,16 @@ T102 registra la base schema già collaudata e sblocca T94/T100; T93 avanzato re
 T97 integra strumenti e disegno PCB nell’app; la prova a schermo resta distinta dal motore.
 T94 resta aperto per archi, keepout, net class, stackup dielettrico, pour/termiche,
 shove e controlli produttivi completi. Nessun Gerber o rilascio di fabbricazione implicito.
+
+
+## Secondo traguardo T94 — classi e aree vietate, 27/09/2026
+
+Motore implementato: classi esplicite con minimi e preferenze di routing separati,
+risoluzione sopra i minimi della scheda, distanza più severa fra due reti; aree vietate
+per strato/tipo con contorno concavo, primitive e pick/snap indicizzati. Regole modificabili
+senza alterare il rame esistente, nuovi tratti non conformi rifiutati. Documento v5 con
+lettura 1–5 e storico; classi conservate dopo separazione delle reti automatiche.
+106 test motore, quattro lettori indipendenti e 177 CAD PASS. Contratto [PCB_RULES.md](PCB_RULES.md).
+Claude integra T97; il collaudo visivo è registrato separatamente in VALIDATION.md.
+Restano T94 avanzato (archi, stackup dielettrico, pour/termiche, shove, DRC completo)
+e T95 per fabbricazione. Nessuna qualificazione produttiva.

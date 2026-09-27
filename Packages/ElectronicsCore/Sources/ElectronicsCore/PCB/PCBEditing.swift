@@ -14,7 +14,7 @@ public enum ElectronicsPCB {
         if ![rules.clearance,rules.edgeClearance,rules.minimumTrackWidth,rules.minimumDrill,rules.minimumAnnularRing].allSatisfy({ ElectronicsGeometry.valid($0) && $0 > 0 }) {
             add("invalid_pcb_rules", "Distanze, larghezze e forature minime devono essere positive e finite.")
         }
-        let ids = copper.tracks.map(\.id)+copper.vias.map(\.id)
+        let ids = copper.tracks.map(\.id)+copper.vias.map(\.id)+copper.netClasses.map(\.id)+copper.keepouts.map(\.id)
         let foreign = Set(design.components.map(\.id)+design.nets.map(\.id)+design.library.footprints.flatMap { $0.pads.map(\.id) })
         if Set(ids).count != ids.count || !Set(ids).isDisjoint(with:foreign) { add("duplicate_copper_identity", "Identità del rame duplicate o condivise con altri oggetti.") }
         let nets = Set(design.nets.map(\.id))
@@ -32,6 +32,7 @@ public enum ElectronicsPCB {
                 add("invalid_via", "Via con posizione o anello anulare non valido.", [v.id])
             }
         }
+        issues += ruleIntegrity(copper, nets: nets)
         return issues
     }
     static func mutate(_ command: PCBCommand, design: inout ElectronicsDesign, depth: Int = 0, count: inout Int) throws {
@@ -64,10 +65,41 @@ public enum ElectronicsPCB {
             copper.vias.removeAll { $0.id == id }
         case let .configure(layers,rules):
             // Existing copper must retain its physical layer; bottom pads would move too.
-            if layers != copper.layerCount && (!copper.tracks.isEmpty || !copper.vias.isEmpty) {
-                throw failure("occupied_stackup", "Rimuovere il rame prima di cambiare il numero di strati.")
+            if layers != copper.layerCount && (!copper.tracks.isEmpty || !copper.vias.isEmpty || !copper.keepouts.isEmpty) {
+                throw failure("occupied_stackup", "Rimuovere il rame e le aree vietate prima di cambiare il numero di strati.")
             }
             copper.layerCount = layers; copper.rules = rules
+        case .addNetClass(let n):
+            guard !copper.netClasses.contains(where: { $0.id == n.id }) else { throw failure("net_class_exists", "Classe già presente.", [n.id]) }
+            copper.netClasses.append(n)
+        case .updateNetClass(let n):
+            guard let i = copper.netClasses.firstIndex(where: { $0.id == n.id }) else { throw failure("net_class_missing", "Classe inesistente.", [n.id]) }
+            copper.netClasses[i] = n
+        case .removeNetClass(let id):
+            guard copper.netClasses.contains(where: { $0.id == id }) else { throw failure("net_class_missing", "Classe inesistente.", [id]) }
+            copper.netClasses.removeAll { $0.id == id }
+        case let .assignNetClass(netIDs, classID):
+            guard Set(netIDs).count == netIDs.count, Set(netIDs).isSubset(of: Set(design.nets.map(\.id))) else {
+                throw failure("invalid_class_assignment", "Scegliere reti esistenti, senza duplicati.", netIDs)
+            }
+            if let classID, !copper.netClasses.contains(where: { $0.id == classID }) { throw failure("net_class_missing", "Classe inesistente.", [classID]) }
+            for i in copper.netClasses.indices {
+                copper.netClasses[i].netIDs.removeAll { netIDs.contains($0) }
+                if copper.netClasses[i].id == classID { copper.netClasses[i].netIDs += netIDs.sorted { $0.uuidString < $1.uuidString } }
+            }
+        case .addKeepout(let k):
+            guard !copper.keepouts.contains(where: { $0.id == k.id }) else { throw failure("keepout_exists", "Area vietata già presente.", [k.id]) }
+            copper.keepouts.append(k)
+        case .updateKeepout(let k):
+            guard let i = copper.keepouts.firstIndex(where: { $0.id == k.id }) else { throw failure("keepout_missing", "Area vietata inesistente.", [k.id]) }
+            copper.keepouts[i] = k
+        case .removeKeepout(let id):
+            guard copper.keepouts.contains(where: { $0.id == id }) else { throw failure("keepout_missing", "Area vietata inesistente.", [id]) }
+            copper.keepouts.removeAll { $0.id == id }
+        case let .moveKeepout(id, offset):
+            guard let i = copper.keepouts.firstIndex(where: { $0.id == id }) else { throw failure("keepout_missing", "Area vietata inesistente.", [id]) }
+            guard ElectronicsGeometry.valid(offset) else { throw failure("invalid_keepout", "Spostamento non valido.", [id]) }
+            copper.keepouts[i].outline = copper.keepouts[i].outline.map { .init($0.x+offset.x, $0.y+offset.y) }
         case .batch: break
         }
         design.board.copper = copper

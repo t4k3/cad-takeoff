@@ -2,6 +2,8 @@
 
 Stato: primo traguardo del motore collaudato automaticamente (88 test totali e quattro lettori indipendenti). Integrazione T97 di Claude e collaudo UI reale completati per piste, via, corto rifiutato e storico: [VALIDATION.md](VALIDATION.md). Il motore non dipende da librerie esterne.
 
+Secondo traguardo (106 test motore e lettore indipendente PASS; integrazione UI in corso): [classi di rete e aree vietate](PCB_RULES.md).
+
 ## Dati e transazioni
 
 - `PCBBoard.copper: PCBCopper?`: assente nei vecchi documenti; equivale a due strati senza piste.
@@ -15,7 +17,7 @@ Stato: primo traguardo del motore collaudato automaticamente (88 test totali e q
 - `ElectronicsCommand.pcb(PCBCommand)` con `addTrack`, `updateTrack`, `removeTrack(UUID)`,
   `addVia`, `updateVia`, `removeVia(UUID)`, `configure(layerCount:rules:)`, `batch([PCBCommand])`.
   Il batch produce un unico passo Annulla, con revisione controllata e rollback totale.
-- Formato documento 4, lettura di 1–4, storico persistente incluso.
+- Formato documento 5, lettura di 1–5, storico persistente incluso.
 
 ## Contratto UI
 

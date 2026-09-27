@@ -89,7 +89,9 @@ struct PCBIndex: Sendable {
     struct Node: Sendable { var box: PCBBox; var left: Int?; var right: Int?; var items: [Int] }
     var nodes: [Node] = []
     init(_ primitives: [PCBCopperPrimitive]) throws {
-        let boxes = primitives.map { PCBBox($0.core, margin:$0.radius) }
+        try self.init(boxes: primitives.map { PCBBox($0.core, margin:$0.radius) })
+    }
+    init(boxes: [PCBBox]) throws {
         func build(_ ids: [Int]) throws -> Int {
             try Task.checkCancellation()
             let box = ids.dropFirst().reduce(boxes[ids[0]]) { PCBBox($0,boxes[$1]) }
@@ -105,7 +107,7 @@ struct PCBIndex: Sendable {
             nodes[i].left = try build(Array(ordered[..<half])); nodes[i].right = try build(Array(ordered[half...]))
             return i
         }
-        if !primitives.isEmpty { _ = try build(Array(primitives.indices)) }
+        if !boxes.isEmpty { _ = try build(Array(boxes.indices)) }
     }
     func query(_ box: PCBBox) -> [Int] {
         guard !nodes.isEmpty else { return [] }
