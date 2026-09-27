@@ -46,7 +46,10 @@ public enum STEPExporter {
 
         var solids: [String] = [], styled: [String] = []
         for part in parts {
-            let brep = try solid(part, into: &w)
+            // Exact planes and cylinders where the body allows it, else every face as facets.
+            let brep: String
+            var trial = w
+            if let exact = try? exactSolid(part, into: &trial) { w = trial; brep = exact } else { brep = try solid(part, into: &w) }
             solids.append(brep)
             let c = part.color
             let colour = w.add("COLOUR_RGB('',\(w.real(Double(c.red) / 255)),\(w.real(Double(c.green) / 255)),\(w.real(Double(c.blue) / 255)))")

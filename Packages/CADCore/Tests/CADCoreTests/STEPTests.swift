@@ -57,9 +57,13 @@ private func check(_ step: String, genus: Int, faces expectedFaces: Int? = nil) 
     let plate = Feature(name: "Piastra", kind: .box(width: 40, depth: 30, height: 5))
     let hole = Feature(name: "Foro", kind: .cylinder(radius: 4, height: 10), position: Vec3(0, 0, -2), operation: .cut)
     let step = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [plate, hole])))
-    // Top and bottom are one face each with the hole as an inner bound; the bore is 64 facets.
-    #expect(entities(step).values.filter { $0.hasPrefix("FACE_BOUND(") }.count == 2)
-    check(step, genus: 1, faces: 6 + 64)
+    // Top and bottom are one face each with the hole as an inner bound; the bore is one exact
+    // cylinder bounded by two circles.
+    let e = entities(step)
+    #expect(e.values.filter { $0.hasPrefix("CYLINDRICAL_SURFACE(") }.count == 1)
+    #expect(e.values.filter { $0.hasPrefix("CIRCLE(") }.count == 2)
+    #expect(e.values.contains { $0.hasPrefix("CYLINDRICAL_SURFACE(") && $0.hasSuffix(",4.)") })
+    check(step, genus: 1, faces: 7)
     // Several bodies: one solid each.
     let other = Feature(name: "Perno", kind: .cylinder(radius: 3, height: 12), position: Vec3(50, 0, 0))
     let two = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [plate, other])))
@@ -73,4 +77,18 @@ private func check(_ step: String, genus: Int, faces expectedFaces: Int? = nil) 
     let round = Feature(name: "R", kind: .chamfer(ChamferSpec(edges: snap.edges.compactMap(EdgeRef.init), profile: .round, distance: 2)))
     let step = try STEPExporter.export(STEPExporter.parts(of: CADDocument(features: [box, round])))
     check(step, genus: 0)
+}
+
+@Test func stepWritesRoundsAndBevelsOnCirclesExactly() throws {
+    let cup = Feature(name: "Tazza", kind: .cylinder(radius: 10, height: 20))
+    let rims = DesignEvaluator.evaluate(CADDocument(features: [cup]), revision: "a").bodies[0].snapshot.edges.compactMap(EdgeRef.init)
+    for (profile, surface) in [(ChamferSpec.Profile.round, "TOROIDAL_SURFACE("), (.flat, "CONICAL_SURFACE(")] {
+        let doc = CADDocument(features: [cup, Feature(name: "R", kind: .chamfer(ChamferSpec(edges: rims, profile: profile, distance: 2)))])
+        let step = try STEPExporter.export(STEPExporter.parts(of: doc))
+        let e = entities(step)
+        // Two caps, the wall and the two rounds or bevels: five exact faces.
+        #expect(e.values.filter { $0.hasPrefix(surface) }.count == 2)
+        #expect(e.values.filter { $0.hasPrefix("CYLINDRICAL_SURFACE(") }.count == 1)
+        check(step, genus: 0, faces: 5)
+    }
 }
