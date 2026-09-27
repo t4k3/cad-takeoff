@@ -6,7 +6,7 @@
 
 Il prodotto deve unire **schema → PCB → fabbricazione/assemblaggio → assieme meccanico** nello stesso progetto, con assistente capace di eseguire gli stessi comandi del progettista. Il motore sarà nostro. I cataloghi di componenti sono dati interoperabili, distinti dalle librerie software: consultarli o importarli non richiede incorporare un motore esterno.
 
-`Packages/ElectronicsCore` è un package Swift 6 per macOS 14+, con Foundation, libreria standard e CryptoKit Apple, **zero dipendenze software esterne**, nessun import UI/CADCore. Si può aprire direttamente in Xcode. Il package è già compilabile e verificabile; il collegamento all’app è il task separato T99 di Claude. Nessuna modifica al documento `.ftk`, al renderer o alle viste esistenti da parte di T91/T92.
+`Packages/ElectronicsCore` è un package Swift 6 per macOS 27+, con Foundation, libreria standard e CryptoKit Apple, **zero dipendenze software esterne**, nessun import UI/CADCore. Il requisito macOS 27 segue la decisione di Ross del 27/09/2026. Si può aprire direttamente in Xcode. Il package è compilabile e verificabile; Claude ha collegato il modulo all’app in T99. Le viste e il ponte app restano di Claude.
 
 Codex possiede il core elettronico, i formati, i controlli e il contratto funzionale. Claude ha confermato lettura e accordo nel registro del 27/09 alle 09:49: possiede CAD, app, UX elettronica T97, aggancio T99, strumenti MCP T100 e adattatore CAD T101. `AGENTS.md` e `docs/UX_RULES.md` regolano la collaborazione. La revisione obiettiva separa evidenze automatiche, prove nell’app, accettazione del produttore e scheda fisica.
 
@@ -20,7 +20,7 @@ Codex possiede il core elettronico, i formati, i controlli e il contratto funzio
 | `DeviceDefinition` | Simbolo e impronta in revisioni esatte, mappatura esplicita pin→piazzole, produttore/MPN e identificativo JLC opzionale. |
 | `ElectronicsLibrary` | Snapshot incluso nel documento: riaprire non dipende da cataloghi online aggiornati. |
 | `ElectronicsDesign` | Componenti, reti, collegamenti/NC espliciti, contorno scheda, posizionamenti e varianti di montaggio. |
-| `ElectronicsDocument` | Scrittura formato 2, lettura 1/2; revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
+| `ElectronicsDocument` | Scrittura formato 3, lettura 1/2/3; schema opzionale, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
 | `ElectronicsValidation.integrity` | Identità duplicate, riferimenti/revisioni mancanti, pin-map, contorno semplice, quote/angoli finiti, piazzole e fori coerenti. |
 | `ElectronicsValidation.electrical` | Prime verifiche: pin senza connessione/NC, pin NC collegati, uscite multiple sulla rete. Non è ERC completo. |
 | `ElectronicsConnectivity.snapshot` | Piazzole in coordinate PCB con rete associata; collegamenti da sbrogliare deterministici tramite albero minimo. Nessuna pista fisica è generata. |
@@ -86,7 +86,7 @@ L’adattatore UI dovrà usare identità, non indici, per individuare l’oggett
 2. Workspace coordinati Libreria, Schema, PCB, Assieme e Preparazione produzione; selezione incrociata su UUID.
 3. Visualizzazione di revisioni, errori con soggetto selezionabile, reti ancora da sbrogliare e stato dei dati fornitore.
 4. Adapter CAD per la scheda e i modelli, con aggiornamenti revisionati e nessuna duplicazione delle trasformazioni.
-5. Inserimento di `bash scripts/test-electronics.sh` nella CI globale quando viene collegato il modulo. Lo script dedicato esiste; la CI attuale dell’app non è stata modificata.
+5. `bash scripts/test-electronics.sh` è collegato alla CI globale da Claude (T99); comprende test Swift e lettori Python indipendenti per assemblaggio, import librerie e schema. La prova del ponte app resta in `scripts/test-circuits.sh`.
 
 ## Fonti studiate e scelte nostre
 

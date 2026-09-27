@@ -17,7 +17,21 @@ Motore proprietario implementato in `Schematic/`, contratto app in [SCHEMATIC.md
 
 Prestazioni sintetiche, Mac locale, 1000 simboli/9000 primitive, 1000 query pick+snap: misura Release finale snapshot 38,09 ms, p95 query 0,0055 ms, massimo 0,0815 ms; artefatti `build/electronics/schematic-release-final`. In Debug la stessa costruzione completa richiede circa 1259 ms (p95 query 0,048 ms): **snapshot/preview devono essere eseguiti in background e conservati per revisione**, non ricalcolati a ogni hover. Le misure non certificano ogni macchina né progetti reali più complessi; il test CI registra i tempi senza soglia instabile. Rendering dell’app e GPU non misurati da questo benchmark.
 
-Stato app: API consegnate a Claude; integrazione Schema/PCB in T97 in corso, nessuna prova a schermo del nuovo schema ancora attestata. Il precedente collaudo PCB qui sotto resta distinto. Non dichiarare completo E2: bus, porte e istanze gerarchiche riutilizzabili, multisezione e matrice ERC configurabile non sono implementati. L’ERC aggiunto segnala ingressi/alimentazioni senza driver, reti a pin singolo, simboli non posati e giunzioni sospese; non simula il circuito. Routing/DRC/Gerber restano E3/E4.
+Passaggio a **macOS 27 minimo**, richiesto da Ross: package verificato con macOS 27.0 (26A428), Xcode 27.0 (27A266a) e SDK 27.0. `bash scripts/test-electronics.sh` passa ancora 71 test e tre lettori indipendenti; artefatti `build/electronics/run.Ug7ixv`. Il requisito di sistema non dimostra da solo l'adozione di nuove API.
+
+### Collaudo UI dello schema con Claude T97
+
+Codex ha provato la build 1.0.10/9f76573+ delle 11:36, con l'aggancio UI non ancora committato di Claude, nella finestra separata di collaudo. Azioni reali nell'app: Nuovo → posa R1/R2 nello schema → Filo R1.2–R2.1 → NC R1.1 → Ruota R2 (il filo segue il pin) → etichetta SIGNAL → PCB con due componenti da posare → posa entrambi, una airwire → Annulla/Ripeti → Salva/Apri. Tutte passate; il nuovo schema riaperto mostra simboli, filo, NC ed etichetta.
+
+File prodotto dalla UI: `build/electronics/run.Ug7ixv/schema-collaudo-ui.ftkc`. Python conferma formato 3, revisione 11, nove passi dello storico con catena before/after coerente, due identità condivise fra schema e PCB, due posizionamenti PCB, un filo, rete SIGNAL e un NC. Non si è modificata l'app originale di Ross.
+
+La prima CI su target macOS 27, `build/ci/run.wMGVog`, conferma 174 test CAD, test del ponte Circuiti e `08-app.log` con `BUILD SUCCEEDED`. Il binario app e la CLI elettronica dichiarano `minos 27.0` e `sdk 27.0`, verificati con `xcrun vtool -show-build`.
+
+Difetti individuati e consegnati a Claude: ricostruzione sincrona di snapshot/anteprima sul main thread, camera riadattata a ogni posa/rotazione anziché solo con Adatta, guida Schema che mostra ancora «F cambia lato» del PCB. Nuova prova su build delle 11:50, target macOS27: posa R1 al clic e successiva posa/rotazione R2 mantengono ferma la camera; guida M corretta. Background e cache verificati nei sorgenti; la cancellazione del worker è stata poi corretta con withTaskCancellationHandler, senza misurazione dello scheduling a schermo. La prova funzionale non certifica prestazioni su schede reali grandi.
+
+Consolidamento: motore in `9f76573`, app e correzioni di Claude in `4e1b280`. CI integrata finale `build/ci/run.gkEkgl`: Claude conferma 16/16 PASS; Codex ha letto direttamente il log del ponte Circuiti (schema/PCB, fili, etichette, NC, giunzioni, undo, salva/riapri) e il `BUILD SUCCEEDED` dell'app. Nessun nuovo test fisico o rilascio produttivo implicito.
+
+Non dichiarare completo E2: bus, porte e istanze gerarchiche riutilizzabili, multisezione e matrice ERC configurabile non sono implementati. L’ERC aggiunto segnala ingressi/alimentazioni senza driver, reti a pin singolo, simboli non posati e giunzioni sospese; non simula il circuito. Routing/DRC/Gerber restano E3/E4.
 
 ## T93 — primi strumenti di costruzione, 27/09/2026
 
