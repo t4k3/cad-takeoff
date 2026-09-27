@@ -280,7 +280,24 @@ class HistoryReader:
                 k = kind(entity)
                 if k == "Sketch":
                     self.read_sketch(entity)
-                elif k in ("ExtrudeFeature", "RevolveFeature", "FilletFeature", "ChamferFeature", "HoleFeature", "ShellFeature"):
+                elif k in ("FilletFeature", "ChamferFeature", "ShellFeature"):
+                    # Their input edges and faces exist only before them: the timeline is rolled
+                    # back to just before the feature to read them, then forward again.
+                    rolled = False
+                    try:
+                        item.rollTo(True)
+                        rolled = True
+                    except Exception:
+                        pass
+                    try:
+                        self.read_feature(entity, k)
+                    finally:
+                        if rolled:
+                            try:
+                                timeline.moveToEnd()
+                            except Exception:
+                                pass
+                elif k in ("ExtrudeFeature", "RevolveFeature", "HoleFeature"):
                     self.read_feature(entity, k)
                 elif k in ("ConstructionPlane", "ConstructionAxis", "ConstructionPoint", "Occurrence", "JointOrigin",
                            "Joint", "AsBuiltJoint", "RigidGroup"):
