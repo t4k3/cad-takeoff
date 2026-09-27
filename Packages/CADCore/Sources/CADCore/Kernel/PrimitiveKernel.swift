@@ -58,7 +58,20 @@ public enum PrimitiveKernel {
         return solid
     }
 
-    private static func buildLocal(_ feature: Feature, cylinderSegments: Int) throws -> BRepBody {
+    private static func buildLocal(_ given: Feature, cylinderSegments standard: Int) throws -> BRepBody {
+        // At a finer tessellation: more facets per turn, the profile's arcs cut finer on their circles.
+        let cylinderSegments = Tessellation.segments(standard)
+        var feature = given
+        /// Unkeyed profiles cut finer: each side named after the side it comes from (so the
+        /// faces keep their names at any tessellation).
+        var fineSides: [String]?
+        if Tessellation.factor > 1, case let .extrude(profile, h) = given.kind {
+            let original = Profile2D(points: profile.points).points
+            let keyed = given.profileKeys?.count == original.count
+            let fine = Tessellation.refined(original, keys: keyed ? given.profileKeys : original.indices.map { "\($0)" })
+            feature.kind = .extrude(profile: Profile2D(points: fine.points), height: h)
+            if keyed { feature.profileKeys = fine.keys } else { fineSides = fine.keys }
+        }
         guard feature.position.isFinite,
               [feature.position.x, feature.position.y, feature.position.z].allSatisfy({ abs($0) <= 100_000 }) else {
             throw KernelError.invalidParameter("posizione oltre ±100000 mm o non finita")
@@ -110,7 +123,7 @@ public enum PrimitiveKernel {
             throw KernelError.invalidParameter("il guscio svuota un corpo: viene calcolato dal valutatore")
         case let .extrude(profile, h):
             try dimension(h)
-            guard (3...1024).contains(profile.points.count) else {
+            guard (3...1024 * Tessellation.factor).contains(profile.points.count) else {
                 throw KernelError.invalidProfile("richiesti 3–1024 vertici")
             }
             points = Profile2D(points: profile.points).points
@@ -118,7 +131,9 @@ public enum PrimitiveKernel {
             // v1 profiles have no entity IDs. Conservatively invalidate side/edge IDs
             // on ANY profile edit instead of silently binding a different segment.
             // Exact bit patterns avoid hash collisions and remain stable across processes.
-            profileKey = "extrude/" + points.map {
+            // Named after the profile as drawn (not as cut finer for an export).
+            let named: [Vec2] = if case let .extrude(drawn, _) = given.kind { Profile2D(points: drawn.points).points } else { points }
+            profileKey = "extrude/" + named.map {
                 String($0.x.bitPattern, radix: 16) + ":" + String($0.y.bitPattern, radix: 16)
             }.joined(separator: ",")
         }
@@ -133,7 +148,7 @@ public enum PrimitiveKernel {
         // under a key of the exact profile (any edit renames them rather than rebind wrongly).
         let keyed = family == "extrude" && feature.profileKeys?.count == n
         if keyed { profileKey = "extrude/k" }
-        func side(_ i: Int) -> String { keyed ? feature.profileKeys![i] : "\(i)" }
+        func side(_ i: Int) -> String { keyed ? feature.profileKeys![i] : (fineSides?[i] ?? "\(i)") }
         /// An arc's wall and rims: after its curve (the side key without the facet number).
         func arcName(_ i: Int, _ arc: ProfileArc) -> String {
             guard keyed else { return "\(arc.index)" }

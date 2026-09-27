@@ -146,8 +146,8 @@ public struct HoleSpec: Codable, Sendable, Equatable {
 
 /// Builds the solid removed by a hole (one per centre), with named faces.
 public enum HoleGeometry {
-    static let segments = 64
-    static let threadSegments = 36
+    static var segments: Int { Tessellation.segments(64) }
+    static var threadSegments: Int { Tessellation.segments(36) }
     static let ringsPerPitch = 6
     /// The tool starts slightly outside the face so the cut is clean (no coplanar sliver).
     static let lead = 0.5

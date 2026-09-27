@@ -149,7 +149,7 @@ public struct ChamferSpec: Codable, Sendable, Equatable {
 public enum ChamferGeometry {
     /// Margin the tool extends beyond the part (no coplanar faces with the body).
     static let lead = 0.5
-    static let segments = 64
+    static var segments: Int { Tessellation.segments(64) }
 
     /// The edge of `snapshot` a reference points to: same two faces, nearest to the hint.
     public static func resolve(_ ref: EdgeRef, in snapshot: BodySnapshot) -> EdgeInfo? {

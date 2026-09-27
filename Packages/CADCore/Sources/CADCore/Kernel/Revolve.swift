@@ -41,8 +41,11 @@ enum Revolve {
     /// The closed solid swept by the profile (and its holes). Faces: one per profile side (plane,
     /// cylinder or cone; arcs of the profile make one torus or sphere face each), plus the two
     /// ends when the turn is not complete.
-    static func build(_ spec: RevolveSpec, holes: [Profile2D], featureID: UUID, position: Vec3, segments: Int = 64) throws -> CSGSolid {
-        try spec.validate(holes: holes)
+    static func build(_ given: RevolveSpec, holes givenHoles: [Profile2D], featureID: UUID, position: Vec3, segments standard: Int = 64) throws -> CSGSolid {
+        try given.validate(holes: givenHoles)
+        // At a finer tessellation: more steps round the axis, the profile's arcs cut finer.
+        let segments = Tessellation.segments(standard)
+        let spec = given, holes = givenHoles
         let plane = spec.plane
         let dir2 = (spec.axisEnd - spec.axisStart) * (1 / (spec.axisEnd - spec.axisStart).length)
         let left2 = Vec2(-dir2.y, dir2.x)
@@ -96,6 +99,9 @@ enum Revolve {
             for i in 0..<n {
                 let a = hr(pts[i]), b = hr(pts[(i + 1) % n])
                 if a.r < 1e-9, b.r < 1e-9 { continue }   // along the axis: nothing to sweep
+                // At a finer tessellation an arc side is swept in pieces on its circle; the face
+                // keeps the side's name.
+                let cut = [pts[i]] + Tessellation.between(pts[i], pts[(i + 1) % n], on: arcs[i]) + [pts[(i + 1) % n]]
                 let f: Int
                 if let arc = arcs[i] {
                     let c = hr(arc.center)
@@ -103,6 +109,9 @@ enum Revolve {
                 } else {
                     f = face("\(loop.tag)/side/\(i)", surface(a, b))
                 }
+                for (qa, qb) in zip(cut, cut.dropFirst()) {
+                let a = hr(qa), b = hr(qb)
+                if a.r < 1e-9, b.r < 1e-9 { continue }
                 for k in 0..<steps {
                     let pa0 = point(a, k), pb0 = point(b, k), pb1 = point(b, k + 1), pa1 = point(a, k + 1)
                     var v: [Vec3]
@@ -112,10 +121,13 @@ enum Revolve {
                     guard v.count >= 3, (v[1] - v[0]).cross(v[2] - v[0]).length > 1e-14 else { continue }
                     polys.append(CSGSolid.Polygon(vertices: v, face: f))
                 }
+                }
             }
         }
         if !full {
-            let tris = Profile2D(points: outer).triangulate(holes: holes.map { Profile2D(points: $0.points) })
+            // The ends: the profile as its sides were swept (arcs cut finer too).
+            let tris = Profile2D(points: Tessellation.refined(outer, keys: nil).points)
+                .triangulate(holes: holes.map { Profile2D(points: Tessellation.refined(Profile2D(points: $0.points).points, keys: nil).points) })
             let flat = tris.map { (hr($0.0), hr($0.1), hr($0.2)) }
             let start = face("start", .plane(origin: origin, normal: -w))
             let endN = radial * -sin(span) + w * cos(span)

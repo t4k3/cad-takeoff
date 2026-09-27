@@ -737,6 +737,8 @@ public final class EvaluationCache: @unchecked Sendable {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         var digest = SHA256()
+        // The same history at another tessellation is another state.
+        digest.update(data: Data("tessellation \(Tessellation.factor)".utf8))
         return features.map { f in
             digest.update(data: (try? encoder.encode(f)) ?? Data(f.id.uuidString.utf8))
             // A component's content is its file: a changed part invalidates what follows.

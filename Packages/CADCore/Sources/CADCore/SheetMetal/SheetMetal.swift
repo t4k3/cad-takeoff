@@ -411,7 +411,7 @@ struct SheetLayout: Sendable {
 }
 
 public enum SheetMetalGeometry {
-    static let bendSegments = 16
+    static var bendSegments: Int { Tessellation.segments(16) }
 
     /// A flange's straight length, bend allowance and outside setback from the mould line, and
     /// its lip's; workshop advice goes to `warnings`.
