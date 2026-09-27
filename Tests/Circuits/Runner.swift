@@ -13,7 +13,7 @@ struct CircuitTests {
         var last = ""
         c.report = { last = $0 }
         // The example opens (a file written by the engine's own tests).
-        try c.open(fixture)
+        try await c.open(fixture)
         check(!(c.design?.components.isEmpty ?? true), "esempio aperto")
 
         // From a NEW circuit: the generic models are there to choose (Ross's blocker).
@@ -80,7 +80,7 @@ struct CircuitTests {
         let out = FileManager.default.temporaryDirectory.appendingPathComponent("circuito-\(UUID().uuidString).ftkc")
         try c.save(to: out)
         let d = CircuitModel()
-        try d.open(out)
+        try await d.open(out)
         check(d.design == c.design && d.canUndo, "salvato e riaperto uguale, con lo storico")
         try? FileManager.default.removeItem(at: out)
 
@@ -399,7 +399,7 @@ struct CircuitTests {
         let outS = FileManager.default.temporaryDirectory.appendingPathComponent("schema-\(UUID().uuidString).ftkc")
         try sc.save(to: outS)
         let reopened = CircuitModel()
-        try reopened.open(outS)
+        try await reopened.open(outS)
         await reopened.schematicReady()
         check(reopened.design == sc.design && reopened.schematic?.pins.count == 4, "schema e rame salvati e riaperti")
         try? FileManager.default.removeItem(at: outS)
@@ -408,12 +408,12 @@ struct CircuitTests {
 
         // A file gone (a stale reference, a moved file): an Italian reason, the open circuit untouched.
         let before = sc.design
-        do { try sc.open(FileManager.default.temporaryDirectory.appendingPathComponent("sparito-\(UUID().uuidString).ftkc")); check(false, "file mancante aperto?") }
+        do { try await sc.open(FileManager.default.temporaryDirectory.appendingPathComponent("sparito-\(UUID().uuidString).ftkc")); check(false, "file mancante aperto?") }
         catch { check(CircuitModel.describe(error).contains("non si trova più") && sc.design == before, "file mancante: motivo in italiano, circuito aperto intatto") }
 
         let notCircuit = FileManager.default.temporaryDirectory.appendingPathComponent("altro-\(UUID().uuidString).json")
         try Data(#"{"outline":[]}"#.utf8).write(to: notCircuit)
-        do { try sc.open(notCircuit); check(false, "JSON qualsiasi aperto?") }
+        do { try await sc.open(notCircuit); check(false, "JSON qualsiasi aperto?") }
         catch { check(CircuitModel.describe(error).contains("non è un circuito") && sc.design == before, "JSON che non è un circuito: detto in italiano (\(CircuitModel.describe(error)))") }
         try? FileManager.default.removeItem(at: notCircuit)
 
@@ -429,7 +429,7 @@ struct CircuitTests {
               "altro circuito alla stessa revisione: niente disegno, pista o selezione del precedente")
         await two.pcbReady()
         check(two.pcbIsCurrent && two.pcb?.designID == two.design?.id && two.pcb?.designID != firstID, "disegno del nuovo circuito")
-        try two.open(outS2)
+        try await two.open(outS2)
         await two.pcbReady()
         check(two.pcbIsCurrent && two.design == sc.design && two.design!.board.copper?.tracks.count == 3, "riaperto col suo rame")
         try? FileManager.default.removeItem(at: outS2)

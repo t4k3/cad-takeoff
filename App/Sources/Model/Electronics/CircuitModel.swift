@@ -120,17 +120,24 @@ final class CircuitModel {
 
     // MARK: Files
 
-    func open(_ given: URL) throws {
+    /// Reads and checks the file (its whole history) off the main thread; the open circuit
+    /// changes only if that succeeds, and only if nothing else was opened meanwhile.
+    func open(_ given: URL) async throws {
         // A file reference (from the open panel) as its path: a save replaces the file, and a
         // reference to the old one no longer resolves.
         let url = (given as NSURL).filePathURL ?? given
-        let data: Data
-        do { data = try Data(contentsOf: url) } catch { throw CircuitEditError(Self.readFailure(url, error)) }
-        let doc: ElectronicsDocument
-        do { doc = try ElectronicsDocument.decode(data) } catch is DecodingError {
-            // Another JSON (the panel shows .json too): not a circuit, said so.
-            throw CircuitEditError("«\(url.deletingPathExtension().lastPathComponent)» non è un circuito di CAD Takeoff (.ftkc): scegli un file di circuito.")
-        }
+        let epoch = documentEpoch
+        let doc = try await Self.offMain { () -> Result<ElectronicsDocument, CircuitEditError> in
+            let data: Data
+            do { data = try Data(contentsOf: url) } catch { return .failure(CircuitEditError(Self.readFailure(url, error))) }
+            do { return .success(try ElectronicsDocument.decode(data)) } catch is DecodingError {
+                // Another JSON (the panel shows .json too): not a circuit, said so.
+                return .failure(CircuitEditError("«\(url.deletingPathExtension().lastPathComponent)» non è un circuito di CAD Takeoff (.ftkc): scegli un file di circuito."))
+            } catch {
+                return .failure(CircuitEditError(Self.describe(error)))
+            }
+        }.get()
+        guard documentEpoch == epoch else { throw CircuitEditError("Nel frattempo è stato aperto un altro circuito.") }
         forgetDrawings()
         document = doc; self.url = url; isDirty = false
         refresh()
@@ -162,7 +169,7 @@ final class CircuitModel {
         // From the current circuit's folder: its listing is read again (after a save the file is a new one).
         if let url { panel.directoryURL = url.deletingLastPathComponent() }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do { try open(url) } catch { report("Circuito non aperto: \(Self.describe(error))") }
+        Task { do { try await open(url) } catch { report("Circuito non aperto: \(Self.describe(error))") } }
     }
 
     func saveWithPanel(asNew: Bool = false) {
@@ -178,10 +185,12 @@ final class CircuitModel {
     /// The example circuit of the engine's tests (synthetic parts: not for manufacture).
     func openExample() {
         guard confirmDiscard(), let url = Bundle.main.url(forResource: "Esempio circuito", withExtension: "ftkc") else { return }
-        do {
-            try open(url)
-            self.url = nil   // a copy: «Salva» asks where
-        } catch { report("Esempio non aperto: \(Self.describe(error))") }
+        Task {
+            do {
+                try await open(url)
+                self.url = nil   // a copy: «Salva» asks where
+            } catch { report("Esempio non aperto: \(Self.describe(error))") }
+        }
     }
 
     /// Unsaved changes: ask before throwing them away.
@@ -778,7 +787,7 @@ extension CircuitModel: LocalUndoTarget {
 
 /// A change the circuit refuses before reaching the engine (the engine's own checks come as
 /// ElectronicsFailure).
-struct CircuitEditError: Error {
+struct CircuitEditError: Error, Sendable {
     let message: String
     init(_ message: String) { self.message = message }
 }
