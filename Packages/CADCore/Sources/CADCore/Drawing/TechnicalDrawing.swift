@@ -345,10 +345,17 @@ public enum TechnicalDrawing {
         var edgeTris: [SIMD2<Int>: [Int]] = [:]
         var bounds: (min: Vec3, max: Vec3, corners: [Vec3])?
 
+        /// Full circles among the edges, with their true centre, axis and radius.
+        var circleEdges: [(center: Vec3, axis: Vec3, radius: Double)] = []
+
         init(_ bodies: [(mesh: Mesh, snapshot: BodySnapshot)]) {
             var index: [SIMD3<Int64>: Int] = [:]
             var faceBase = 0
             for (_, s) in bodies {
+                for e in s.edges {
+                    guard case let .circle(c, a, r)? = e.curve, e.polyline.count > 3, (e.polyline.first! - e.polyline.last!).length < 1e-9 else { continue }
+                    circleEdges.append((c, a, r))
+                }
                 func key(_ p: Vec3) -> SIMD3<Int64> { SIMD3(Int64((p.x * 1e6).rounded()), Int64((p.y * 1e6).rounded()), Int64((p.z * 1e6).rounded())) }
                 let corner = s.triangles.map { i -> Int in
                     let p = s.positions[Int(i)], k = key(p)
@@ -415,9 +422,23 @@ public enum TechnicalDrawing {
             return merged(out)
         }
 
-        /// Circles seen end-on (holes and bosses square to the view), from the model's rims.
+        /// Circles seen end-on (holes and bosses square to the view), from the model's rims: the
+        /// edges' true circles first, then round crease loops (meshes without exact surfaces).
         func circles(for view: View) -> [(centre: Vec2, radius: Double, depth: ClosedRange<Double>)] {
-            // Closed crease loops whose points are co-circular in the view plane.
+            let r = view.right, u = view.up
+            var exact: [(Vec2, Double, ClosedRange<Double>)] = []
+            for e in circleEdges where abs(abs(e.axis.dot(view.look)) - 1) < 1e-9 {
+                let c = Vec2(e.center.dot(r), e.center.dot(u)), depth = e.center.dot(view.look)
+                if let i = exact.firstIndex(where: { ($0.0 - c).length < 1e-6 && abs($0.1 - e.radius) < 1e-6 }) {
+                    exact[i].2 = min(exact[i].2.lowerBound, depth)...max(exact[i].2.upperBound, depth)
+                } else { exact.append((c, e.radius, depth...depth)) }
+            }
+            let found = creaseCircles(for: view).filter { m in !exact.contains { ($0.0 - m.centre).length < 0.02 * $0.1 + 1e-3 && abs($0.1 - m.radius) < 0.02 * $0.1 + 1e-3 } }
+            return (exact.map { ($0.0, $0.1, $0.2) } + found).sorted { $0.1 > $1.1 }
+        }
+
+        /// Closed crease loops whose points are co-circular in the view plane.
+        func creaseCircles(for view: View) -> [(centre: Vec2, radius: Double, depth: ClosedRange<Double>)] {
             let r = view.right, u = view.up
             var adjacency: [Int: [Int]] = [:]
             for (e, ts) in edgeTris where ts.count == 2 && tris[ts[0]].face != tris[ts[1]].face {

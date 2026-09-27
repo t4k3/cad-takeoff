@@ -16,6 +16,8 @@ public struct EdgeInfo: Equatable, Sendable {
     /// Two distinct selection-face IDs on the currently supported closed bodies.
     public let faces: [FaceID]
     public let topologyEdgeIDs: [EdgeID]
+    /// Its true curve where the two surfaces describe one (a line, a circle); nil: only the polyline.
+    public var curve: EdgeCurve? = nil
 
     public var length: Double {
         zip(polyline, polyline.dropFirst()).reduce(0) { $0 + ($1.1 - $1.0).length }
@@ -105,8 +107,10 @@ extension BRepBody {
                 }
             }
             let adjacent = first.halfEdges.map { faces[halfEdges[$0].face].selectionID }
-            return EdgeInfo(id: id, polyline: chain.map { vertices[$0].position }, isSharp: true,
-                            faces: adjacent, topologyEdgeIDs: topologyIDs)
+            let polyline = chain.map { vertices[$0].position }
+            let sides = first.halfEdges.map { faces[halfEdges[$0].face].sourceSurface }
+            return EdgeInfo(id: id, polyline: polyline, isSharp: true, faces: adjacent, topologyEdgeIDs: topologyIDs,
+                            curve: sides.count == 2 ? EdgeCurve.between(sides[0], sides[1], polyline: polyline) : nil)
         }
         return BodySnapshot(bodyID: id, revision: revision, positions: positions, normals: normals,
                             triangles: triangles, triangleFace: triangleFace, triangleTopologyFace: triangleTopologyFace,

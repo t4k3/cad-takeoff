@@ -35,12 +35,13 @@ uguali. Nessuna tappa cambia i file `.ftk` in modo che una versione vecchia li l
 
 ### Tappa 1 — Risoluzione come parametro, identità che non ne dipendono
 
-**Stato 27/09:** fatti i punti 2, 4 e 5 — `Tessellation.factor` moltiplica ogni conteggio del
+**Stato 27/09: completata.** Fatti i punti 2, 4 e 5 — `Tessellation.factor` moltiplica ogni conteggio del
 motore (cilindri, fori, raccordi e sfere d'angolo, rivoluzioni, pieghe) e gli archi dei profili
 si tagliano più fini sul loro cerchio; nomi di facce e spigoli identici a ogni risoluzione, pezzi
 chiusi (test `TessellationTests`); export STL/3MF «Fine» (256 lati per giro) predefinito, anche
-dall'assistente (`quality`). Restano i punti 1 (profili con le curve vere) e 3 (nomi delle
-estrusioni senza chiavi e migrazione).
+dall'assistente (`quality`). Punti 1 e 3 non necessari: gli archi dei profili si riconoscono esatti
+dai punti (e dalle chiavi dello schizzo), e i nomi restano quelli del profilo disegnato a ogni
+risoluzione — un profilo cambiato li invalida di proposito, invece di legarli alla faccia sbagliata.
 
 1. **Profili con le curve vere.** `Profile2D` conserva, accanto ai punti, i tratti di arco e
    cerchio da cui vengono (centro, raggio, verso). Lo schizzo li scrive; i file vecchi senza
@@ -59,6 +60,13 @@ estrusioni senza chiavi e migrazione).
 «Fine» ha scostamento ≤ 0,01 mm; cambiare la risoluzione non cambia nessun `FaceID` salvato.
 
 ### Tappa 2 — Spigoli e vertici esatti
+
+**Stato 27/09:** ogni spigolo porta la sua curva vera quando le due superfici la descrivono
+(`EdgeCurve`: rette tra piani e lungo i cilindri; cerchi tra piano e cilindro, cono, sfera o toro,
+e tra cilindro e toro o sfera coassiali — i raccordi sui bordi dei fori), verificata sui vertici
+della sfaccettatura e spostata con le copie. La tavola prende i cerchi (centri e diametri) dagli
+spigoli. Da fare: intersezioni non circolari (ellissi, cilindro–cilindro) e i vertici esatti nei
+risultati delle booleane (tappa 3).
 
 Ogni spigolo porta la sua curva vera (retta, cerchio, ellisse, curva di intersezione) calcolata
 dalle due superfici, e i vertici i loro punti esatti. Ne approfittano: STEP (niente più cerchi

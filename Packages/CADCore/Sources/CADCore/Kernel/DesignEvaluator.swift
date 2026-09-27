@@ -546,7 +546,8 @@ public enum DesignEvaluator {
             faces += s.faces.map { FaceInfo(id: fid($0.id), surface: surface($0.surface), area: $0.area, topologyFaceIDs: $0.topologyFaceIDs.map(fid)) }
             edges += s.edges.map { e in
                 EdgeInfo(id: EdgeID(rawValue: part.prefix + e.id.rawValue), polyline: e.polyline.map(point), isSharp: e.isSharp,
-                         faces: e.faces.map(fid), topologyEdgeIDs: e.topologyEdgeIDs.map { EdgeID(rawValue: part.prefix + $0.rawValue) })
+                         faces: e.faces.map(fid), topologyEdgeIDs: e.topologyEdgeIDs.map { EdgeID(rawValue: part.prefix + $0.rawValue) },
+                         curve: e.curve?.mapped(point: point, direction: direction))
             }
             deviation = max(deviation, s.maximumSurfaceDeviation)
         }
@@ -646,8 +647,9 @@ public enum DesignEvaluator {
             for (n, chain) in chains(segments).enumerated() {
                 let ids = pair.map { faces[$0].id }
                 let id = EdgeID(rawValue: ids.map(\.rawValue).joined(separator: "|") + "#\(n)")
-                edges.append(EdgeInfo(id: id, polyline: chain.map { mesh.vertices[Int($0)] }, isSharp: true,
-                                      faces: ids, topologyEdgeIDs: []))
+                let polyline = chain.map { mesh.vertices[Int($0)] }
+                edges.append(EdgeInfo(id: id, polyline: polyline, isSharp: true, faces: ids, topologyEdgeIDs: [],
+                                      curve: EdgeCurve.between(faces[pair[0]].surface, faces[pair[1]].surface, polyline: polyline)))
             }
         }
         return edges
