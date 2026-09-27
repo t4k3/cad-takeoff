@@ -16,6 +16,7 @@ struct DesignTabs: View {
             }
             Button { library.newUntitled(model: model) } label: {
                 Image(systemName: "plus").font(.system(size: 11, weight: .semibold)).frame(width: 26, height: 22)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.Palette.textSecondary)
@@ -43,6 +44,9 @@ struct DesignTabs: View {
                         Image(systemName: "xmark").font(.system(size: 8.5, weight: .bold))
                             .frame(width: 16, height: 16)
                             .background(Circle().fill(hovered == tab.id ? Color.white.opacity(0.12) : .clear))
+                            // The whole 16×16 circle takes the click (a clear background alone
+                            // does not: only the small cross did).
+                            .contentShape(Circle())
                     }
                     .buttonStyle(.plain)
                     .opacity(active || hovered == tab.id ? 1 : 0)
