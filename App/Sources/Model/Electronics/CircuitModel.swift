@@ -102,8 +102,13 @@ final class CircuitModel {
 
     // MARK: Files
 
-    func open(_ url: URL) throws {
-        let doc = try ElectronicsDocument.decode(Data(contentsOf: url))
+    func open(_ given: URL) throws {
+        // A file reference (from the open panel) as its path: a save replaces the file, and a
+        // reference to the old one no longer resolves.
+        let url = (given as NSURL).filePathURL ?? given
+        let data: Data
+        do { data = try Data(contentsOf: url) } catch { throw CircuitEditError(Self.readFailure(url, error)) }
+        let doc = try ElectronicsDocument.decode(data)
         forgetDrawings()
         document = doc; self.url = url; isDirty = false
         refresh()
@@ -132,6 +137,8 @@ final class CircuitModel {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [Self.fileType, .json]
         panel.message = "Apri un circuito (.ftkc)"
+        // From the current circuit's folder: its listing is read again (after a save the file is a new one).
+        if let url { panel.directoryURL = url.deletingLastPathComponent() }
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do { try open(url) } catch { report("Circuito non aperto: \(Self.describe(error))") }
     }
@@ -181,6 +188,8 @@ final class CircuitModel {
             try doc.edit(title: title, expectedRevision: doc.revision, change)
             document = doc; isDirty = true
             refresh()
+            // Done: its name replaces an older refusal in the status bar.
+            report(title)
             return true
         } catch {
             report("\(title) non riuscito: \(Self.describe(error))")
@@ -214,6 +223,8 @@ final class CircuitModel {
             try ElectronicsCommands.apply(command, to: &doc, expectedRevision: expectedRevision ?? doc.revision)
             document = doc; isDirty = true
             refresh()
+            // Done: its name replaces an older refusal in the status bar.
+            report(command.title)
             return true
         } catch {
             report("\(command.title) non riuscito: \(Self.describe(error))")
@@ -659,6 +670,19 @@ final class CircuitModel {
         refreshPCB()
         guard let d = design else { baseIssues = []; return }
         baseIssues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
+    }
+
+    /// Why a circuit file could not be read, in words to act on.
+    nonisolated static func readFailure(_ url: URL, _ error: Error) -> String {
+        let name = "«\(url.deletingPathExtension().lastPathComponent)»"
+        switch (error as? CocoaError)?.code {
+        case .fileReadNoSuchFile?, .fileNoSuchFile?:
+            return "\(name) non si trova più lì: forse è stato salvato di nuovo o spostato. Riaprilo dalla sua cartella (in Apri, ⇧⌘G per scrivere il percorso)."
+        case .fileReadNoPermission?:
+            return "Non ho il permesso di leggere \(name): aprilo con Apri, dalla sua cartella."
+        default:
+            return "\(name) non si legge: \(error.localizedDescription)"
+        }
     }
 
     nonisolated static func describe(_ error: Error) -> String {

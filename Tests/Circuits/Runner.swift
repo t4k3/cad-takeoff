@@ -261,6 +261,11 @@ struct CircuitTests {
         let beforeBroken = sc.document!.revision
         check(!sc.updateNetClass(broken) && sc.document!.revision == beforeBroken && sc.netClass(of: air.netID)?.constraints.minimumTrackWidth == 1.0,
               "classe non valida rifiutata senza toccare il circuito (\(last))")
+        check(last.contains("non riuscito"), "rifiuto nella barra di stato")
+        var renamed = strict
+        renamed.name = "Potenza 2"
+        check(sc.updateNetClass(renamed) && !last.contains("non riuscito"), "dopo un comando riuscito il vecchio rifiuto sparisce (\(last))")
+        sc.undo()
         sc.refreshNetRules()
         await sc.netRulesReady()
         check(sc.currentNetRules?[air.netID]?.rules.minimumTrackWidth == 1.0, "regole risolte per rete, per revisione")
@@ -331,6 +336,11 @@ struct CircuitTests {
         try? FileManager.default.removeItem(at: outS)
         let outS2 = FileManager.default.temporaryDirectory.appendingPathComponent("rame-\(UUID().uuidString).ftkc")
         try sc.save(to: outS2)
+
+        // A file gone (a stale reference, a moved file): an Italian reason, the open circuit untouched.
+        let before = sc.design
+        do { try sc.open(FileManager.default.temporaryDirectory.appendingPathComponent("sparito-\(UUID().uuidString).ftkc")); check(false, "file mancante aperto?") }
+        catch { check(CircuitModel.describe(error).contains("non si trova più") && sc.design == before, "file mancante: motivo in italiano, circuito aperto intatto") }
 
         // Another document with the same revision: nothing of the previous drawings, route or selection.
         let two = CircuitModel()
