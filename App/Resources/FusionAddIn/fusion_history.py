@@ -454,39 +454,83 @@ class HistoryReader:
         self.features.append(entry)
 
     def extent(self, f):
+        """How far the extrusion goes, parametric where Fusion says it (distance, symmetric,
+        two sides, offset start), and in any case where it really starts and ends along the
+        sketch's normal (measured on its start and end faces), so every extent comes in right."""
         try:
+            info = self.extent_one(f)
             if getattr(f, "hasTwoExtents", False):
-                return {"type": "twoSides"}
-            start = kind(getattr(f, "startExtent", None))
-            if start not in ("ProfilePlaneStartDefinition", "NoneType"):
-                return {"type": "offsetStart"}
-            e = f.extentOne
-            taper = 0.0
-            try:
-                taper = math.degrees(f.taperAngleOne.value)
-            except Exception:
-                pass
-            ek = kind(e)
-            if ek == "DistanceExtentDefinition":
-                d = e.distance
-                return {"type": "distance", "distance": length_value(d), "expression": d.expression, "taper": taper}
-            if ek == "SymmetricExtentDefinition":
-                d = e.distance
-                full = getattr(e, "isFullLength", True)
-                value = length_value(d) * (1 if full else 2)
-                expression = d.expression if full else "2 * (%s)" % d.expression
-                return {"type": "symmetric", "distance": value, "expression": expression, "taper": taper}
-            if ek == "ThroughAllExtentDefinition":
-                reversed_ = False
+                info = {"type": "twoSides"}
                 try:
-                    import adsk.fusion
-                    reversed_ = e.direction == adsk.fusion.ExtentDirections.NegativeExtentDirection
+                    d1, d2 = f.extentOne.distance, f.extentTwo.distance
+                    info.update(distance=length_value(d1), expression=d1.expression,
+                                distance2=length_value(d2), expression2=d2.expression)
                 except Exception:
                     pass
-                return {"type": "through", "reversed": reversed_}
-            return {"type": ek}
+            start = getattr(f, "startExtent", None)
+            sk = kind(start) if start is not None else "NoneType"
+            if sk == "OffsetStartDefinition":
+                try:
+                    off = start.offset
+                    info.update(start=length_value(off), startExpression=getattr(off, "expression", None))
+                except Exception:
+                    info["startType"] = sk
+            elif sk not in ("ProfilePlaneStartDefinition", "NoneType"):
+                info["startType"] = sk
+            measured = self.measure(f)
+            if measured is not None:
+                info.update(measuredStart=measured[0], measuredEnd=measured[1])
+            return info
         except Exception:
             return {"type": "unknown"}
+
+    def measure(self, f):
+        """Where the extrusion starts and ends (mm along its sketch's normal, from the sketch)."""
+        try:
+            prof = f.profile
+            p = prof if kind(prof) == "Profile" else prof.item(0)
+            o, x, y, z = p.parentSketch.transform.getAsCoordinateSystem()
+            n = math.sqrt(z.x ** 2 + z.y ** 2 + z.z ** 2)
+
+            def along(faces):
+                ts = []
+                for i in range(faces.count):
+                    q = faces.item(i).pointOnFace
+                    ts.append(((q.x - o.x) * z.x + (q.y - o.y) * z.y + (q.z - o.z) * z.z) / n * CM)
+                return sum(ts) / len(ts) if ts else None
+            s, e = along(f.startFaces), along(f.endFaces)
+            if s is None or e is None:
+                return None
+            return (s, e)
+        except Exception:
+            return None
+
+    def extent_one(self, f):
+        e = f.extentOne
+        taper = 0.0
+        try:
+            taper = math.degrees(f.taperAngleOne.value)
+        except Exception:
+            pass
+        ek = kind(e)
+        if ek == "DistanceExtentDefinition":
+            d = e.distance
+            return {"type": "distance", "distance": length_value(d), "expression": d.expression, "taper": taper}
+        if ek == "SymmetricExtentDefinition":
+            d = e.distance
+            full = getattr(e, "isFullLength", True)
+            value = length_value(d) * (1 if full else 2)
+            expression = d.expression if full else "2 * (%s)" % d.expression
+            return {"type": "symmetric", "distance": value, "expression": expression, "taper": taper}
+        if ek == "ThroughAllExtentDefinition":
+            reversed_ = False
+            try:
+                import adsk.fusion
+                reversed_ = e.direction == adsk.fusion.ExtentDirections.NegativeExtentDirection
+            except Exception:
+                pass
+            return {"type": "through", "reversed": reversed_}
+        return {"type": ek, "taper": taper}
 
 
 def bodies_info(body, name, frame, mesh_index):

@@ -102,14 +102,31 @@ public struct FusionTimeline: Codable, Sendable, Equatable {
     }
 
     public struct Extent: Codable, Sendable, Equatable {
-        /// distance, symmetric (total distance), through (all), unsupported.
+        /// distance, symmetric (total distance), through (all), twoSides, or Fusion's own name of
+        /// an extent not described here (to an object…).
         public var type: String
         public var distance: Double?
         public var expression: String?
         public var reversed: Bool?
         public var taper: Double?
-        public init(type: String, distance: Double? = nil, expression: String? = nil, reversed: Bool? = nil, taper: Double? = nil) {
+        /// twoSides: the second side's distance.
+        public var distance2: Double?
+        public var expression2: String?
+        /// Offset start: how far from the sketch it starts (mm along the normal); another kind of
+        /// start (from an object) by name.
+        public var start: Double?
+        public var startExpression: String?
+        public var startType: String?
+        /// Where it really starts and ends along the sketch's normal (mm), measured by Fusion on
+        /// the result: any extent comes in right from these.
+        public var measuredStart: Double?
+        public var measuredEnd: Double?
+        public init(type: String, distance: Double? = nil, expression: String? = nil, reversed: Bool? = nil, taper: Double? = nil,
+                    distance2: Double? = nil, expression2: String? = nil, start: Double? = nil, startExpression: String? = nil,
+                    startType: String? = nil, measuredStart: Double? = nil, measuredEnd: Double? = nil) {
             self.type = type; self.distance = distance; self.expression = expression; self.reversed = reversed; self.taper = taper
+            self.distance2 = distance2; self.expression2 = expression2; self.start = start; self.startExpression = startExpression
+            self.startType = startType; self.measuredStart = measuredStart; self.measuredEnd = measuredEnd
         }
     }
 

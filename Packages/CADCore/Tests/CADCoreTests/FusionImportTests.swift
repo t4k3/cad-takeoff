@@ -126,3 +126,44 @@ private func bracket() -> FusionTimeline {
     #expect(FusionImport.translate("a * 3", value: 31, parameters: p, users: users) == nil)           // does not give the value
     #expect(FusionImport.translate("unknown + 1", value: 1, parameters: p, users: users) == nil)
 }
+
+/// The bracket's sketch extruded another way: the extent (and where Fusion measured it on the
+/// result), the body Fusion made (z from `lo` to `hi`), no round.
+private func bracket(_ extent: F.Extent, lo: Double, hi: Double) -> FusionTimeline {
+    var t = bracket()
+    t.features = [F.Feature(type: "extrude", name: "Estrusione1", operation: "newBody", profiles: ["S1/P0"], extent: extent)]
+    t.bodies = [F.Body(name: "Staffa", volume: (2400 - .pi * 16) * (hi - lo), min: [0, 0, lo], max: [60, 40, hi])]
+    return t
+}
+
+@Test func fusionExtentsTwoSidesOffsetStartAndToAnObject() throws {
+    // Two sides: «spessore» up, 3 mm down — one extrusion from −3, its height both expressions.
+    let two = bracket(F.Extent(type: "twoSides", distance: 5, expression: "spessore", distance2: 3, expression2: "3 mm",
+                               measuredStart: -3, measuredEnd: 5), lo: -3, hi: 5)
+    let (d1, r1) = FusionImport.convert(two, meshes: [])
+    #expect(r1.editable == ["Staffa"] && r1.skipped.isEmpty, "\(r1.summary)")
+    let e1 = try #require(d1.features.first)
+    #expect(e1.expressions["height"]?.replacingOccurrences(of: " ", with: "") == "(spessore)+(3)", "\(e1.expressions)")
+    // Still editable: thicker, the two sides follow.
+    var thicker = d1
+    thicker.parameters[1].expression = "7"
+    _ = try thicker.applyParameters()
+    let b1 = try #require(DesignEvaluator.evaluate(thicker, revision: "t").bodies.first?.mesh.bounds)
+    #expect(abs(b1.min.z + 3) < 1e-6 && abs(b1.max.z - 7) < 1e-6)
+
+    // Starting 10 mm off the sketch, 5 thick.
+    let offset = bracket(F.Extent(type: "distance", distance: 5, expression: "spessore", start: 10, startExpression: "10 mm",
+                                  measuredStart: 10, measuredEnd: 15), lo: 10, hi: 15)
+    let (d2, r2) = FusionImport.convert(offset, meshes: [])
+    #expect(r2.editable == ["Staffa"] && r2.skipped.isEmpty, "\(r2.summary)")
+    #expect(d2.features.first?.expressions["height"] == "spessore")
+
+    // To an object: the length Fusion measured, said in the report.
+    let toFace = bracket(F.Extent(type: "ToEntityExtentDefinition", measuredStart: 0, measuredEnd: 12), lo: 0, hi: 12)
+    let (d3, r3) = FusionImport.convert(toFace, meshes: [])
+    #expect(r3.editable == ["Staffa"] && r3.notes.count == 1 && r3.summary.contains("non parametrica"), "\(r3.summary)")
+    #expect(d3.features.first?.expressions["height"] == nil)
+    // Without Fusion's measure it cannot be rebuilt: the mesh stands in.
+    let unknown = bracket(F.Extent(type: "ToEntityExtentDefinition"), lo: 0, hi: 12)
+    #expect(FusionImport.convert(unknown, meshes: []).1.skipped.count == 1)
+}

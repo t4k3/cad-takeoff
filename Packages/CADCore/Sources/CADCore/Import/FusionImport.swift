@@ -12,11 +12,14 @@ public enum FusionImport {
         public var meshes: [String] = []
         /// Features not converted (name: reason).
         public var skipped: [String] = []
+        /// Converted, but not quite as in Fusion (a measured length instead of its rule…).
+        public var notes: [String] = []
 
         public var summary: String {
             var s = "Da Fusion: \(editable.count) corp\(editable.count == 1 ? "o" : "i") modificabil\(editable.count == 1 ? "e" : "i")"
             if !meshes.isEmpty { s += ", \(meshes.count) come mesh (" + meshes.joined(separator: ", ") + ")" }
             if !skipped.isEmpty { s += " · non convertiti: " + skipped.prefix(4).joined(separator: "; ") + (skipped.count > 4 ? "…" : "") }
+            if !notes.isEmpty { s += " · da sapere: " + notes.prefix(3).joined(separator: "; ") + (notes.count > 3 ? "…" : "") }
             return s
         }
     }
@@ -58,7 +61,7 @@ public enum FusionImport {
             do {
                 switch f.type {
                 case "extrude", "revolve":
-                    let (sid, sketchID, added) = try profileFeatures(f, sketches: sketches, expression: expression)
+                    let (sid, sketchID, added) = try profileFeatures(f, sketches: sketches, expression: expression, notes: &report.notes)
                     useSketch(sid)
                     for (feature, seeds) in added {
                         doc.timeline.append(TimelineItem(.feature(feature)))
@@ -324,7 +327,7 @@ public enum FusionImport {
     /// An extrusion or revolution: one solid per area (disjoint areas are separate bodies), each
     /// with the points that find its area again when the sketch changes.
     static func profileFeatures(_ f: FusionTimeline.Feature, sketches: [String: BuiltSketch],
-                                expression: (String?, Double) -> String?) throws -> (String, UUID, [(Feature, [Vec2])]) {
+                                expression: (String?, Double) -> String?, notes: inout [String]) throws -> (String, UUID, [(Feature, [Vec2])]) {
         let keys = f.profiles ?? []
         let sketchIDs = Set(keys.map { String($0.split(separator: "/").first ?? "") })
         guard sketchIDs.count == 1, let sid = sketchIDs.first, let built = sketches[sid] else { throw Skip("profili da più schizzi o mancanti") }
@@ -343,22 +346,49 @@ public enum FusionImport {
                 var height = abs(e.distance ?? 10)
                 var reversed = (e.reversed ?? false) != ((e.distance ?? 0) < 0)
                 var symmetric = false, through = false
+                var plane = sketch.plane
+                var heightExpression = e.expression
+                // Where it really is along the normal, as Fusion measured it: from there, a start
+                // away from the sketch, two sides, «to an object» come in as the same solid.
+                let measured: (lo: Double, hi: Double)? = {
+                    guard let s = e.measuredStart, let t = e.measuredEnd, abs(t - s) > 1e-6 else { return nil }
+                    return (min(s, t), max(s, t))
+                }()
+                func fromMeasure(_ why: String) throws {
+                    guard let m = measured else { throw Skip(why) }
+                    guard (e.taper ?? 0) == 0 else { throw Skip("sformo con \(why)") }
+                    height = m.hi - m.lo; reversed = false
+                    plane.origin = sketch.plane.origin + sketch.plane.normal * m.lo
+                }
                 switch e.type {
-                case "distance": break
+                case "distance":
+                    if e.start != nil || e.startType != nil {
+                        try fromMeasure("inizio spostato")
+                        if let d = e.distance, abs(abs(d) - height) > 1e-6 { heightExpression = nil }
+                    }
                 case "symmetric": symmetric = true
                 case "through": through = true; height = 10; reversed = e.reversed ?? false
-                default: throw Skip("estensione «\(e.type)» non ancora convertita")
+                case "twoSides":
+                    try fromMeasure("estrusione a due lati")
+                    if let d1 = e.distance, let d2 = e.distance2, abs(abs(d1) + abs(d2) - height) < 1e-6, let x1 = e.expression, let x2 = e.expression2 {
+                        heightExpression = "(\(x1)) + (\(x2))"
+                    } else { heightExpression = nil }
+                default:
+                    // To a face or object: the measured length (not parametric: it follows nothing here).
+                    try fromMeasure("estensione «\(e.type)»")
+                    heightExpression = nil
+                    notes.append("\(f.name): estensione «\(e.type)» convertita con la misura di Fusion (\(number(height)) mm), non parametrica")
                 }
                 guard height > 1e-6 else { throw Skip("altezza nulla") }
-                let onXY = sketch.plane.isXY && !reversed
+                let onXY = plane.isXY && !reversed
                 feature = Feature(name: f.name, kind: .extrude(profile: Profile2D(points: area.outline), height: height), operation: op,
-                                  placement: onXY ? nil : FeaturePlacement(plane: sketch.plane, reversed: reversed),
+                                  placement: onXY ? nil : FeaturePlacement(plane: plane, reversed: reversed),
                                   holes: area.holes.map { Profile2D(points: $0) })
                 feature.keyProfile(from: sketch)
                 feature.symmetric = symmetric
                 feature.throughAll = through
                 feature.taper = e.taper ?? 0
-                if !through, let x = expression(e.expression, height) { feature.expressions["height"] = x }
+                if !through, let x = expression(heightExpression, height) { feature.expressions["height"] = x }
             } else {
                 guard let axis = f.axis else { throw Skip("asse mancante") }
                 var start: Vec2, end: Vec2, ref: SketchRef?

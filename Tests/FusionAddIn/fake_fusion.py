@@ -129,7 +129,8 @@ sketch = Obj("Sketch", name="Schizzo1", transform=Matrix(), originPoint=corners[
 profile.parentSketch = sketch
 extrude = Obj("ExtrudeFeature", name="Estrusione1", profile=profile, operation=3, hasTwoExtents=False,
               extentOne=Obj("DistanceExtentDefinition", distance=Param("d3", "lato", 2.0)),
-              taperAngleOne=Param("d4", "0 deg", 0.0, "deg"))
+              taperAngleOne=Param("d4", "0 deg", 0.0, "deg"),
+              startFaces=Coll([Obj("BRepFace", pointOnFace=P3(1, 1, 0))]), endFaces=Coll([Obj("BRepFace", pointOnFace=P3(1, 1, 2))]))
 timeline = Coll([types.SimpleNamespace(entity=sketch, isSuppressed=False, isRolledBack=False),
                  types.SimpleNamespace(entity=extrude, isSuppressed=False, isRolledBack=False)])
 
@@ -158,4 +159,9 @@ addin = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(addin)
 path, count = addin.export_design(app, out)
 assert count == 2 and os.path.basename(path) == "Staffa v3.ftk", (path, count)
+# The extrusion's real start and end along its sketch's normal (mm), measured on its faces.
+import json
+with open(path) as fh:
+    extent = json.load(fh)["fusion"]["features"][0]["extent"]
+assert abs(extent["measuredStart"]) < 1e-9 and abs(extent["measuredEnd"] - 20) < 1e-9, extent
 print("fake Fusion export:", path)
