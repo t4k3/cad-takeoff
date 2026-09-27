@@ -100,8 +100,11 @@ se differisce, entra la mesh al suo posto: niente si perde e niente è sbagliato
    delle estrusioni prendono il nome dalle curve dello schizzo (una quota cambiata non fa perdere
    raccordi e smussi).
 2. Prova di Ross su pezzi veri di «025 RobotVolley»: dal resoconto all'apertura si vede cosa non
-   passa ancora; si allarga il convertitore caso per caso (estrusione a due lati o da faccia, serie
-   e specchi, combina, fori svasati, sformo, loft/sweep come mesh).
+   passa ancora; si allarga il convertitore caso per caso. **Fatto 27/09:** estrusioni a due lati,
+   con inizio spostato e «fino a faccia» (misurate su Fusion), fori lamati e svasati con le loro
+   misure (i cilindri di un foro riconosciuti insieme), serie e specchi di fori, estrusioni e
+   rivoluzioni (copie al loro posto, legate allo schizzo). Restano: combina, sformo, serie di
+   corpi, loft/sweep (come mesh).
 3. Componenti usati più volte e giunti dell'assieme; poi riaprire in CAD Takeoff un file già
    convertito e riesportato da Fusion senza perdere le modifiche fatte qui.
 

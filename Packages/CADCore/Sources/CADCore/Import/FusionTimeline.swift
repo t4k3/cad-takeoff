@@ -161,6 +161,20 @@ public struct FusionTimeline: Codable, Sendable, Equatable {
         public var depth: Double?
         /// Shell: a point and the normal of each removed face (world).
         public var faces: [[[Double]]]?
+        /// Hole: simple, counterbore, countersink; head (counterbore/countersink) diameter,
+        /// counterbore depth, countersink angle; each hole's own direction and depth (nil: through).
+        public var style: String?
+        public var headDiameter: Double?
+        public var counterboreDepth: Double?
+        public var countersinkAngle: Double?
+        public var diameterExpression: String?
+        public var directions: [[Double]]?
+        public var depths: [Double?]?
+        /// Pattern / mirror: the features copied (by name), what else was given (bodies, faces:
+        /// not converted), and each copy's placement in the world (3 rows: rotation | translation).
+        public var inputs: [String]?
+        public var inputKind: String?
+        public var transforms: [[[Double]]]?
 
         public init(type: String, name: String, operation: String? = nil, profiles: [String]? = nil, extent: Extent? = nil, axis: Axis? = nil,
                     angle: Double? = nil, angleExpression: String? = nil, edges: [[[Double]]]? = nil, size: Double? = nil,

@@ -353,6 +353,8 @@ extension Feature {
         case let (.cylinder(_, h), "radius"): kind = .cylinder(radius: v, height: h)
         case let (.cylinder(r, _), "height"): kind = .cylinder(radius: r, height: v)
         case let (.extrude(p, _), "height"): kind = .extrude(profile: p, height: v)
+        case (.hole(var spec), "diameter"): spec.diameter = v; kind = .hole(spec)
+        case (.chamfer(var spec), "distance"): spec.distance = v; kind = .chamfer(spec)
         default: break
         }
     }

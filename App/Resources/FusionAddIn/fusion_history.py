@@ -299,6 +299,8 @@ class HistoryReader:
                                 pass
                 elif k in ("ExtrudeFeature", "RevolveFeature", "HoleFeature"):
                     self.read_feature(entity, k)
+                elif k in ("RectangularPatternFeature", "CircularPatternFeature", "PathPatternFeature", "MirrorFeature"):
+                    self.read_pattern(entity, k)
                 elif k in ("ConstructionPlane", "ConstructionAxis", "ConstructionPoint", "Occurrence", "JointOrigin",
                            "Joint", "AsBuiltJoint", "RigidGroup"):
                     continue
@@ -410,36 +412,7 @@ class HistoryReader:
                     edges.append(samples)
             entry.update(edges=edges, size=size)
         elif k == "HoleFeature":
-            # Each drilled cylinder: from the far end, along its axis, as long as it is.
-            centers, depth, direction, diameter = [], None, None, None
-            for face in f.sideFaces:
-                g = face.geometry
-                if kind(g) != "Cylinder":
-                    continue
-                axis = g.axis
-                n = math.sqrt(axis.x ** 2 + axis.y ** 2 + axis.z ** 2)
-                ts = []
-                for edge in face.edges:                 # its rims (a circle may have no vertex)
-                    ev = edge.evaluator
-                    ok, e0, e1 = ev.getParameterExtents()
-                    for t in (e0, (e0 + e1) / 2, e1):
-                        ok, q = ev.getPointAtParameter(t)
-                        ts.append(((q.x - g.origin.x) * axis.x + (q.y - g.origin.y) * axis.y + (q.z - g.origin.z) * axis.z) / n)
-                if not ts:
-                    continue
-                t1, t0 = max(ts), min(ts)
-
-                class P:
-                    pass
-                top = P()
-                top.x, top.y, top.z = (g.origin.x + axis.x / n * t1, g.origin.y + axis.y / n * t1, g.origin.z + axis.z / n * t1)
-                down = P()
-                down.x, down.y, down.z = -axis.x / n, -axis.y / n, -axis.z / n
-                centers.append(frame.point(top))
-                direction = frame.vector(down)
-                depth = (t1 - t0) * CM
-                diameter = 2 * g.radius * CM
-            entry.update(type="hole", centers=centers, direction=direction, diameter=diameter, depth=depth)
+            self.read_hole(f, frame, entry)
         elif k == "ShellFeature":
             faces = []
             ents = f.inputEntities
@@ -451,6 +424,148 @@ class HistoryReader:
                 ok, normal = face.evaluator.getNormalAtPoint(p)
                 faces.append([frame.point(p), frame.vector(normal)])
             entry.update(type="shell", faces=faces, size=length_value(f.insideThickness))
+        self.features.append(entry)
+
+    def read_hole(self, f, frame, entry):
+        """A hole feature: its kind and sizes from Fusion's parameters, and each hole from its
+        walls: the cylinders on one axis are one hole; it is drilled from its wide end (counterbore
+        or countersink), else from the side away from its bottom, through all when it has none."""
+        style = "simple"
+        try:
+            style = {0: "simple", 1: "counterbore", 2: "countersink"}.get(int(f.holeType), "simple")
+        except Exception:
+            pass
+        sizes = {}
+        for key, attr in (("diameter", "holeDiameter"), ("headDiameter", "counterboreDiameter"),
+                          ("counterboreDepth", "counterboreDepth")):
+            try:
+                sizes[key] = length_value(getattr(f, attr))
+            except Exception:
+                pass
+        if style == "countersink":
+            try:
+                sizes["headDiameter"] = length_value(f.countersinkDiameter)
+                sizes["countersinkAngle"] = math.degrees(f.countersinkAngle.value)
+            except Exception:
+                pass
+        try:
+            sizes["diameterExpression"] = f.holeDiameter.expression
+        except Exception:
+            pass
+        bottoms = []
+        try:
+            for face in f.endFaces:
+                bottoms.append(face.pointOnFace)
+        except Exception:
+            pass
+        groups = {}
+        for face in f.sideFaces:
+            g = face.geometry
+            gk = kind(g)
+            if gk not in ("Cylinder", "Cone"):
+                continue
+            axis = g.axis
+            n = math.sqrt(axis.x ** 2 + axis.y ** 2 + axis.z ** 2)
+            a = (axis.x / n, axis.y / n, axis.z / n)
+            if a[0] < -1e-9 or (abs(a[0]) < 1e-9 and (a[1] < -1e-9 or (abs(a[1]) < 1e-9 and a[2] < 0))):
+                a = (-a[0], -a[1], -a[2])            # one sign per axis direction
+            o = g.origin
+            t0 = o.x * a[0] + o.y * a[1] + o.z * a[2]
+            foot = (o.x - a[0] * t0, o.y - a[1] * t0, o.z - a[2] * t0)   # the axis' point nearest the origin
+            key = tuple(round(c, 5) for c in a + foot)
+            ts = []
+            for edge in face.edges:
+                ev = edge.evaluator
+                ok, e0, e1 = ev.getParameterExtents()
+                for t in (e0, (e0 + e1) / 2, e1):
+                    ok, q = ev.getPointAtParameter(t)
+                    ts.append(q.x * a[0] + q.y * a[1] + q.z * a[2])
+            if not ts:
+                continue
+            radius = getattr(g, "radius", 0.0)
+            groups.setdefault(key, {"axis": a, "foot": foot, "parts": []})["parts"].append((min(ts), max(ts), radius, gk))
+        holes = []
+        for gr in groups.values():
+            a, foot, parts = gr["axis"], gr["foot"], gr["parts"]
+            bore = min((p for p in parts if p[3] == "Cylinder"), key=lambda p: p[2], default=None)
+            if bore is None:
+                continue
+            lo, hi = min(p[0] for p in parts), max(p[1] for p in parts)
+            wide = [p for p in parts if p is not bore]
+            if wide:
+                w = max(wide, key=lambda p: p[1] - p[0])
+                entry_hi = (w[0] + w[1]) / 2 > (bore[0] + bore[1]) / 2
+            elif bottoms:
+                b = bottoms[0]
+                tb = b.x * a[0] + b.y * a[1] + b.z * a[2]
+                entry_hi = abs(tb - lo) < abs(tb - hi)
+            else:
+                entry_hi = True
+            t_entry = hi if entry_hi else lo
+
+            class P:
+                pass
+            c = P()
+            c.x, c.y, c.z = (foot[0] + a[0] * t_entry, foot[1] + a[1] * t_entry, foot[2] + a[2] * t_entry)
+            d = P()
+            d.x, d.y, d.z = ((-1 if entry_hi else 1) * a[0], (-1 if entry_hi else 1) * a[1], (-1 if entry_hi else 1) * a[2])
+            far = bore[0] if entry_hi else bore[1]
+            holes.append({"center": frame.point(c), "direction": frame.vector(d),
+                          "depth": abs(t_entry - far) * CM if bottoms else None,
+                          "bore": 2 * bore[2] * CM})
+        if not holes:
+            return
+        entry.update(type="hole", style=style, centers=[h["center"] for h in holes], direction=holes[0]["direction"],
+                     directions=[h["direction"] for h in holes], depths=[h["depth"] for h in holes],
+                     diameter=sizes.get("diameter", holes[0]["bore"]), depth=holes[0]["depth"])
+        for key in ("headDiameter", "counterboreDepth", "countersinkAngle", "diameterExpression"):
+            if key in sizes and (key != "counterboreDepth" or style == "counterbore") and (key != "headDiameter" or style != "simple"):
+                entry[key] = sizes[key]
+
+    def read_pattern(self, f, k):
+        """A pattern or mirror of features: which ones (by name) and every copy's placement in
+        the world (3×4, rotation and translation, mm); bodies patterned are not converted yet."""
+        entry = {"type": "mirror" if k == "MirrorFeature" else "pattern", "name": f.name}
+        frame = self.frame_of(f.parentComponent)
+        inputs = []
+        try:
+            ents = f.inputEntities
+            for i in range(ents.count):
+                e = ents.item(i)
+                if not kind(e).endswith("Feature"):
+                    entry["inputKind"] = kind(e)
+                    break
+                inputs.append(e.name)
+        except Exception:
+            entry["inputKind"] = "unknown"
+        entry["inputs"] = inputs
+        transforms = []
+        try:
+            if frame is None:
+                raise ValueError("componente ripetuto")
+            if k == "MirrorFeature":
+                plane = f.mirrorPlane
+                g = plane.geometry if kind(plane) != "BRepFace" else plane.geometry
+                o, nrm = frame.point(g.origin), frame.vector(g.normal)
+                ln = math.sqrt(sum(c * c for c in nrm))
+                nrm = [c / ln for c in nrm]
+                dot = sum(o[i] * nrm[i] for i in range(3))
+                R = [[(1 if i == j else 0) - 2 * nrm[i] * nrm[j] for j in range(3)] for i in range(3)]
+                transforms.append([R[i] + [2 * dot * nrm[i]] for i in range(3)])
+            else:
+                elements = f.patternElements
+                for i in range(elements.count):
+                    el = elements.item(i)
+                    if getattr(el, "isSuppressed", False):
+                        continue
+                    T = world_transform(frame, el.transform)
+                    identity = all(abs(T[r][c] - (1 if r == c else 0)) < 1e-9 for r in range(3) for c in range(3)) \
+                        and all(abs(T[r][3]) < 1e-6 for r in range(3))
+                    if not identity:
+                        transforms.append(T)
+        except Exception:
+            entry["inputKind"] = entry.get("inputKind", "unreadable")
+        entry["transforms"] = transforms
         self.features.append(entry)
 
     def extent(self, f):
@@ -531,6 +646,23 @@ class HistoryReader:
                 pass
             return {"type": "through", "reversed": reversed_}
         return {"type": ek, "taper": taper}
+
+
+class _P:
+    def __init__(self, x, y, z):
+        self.x, self.y, self.z = x, y, z
+
+
+def world_transform(frame, m):
+    """A transform of component space as it acts on the world (3×4: rotation | translation, mm):
+    the frame's inverse, the transform, the frame again."""
+    o, x, y, z = m.getAsCoordinateSystem()
+    A = [frame.vector(_P(1, 0, 0)), frame.vector(_P(0, 1, 0)), frame.vector(_P(0, 0, 1))]
+    B = [frame.vector(x), frame.vector(y), frame.vector(z)]
+    R = [[sum(B[k][i] * A[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+    tf, ot = frame.point(_P(0, 0, 0)), frame.point(o)
+    t = [ot[i] - sum(R[i][j] * tf[j] for j in range(3)) for i in range(3)]
+    return [R[i] + [t[i]] for i in range(3)]
 
 
 def bodies_info(body, name, frame, mesh_index):

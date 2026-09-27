@@ -68,7 +68,8 @@ public enum FusionImport {
                         doc.sketchLinks.append(SketchLink(featureID: feature.id, sketchID: sketchID, shapeID: UUID(), seeds: seeds))
                     }
                 case "fillet", "chamfer": try addEdgeFeature(f, doc: &doc, expression: expression)
-                case "hole": try addHole(f, doc: &doc)
+                case "hole": try addHole(f, doc: &doc, expression: expression)
+                case "pattern", "mirror": try addCopies(f, doc: &doc, notes: &report.notes)
                 case "shell": try addShell(f, doc: &doc)
                 default: throw Skip("tipo \(f.type) non ancora convertito")
                 }
@@ -428,11 +429,84 @@ public enum FusionImport {
         doc.timeline.append(TimelineItem(.feature(Feature(name: f.name, kind: .chamfer(spec)))))
     }
 
-    static func addHole(_ f: FusionTimeline.Feature, doc: inout CADDocument) throws {
+    /// A hole feature: simple, counterbored or countersunk, its sizes as Fusion gives them; the
+    /// holes that go the same way to the same depth are one feature (one per group otherwise).
+    static func addHole(_ f: FusionTimeline.Feature, doc: inout CADDocument, expression: (String?, Double) -> String?) throws {
         guard let centers = f.centers, !centers.isEmpty, let d = f.diameter, d > 0 else { throw Skip("foro senza posizione o diametro") }
-        let dir = f.direction.map(v3)?.normalized ?? Vec3(0, 0, -1)
-        let spec = HoleSpec(centers: centers.map(v3), direction: dir, style: .simple, fit: .manual, size: nil, diameter: d, depth: f.depth)
-        doc.timeline.append(TimelineItem(.feature(Feature(name: f.name, kind: .hole(spec)))))
+        let style: HoleSpec.Style = switch f.style { case "counterbore": .counterbore; case "countersink": .countersink; default: .simple }
+        if style != .simple, (f.headDiameter ?? 0) <= d { throw Skip("foro \(style.label.lowercased()) senza diametro della testa") }
+        let dirs = (f.directions?.count == centers.count ? f.directions! : Array(repeating: f.direction ?? [0, 0, -1], count: centers.count)).map { v3($0).normalized }
+        let depths: [Double?] = f.depths?.count == centers.count ? f.depths! : Array(repeating: f.depth, count: centers.count)
+        // Holes drilled the same way to the same depth together.
+        var groups: [(dir: Vec3, depth: Double?, centers: [Vec3])] = []
+        for (k, c) in centers.enumerated() {
+            if let g = groups.firstIndex(where: { ($0.dir - dirs[k]).length < 1e-6 && $0.depth == depths[k] }) { groups[g].centers.append(v3(c)) }
+            else { groups.append((dirs[k], depths[k], [v3(c)])) }
+        }
+        for (k, g) in groups.enumerated() {
+            var spec = HoleSpec(centers: g.centers, direction: g.dir, style: style, fit: .manual, size: nil, diameter: d, depth: g.depth)
+            if style != .simple { spec.headDiameter = f.headDiameter ?? 0 }
+            if style == .counterbore { spec.counterboreDepth = f.counterboreDepth ?? 0 }
+            if style == .countersink, let a = f.countersinkAngle { spec.countersinkAngle = a }
+            var feature = Feature(name: groups.count == 1 ? f.name : "\(f.name) (\(k + 1))", kind: .hole(spec))
+            if let x = expression(f.diameterExpression, d) { feature.expressions["diameter"] = x }
+            doc.timeline.append(TimelineItem(.feature(feature)))
+        }
+    }
+
+    /// A pattern or mirror of features: every copy of the features it names, placed where Fusion
+    /// put it — holes with their centres moved, extrusions and revolves on their plane moved (and
+    /// still following their sketch). Count and spacing are not editable here: said in the report.
+    static func addCopies(_ f: FusionTimeline.Feature, doc: inout CADDocument, notes: inout [String]) throws {
+        if let other = f.inputKind { throw Skip("serie di \(other == "BRepBody" ? "corpi" : other) non ancora convertita") }
+        guard let names = f.inputs, !names.isEmpty, let transforms = f.transforms, !transforms.isEmpty else { throw Skip("serie senza elementi") }
+        let sources = doc.features.filter { names.contains($0.name) }
+        guard !sources.isEmpty else { throw Skip("le feature ripetute non sono state convertite") }
+        var copies = 0
+        for (k, t) in transforms.enumerated() {
+            guard t.count == 3, t.allSatisfy({ $0.count == 4 }) else { throw Skip("posizione della copia non valida") }
+            let r = [Vec3(t[0][0], t[1][0], t[2][0]), Vec3(t[0][1], t[1][1], t[2][1]), Vec3(t[0][2], t[1][2], t[2][2])]   // columns
+            let shift = Vec3(t[0][3], t[1][3], t[2][3])
+            func dir(_ v: Vec3) -> Vec3 { r[0] * v.x + r[1] * v.y + r[2] * v.z }
+            func point(_ p: Vec3) -> Vec3 { dir(p) + shift }
+            let mirrored = r[0].cross(r[1]).dot(r[2]) < 0
+            for source in sources {
+                var copy = source
+                copy.id = UUID()
+                copy.name = "\(source.name) (copia \(k + 1))"
+                switch source.kind {
+                case var .hole(spec):
+                    spec.centers = spec.centers.map(point)
+                    spec.direction = dir(spec.direction).normalized
+                    copy.kind = .hole(spec)
+                case .extrude:
+                    let placement = source.placement ?? FeaturePlacement(plane: .xy)
+                    var plane = placement.plane
+                    plane.origin = point(plane.origin + source.position)
+                    plane.xAxis = dir(plane.xAxis); plane.yAxis = dir(plane.yAxis)
+                    copy.position = .zero
+                    // A mirror turns the plane over: the extrusion then goes the other way along it.
+                    copy.placement = FeaturePlacement(plane: plane, reversed: placement.reversed != mirrored)
+                case var .revolve(spec):
+                    spec.plane.origin = point(spec.plane.origin + source.position)
+                    spec.plane.xAxis = dir(spec.plane.xAxis); spec.plane.yAxis = dir(spec.plane.yAxis)
+                    if mirrored { spec.reversed.toggle() }
+                    copy.position = .zero
+                    copy.kind = .revolve(spec)
+                default:
+                    throw Skip("copie di «\(source.name)» non ancora convertite")
+                }
+                doc.timeline.append(TimelineItem(.feature(copy)))
+                // The copy follows the same sketch as its original.
+                for link in doc.sketchLinks where link.featureID == source.id {
+                    var l = link
+                    l.featureID = copy.id
+                    doc.sketchLinks.append(l)
+                }
+                copies += 1
+            }
+        }
+        notes.append("\(f.name): \(copies) copie al loro posto (numero e passo non modificabili qui)")
     }
 
     static func addShell(_ f: FusionTimeline.Feature, doc: inout CADDocument) throws {

@@ -167,3 +167,52 @@ private func bracket(_ extent: F.Extent, lo: Double, hi: Double) -> FusionTimeli
     let unknown = bracket(F.Extent(type: "ToEntityExtentDefinition"), lo: 0, hi: 12)
     #expect(FusionImport.convert(unknown, meshes: []).1.skipped.count == 1)
 }
+
+@Test func fusionHolesWithTheirKindAndPatternsAndMirrors() throws {
+    // A counterbored hole on the bracket, then a pattern of it (two more, 15 mm apart along X).
+    var t = bracket()
+    t.features = [t.features[0],
+                  F.Feature(type: "hole", name: "Foro1", centers: [[10, 10, 5]], direction: [0, 0, -1], diameter: 4.5, depth: nil),
+                  F.Feature(type: "pattern", name: "Serie1")]
+    t.features[1].style = "counterbore"; t.features[1].headDiameter = 8; t.features[1].counterboreDepth = 2
+    t.features[1].diameterExpression = "foro - 3.5 mm"
+    t.features[2].inputs = ["Foro1"]
+    t.features[2].transforms = [[[1, 0, 0, 15], [0, 1, 0, 0], [0, 0, 1, 0]], [[1, 0, 0, 30], [0, 1, 0, 0], [0, 0, 1, 0]]]
+    t.bodies = []
+    let (doc, report) = FusionImport.convert(t, meshes: [])
+    #expect(report.skipped.isEmpty && report.notes.contains { $0.contains("Serie1") && $0.contains("2 copie") }, "\(report.summary)")
+    let holes = doc.features.compactMap { f -> HoleSpec? in if case let .hole(s) = f.kind { s } else { nil } }
+    #expect(holes.count == 3 && holes.allSatisfy { $0.style == .counterbore && $0.headDiameter == 8 && $0.counterboreDepth == 2 && $0.diameter == 4.5 })
+    #expect(Set(holes.flatMap(\.centers).map(\.x)) == [10, 25, 40])
+    #expect(doc.features.first { $0.name == "Foro1" }?.expressions["diameter"] != nil)
+    // The rebuilt bracket has the three counterbores.
+    let body = try #require(DesignEvaluator.evaluate(doc, revision: "h").bodies.first)
+    let bore = Double.pi * 2.25 * 2.25 * 3 + Double.pi * 16 * 2
+    #expect(abs(body.mesh.volume - ((2400 - .pi * 16) * 5 - 3 * bore)) < 0.02 * 3 * bore)
+
+    // A boss mirrored across the YZ plane (x → −x): its copy on the other side, same height.
+    var m = bracket()
+    m.features = [m.features[0], F.Feature(type: "mirror", name: "Specchio1")]
+    m.features[1].inputs = ["Estrusione1"]
+    m.features[1].transforms = [[[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]]]
+    m.bodies = []
+    let (mdoc, mreport) = FusionImport.convert(m, meshes: [])
+    #expect(mreport.skipped.isEmpty, "\(mreport.summary)")
+    let bodies = DesignEvaluator.evaluate(mdoc, revision: "m").bodies
+    #expect(bodies.count == 2)
+    let boxes = bodies.compactMap(\.mesh.bounds)
+    #expect(boxes.contains { abs($0.min.x + 60) < 1e-6 && abs($0.max.x) < 1e-6 && abs($0.min.z) < 1e-6 && abs($0.max.z - 5) < 1e-6 },
+            "\(boxes.map { ($0.min, $0.max) })")
+    // The copy follows the sketch too: a wider bracket, both sides wider.
+    var wider = mdoc
+    wider.parameters[0].expression = "80"
+    for id in try wider.applyParameters() { if let s = wider.sketches.first(where: { $0.id == id }) { wider.regenerate(from: s) } }
+    let wide = DesignEvaluator.evaluate(wider, revision: "w").bodies.compactMap(\.mesh.bounds)
+    #expect(wide.contains { abs($0.min.x + 80) < 1e-6 } && wide.contains { abs($0.max.x - 80) < 1e-6 })
+
+    // A pattern of bodies: not converted yet, said so.
+    var b = bracket()
+    b.features = [b.features[0], F.Feature(type: "pattern", name: "Serie corpi")]
+    b.features[1].inputKind = "BRepBody"
+    #expect(FusionImport.convert(b, meshes: []).1.skipped.contains { $0.contains("corpi") })
+}

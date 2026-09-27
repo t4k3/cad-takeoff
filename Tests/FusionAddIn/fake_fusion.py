@@ -101,6 +101,10 @@ class Evaluator:
     def getStrokes(self, t0, t1, tol):
         return True, self.pts
 
+    def getPointAtParameter(self, t):
+        a, b = self.pts[0], self.pts[-1]
+        return True, P3(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t)
+
 
 class Matrix:
     def getAsCoordinateSystem(self):
@@ -131,11 +135,31 @@ extrude = Obj("ExtrudeFeature", name="Estrusione1", profile=profile, operation=3
               extentOne=Obj("DistanceExtentDefinition", distance=Param("d3", "lato", 2.0)),
               taperAngleOne=Param("d4", "0 deg", 0.0, "deg"),
               startFaces=Coll([Obj("BRepFace", pointOnFace=P3(1, 1, 0))]), endFaces=Coll([Obj("BRepFace", pointOnFace=P3(1, 1, 2))]))
+# A counterbored hole (Ø4.5, head Ø8 × 2 deep) through the cube's top at (0.6, 1), then a pattern of it.
+def rim(x, y, z, r):
+    return Obj("BRepEdge", evaluator=Evaluator([P3(x + r, y, z), P3(x - r, y, z)]))
+def wall(r, z0, z1):
+    return Obj("BRepFace", geometry=Obj("Cylinder", origin=P3(0.6, 1, 0), axis=P3(0, 0, 1), radius=r),
+               edges=[rim(0.6, 1, z0, r), rim(0.6, 1, z1, r)])
+hole = Obj("HoleFeature", name="Foro1", holeType=1, holeDiameter=Param("d5", "4.5 mm", 0.45), counterboreDiameter=Param("d6", "8 mm", 0.8),
+           counterboreDepth=Param("d7", "2 mm", 0.2), sideFaces=[wall(0.225, 0.0, 2.0), wall(0.4, 1.8, 2.0)], endFaces=Coll([]))
+class Shift:
+    def __init__(self, dx):
+        self.dx = dx
+    def getAsCoordinateSystem(self):
+        return P3(self.dx, 0, 0), P3(1, 0, 0), P3(0, 1, 0), P3(0, 0, 1)
+pattern = Obj("RectangularPatternFeature", name="Serie1", inputEntities=Coll([hole]),
+              patternElements=Coll([types.SimpleNamespace(transform=Shift(0.0), isSuppressed=False),
+                                    types.SimpleNamespace(transform=Shift(0.9), isSuppressed=False)]))
 timeline = Coll([types.SimpleNamespace(entity=sketch, isSuppressed=False, isRolledBack=False),
-                 types.SimpleNamespace(entity=extrude, isSuppressed=False, isRolledBack=False)])
+                 types.SimpleNamespace(entity=extrude, isSuppressed=False, isRolledBack=False),
+                 types.SimpleNamespace(entity=hole, isSuppressed=False, isRolledBack=False),
+                 types.SimpleNamespace(entity=pattern, isSuppressed=False, isRolledBack=False)])
 
 base = Body("Base", cube(0, 0, 0, 2), Colour(200, 30, 30))
-base.physicalProperties = types.SimpleNamespace(volume=8.0)
+# The cube with its two counterbored holes (bore Ø4.5 × 18, head Ø8 × 2), in cm³.
+import math
+base.physicalProperties = types.SimpleNamespace(volume=8.0 - 2 * math.pi * (0.225 ** 2 * 1.8 + 0.4 ** 2 * 0.2))
 base.boundingBox = types.SimpleNamespace(minPoint=P3(0, 0, 0), maxPoint=P3(2, 2, 2))
 root = types.SimpleNamespace(
     bRepBodies=[base, Body("Nascosto", cube(9, 9, 9, 1), Colour(0, 0, 0), visible=False)],
@@ -146,6 +170,8 @@ design = types.SimpleNamespace(rootComponent=root, designType=1, timeline=timeli
                                                                                Param("d2", "lato", 2.0), Param("d3", "lato", 2.0)]))
 sketch.parentComponent = root
 extrude.parentComponent = root
+hole.parentComponent = root
+pattern.parentComponent = root
 fusion.Design = types.SimpleNamespace(cast=lambda p: p)
 app = types.SimpleNamespace(
     activeProduct=design, activeDocument=types.SimpleNamespace(name="Staffa v3"),
@@ -164,4 +190,15 @@ import json
 with open(path) as fh:
     extent = json.load(fh)["fusion"]["features"][0]["extent"]
 assert abs(extent["measuredStart"]) < 1e-9 and abs(extent["measuredEnd"] - 20) < 1e-9, extent
+# The hole: counterbored, one hole drilled from the top (Fusion Y-up: its Z is our −Y), through.
+with open(path) as fh:
+    feats = json.load(fh)["fusion"]["features"]
+h = feats[1]
+assert h["type"] == "hole" and h["style"] == "counterbore" and abs(h["diameter"] - 4.5) < 1e-9 and abs(h["headDiameter"] - 8) < 1e-9, h
+assert abs(h["counterboreDepth"] - 2) < 1e-9 and len(h["centers"]) == 1 and h["depth"] is None, h
+assert [round(c, 6) for c in h["centers"][0]] == [6.0, -20.0, 10.0] and [round(c, 6) for c in h["direction"]] == [0, 1, 0], h
+# The pattern: the hole once more, 9 mm along X (the identity element left out).
+sp = feats[2]
+assert sp["type"] == "pattern" and sp["inputs"] == ["Foro1"] and len(sp["transforms"]) == 1, sp
+assert [round(v, 6) for v in sp["transforms"][0][0]] == [1, 0, 0, 9], sp
 print("fake Fusion export:", path)
