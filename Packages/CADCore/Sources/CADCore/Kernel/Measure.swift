@@ -40,6 +40,8 @@ public enum Measure {
         func consider(_ p: Vec3, _ q: Vec3) { let d = (p - q).length; if d < (best?.0 ?? .infinity) { best = (d, p, q) } }
         let segsA = a.segments + a.triangles.flatMap { [($0.0, $0.1), ($0.1, $0.2), ($0.2, $0.0)] }
         let segsB = b.segments + b.triangles.flatMap { [($0.0, $0.1), ($0.1, $0.2), ($0.2, $0.0)] }
+        // Very large faces (imported meshes): not measured, rather than stalling the window.
+        guard segsA.count * segsB.count + a.points.count * b.triangles.count + b.points.count * a.triangles.count <= 4_000_000 else { return nil }
         // Edges against edges, and every vertex against the other side's triangles.
         for s in segsA { for t in segsB { let (p, q) = closest(s, t); consider(p, q) } }
         for p in a.points { for t in b.triangles { consider(p, closest(p, t)) } }
