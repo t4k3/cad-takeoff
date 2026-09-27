@@ -24,6 +24,7 @@
 		2E9E1A85449505E8EE29A665 /* SketchSession+Constraints.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10B7DAAA5C2972E239820E7 /* SketchSession+Constraints.swift */; };
 		2F1583AA3117428454D4F36B /* UndoRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E853D121D28F163F7809FD /* UndoRouter.swift */; };
 		2FC4825CD83EF05888764383 /* Ribbon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8DCACC31C8A1D1083704390 /* Ribbon.swift */; };
+		31399CA1BDEC34626648EB0E /* CircuitModel+Rules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7E4062145A9A8EA45189EC /* CircuitModel+Rules.swift */; };
 		33179EDE90F3611F14EC7AAF /* OpenAIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */; };
 		363309F9322A024E16F49312 /* ThumbnailRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F81146D05AB6550033CA0390 /* ThumbnailRenderer.swift */; };
 		36BC8E66826F4BCED0F7E73B /* SplitCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */; };
@@ -131,6 +132,7 @@
 		0B64F683EF67CA5B65DCDA84 /* ExplodeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplodeCommand.swift; sourceTree = "<group>"; };
 		0C2A030D32CF1A0BBDAFD07B /* AnthropicStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStream.swift; sourceTree = "<group>"; };
 		0D62E0F75CF5CB298CD5B22F /* OpenAIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIConversation.swift; sourceTree = "<group>"; };
+		0D7E4062145A9A8EA45189EC /* CircuitModel+Rules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CircuitModel+Rules.swift"; sourceTree = "<group>"; };
 		107E7A72ACBBD8A3E6C64783 /* ViewportContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewportContainer.swift; sourceTree = "<group>"; };
 		14BCB1CCAA2E691590A08FFD /* DistanceManipulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceManipulator.swift; sourceTree = "<group>"; };
 		14F28DA722F5CEA29D56B8C6 /* DesignTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTabs.swift; sourceTree = "<group>"; };
@@ -377,6 +379,7 @@
 			children = (
 				F1A5F02CE2EF0AEDD8D86251 /* CircuitModel.swift */,
 				1910760B5F8D7EDB7F9D1502 /* CircuitModel+PCB.swift */,
+				0D7E4062145A9A8EA45189EC /* CircuitModel+Rules.swift */,
 				4A22EDDA6CFE7BB109C9224B /* CircuitModel+Schematic.swift */,
 			);
 			path = Electronics;
@@ -749,6 +752,7 @@
 				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
 				B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */,
 				99BD3748892C2F30C9DCB2D8 /* CircuitModel+PCB.swift in Sources */,
+				31399CA1BDEC34626648EB0E /* CircuitModel+Rules.swift in Sources */,
 				5A5FE040EE1622D222CE7B85 /* CircuitModel+Schematic.swift in Sources */,
 				373A61520DDA32DF06C8685D /* CircuitModel.swift in Sources */,
 				6B565AFFC0F914F50DE7ED6C /* CircuitSchematicView.swift in Sources */,
@@ -908,7 +912,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.20;
+				MARKETING_VERSION = 1.0.21;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -972,7 +976,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.20;
+				MARKETING_VERSION = 1.0.21;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

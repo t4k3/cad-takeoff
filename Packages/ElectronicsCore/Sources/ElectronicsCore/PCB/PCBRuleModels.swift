@@ -76,6 +76,19 @@ public struct PCBKeepoutSnapTarget: Equatable, Sendable {
 }
 
 extension ElectronicsPCB {
+    /// Resolve a whole net table after one integrity check. Intended for a background,
+    /// revision-keyed UI cache; calling the single-net overload N times validates N times.
+    public static func resolvedRules(design: ElectronicsDesign) throws -> [UUID: PCBResolvedNetRules] {
+        try ElectronicsValidation.requireIntegrity(design)
+        let copper = design.board.copper ?? .init()
+        let classes = Dictionary(uniqueKeysWithValues:copper.netClasses.flatMap { c in c.netIDs.map { ($0,c) } })
+        var result: [UUID: PCBResolvedNetRules] = [:]
+        for net in design.nets {
+            try Task.checkCancellation()
+            result[net.id] = resolve(copper.rules,netClass:classes[net.id])
+        }
+        return result
+    }
     public static func resolvedRules(design: ElectronicsDesign, netID: UUID?) throws -> PCBResolvedNetRules {
         try ElectronicsValidation.requireIntegrity(design)
         if let netID, !design.nets.contains(where: { $0.id == netID }) {

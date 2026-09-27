@@ -264,4 +264,13 @@ final class PCBRuleTests: XCTestCase {
         try apply(.batch([.removeKeepout(id(30)),.configure(layerCount:4,rules:.init())]),&d)
         XCTAssertEqual(d.design.board.copper?.layerCount,4)
     }
+    func testBulkRulesMatchIndividualResolutionWithoutDroppingUnclassifiedNets() throws {
+        var d = try document()
+        try apply(.addNetClass(.init(id:id(20),name:"Potenza",netIDs:[id(1)],constraints:.init(minimumTrackWidth:0.8))),&d)
+        let all = try ElectronicsPCB.resolvedRules(design:d.design)
+        XCTAssertEqual(Set(all.keys),[id(1),id(2)])
+        for net in d.design.nets { XCTAssertEqual(all[net.id],try ElectronicsPCB.resolvedRules(design:d.design,netID:net.id)) }
+        var invalid = d.design; invalid.board.copper!.netClasses.append(.init(name:"Doppia",netIDs:[id(1)]))
+        failure("ambiguous_net_class") { _ = try ElectronicsPCB.resolvedRules(design:invalid) }
+    }
 }

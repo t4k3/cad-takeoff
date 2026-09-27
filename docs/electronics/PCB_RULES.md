@@ -1,7 +1,7 @@
 # Classi di rete e aree vietate — contratto T94
 
-Questa seconda tranche estende [PCB.md](PCB.md). API compilanti e 106 test del motore
-verdi, inclusi 18 nuovi casi sulle regole. Lettore Python indipendente e fixture
+Questa seconda tranche estende [PCB.md](PCB.md). API compilanti e 107 test del motore
+verdi, inclusi 19 nuovi casi sulle regole. Lettore Python indipendente e fixture
 esportata verificati; integrazione UI in corso.
 
 ## Classi
@@ -28,6 +28,9 @@ mostra le violazioni e permette di correggerle.
 La risoluzione completa valida il documento: chiamarla al cambio di rete/revisione,
 non a ogni movimento del cursore. Le dimensioni ottenute sono valori per la sessione
 di routing; un aggiornamento di revisione invalida la sessione/anteprima come già per le piste.
+Per la tabella completa usare `ElectronicsPCB.resolvedRules(design:) -> [UUID: PCBResolvedNetRules]`:
+valida una volta e risolve tutte le reti in un worker cancellabile. Conservare la mappa
+per identità/revisione; non chiamare l'overload singolo per ogni riga a ogni ridisegno.
 
 Separare gruppi di fili di una rete automatica conserva la classe sui gruppi derivati.
 Unire reti appartenenti a classi diverse produce `schematic_net_class_conflict`:

@@ -68,7 +68,7 @@ risoluzione sopra i minimi della scheda, distanza più severa fra due reti; aree
 per strato/tipo con contorno concavo, primitive e pick/snap indicizzati. Regole modificabili
 senza alterare il rame esistente, nuovi tratti non conformi rifiutati. Documento v5 con
 lettura 1–5 e storico; classi conservate dopo separazione delle reti automatiche.
-106 test motore, quattro lettori indipendenti e 177 CAD PASS. Contratto [PCB_RULES.md](PCB_RULES.md).
+107 test motore, quattro lettori indipendenti e 177 CAD PASS. Contratto [PCB_RULES.md](PCB_RULES.md).
 Claude integra T97; il collaudo visivo è registrato separatamente in VALIDATION.md.
 Restano T94 avanzato (archi, stackup dielettrico, pour/termiche, shove, DRC completo)
 e T95 per fabbricazione. Nessuna qualificazione produttiva.

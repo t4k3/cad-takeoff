@@ -2,9 +2,10 @@
 
 ## 27/09/2026 — T94: classi di rete e aree vietate
 
-- Suite elettronica: **106 test Swift PASS**, 18 nuovi sulle regole; quattro lettori
+- Suite elettronica: **107 test Swift PASS**, 19 nuovi sulle regole; quattro lettori
   Python indipendenti PASS. Processo `bash scripts/test-electronics.sh` exit 0,
-  artefatti `build/electronics/run.7d8g5T/`.
+  artefatti `build/electronics/run.7d8g5T/` (106 test al primo giro). Dopo il resolver
+  batch, suite Swift completa 107 PASS, exit 0: `/tmp/ftk-pcb-rules-bulk.log`.
 - Test: minimi globali non aggirabili, preferenze risolte, DRC su larghezza/fori/anello,
   clearance più severa fra reti anche nell'indice spaziale; assegnazioni esclusive,
   classe ereditata su split e merge di classi diverse rifiutato; keepout concavo,
