@@ -376,9 +376,25 @@ private func evaluate(_ spec: SheetMetalSpec, extra: [Feature] = []) -> (DesignE
         SheetSideFlange(side: 0, flange: SheetFlange(length: 12)), SheetSideFlange(side: 2, flange: SheetFlange(length: 12)),
     ])
     let build = try SheetMetalGeometry.build(one, featureID: UUID())
-    #expect(MeshValidator.validate(build.folded.triangulated().mesh).isWatertight)
-    #expect(build.warnings.contains { $0.contains("rientrante") && $0.contains("scarico") })
+    let mesh = build.folded.triangulated().mesh
+    #expect(MeshValidator.validate(mesh).isWatertight)
+    #expect(build.warnings.contains { $0.contains("Scarico tondo") })
     #expect(!SheetMetalGeometry.selfIntersecting(build.flat.outline))
+    // Side 2 runs from (60,30) to the inward corner (30,30): its flange stops a relief (t) short
+    // of it, and the blank has a slot there between the flange and the plate going on up along
+    // side 3 (x = 30), round at the bottom — else the flange would stay joined to the plate.
+    let t = 1.5, r = build.rule.insideRadius, sb = r + t, w = t
+    let reach = Double.pi / 2 * (r + build.rule.kFactor * t) + (12 - sb)
+    #expect(!SketchArrangement.inside(Vec2(30 + w / 2, 30 - sb + reach / 2), build.flat.outline))
+    #expect(!SketchArrangement.inside(Vec2(30 + w / 2, 30 - sb - w / 4), build.flat.outline))
+    #expect(SketchArrangement.inside(Vec2(30 - 0.1, 30 - sb + reach / 2), build.flat.outline))
+    // Blank area: plate (sides 0 and 2 moved in by sb) + two strips, side 2's narrowed by the
+    // relief, − the round end (a 16-chord half disc).
+    let plateArea = 60 * (30 - 2 * sb) + 30 * (30 + sb)
+    let halfDisc = 16.0 / 2 * sin(Double.pi / 16) * (w / 2) * (w / 2)
+    #expect(abs(build.flat.area - (plateArea + 60 * reach + (30 - w) * reach - halfDisc)) < 1e-6)
+    // The folded part has the same round notch in the plate (a cylinder).
+    #expect(build.folded.faces.contains { if case let .cylinder(_, _, radius) = $0.surface { abs(radius - w / 2) < 1e-9 } else { false } })
     // Both sides of the inward corner: the flanges would overlap.
     var both = one
     both.sideFlanges!.append(SheetSideFlange(side: 3, flange: SheetFlange(length: 12)))

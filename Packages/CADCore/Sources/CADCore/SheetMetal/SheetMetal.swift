@@ -690,7 +690,11 @@ public enum SheetMetalGeometry {
         }
         let along = (0..<n).map { (outline[($0 + 1) % n] - outline[$0]).normalized }
         let out = along.map { Vec2($0.y, -$0.x) }
-        // Corners: a flange on both sides of an inward corner overlaps; one flange there needs a relief.
+        // Corners: a flange on both sides of an inward corner overlaps. One flange there ends
+        // against the plate, which goes on along the next side: the flange stops a relief width
+        // short of the corner and a slot with a round end (into the plate) frees it to bend.
+        let relief = t
+        var reliefAtStart = Set<Int>(), reliefAtEnd = Set<Int>()
         for k in 0..<n {
             let prev = (k + n - 1) % n
             let turn = along[prev].cross(along[k])
@@ -698,7 +702,10 @@ public enum SheetMetalGeometry {
             if bent[prev] != nil, bent[k] != nil {
                 throw SheetMetalError.invalidParameter("flange sui lati \(prev + 1) e \(k + 1): si sovrappongono nell'angolo rientrante")
             }
-            warnings.append("Angolo rientrante al punto \(k + 1): serve uno scarico per piegare la flangia")
+            if bent[k] != nil { reliefAtStart.insert(k) } else { reliefAtEnd.insert(prev) }
+        }
+        if !reliefAtStart.isEmpty || !reliefAtEnd.isEmpty {
+            warnings.append("Scarico tondo largo \(fmt(relief)) mm negli angoli rientranti: la flangia si ferma prima dell'angolo")
         }
 
         // The plate: each side moved in by its setback, corners where the moved sides meet.
@@ -726,9 +733,27 @@ public enum SheetMetalGeometry {
         let prefix = "sheet:\(featureID.uuidString)"
         var solid = prism(plate, height: t, at: position, prefix: prefix + "/plate")
         struct Side { let origin: Vec2; let out: Vec2; let along: Vec2; let span: Double }
+        /// A flanged side's bend line: the plate's side less the reliefs at inward corners.
         func side(_ k: Int) -> Side {
             let a = plate[k], b = plate[(k + 1) % n]
-            return Side(origin: a, out: out[k], along: along[k], span: (b - a).length)
+            let start = reliefAtStart.contains(k) ? relief : 0, end = reliefAtEnd.contains(k) ? relief : 0
+            return Side(origin: a + along[k] * start, out: out[k], along: along[k], span: (b - a).length - start - end)
+        }
+        for k in bent.keys where side(k).span < 0.1 {
+            throw SheetMetalError.invalidParameter("lato \(k + 1) troppo corto per la flangia con lo scarico")
+        }
+        // The reliefs' round ends: half-discs into the plate, centred on the bend's tangent line.
+        let notches: [Vec2] = reliefAtStart.map { plate[$0] + along[$0] * (relief / 2) }
+            + reliefAtEnd.map { plate[($0 + 1) % n] - along[$0] * (relief / 2) }
+        /// From `a` to `b` (a relief's width apart on a side) round into the plate.
+        func notch(_ a: Vec2, _ b: Vec2, inward: Vec2) -> [Vec2] {
+            let c = (a + b) * 0.5, r = (b - a).length / 2, u = (a - c) * (1 / r)
+            return (0...16).map { i in let th = Double(i) / 16 * .pi; return c + u * (r * cos(th)) + inward * (r * sin(th)) }
+        }
+        for (i, c) in notches.enumerated() where folded {
+            let spec = HoleSpec(centers: [Vec3(c.x, c.y, t) + position], fit: .manual, diameter: relief)
+            solid = solid.subtracting(HoleGeometry.solid(spec, featureID: UUID(uuidString: featureID.uuidString.prefix(24) + String(format: "%012d", 900 + i)) ?? featureID,
+                                                         throughDepth: t + 1))
         }
         for (k, b) in bent.sorted(by: { $0.key < $1.key }) where folded {
             let f = side(k)
@@ -748,10 +773,12 @@ public enum SheetMetalGeometry {
         // Flat pattern: the plate with a strip out of each flanged side.
         var raw: [Vec2] = []
         for k in 0..<n {
-            raw.append(plate[k])
+            let f = side(k)
+            if reliefAtStart.contains(k) { raw += notch(plate[k], f.origin, inward: out[k] * -1) } else { raw.append(plate[k]) }
             if let b = bent[k] {
-                let f = side(k)
-                raw += [f.origin + f.out * b.total, f.origin + f.along * f.span + f.out * b.total]
+                let end = f.origin + f.along * f.span
+                raw += [f.origin + f.out * b.total, end + f.out * b.total, end]
+                if reliefAtEnd.contains(k) { raw += notch(end, plate[(k + 1) % n], inward: out[k] * -1) }
             }
         }
         var bends: [SheetFlatPattern.Bend] = []

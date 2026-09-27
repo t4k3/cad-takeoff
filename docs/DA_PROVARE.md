@@ -49,7 +49,7 @@ sono le prove a mano, sull'interfaccia.
 - [ ] Rilancia lo script «Importa progetto in CAD Takeoff» su «025 RobotVolley»: riesporta tutto (i vecchi .ftk senza cronologia non vengono saltati). Mandami import-fusion.txt e i messaggi «non convertiti» dei pezzi che ti servono.
 
 ## Lamiera a base libera
-- [ ] Schizzo sul piano XY → un profilo chiuso (esagono, forma a L…) → CREA › **Lamiera**: esce la base piana; clicca i bordi da piegare (di nuovo per toglierli), altezza/angolo/risvolto come sempre → OK. LAMIERA › Sviluppo: la sagoma stesa con le pieghe. Due lati piegati che si incontrano in un angolo rientrante: messaggio che si sovrappongono.
+- [ ] Schizzo sul piano XY → un profilo chiuso (esagono, forma a L…) → CREA › **Lamiera**: esce la base piana; clicca i bordi da piegare (di nuovo per toglierli), altezza/angolo/risvolto come sempre → OK. LAMIERA › Sviluppo: la sagoma stesa con le pieghe. Due lati piegati che si incontrano in un angolo rientrante: messaggio che si sovrappongono. Un solo lato piegato che finisce in un angolo rientrante (la L): la flangia si ferma uno spessore prima e nello sviluppo c'è la fessura con il fondo tondo che la stacca dalla base.
 
 ## Circuiti (1.0.0)
 - [ ] Scheda **CIRCUITI** › Esempio: scheda verde, piazzole oro (sopra) e blu (sotto), sigle, linee bianche dei collegamenti da sbrogliare; passa sulle piazzole: la rete si accende in arancio.
