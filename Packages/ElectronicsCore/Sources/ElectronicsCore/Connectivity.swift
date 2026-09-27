@@ -27,14 +27,16 @@ public struct Airwire: Codable, Equatable, Sendable {
 
 public struct BoardConnectivity: Codable, Equatable, Sendable {
     public var pads: [PlacedPad]
-    /// Minimum-length spanning tree between pad centres. E0 has no routed copper; these
-    /// are connections to be routed, never evidence of electrical connection on a real PCB.
+    /// Remaining connections between separate physical copper islands. Never manufacturing approval.
     public var airwires: [Airwire]
     public var unplacedComponents: [UUID]
 }
 
 public enum ElectronicsConnectivity {
     public static func snapshot(_ design: ElectronicsDesign) throws -> BoardConnectivity {
+        try ElectronicsPCB.snapshot(design: design, revision: 0).board
+    }
+    static func unroutedSnapshot(_ design: ElectronicsDesign) throws -> BoardConnectivity {
         try ElectronicsValidation.requireIntegrity(design)
         var pads: [PlacedPad] = []
         var unplaced: [UUID] = []
@@ -55,30 +57,6 @@ public enum ElectronicsConnectivity {
                                   cornerRadius: pad.cornerRadius, sourceLayers: pad.sourceLayers))
             }
         }
-        var airwires: [Airwire] = []
-        for net in design.nets.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
-            let members = pads.filter { $0.netID == net.id }
-            guard members.count > 1 else { continue }
-            // Deterministic Prim, O(n²), no external geometry library. Tie breaks follow UUID order.
-            var reached = Set([0])
-            var best = [Double](repeating: .infinity, count: members.count)
-            var parent = [Int](repeating: 0, count: members.count)
-            var newest = 0
-            while reached.count < members.count {
-                for j in members.indices where !reached.contains(j) {
-                    let a = members[newest].center, b = members[j].center
-                    let distance = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
-                    if distance < best[j] { best[j] = distance; parent[j] = newest }
-                }
-                let next = members.indices.filter { !reached.contains($0) }.min { a, b in
-                    best[a] == best[b] ? a < b : best[a] < best[b]
-                }!
-                let a = members[parent[next]], b = members[next]
-                airwires.append(.init(netID: net.id, fromComponent: a.componentID, fromPad: a.padID,
-                                      toComponent: b.componentID, toPad: b.padID, from: a.center, to: b.center))
-                reached.insert(next); newest = next
-            }
-        }
-        return .init(pads: pads, airwires: airwires, unplacedComponents: unplaced)
+        return .init(pads: pads, airwires: [], unplacedComponents: unplaced)
     }
 }

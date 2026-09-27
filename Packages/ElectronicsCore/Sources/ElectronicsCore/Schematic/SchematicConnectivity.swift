@@ -185,7 +185,7 @@ public enum ElectronicsSchematic {
                 connections[pin] = .init(pin: pin, netID: netID)
             }
         }
-        let explicitlyUsed = Set(schematic.directConnections.compactMap(\.netID) + labels.map(\.netID) + schematic.namedNetIDs)
+        let explicitlyUsed = Set(schematic.directConnections.compactMap(\.netID) + labels.map(\.netID) + schematic.namedNetIDs).union(design.board.copper?.netIDs ?? [])
         design.nets.removeAll { oldGenerated.contains($0.id) && !used.contains($0.id) && !explicitlyUsed.contains($0.id) }
         generated.formUnion(oldGenerated.intersection(explicitlyUsed))
         schematic.generatedNetIDs = generated.sorted { $0.uuidString < $1.uuidString }

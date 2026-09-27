@@ -1,5 +1,32 @@
 # Elettronica — prove del motore e dell’app
 
+## 27/09/2026 — T94: motore del rame e DRC iniziale
+
+- `bash scripts/test-electronics.sh`: **88 test Swift PASS**, 17 nuovi test PCB;
+  quattro lettori Python indipendenti PASS (assemblaggio, librerie, schema, PCB).
+  Artefatti `build/electronics/run.fUyGr4/`, esito processo 0.
+- PCB: traccia continua/rotta, strati sovrapposti isolati, via e pad passanti, foro vuoto,
+  corti e distanze reali, anelli/fori/larghezze/bordo concavo, NC, rete trattenuta dal rame
+  dopo eliminazione del filo, preview non mutante e non confermabile, batch atomico,
+  revisione obsoleta, migrazione 1–3, salvataggio/undo/redo, cancellazione, pick/snap.
+- Il lettore `Tests/Electronics/check_pcb.py` ricalcola dai dati i pad ruotati/specchiati,
+  la continuità su due strati attraverso il via, i diametri, il corto perpendicolare e la catena
+  dello storico. Non richiama le funzioni Swift sotto prova. È una fixture indipendente,
+  non un corpus produttivo universale.
+- `swift test --package-path Packages/CADCore`: **174 PASS**, esito processo 0.
+- Benchmark Release `build/electronics/pcb-release-20260927-1240/metrics.json`: 1.000
+  capsule distribuite, snapshot 5,30 ms; 1.000 query pick+snap, p95 0,0091 ms, max 0,088 ms.
+  Debug finale: snapshot 35,19 ms, p95 0,0404 ms. Snapshot grandi e preview restano
+  da eseguire in background con cache per revisione: non è una garanzia su qualsiasi PCB.
+- Documento formato **4**. Vecchie versioni devono rifiutarlo; il nuovo lettore conserva
+  contenuto e storico di 1–3. La semplice assenza di DRC non significa fabbricabilità.
+
+Copertura e limiti: [PCB.md](PCB.md). Non inclusi piani, shove, archi, net class, keepout,
+regole mask/copper-to-hole complete e Gerber. `fabricationReady` resta false.
+Il motore è pronto per la UI di Claude; a questo punto non è ancora stata verificata a schermo
+la nuova integrazione del routing. Il collaudo schema delle sezioni seguenti è storico.
+
+
 ## T93 — schema elettrico, 27/09/2026
 
 Motore proprietario implementato in `Schematic/`, contratto app in [SCHEMATIC.md](SCHEMATIC.md). Fogli con gerarchia organizzativa, simboli con identità condivisa col PCB, fili/giunzioni espliciti, etichette di rete/alimentazione, NC, anteprime e transazioni; connettività derivata e collegamenti diretti conservati separatamente. Componenti creati nello schema con un solo undo e senza posizione PCB inventata; posa PCB successiva esplicita. Formato 3 con lettura 1/2/3 e storico completo.

@@ -69,3 +69,11 @@ Schema grafico, routing, DRC completo, primitive render e pick/snap indicizzati 
 ## Schema elettrico (secondo traguardo T93)
 
 Il catalogo comprende anche `.schematic(SchematicCommand)`, `.addSchematicComponent(component:sheetID:symbol:library:)` e `.placeComponent(ComponentPlacement)`. Contratto, primitive, pick/snap e regole di connettività in [SCHEMATIC.md](SCHEMATIC.md). Il formato corrente è 3, lettura 1/2/3.
+
+## Estensione rame T94
+
+`ElectronicsCommand.pcb(PCBCommand)` aggiunge i comandi del [PCB](PCB.md).
+La preview espone `blockingIssues`, `canApply` e `pcbSnapshot()` memorizzato: gli errori DRC
+sugli elementi inseriti/modificati bloccano la conferma; gli ERC di un circuito incompleto no.
+Il modello permette di correggere componenti e regole in una scheda già in errore, mostrando
+la diagnostica. Nessun cambiamento automatico del percorso delle piste.

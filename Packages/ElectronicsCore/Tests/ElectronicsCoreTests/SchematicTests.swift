@@ -218,7 +218,7 @@ final class SchematicTests: XCTestCase {
         let decoded=try JSONDecoder().decode(ElectronicsCommand.self,from:JSONEncoder().encode(command))
         try apply(command,&d); try apply(decoded,&copy)
         XCTAssertEqual(d,copy)
-        XCTAssertEqual(d.formatVersion,3)
+        XCTAssertEqual(d.formatVersion,4)
         let roundtrip=try ElectronicsDocument.decode(d.encoded()); XCTAssertEqual(roundtrip,d)
     }
 

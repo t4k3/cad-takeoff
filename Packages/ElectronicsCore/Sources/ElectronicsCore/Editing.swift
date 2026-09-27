@@ -4,6 +4,7 @@ import Foundation
 public enum ElectronicsCommand: Codable, Equatable, Sendable {
     case library(ElectronicsLibraryCommand)
     case schematic(SchematicCommand)
+    case pcb(PCBCommand)
     case addComponent(component: CircuitComponent, placement: ComponentPlacement, library: ElectronicsLibrary)
     case addSchematicComponent(component: CircuitComponent, sheetID: UUID, symbol: SchematicSymbol, library: ElectronicsLibrary)
     case placeComponent(ComponentPlacement)
@@ -25,6 +26,7 @@ public enum ElectronicsCommand: Codable, Equatable, Sendable {
         switch self {
         case .library(let command): command.title
         case .schematic(let command): command.title
+        case .pcb(let command): command.title
         case .addComponent, .addSchematicComponent: "Inserisci componente"
         case .placeComponent: "Posiziona sul PCB"
         case .updateComponent: "Modifica componente"
@@ -48,6 +50,12 @@ public struct ElectronicsCommandPreview: Sendable {
     public let design: ElectronicsDesign
     public let board: BoardConnectivity
     public let issues: [ElectronicsIssue]
+    public let blockingIssues: [ElectronicsIssue]
+    let cachedPCB: PCBSnapshot
+    public var canApply: Bool { blockingIssues.isEmpty }
+    public func pcbSnapshot() throws -> PCBSnapshot {
+        cachedPCB
+    }
     /// Build only the visible sheet; the original document is not changed by preview.
     public func schematicSnapshot(sheetID: UUID) throws -> SchematicSnapshot {
         try ElectronicsSchematic.snapshot(design: design, revision: baseRevision, sheetID: sheetID)
@@ -75,19 +83,32 @@ public enum ElectronicsCommands {
                                expectedRevision: UInt64) throws -> ElectronicsCommandPreview {
         try Task.checkCancellation()
         var candidate = document
-        try apply(command, to: &candidate, expectedRevision: expectedRevision)
+        try applyUncheckedDRC(command, to: &candidate, expectedRevision: expectedRevision)
         try Task.checkCancellation()
         let importIssues: [ElectronicsIssue]
         if case .library(.importLibrary(let bundle)) = command { importIssues = bundle.issues } else { importIssues = [] }
-        return try .init(baseRevision: document.revision, design: candidate.design,
-                         board: ElectronicsConnectivity.snapshot(candidate.design),
-                         issues: importIssues + ElectronicsValidation.electrical(candidate.design) + genericIssues(candidate.design))
+        let pcb = try ElectronicsPCB.snapshot(design: candidate.design, revision: document.revision)
+        return .init(baseRevision: document.revision, design: candidate.design, board: pcb.board,
+                     issues: importIssues + ElectronicsValidation.electrical(candidate.design) + genericIssues(candidate.design) + pcb.issues,
+                     blockingIssues: ElectronicsPCB.blockingIssues(before: document.design, after: candidate.design, issues: pcb.issues), cachedPCB: pcb)
     }
 
     /// Mutates only through the document transaction. Invalid commands, missing subjects or
     /// revision mismatches leave library, circuit, board and persistent history untouched.
     public static func apply(_ command: ElectronicsCommand, to document: inout ElectronicsDocument,
                              expectedRevision: UInt64) throws {
+        var candidate = document
+        try applyUncheckedDRC(command, to: &candidate, expectedRevision: expectedRevision)
+        if candidate.design.board.copper != document.design.board.copper {
+            let pcb = try ElectronicsPCB.snapshot(candidate)
+            let blocking = ElectronicsPCB.blockingIssues(before: document.design, after: candidate.design, issues: pcb.issues)
+            if !blocking.isEmpty { throw ElectronicsFailure(blocking) }
+        }
+        document = candidate
+    }
+
+    private static func applyUncheckedDRC(_ command: ElectronicsCommand, to document: inout ElectronicsDocument,
+                                          expectedRevision: UInt64) throws {
         if case .library(let library) = command {
             try ElectronicsLibraryCommands.apply(library, to: &document, expectedRevision: expectedRevision)
             return
@@ -96,6 +117,9 @@ public enum ElectronicsCommands {
             switch command {
             case .library: break // Dispatched above, preserving exactly one transaction.
             case .schematic(let edit): try ElectronicsSchematic.mutate(edit, design: &design)
+            case .pcb(let edit):
+                var count = 0
+                try ElectronicsPCB.mutate(edit, design: &design, count: &count)
             case let .addComponent(component, placement, library):
                 guard placement.componentID == component.id else {
                     throw failure("placement_component_mismatch", "Il posizionamento appartiene a un altro componente.", [component.id, placement.componentID])
@@ -162,6 +186,9 @@ public enum ElectronicsCommands {
                    design.schematic?.namedNetIDs.contains(id) == false { design.schematic!.namedNetIDs.append(id) }
                 design.nets[index].name = name
             case .removeNet(let id):
+                guard design.board.copper?.netIDs.contains(id) != true else {
+                    throw failure("net_has_copper", "Rimuovere prima il rame associato alla rete.", [id])
+                }
                 let index = try netIndex(id, in: design)
                 design.nets.remove(at: index)
                 design.schematic?.namedNetIDs.removeAll { $0 == id }

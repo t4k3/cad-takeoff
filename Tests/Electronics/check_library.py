@@ -105,7 +105,7 @@ run("apply-import", original, fp_path, 0, first)
 run("apply-import", first, symbol_path, 1, second)
 run("apply-import", second, symbol_path, 2, same)
 one, two = read(first), read(second)
-assert one["formatVersion"] == two["formatVersion"] == 3
+assert one["formatVersion"] == two["formatVersion"] == 4
 assert one["revision"] == 1 and len(one["past"]) == 1
 assert two["revision"] == 2 and len(two["past"]) == 2
 assert one["past"][0]["before"] == read(original)["design"]

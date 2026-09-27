@@ -1,6 +1,6 @@
-# Elettronica Fusion Takeoff — contratto E0/E1
+# Elettronica Fusion Takeoff — contratto E0–E3
 
-27 settembre 2026 · T91/T92 · Codex · richiesta di Ross: EDA proprietario, componenti JLCPCB, assemblaggio produttivo e meccanico 3D.
+27 settembre 2026 · T91/T92/T93/T94 · Codex · richiesta di Ross: EDA proprietario, componenti JLCPCB, assemblaggio produttivo e meccanico 3D.
 
 ## Decisione e confini
 
@@ -20,10 +20,11 @@ Codex possiede il core elettronico, i formati, i controlli e il contratto funzio
 | `DeviceDefinition` | Simbolo e impronta in revisioni esatte, mappatura esplicita pin→piazzole, produttore/MPN e identificativo JLC opzionale. |
 | `ElectronicsLibrary` | Snapshot incluso nel documento: riaprire non dipende da cataloghi online aggiornati. |
 | `ElectronicsDesign` | Componenti, reti, collegamenti/NC espliciti, contorno scheda, posizionamenti e varianti di montaggio. |
-| `ElectronicsDocument` | Scrittura formato 3, lettura 1/2/3; schema opzionale, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
+| `ElectronicsDocument` | Scrittura formato 4, lettura 1/2/3/4; schema e rame opzionali, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
 | `ElectronicsValidation.integrity` | Identità duplicate, riferimenti/revisioni mancanti, pin-map, contorno semplice, quote/angoli finiti, piazzole e fori coerenti. |
 | `ElectronicsValidation.electrical` | Prime verifiche: pin senza connessione/NC, pin NC collegati, uscite multiple sulla rete. Non è ERC completo. |
-| `ElectronicsConnectivity.snapshot` | Piazzole in coordinate PCB con rete associata; collegamenti da sbrogliare deterministici tramite albero minimo. Nessuna pista fisica è generata. |
+| `ElectronicsConnectivity.snapshot` | Piazzole in coordinate PCB con rete associata; collegamenti ancora da sbrogliare fra isole fisiche, deterministici tramite albero minimo; piste/via provengono dai comandi PCB. |
+| `ElectronicsPCB`, `PCBCommand` | Piste, via passanti, strati, DRC, snapshot/pick/snap e anteprima transazionale: [PCB.md](PCB.md). |
 | `ElectronicsAssembly.export` | BOM/CPL JLC, istanze meccaniche e collegamenti; un’unica selezione di variante. Errori bloccanti prima di produrre risultati. |
 | `ElectronicsLibraryCommands` | Importazione e creazione dispositivo tipizzate, anteprima su copia e conferma atomica. Stesse API per app/chat/MCP. |
 | `KiCadLibraryImporter`, `EasyEDAStandardImporter` | Importatori proprietari con sottoinsiemi espliciti, provenienza, SHA-256 e report. Vedere [LIBRARIES.md](LIBRARIES.md). |
@@ -47,7 +48,7 @@ E0 salva snapshot prima/dopo ogni modifica, compresi undo e redo dopo riapertura
 - Matrice 3D 4×4 in ordine di righe, vettori colonna. Il modello deve essere normalizzato in mm, piano di montaggio Z=0, corpo verso +Z; E0 applica solo l’offset e il posizionamento dichiarati.
 - Asset 3D: percorso relativo e hash registrati; il core **non legge il file e non verifica ancora l’hash né l’ingombro reale**. Risoluzione sicura, verifica bytes e import geometrico competono all’adattatore E5. Non risolvere percorsi tramite la directory corrente o oltre la radice del progetto, inclusi symlink.
 
-Le quote sono `Double` in mm, con rifiuto di NaN, infiniti e coordinate oltre ±100.000 mm. Non vi è ancora una precisione geometrica certificata per rame/offset: E3 dovrà definire griglia, tolleranze e predicati robusti prima del DRC.
+Le quote sono `Double` in mm, con rifiuto di NaN, infiniti e coordinate oltre ±100.000 mm. Il PCB usa nuclei convessi con raggio analitico per distanze del rame, BVH per i candidati, tolleranza numerica di contatto 1e-8 mm. Questa non è una tolleranza produttiva certificata. Vedere [PCB.md](PCB.md) per copertura e limiti.
 
 ### BOM, CPL e varianti
 

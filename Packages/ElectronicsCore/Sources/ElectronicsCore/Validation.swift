@@ -166,6 +166,7 @@ public enum ElectronicsValidation {
             text(variant.name, "variant"); unique(variant.excludedComponents, variant.name)
             if !Set(variant.excludedComponents).isSubset(of: componentIDs) { add("dangling_variant", variant.name, "Variante con componenti inesistenti.") }
         }
+        issues += ElectronicsPCB.integrity(design)
         issues += ElectronicsSchematic.integrity(design)
         return issues
     }

@@ -48,3 +48,14 @@ Gli schemi più complessi, multistrato, QFN con pad termico, piani divisi, routi
 - **Fisica**: scheda prodotta, continuità, alimentazioni e funzionamento, montaggio nel contenitore.
 
 Non etichettare come «pronto produzione» un risultato verificato solo al primo livello. Nessun acquisto o ordine automatico fa parte dei task di sviluppo.
+
+## Primo traguardo T94 — 27/09/2026
+
+Implementati piste polilineari con larghezza, via passanti, 2–32 strati pari, regole del progetto,
+DRC di rame/bordo/fori/anello, connettività fisica e airwire residue, snapshot indicizzato,
+comandi e preview che rifiutano nuovo rame non conforme, documento v4 con undo persistente.
+Contratto [PCB.md](PCB.md), prova automatica [VALIDATION.md](VALIDATION.md).
+T102 registra la base schema già collaudata e sblocca T94/T100; T93 avanzato resta aperto.
+T97 integra strumenti e disegno PCB nell’app; la prova a schermo resta distinta dal motore.
+T94 resta aperto per archi, keepout, net class, stackup dielettrico, pour/termiche,
+shove e controlli produttivi completi. Nessun Gerber o rilascio di fabbricazione implicito.

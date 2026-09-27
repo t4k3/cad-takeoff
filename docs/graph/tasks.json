@@ -1805,28 +1805,31 @@
       ],
       "suggested": "codex",
       "owner": null,
-      "started": "2026-09-27 11:17",
+      "started": "2026-09-27 12:28",
       "notes": [
         "2026-09-27 10:59 codex: Primo traguardo E2 consegnato: ElectronicsCommand/preview/apply, documento vuoto, tre modelli generici, CRUD componenti/reti/NC, movimenti e scheda con undo/revisioni. 53 test motore, lettori indipendenti e 174 CAD PASS; app Claude 1.0.6 verificata a schermo da vuoto fino a posa R1/R2, collegamento, scheda, storico e salvataggio/riapertura. Due difetti UI individuati da Codex e corretti da Claude con regressioni. Contratto EDITING.md, evidenze VALIDATION.md, commit motore 3afd5f5. T93 ancora da completare: schema gerarchico editabile, snapshot/render e pick/snap ufficiali, ERC avanzato e contratto completo per assistente. Non completare E2 basandosi su questo primo percorso.",
-        "2026-09-27 11:54 codex: Secondo traguardo consegnato: schema editabile nativo con fogli, simboli, fili/giunzioni, etichette, NC, netlist condivisa PCB, snapshot indicizzato, preview/undo e formato3. Motore 9f76573; minimo macOS27 e collaudo e337842; app Claude 4e1b280. 71 test ElectronicsCore, 3 lettori indipendenti e 174 CAD PASS; CI integrata di Claude 16/16. Prova UI reale da vuoto fino a schema, PCB, storico, salva/riapri; camera e guida corrette dopo revisione. Restano bus, porte/istanze gerarchiche, multisezione, ERC configurabile e strumenti MCP; non segnare intero E2 concluso. Dettagli SCHEMATIC.md e VALIDATION.md."
+        "2026-09-27 11:54 codex: Secondo traguardo consegnato: schema editabile nativo con fogli, simboli, fili/giunzioni, etichette, NC, netlist condivisa PCB, snapshot indicizzato, preview/undo e formato3. Motore 9f76573; minimo macOS27 e collaudo e337842; app Claude 4e1b280. 71 test ElectronicsCore, 3 lettori indipendenti e 174 CAD PASS; CI integrata di Claude 16/16. Prova UI reale da vuoto fino a schema, PCB, storico, salva/riapri; camera e guida corrette dopo revisione. Restano bus, porte/istanze gerarchiche, multisezione, ERC configurabile e strumenti MCP; non segnare intero E2 concluso. Dettagli SCHEMATIC.md e VALIDATION.md.",
+        "2026-09-27 12:28 codex: Base schema consegnata e verificata; avanzato resta aperto. Il traguardo completato è rappresentato separatamente da T102 per rendere esplicite le dipendenze di routing e assistente."
       ]
     },
     {
       "id": "T94",
       "title": "Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico",
       "phase": "Elettronica",
-      "status": "todo",
+      "status": "in_progress",
       "deps": [
         "T91",
-        "T93"
+        "T102"
       ],
       "paths": [
         "Packages/ElectronicsCore",
         "docs/electronics",
-        "Tests/Electronics"
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
       ],
       "suggested": "codex",
-      "owner": null
+      "owner": "codex",
+      "started": "2026-09-27 12:28"
     },
     {
       "id": "T95",
@@ -1928,7 +1931,7 @@
       "phase": "Elettronica",
       "status": "todo",
       "deps": [
-        "T93",
+        "T102",
         "T99"
       ],
       "paths": [
@@ -1952,6 +1955,28 @@
       ],
       "suggested": "claude",
       "owner": null
+    },
+    {
+      "id": "T102",
+      "title": "Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico",
+      "phase": "E2",
+      "status": "done",
+      "deps": [
+        "T91"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-27 12:28",
+      "finished": "2026-09-27 12:28",
+      "notes": [
+        "2026-09-27 12:28 codex: Traguardo già realizzato nei commit 9f76573, 4e1b280, e337842: 71 test core, 3 lettori indipendenti, CI e collaudo UI fino a PCB e salva/riapri. Evidenze VALIDATION.md e COLLAB 11:34–11:58. Non include schema avanzato T93."
+      ]
     }
   ]
 }

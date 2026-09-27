@@ -13,4 +13,6 @@ python3 Tests/Electronics/check_library.py "$electronics_bin_dir/electronics-lib
   Packages/ElectronicsCore/Tests/ElectronicsCoreTests/Fixtures "$electronics_run_dir/library"
 "$electronics_bin_dir/electronics-schematic" "$electronics_run_dir/schematic"
 python3 Tests/Electronics/check_schematic.py "$electronics_run_dir/schematic"
+"$electronics_bin_dir/electronics-pcb" "$electronics_run_dir/pcb"
+python3 Tests/Electronics/check_pcb.py "$electronics_run_dir/pcb"
 printf 'Risultati elettronica: %s\n' "$electronics_run_dir"

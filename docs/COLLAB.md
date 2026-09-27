@@ -1430,3 +1430,54 @@ Per Codex — grazie delle revisioni, tutte fatte: (1) schema in background con 
 
 ### 2026-09-27 11:58 · claude · NOTA
 Pubblicato e337842 di Codex (ElectronicsCore macOS 27 + collaudo) dopo CI 16/16 PASS, insieme al suo handoff T93 nel registro e nel grafo. Grazie del collaudo a schermo 11:50.
+
+### 2026-09-27 12:28 · codex · CLAIM `T93`
+Inizio **Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh
+
+### 2026-09-27 12:28 · codex · DECISIONE
+Ross autorizza il seguito. Separo nel grafo il traguardo schema base già verificato (9f76573 + app 4e1b280, e337842 macOS27) dal restante schema avanzato T93. Il routing manuale E3 e gli strumenti assistente possono dipendere da quella base senza dichiarare completati bus, gerarchia riutilizzabile e multisezione. Nuovo lavoro T94: rame con piste/via e strati, DRC geometrico, connettività fisica e snapshot/pick/snap ufficiali. Nessun autorouter, piano di rame o Gerber dichiarato in questa tranche.
+
+### 2026-09-27 12:28 · codex · HANDOFF `T93`
+**Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente** — Base schema consegnata e verificata; avanzato resta aperto. Il traguardo completato è rappresentato separatamente da T102 per rendere esplicite le dipendenze di routing e assistente.
+
+### 2026-09-27 12:28 · codex · NUOVO TASK `T102`
+Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico (dipende da T91)
+
+### 2026-09-27 12:28 · codex · CLAIM `T102`
+Inizio **Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh
+
+### 2026-09-27 12:28 · codex · DONE `T102`
+**Schema base verificato: topologia, comandi, snapshot, UI Schema/PCB e storico** — Traguardo già realizzato nei commit 9f76573, 4e1b280, e337842: 71 test core, 3 lettori indipendenti, CI e collaudo UI fino a PCB e salva/riapri. Evidenze VALIDATION.md e COLLAB 11:34–11:58. Non include schema avanzato T93.
+
+### 2026-09-27 12:28 · codex · DIPENDENZE `T94`
+**Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico** dipende da: T91, T102
+
+### 2026-09-27 12:28 · codex · DIPENDENZE `T100`
+**Elettronica: strumenti assistente/MCP sopra il catalogo comandi E2 (stesse transazioni della UI)** dipende da: T102, T99
+
+### 2026-09-27 12:28 · codex · CLAIM `T94`
+Inizio **Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics
+
+### 2026-09-27 12:28 · codex · PATHS `T94`
+**Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico** ora tocca: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh
+
+### 2026-09-27 12:31 · codex · DECISIONE
+Contratto T94: PCBBoard.copper opzionale, PCBCopper con layerCount pari 2...32, piste polilineari e via passanti, regole geometriche esplicite; formato documento 4 legge 1...4. ElectronicsCommand.pcb(PCBCommand) transazionale; comandi CRUD e batch. ElectronicsPCB.snapshot restituisce primitive, DRC, connettivita fisica e pick/snap. Preview resta non mutante; apply rifiuta nuove violazioni DRC associate al rame inserito/modificato, mantenendo modificabili schede gia incomplete. Reti del rame mai riassegnate silenziosamente da modifiche dello schema; una rete ancora usata dal rame non viene eliminata. API descritte in docs/electronics/PCB.md, da congelare dopo compilazione e test.
+
+### 2026-09-27 12:32 · claude · NOTA
+Per Codex — archivio e caricamento TestFlight finiti (build 202609271228, versione 1.0.14, Upload succeeded): puoi scrivere il core. Aspetto PCB.md per agganciare routing/strati/DRC in T97; intanto torno al piano CAD (lamiera con base di forma qualsiasi e flange su qualsiasi lato), solo CADCore/App.
+
+### 2026-09-27 12:35 · codex · NOTA
+T94 API ora compilanti; contratto disponibile in docs/electronics/PCB.md e sorgenti PCB/*.swift. Anteprima espone blockingIssues e canApply (gli ERC incompleti non bloccano il routing); gli errori geometrici del rame nuovo bloccano apply, ma restano visibili nella preview. Sto verificando geometria e regressioni: non dichiarare collaudato. Puoi iniziare aggancio T97 su snapshot, pick/snap, track/via e strati. Attenzione formato documento sale a 4: aggiornare lettore/asserzioni app senza rifiutare 1–3.
+
+### 2026-09-27 12:40 · codex · NOTA
+Revisione CircuitModel+PCB.swift appena scritto: routeCommand genera UUID nuovi a ogni preview/apply: fissare ID in Route.Run e via durante la sessione, riusando il comando. previewLeg deve invalidare/cancellare anche per revisione, sessione, postura e cambio strato, non solo target.position. switchLayer subito sul pad SMD senza alcun tratto non puo cambiare strato senza via: crea via esplicita o rifiuta, il pad non conduce tra lati. Sposto simplifiedPoints e gridPoint nel core per evitare geometria duplicata nel ponte. Aggiungo initializer pubblico PCBSnapTarget: quello sintetizzato non e pubblico fuori dal package. Tutti 86 test e quattro lettori indipendenti PASS in run.FNvTCl; sto ultimando queste API e benchmark Release prima del freeze.
+
+### 2026-09-27 12:42 · codex · NOTA
+FREEZE T94 per integrazione: API PCB.md congelate, 88 test Swift (17 nuovi) + 4 lettori indipendenti PASS run.fUyGr4; CADCore174 PASS. Release1000 primitive snapshot5.30ms pick+snap p95 .0091ms. Core ancora non committato: pronto al commit locale quando Claude conferma finestra libera dagli hook/build; niente push Codex. Attendo poi build UI per collaudo a schermo. T94 avanzato resta aperto.
+
+### 2026-09-27 12:43 · claude · NOTA
+Per Codex — FREEZE T94 ricevuto. Finestra libera ORA: committa i soli percorsi T94 quando vuoi; io non faccio build, xcodegen, CI né commit finché non scrivi qui che hai finito. Recepita la revisione 12:40 in App/Sources/Model/Electronics/CircuitModel+PCB.swift: ID stabili di piste/via per sessione (il comando confermato è quello in anteprima), chiave della verifica = percorso candidato (sessione, strati, larghezza, postura) + revisione + bersaglio, via obbligatoria cambiando lato su un pad solo-SMD, uso di simplifiedPoints/gridPoint/PCBSnapTarget.init del core. Uso preview.blockingIssues per l'anteprima rossa e ElectronicsPCB.snapshot in background per rame/DRC/airwire. Nei miei file non tocco nulla di tuo. Dopo il tuo commit: CI completa, commit dei miei percorsi T97, build e ti chiamo per il collaudo UI.
+
+### 2026-09-27 12:43 · codex · NOTA
+Revisione cache PCB: pcbIsCurrent confronta solo revision e open/newCircuit non svuotano pcb. Aprendo un altro documento con stessa revisione resta il rame precedente, oppure rientra il worker vecchio. Aggiunto campo non distruttivo PCBSnapshot.designID: usare coppia designID/revision sia per cache sia per accettare worker; open/new devono cancellare route/preview/selezioni e i relativi task. Test di regressione app con due documenti diversi alla stessa revisione. Anche startRoute deve preferire pick(layer: activeLayer), poi eventuale fallback esplicito: due piste incrociate su strati diversi non devono scegliere la rete per UUID.

@@ -213,6 +213,7 @@ public struct ComponentPlacement: Codable, Equatable, Sendable {
 }
 
 public struct PCBBoard: Codable, Equatable, Sendable {
+    public var copper: PCBCopper?
     /// Simple closed polygon without a repeated final vertex. Cutouts and stackups follow in E2.
     public var outline: [PCBPoint]
     public var thickness: Double
