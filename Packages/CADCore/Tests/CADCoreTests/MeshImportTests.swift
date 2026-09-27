@@ -25,8 +25,15 @@ private let plate = Feature(name: "Piastra", kind: .box(width: 40, depth: 30, he
     let cylinder = try PrimitiveKernel.build(Feature(name: "C", kind: .cylinder(radius: 10, height: 20))).mesh
     let imported = Feature(name: "C", kind: .importedMesh(ImportedMesh(mesh: try MeshImport.stl(STLExporter.binary(cylinder)), source: "c.stl")))
     let snap = DesignEvaluator.evaluate(CADDocument(features: [imported]), revision: "r").bodies[0].snapshot
-    // Top, bottom and one smooth wall.
-    #expect(snap.faces.count == 3 && snap.faces.filter { $0.surface == .freeform }.count == 1)
+    // Top, bottom and one smooth wall, recognised as the cylinder it is.
+    #expect(snap.faces.count == 3)
+    #expect(snap.faces.contains { if case let .cylinder(_, a, r) = $0.surface { abs(r - 10) < 1e-3 && abs(abs(a.z) - 1) < 1e-6 } else { false } })
+    // A sphere is not a cylinder: it stays freeform.
+    let ball = ChamferGeometry.ball(.zero, 8, Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), id: FaceID(rawValue: "s"))
+    let ballMesh = ball.triangulated().mesh
+    let round = Feature(name: "S", kind: .importedMesh(ImportedMesh(mesh: try MeshImport.stl(STLExporter.binary(ballMesh)), source: "s.stl")))
+    let ballSnap = DesignEvaluator.evaluate(CADDocument(features: [round]), revision: "r").bodies[0].snapshot
+    #expect(ballSnap.faces.allSatisfy { $0.surface == .freeform })
 }
 
 @Test func asciiStlAndObj() throws {

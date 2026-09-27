@@ -41,3 +41,4 @@ sono le prove a mano, sull'interfaccia.
 - [ ] **Schizzo più facile**: la linea si aggancia ai lati e ai cerchi (◇), agli incroci (×), si allinea in orizzontale/verticale coi punti già disegnati (guida tratteggiata); si finisce con doppio clic, Esc o cambiando strumento.
 - [ ] **Vincoli sotto un pulsante** (Schizzo › VINCOLI › Vincoli): la lista si apre sotto, un clic per scegliere.
 - [ ] **Schizzo su una faccia qualsiasi**: SOLIDO › Schizzo, passa sulle facce (si illuminano), clic su una piana anche di smussi/STL; selezione ora arancio pieno con contorno spesso.
+- [ ] **Pezzi importati da Fusion**: facce piane intere (schizzo su faccia, punto medio dei bordi), fori e perni riconosciuti come cilindri (misura Ø, centro, giunto, piano tangente). Reimporta il pezzo o riapri il file.
