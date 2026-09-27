@@ -1,5 +1,8 @@
 # Piani di rame — contratto T94
 
+Il quarto traguardo estende questo contratto con [termiche e larghezza minima](PCB_THERMALS.md),
+formato7 e relativi controlli. Quanto segue documenta la base a collegamento pieno.
+
 Terzo traguardo, 27/09/2026. Motore Swift proprietario; 124 test elettronici e cinque lettori
 indipendenti PASS. Aggancio T97 di Claude e correzioni nella build **1.0.36**,
 CI **16/16 PASS**. Collaudo visivo di creazione, anteprima, connettività, bozze,

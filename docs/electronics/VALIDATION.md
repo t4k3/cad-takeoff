@@ -19,10 +19,48 @@
   Debug finale: quattro piazzole **1641,50 ms**; 16 piazzole **4191,00 ms**. Misure locali
   sintetiche: il worker cancellabile rimane necessario. Non è una misura su schede industriali.
 
-API in [PCB_THERMALS.md](PCB_THERMALS.md). Aggancio e build UI gestiti da Claude T97:
-**collaudo grafico di questo traguardo ancora da eseguire**. Il collaudo dei piani pieni
-riportato sotto resta evidenza storica distinta. Nessuna qualificazione produttiva;
-`fabricationReady` resta `false`.
+API in [PCB_THERMALS.md](PCB_THERMALS.md). Core `15edf22`; UI di Claude `c28aaee`,
+CI **16/16 PASS** `build/ci/run.FzJpQq`, `BUILD SUCCEEDED`, build **1.0.43** alle16:42.
+Prova grafica nella copia Debug con `build/electronics/thermals-release-03/thermals-ui.ftkc`
+(copia distinta di solid, quattro R/GND e pista POWER):
+
+- Pieno1314,0 mm² → Termiche1308,7 mm², quattro piazzole con ponticelli visibili,
+  zero collegamenti da sbrogliare.
+- Piazzole isolate1304,0 mm², tre collegamenti da sbrogliare; distanza visibile nel pannello.
+  Annulla ripristina le termiche, Ripeti reisola.
+- **Difetto trovato nel collaudo reale:** minimo0 → digitazione0,2/Invio ritorna0. La fixture
+  salvata revision11/past11 contiene due comandi0,2 poi0. Il binding leggeva il modello ancora
+  vecchio mentre il worker applicava la modifica. Segnalato a Claude; richiesti bozza locale,
+  conferma unica e protezione della sessione/piano. Il test del solo Model non lo riproduceva.
+- Fixture salvata dopo prova isolamento/undo: revision15/past11/future1, termiche/minimo0.
+  La correzione viene verificata nel ciclo seguente.
+
+Correzioni UI: `ea87a61` introduce la copia locale; `1ea79fb` aggiunge anteprima,
+Applica/Ripristina espliciti; `802c983` usa la base della modifica per distinguere una bozza
+reale da un pannello pulito durante Annulla. Verifica a schermo:
+
+- Build16:53, etichetta1.0.45/a9bd6bd+ con Applica/Ripristina: minimo0,2 → anteprima valida →
+  Applica → salva **revision16/past12**, un solo comando. Minimo0,5 con ponticelli0,4:
+  anteprima mostra zero raggi, conferma rifiutata, bozza mantenuta, Ripristina torna0,2.
+- Difetto residuo trovato: Annulla correggeva il documento ma lasciava il campo0,2 con
+  una falsa bozza. La correzione `802c983` viene collaudata nella build16:58, etichetta
+  **1.0.46/1ea79fb+**, prima del commit: file riaperto con redo persistente, Ripeti0→0,2,
+  Annulla0,2→0 senza pulsanti di modifica pendente. PASS.
+- Ultima prova: nella stessa bozza minimo0,2 e gap0,5, anteprima valida, Applica una sola volta.
+  File **revision20/past12**; Annulla ripristina entrambi0/0,4 e Ripeti0,2/0,5.
+  Salva/Riapri conserva campi, quattro termiche e zero collegamenti da sbrogliare;
+  area1306,7 mm², un'isola, area stretta rimossa0,2 mm² (valori arrotondati dalla UI).
+- Fixture finale **formato7/revision22/past12/future0**, verificata anche leggendo JSON:
+  coppie before/after coerenti, ultimo after uguale al disegno. Originale solid invariato.
+  Nessuna modifica del CAD originale di Ross; solo la copia del circuito di collaudo.
+
+CI finale di **802c983**, eseguita da Claude nel worktree isolato: **exit0 e16/16 PASS**,
+`run.Kkf9PQ`. Risultato `ci 0` e riga finale dei16 passaggi letti direttamente nell'output
+del suo comando; log completo conservato in `build/electronics/ci-802c983-final.log`
+(il worktree temporaneo è stato rimosso da Claude). Core invariato da15edf22.
+
+Il collaudo dei piani pieni riportato sotto resta evidenza storica distinta.
+Nessuna qualificazione produttiva; `fabricationReady` resta `false`.
 
 ## 27/09/2026 — T94: piani di rame a collegamento pieno
 

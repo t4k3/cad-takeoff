@@ -1,6 +1,6 @@
 # Termiche e larghezza del rame — contratto T94
 
-27/09/2026, quarto traguardo. API congelate dopo i test del core; aggancio T97 e collaudo UI in corso.
+27/09/2026, quarto traguardo. API congelate dopo i test del core; aggancio T97 e collaudo UI completati (evidenze in VALIDATION.md).
 Implementazione Swift propria, nessuna libreria geometrica esterna. Questo contratto estende
 [PCB_ZONES.md](PCB_ZONES.md), mantenendo gli stessi comandi e le stesse identità.
 
@@ -66,6 +66,9 @@ Nascondere/disabilitare i parametri senza effetto nella modalità corrente; non 
 i valori quando si cambia modalità. Distinguere chiaramente «0: disattivato» dal minimo
 positivo del piano. Worker cancellabile, UUID, epoca/revisione e protezione delle bozze
 restano quelli già collaudati. Le dimensioni devono usare i controlli numerici dell'app.
+Nel piano selezionato le regole sono una bozza locale con anteprima e Applica/Ripristina:
+un comando per il gruppo, valori conservati in caso di rifiuto, sincronizzazione corretta
+del pannello pulito su Annulla/Ripeti.
 
 ## Studio e limiti
 
