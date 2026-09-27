@@ -88,6 +88,23 @@ parametrico da Fusion (non solo mesh).
 Ogni settimana si chiude con CI verde, push su GitHub, **build TestFlight** e una prova di Ross il venerdì
 su un pezzo reale. Ogni consegna ha test automatici sul motore.
 
+### Priorità decisa con Ross il 27/09: import modificabile da Fusion 360
+
+Il lavoro di Ross è nei server di Autodesk: senza portarlo **modificabile** (non come mesh) CAD
+Takeoff non può sostituire Fusion. Il plug-in legge la cronologia dentro Fusion e CAD Takeoff la
+ricostruisce; ogni corpo ricostruito è confrontato con quello di Fusion (volume e ingombro) e,
+se differisce, entra la mesh al suo posto: niente si perde e niente è sbagliato.
+1. **Fatto 27/09** — convertitore in CADCore (parametri utente con espressioni, schizzi con vincoli
+   e quote, estrusioni distanza/simmetrica/passante, rivoluzioni, raccordi e smussi ritrovati per
+   geometria, fori, gusci); plug-in e script di progetto scrivono la cronologia nel .ftk; le facce
+   delle estrusioni prendono il nome dalle curve dello schizzo (una quota cambiata non fa perdere
+   raccordi e smussi).
+2. Prova di Ross su pezzi veri di «025 RobotVolley»: dal resoconto all'apertura si vede cosa non
+   passa ancora; si allarga il convertitore caso per caso (estrusione a due lati o da faccia, serie
+   e specchi, combina, fori svasati, sformo, loft/sweep come mesh).
+3. Componenti usati più volte e giunti dell'assieme; poi riaprire in CAD Takeoff un file già
+   convertito e riesportato da Fusion senza perdere le modifiche fatte qui.
+
 ### Settimana 1 (29 set – 3 ott) — Schizzo parametrico
 
 **Stato al 26/09 (in anticipo): fatta, in attesa della prova di Ross.** Vincoli con risolutore e gradi di

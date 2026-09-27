@@ -1,0 +1,37 @@
+# Elettronica — roadmap verificabile
+
+27/09/2026 · Obiettivo: schede professionali, motore proprio, componenti reperibili e collegamento all’assieme CAD. Ogni voce distingue sviluppo del nucleo, integrazione UI e accettazione reale. Il grafo operativo è `docs/graph/GRAPH.md`, aggiornato solo da `scripts/graph.py`.
+
+| Fase / task | Risultato | Criterio di uscita |
+|---|---|---|
+| E0 / T91 | Librerie revisionate, netlist, posizionamenti, storico, BOM/CPL e trasformazioni 3D | Test negativi e persistenza; lettore indipendente BOM/CPL; convenzioni top/bottom verificate con fixture. Core consegnato; UI e file produttivi esclusi. |
+| E1 / T92 | Librerie native e import componenti; catalogo JLCPCB/LCSC | Importatori nostri KiCad ed EasyEDA con sottoinsiemi dichiarati; pin-map/datasheet verificati; provenienza e licenza conservate; cache offline; stock/prezzo con data; alternative proposte senza sostituzione automatica. |
+| E2 / T93 | Schemi usabili e comandi comuni a UI/chat | Grafica simboli, fili/giunzioni, etichette, gerarchie, bus, componenti multisezione, NC; netlist indipendente dal disegno; matrice ERC, alimentazioni e diagnostica; modifica/ripristino/riapertura coerenti; prime API assistente. |
+| E3 / T94 | PCB realmente sbrogliabile | Stackup e classi di rete; piste, archi, via, padstack SMD/THT, fori e contorni, keepout; DRC indipendente; routing manuale 45°/arco e ostacoli, poi push/shove; piani di rame e termiche; differenziali e lunghezze solo con prove dedicate. |
+| E4 / T95 | Pacchetto fabbricazione e assemblaggio | Gerber X2/job, forature PTH/NPTH, maschera/pasta/serigrafia, BOM/CPL e disegni assemblaggio; confronto con parser/viewer indipendenti; profilo JLC revisionato; controllo reale orientamento/pin 1 e corrispondenza col datasheet. |
+| E5 / T96 | Assieme elettromeccanico associativo | Contorno/spessore/fori scheda revisionati; componenti con modelli controllati; unità e orientamenti verificati; distanza da involucro, distanziali, connettori e volumi di rispetto; refresh esplicito, persistenza dei riferimenti. |
+| UX / T97 | Workspace elettronica progettato con Claude | Flussi Libreria→Schema→PCB→Assieme→Produzione, selezione incrociata, comandi annullabili, errori navigabili, tabella BOM, anteprima montaggio sopra/sotto. Proposta in attesa di riscontro; interfacce basate su core verificato. |
+| E6 / T98 | Scheda campione accettata end-to-end | Stessa operazione da UI/chat/MCP; schema→PCB→modifica→ERC/DRC→riapertura→export→assemblaggio 3D; revisione incrociata degli export; prova sul produttore e sulla scheda reale documentate separatamente. |
+
+## Primo obiettivo utilizzabile
+
+Una scheda a due strati, con connettori, componenti passivi, almeno un dispositivo polarizzato e montaggio su entrambi i lati. Deve passare dallo schema ai file produttivi e adattarsi a un contenitore CAD. Il circuito reale sarà scelto con Ross; il fixture E0 è sintetico e non rappresenta uno schema elettronico progettato.
+
+Gli schemi più complessi, multistrato, QFN con pad termico, piani divisi, routing differenziale, pannellizzazione e flex richiedono corpus e criteri separati. La sola presenza del relativo comando non basta a dichiarare il supporto.
+
+## Ordine delle priorità tecniche
+
+1. Identità e connettività affidabili, revisione librerie e pin-map: un simbolo bello con il pinout sbagliato produce una scheda sbagliata.
+2. Transazioni, diagnosi e storico equivalenti da UI e assistente. Ogni modifica dell’assistente parte da una revisione letta e produce un diff verificabile.
+3. Rame e DRC robusti prima di router avanzati. Predicati/tolleranze e precisione da fissare su casi limite, non nascondere gli errori con arrotondamenti.
+4. Fabbricazione e dati di montaggio controllati sullo stesso documento, con prova indipendente degli output e disponibilità aggiornata dei componenti.
+5. Associatività con la meccanica e verifica di ingombri reali. Una trasformazione numerica corretta non certifica il modello scaricato o il volume necessario per inserire un connettore.
+
+## Distinzione delle prove
+
+- **Core**: test automatici, casi invalidi, regressioni, parser indipendenti.
+- **App**: selezione, modifiche, annullamento, salvataggio e riapertura, prestazioni e accessibilità.
+- **Fornitore**: interpretazione del pacchetto nel viewer, componenti esatti, orientamento/polarità e possibilità di assemblaggio.
+- **Fisica**: scheda prodotta, continuità, alimentazioni e funzionamento, montaggio nel contenitore.
+
+Non etichettare come «pronto produzione» un risultato verificato solo al primo livello. Nessun acquisto o ordine automatico fa parte dei task di sviluppo.

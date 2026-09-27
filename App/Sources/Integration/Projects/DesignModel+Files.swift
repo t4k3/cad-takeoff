@@ -6,7 +6,8 @@ import Foundation
 extension DesignModel {
     func load(from url: URL) throws {
         let doc = try CADDocument.decode(Data(contentsOf: url))
-        replaceDocument(doc, status: "Aperto \(url.deletingPathExtension().lastPathComponent)")
+        let name = url.deletingPathExtension().lastPathComponent
+        replaceDocument(doc, status: doc.importReport.map { "Aperto \(name) — \($0)" } ?? "Aperto \(name)")
     }
 
     func write(to url: URL) throws {

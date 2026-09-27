@@ -5,7 +5,10 @@ Exports every design of a Fusion project (all folders, recursively) as CAD Takeo
 components, placed as in the assembly) becomes an imported mesh in millimetres with its name and
 colour, as the «Esporta per CAD Takeoff» add-in does for one design.
 
-Designs already exported and not changed since in Fusion are skipped, so the script can be run
+The design's history goes along (parameters, sketches, extrusions…): CAD Takeoff rebuilds the
+bodies from it as editable steps, the meshes only standing in where it cannot.
+
+Designs already exported (with their history) and not changed since in Fusion are skipped, so the script can be run
 again after editing a few parts. Documents opened here are closed without saving. A log of what
 was exported, skipped or failed is written next to the designs (import-fusion.txt).
 """
@@ -80,25 +83,51 @@ def mesh_feature(body, name, source, rotate_y_up):
     }
 
 
+def load_history():
+    """The history reader (fusion_history.py): next to this file, one folder up (the app's
+    sources) or in the installed «Esporta per CAD Takeoff» add-in."""
+    import importlib
+    import sys
+    here = os.path.dirname(os.path.abspath(__file__))
+    addins = os.path.expanduser("~/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns/FusionTakeoffExport")
+    for folder in (here, os.path.dirname(here), addins):
+        if os.path.exists(os.path.join(folder, "fusion_history.py")):
+            if folder not in sys.path:
+                sys.path.insert(0, folder)
+            import fusion_history
+            return importlib.reload(fusion_history)
+    return None
+
+
 def export_active(app, path, source):
     design = adsk.fusion.Design.cast(app.activeProduct)
     if not design:
         raise RuntimeError("non è un disegno 3D")
     rotate = y_up(app)
-    features = []
+    features, entries = [], []
     root = design.rootComponent
     for body in root.bRepBodies:
         if body.isVisible and body.isSolid:
+            entries.append((body, body.name, len(features)))
             features.append(mesh_feature(body, body.name, source, rotate))
     for occurrence in root.allOccurrences:
         if not occurrence.isLightBulbOn:
             continue
         for body in occurrence.bRepBodies:          # proxies: already placed in the assembly
             if body.isVisible and body.isSolid:
-                features.append(mesh_feature(body, occurrence.name + " · " + body.name, source, rotate))
+                name = occurrence.name + " · " + body.name
+                entries.append((body, name, len(features)))
+                features.append(mesh_feature(body, name, source, rotate))
     if not features:
         raise RuntimeError("nessun corpo solido visibile")
     doc = {"version": 2, "timeline": [{"content": {"feature": {"_0": f}}, "isSuppressed": False} for f in features]}
+    try:
+        reader = load_history()
+        block = reader.history(design, rotate, entries) if reader else None
+        if block:
+            doc["fusion"] = block
+    except Exception:
+        pass
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(doc, f)
@@ -141,6 +170,14 @@ def find_root(app, name):
                     if depth < 1:
                         stack.append((sub, depth + 1))
     return found["same"] or found["loose"]
+
+
+def has_history(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return '"fusion"' in f.read()
+    except Exception:
+        return False
 
 
 def designs(folder, parts):
@@ -191,7 +228,8 @@ def run(context):
             label = "/".join(parts + [data.name])
             try:
                 changed = data.dateModified   # seconds since epoch
-                if os.path.exists(path) and os.path.getmtime(path) >= changed:
+                # Up to date and already with its history (older exports were meshes only).
+                if os.path.exists(path) and os.path.getmtime(path) >= changed and has_history(path):
                     skipped += 1
                     log.append("uguale    " + label)
                     continue

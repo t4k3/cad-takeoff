@@ -274,7 +274,7 @@ final class DesignModel {
                 }
                 await MainActor.run {
                     guard let self else { return }
-                    self.replaceDocument(doc, status: "Aperto \(name)")
+                    self.replaceDocument(doc, status: doc.importReport.map { "Aperto \(name) — \($0)" } ?? "Aperto \(name)")
                     // The evaluation just made is the one for this document: no second pass.
                     self.designRevision = revision
                     self.cachedEvaluation = (revision, bodies, issues)
@@ -390,7 +390,8 @@ final class DesignModel {
         panel.allowedContentTypes = [Self.ftkType, .json]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            replaceDocument(try CADDocument.decode(Data(contentsOf: url)), status: "Aperto \(url.lastPathComponent)")
+            let doc = try CADDocument.decode(Data(contentsOf: url))
+            replaceDocument(doc, status: doc.importReport.map { "Aperto \(url.lastPathComponent) — \($0)" } ?? "Aperto \(url.lastPathComponent)")
         } catch { statusMessage = "Errore apertura: \(error.localizedDescription)" }
     }
 

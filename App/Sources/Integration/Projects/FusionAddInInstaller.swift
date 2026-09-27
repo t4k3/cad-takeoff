@@ -26,11 +26,12 @@ enum FusionAddInInstaller {
         do {
             let target = folder.lastPathComponent == name ? folder : folder.appendingPathComponent(name)
             try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
-            for ext in ["py", "manifest"] {
-                guard let source = Bundle.main.url(forResource: name, withExtension: ext) else {
-                    return "Add-in non trovato nell'app (\(name).\(ext))"
+            // The add-in, its manifest and the history reader it uses.
+            for (file, ext) in [(name, "py"), (name, "manifest"), ("fusion_history", "py")] {
+                guard let source = Bundle.main.url(forResource: file, withExtension: ext) else {
+                    return "Add-in non trovato nell'app (\(file).\(ext))"
                 }
-                let destination = target.appendingPathComponent("\(name).\(ext)")
+                let destination = target.appendingPathComponent("\(file).\(ext)")
                 if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
                 try FileManager.default.copyItem(at: source, to: destination)
             }

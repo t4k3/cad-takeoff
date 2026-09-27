@@ -31,6 +31,7 @@ for row in cpl:
     assert float(row['Rotation']) == angle
 assert assembly['fabricationReady'] is False
 assert assembly['documentRevision'] == 0
+assert 'model_assets_unchecked' in {i['code'] for i in assembly['issues']}
 assert {i['reference'] for i in assembly['instances3D']} == {'R1', 'R2', 'R4', 'R5', 'R6'}
 for instance in assembly['instances3D']:
     m = instance['transform']

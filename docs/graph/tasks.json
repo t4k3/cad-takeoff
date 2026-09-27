@@ -1749,7 +1749,7 @@
       "id": "T91",
       "title": "Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile",
       "phase": "Elettronica",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T75"
       ],
@@ -1761,7 +1761,128 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-27 09:09"
+      "started": "2026-09-27 09:09",
+      "finished": "2026-09-27 09:20",
+      "notes": [
+        "2026-09-27 09:20 codex: Consegnato ElectronicsCore E0 nativo Swift 6/Foundation, zero dipendenze esterne: simboli logici/impronte/dispositivi revisionati e pin-map esplicita; documento con transazioni e storico undo/redo persistente; netlist, piazzole posizionate e airwire deterministici; varianti e BOM/CPL JLC atomici; convenzioni per lato e trasformazioni rigide 3D. CLI electronics-check, fixture sintetico, 19 test Swift e lettore Python indipendente PASS; rifiuto sovrascrittura CLI PASS; CADCore 174 test PASS. Contratto, roadmap e limiti in docs/electronics; T92-T98 registrati. Non ancora UI, catalogo live/importatori, asset 3D reali, routing, DRC completo o Gerber. Export sempre fabricationReady false. Nessun codice CAD/UI modificato; integrazione proposta a Claude nel registro, lettura non confermata."
+      ]
+    },
+    {
+      "id": "T92",
+      "title": "Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T91"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T93",
+      "title": "Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T91"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "App/Sources/Model/Electronics",
+        "docs/electronics"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T94",
+      "title": "Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T91",
+        "T93"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T95",
+      "title": "Elettronica E4: Gerber e forature, rilascio BOM/CPL e collaudo JLCPCB",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T92",
+        "T94"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T96",
+      "title": "Elettronica E5: collegamento PCB-assieme, modelli componenti e interferenze 3D",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T91",
+        "T92"
+      ],
+      "paths": [
+        "Packages/ElectronicsCADKit",
+        "App/Sources/Model/Electronics",
+        "docs/electronics"
+      ],
+      "suggested": "codex",
+      "owner": null
+    },
+    {
+      "id": "T97",
+      "title": "Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude)",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T91"
+      ],
+      "paths": [
+        "App/Sources/UI/Electronics"
+      ],
+      "suggested": "claude",
+      "owner": null
+    },
+    {
+      "id": "T98",
+      "title": "Elettronica E6: strumenti MCP equivalenti alla UI e accettazione scheda reale",
+      "phase": "Elettronica",
+      "status": "todo",
+      "deps": [
+        "T93",
+        "T94",
+        "T95",
+        "T96",
+        "T97"
+      ],
+      "paths": [
+        "App/Sources/Model/Electronics",
+        "docs/electronics",
+        "Tests/Electronics"
+      ],
+      "suggested": "codex",
+      "owner": null
     }
   ]
 }

@@ -83,6 +83,7 @@ public enum ElectronicsAssembly {
             .sorted { $0[1] < $1[1] }
         issues.append(.init("assembly_data_only", "export", "Dati di assemblaggio: routing, DRC completo e file di fabbricazione non verificati da E0.", severity: .warning))
         issues.append(.init("supplier_availability_unchecked", "export", "Disponibilità e orientamento nel viewer JLCPCB richiedono verifica sul fornitore.", severity: .warning))
+        issues.append(.init("model_assets_unchecked", "export", "Riferimenti e trasformazioni 3D disponibili; file, hash e ingombri dei modelli non verificati da E0.", severity: .warning))
         return AssemblyData(designID: design.id, documentRevision: document.revision, variantID: variantID,
                             bomCSV: csv([["Comment", "Designator", "Footprint", "LCSC Part #"]] + bomRows),
                             cplCSV: csv([["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]] + rows),

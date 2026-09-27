@@ -1202,3 +1202,33 @@ Inizio **Elettronica E0: architettura proprietaria, librerie revisionate, netlis
 
 ### 2026-09-27 09:09 · codex · DECISIONE
 Ross 27/09 assegna a Codex sviluppo elettronica e controllo obiettivo; conferma assemblaggio sia JLCPCB sia 3D meccanico. T91 introduce il package locale ElectronicsCore (Swift 6/Foundation, zero dipendenze terze), separato da CADCore per non interferire con Claude. API nuove solo in questo package; documento elettronico versionato autonomo prima dell’integrazione nel progetto. Claude mantiene il lavoro CAD e la UX: richiedo confronto su schema/board editor e collegamento assieme dopo il contratto docs/electronics/ARCHITECTURE.md. Registrazione nel canale condiviso, nessuna conferma di lettura da Claude ancora. Librerie di componenti come dati importabili, con provenienza e revisione; nessun motore EDA esterno incorporato. Prima consegna E0: modello libreria/netlist/posizionamento, validazioni, export BOM/CPL JLC e trasformazioni per assieme 3D; routing/Gerber/ERC/DRC completi sono milestone successive.
+
+### 2026-09-27 09:17 · codex · NUOVO TASK `T92`
+Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB (dipende da T91)
+
+### 2026-09-27 09:17 · codex · NUOVO TASK `T93`
+Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente (dipende da T91)
+
+### 2026-09-27 09:17 · codex · NUOVO TASK `T94`
+Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico (dipende da T91,T93)
+
+### 2026-09-27 09:17 · codex · NUOVO TASK `T95`
+Elettronica E4: Gerber e forature, rilascio BOM/CPL e collaudo JLCPCB (dipende da T92,T94)
+
+### 2026-09-27 09:17 · codex · NUOVO TASK `T96`
+Elettronica E5: collegamento PCB-assieme, modelli componenti e interferenze 3D (dipende da T91,T92)
+
+### 2026-09-27 09:17 · claude · NUOVO TASK `T97`
+Elettronica UX: editor librerie-schema-PCB, verifiche e chat (proposta a Claude) (dipende da T91)
+
+### 2026-09-27 09:17 · codex · NUOVO TASK `T98`
+Elettronica E6: strumenti MCP equivalenti alla UI e accettazione scheda reale (dipende da T93,T94,T95,T96,T97)
+
+### 2026-09-27 09:19 · codex · RICHIESTA-API
+Per Claude: disponibile Packages/ElectronicsCore, contratto docs/electronics/ARCHITECTURE.md, roadmap e task T91-T98. T97 è una proposta UX, non un lavoro già concordato: leggere il contratto e rispondere nel registro prima di integrare Home/progetto/renderer. API: ElectronicsDocument.edit(title:expectedRevision:mutation), ElectronicsConnectivity.snapshot, ElectronicsAssembly.export. Non duplicare pin-map o trasformazioni top/bottom nella UI. Test dedicato bash scripts/test-electronics.sh; futura integrazione CI e package Xcode da coordinare. Nessun file del CAD o della tua UX modificato da Codex.
+
+### 2026-09-27 09:20 · codex · DONE `T91`
+**Elettronica E0: architettura proprietaria, librerie revisionate, netlist e assemblaggio verificabile** — Consegnato ElectronicsCore E0 nativo Swift 6/Foundation, zero dipendenze esterne: simboli logici/impronte/dispositivi revisionati e pin-map esplicita; documento con transazioni e storico undo/redo persistente; netlist, piazzole posizionate e airwire deterministici; varianti e BOM/CPL JLC atomici; convenzioni per lato e trasformazioni rigide 3D. CLI electronics-check, fixture sintetico, 19 test Swift e lettore Python indipendente PASS; rifiuto sovrascrittura CLI PASS; CADCore 174 test PASS. Contratto, roadmap e limiti in docs/electronics; T92-T98 registrati. Non ancora UI, catalogo live/importatori, asset 3D reali, routing, DRC completo o Gerber. Export sempre fabricationReady false. Nessun codice CAD/UI modificato; integrazione proposta a Claude nel registro, lettura non confermata.
+
+### 2026-09-27 09:20 · codex · NOTA
+Coordinamento Git: durante T91 il commit concorrente 79785b8 (Import da Fusion modificabile) ha incluso anche la prima versione di Packages/ElectronicsCore, Tests/Electronics e scripts/test-electronics.sh mentre Codex stava ancora completando il task. Non riscrivo né separo la storia. Le ultime correzioni e docs/electronics sono ora verificate nel working tree. Per i prossimi commit condivisi usare staging per percorsi/task, evitando di incorporare il lavoro ancora in corso dell’altro agente.

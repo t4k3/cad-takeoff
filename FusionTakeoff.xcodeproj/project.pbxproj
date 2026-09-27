@@ -38,6 +38,7 @@
 		4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB8505013537F19DABD1503A /* CADToolValidation.swift */; };
 		5D43B61BB9B0A3E5112D894B /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 542BB2CC5B625AFE33908AA5 /* StatusBar.swift */; };
 		5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFA7766810275F652983FA1 /* LocalHTTPTransport.swift */; };
+		632024767AA11693D6157405 /* fusion_history.py in Resources */ = {isa = PBXBuildFile; fileRef = 3770472710CAC4D5EE4F671D /* fusion_history.py */; };
 		6391BD7137C19D938C85F761 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ACF2F56948E53B401DAEA56 /* HomeView.swift */; };
 		6A10CC336BAEA35811826D10 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069D2799753CD573213F79CB /* AppVersion.swift */; };
 		6A65AED3408C4EB0ECFB82BF /* ftk-mcp in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 8CDAC622763B58001C57E74E /* ftk-mcp */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -132,6 +133,7 @@
 		2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */ = {isa = PBXFileReference; path = FusionTakeoffExport.manifest; sourceTree = "<group>"; };
 		3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = CADTakeoffImportProject.py; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
+		3770472710CAC4D5EE4F671D /* fusion_history.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = fusion_history.py; sourceTree = "<group>"; };
 		388E65A3410FB91CB09F5B4C /* ShellCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommand.swift; sourceTree = "<group>"; };
 		38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblySheets.swift; sourceTree = "<group>"; };
 		3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorsPanel.swift; sourceTree = "<group>"; };
@@ -477,6 +479,7 @@
 		E4B1A91129EF63A88EF293AD /* FusionAddIn */ = {
 			isa = PBXGroup;
 			children = (
+				3770472710CAC4D5EE4F671D /* fusion_history.py */,
 				2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */,
 				3ECE718E5B72F020F3210669 /* FusionTakeoffExport.py */,
 				4E69D514B4A72A1E1F8C7F04 /* CADTakeoffImportProject */,
@@ -645,6 +648,7 @@
 				829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */,
 				FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */,
 				00F4B54DB5EC90153C2FA6BE /* PrivacyInfo.xcprivacy in Resources */,
+				632024767AA11693D6157405 /* fusion_history.py in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -845,7 +849,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.160;
+				MARKETING_VERSION = 0.1.161;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -908,7 +912,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.160;
+				MARKETING_VERSION = 0.1.161;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

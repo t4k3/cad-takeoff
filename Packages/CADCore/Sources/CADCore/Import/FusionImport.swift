@@ -79,21 +79,21 @@ public enum FusionImport {
 
         // Check every body against Fusion's; the ones that differ come in as meshes.
         let built = DesignEvaluator.evaluate(doc, revision: "fusion").bodies
-        var matched = Set<UUID>()
-        var fallbacks: [Feature] = []
+        var matched = Set<UUID>(), replaced = Set<Int>()
         for body in t.bodies {
-            if let b = built.first(where: { !matched.contains($0.id) && same(body, $0.mesh) }) {
-                matched.insert(b.id)
-                if let i = doc.features.firstIndex(where: { $0.id == b.id }) {
-                    doc.features[i].name = body.name
-                    if let m = body.mesh, meshes.indices.contains(m) { doc.features[i].color = meshes[m].color }
-                }
-                report.editable.append(body.name)
-            } else if let m = body.mesh, meshes.indices.contains(m) {
-                fallbacks.append(meshes[m])
-                report.meshes.append(body.name)
+            guard let b = built.first(where: { !matched.contains($0.id) && same(body, $0.mesh) }) else { continue }
+            matched.insert(b.id)
+            if let i = doc.features.firstIndex(where: { $0.id == b.id }) {
+                doc.features[i].name = body.name
+                if let m = body.mesh, meshes.indices.contains(m) { doc.features[i].color = meshes[m].color }
             }
+            if let m = body.mesh { replaced.insert(m) }
+            report.editable.append(body.name)
         }
+        // Every mesh stays but those a checked, rebuilt body replaces (one Fusion could not
+        // measure is kept too).
+        let fallbacks = meshes.indices.filter { !replaced.contains($0) }.map { meshes[$0] }
+        report.meshes = fallbacks.map(\.name)
         // Rebuilt bodies that match nothing are kept, hidden, to be looked at.
         for b in built where !matched.contains(b.id) {
             if let i = doc.features.firstIndex(where: { $0.id == b.id }) {

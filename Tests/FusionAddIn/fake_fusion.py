@@ -71,11 +71,80 @@ class Body:
         self.appearance = types.SimpleNamespace(appearanceProperties=Props(colour))
 
 
+# --- the Base cube's history: a 2 × 2 cm square sketched on XY, sides «lato», extruded 2 cm ---
+class Obj(types.SimpleNamespace):
+    """A Fusion object: its type name and a stable token."""
+    def __init__(self, kind, **kw):
+        super().__init__(objectType="adsk::fusion::" + kind, entityToken="%s-%d" % (kind, id(self)), **kw)
+
+
+class Coll(list):
+    @property
+    def count(self):
+        return len(self)
+
+    def item(self, i):
+        return self[i]
+
+
+def P3(x, y, z=0.0):
+    return types.SimpleNamespace(x=x, y=y, z=z)
+
+
+class Evaluator:
+    def __init__(self, pts):
+        self.pts = pts
+
+    def getParameterExtents(self):
+        return True, 0.0, 1.0
+
+    def getStrokes(self, t0, t1, tol):
+        return True, self.pts
+
+
+class Matrix:
+    def getAsCoordinateSystem(self):
+        return P3(0, 0, 0), P3(1, 0, 0), P3(0, 1, 0), P3(0, 0, 1)
+
+
+class Param:
+    def __init__(self, name, expression, value, unit="mm", comment=""):
+        self.name, self.expression, self.value, self.unit, self.comment = name, expression, value, unit, comment
+
+
+corners = [Obj("SketchPoint", geometry=P3(x, y), isFixed=(x == 0 and y == 0)) for x, y in ((0, 0), (2, 0), (2, 2), (0, 2))]
+lines = [Obj("SketchLine", startSketchPoint=corners[i], endSketchPoint=corners[(i + 1) % 4], isConstruction=False) for i in range(4)]
+lato = Param("lato", "20 mm", 2.0)
+profile_curves = [types.SimpleNamespace(geometry=types.SimpleNamespace(evaluator=Evaluator([P3(0, 0), P3(2, 0), P3(2, 2), P3(0, 2)])))]
+profile = Obj("Profile", areaProperties=lambda: types.SimpleNamespace(area=4.0),
+              profileLoops=[types.SimpleNamespace(profileCurves=profile_curves)])
+sketch = Obj("Sketch", name="Schizzo1", transform=Matrix(), originPoint=corners[0], sketchPoints=Coll(corners),
+             sketchCurves=Coll(lines), profiles=Coll([profile]),
+             geometricConstraints=Coll([Obj("HorizontalConstraint", line=lines[0]), Obj("HorizontalConstraint", line=lines[2]),
+                                        Obj("VerticalConstraint", line=lines[1]), Obj("VerticalConstraint", line=lines[3])]),
+             sketchDimensions=Coll([Obj("SketchLinearDimension", isDriving=True, orientation=1, parameter=Param("d1", "lato", 2.0),
+                                        entityOne=corners[0], entityTwo=corners[1]),
+                                    Obj("SketchLinearDimension", isDriving=True, orientation=2, parameter=Param("d2", "lato", 2.0),
+                                        entityOne=corners[1], entityTwo=corners[2])]))
+profile.parentSketch = sketch
+extrude = Obj("ExtrudeFeature", name="Estrusione1", profile=profile, operation=3, hasTwoExtents=False,
+              extentOne=Obj("DistanceExtentDefinition", distance=Param("d3", "lato", 2.0)),
+              taperAngleOne=Param("d4", "0 deg", 0.0, "deg"))
+timeline = Coll([types.SimpleNamespace(entity=sketch, isSuppressed=False, isRolledBack=False),
+                 types.SimpleNamespace(entity=extrude, isSuppressed=False, isRolledBack=False)])
+
+base = Body("Base", cube(0, 0, 0, 2), Colour(200, 30, 30))
+base.physicalProperties = types.SimpleNamespace(volume=8.0)
+base.boundingBox = types.SimpleNamespace(minPoint=P3(0, 0, 0), maxPoint=P3(2, 2, 2))
 root = types.SimpleNamespace(
-    bRepBodies=[Body("Base", cube(0, 0, 0, 2), Colour(200, 30, 30)), Body("Nascosto", cube(9, 9, 9, 1), Colour(0, 0, 0), visible=False)],
+    bRepBodies=[base, Body("Nascosto", cube(9, 9, 9, 1), Colour(0, 0, 0), visible=False)],
     allOccurrences=[types.SimpleNamespace(name="Perno:1", isLightBulbOn=True,
                                           bRepBodies=[Body("Corpo1", cube(5, 0, 0, 1), Colour(20, 40, 220))])])
-design = types.SimpleNamespace(rootComponent=root)
+design = types.SimpleNamespace(rootComponent=root, designType=1, timeline=timeline,
+                               userParameters=Coll([lato]), allParameters=Coll([lato, Param("d1", "lato", 2.0),
+                                                                               Param("d2", "lato", 2.0), Param("d3", "lato", 2.0)]))
+sketch.parentComponent = root
+extrude.parentComponent = root
 fusion.Design = types.SimpleNamespace(cast=lambda p: p)
 app = types.SimpleNamespace(
     activeProduct=design, activeDocument=types.SimpleNamespace(name="Staffa v3"),

@@ -3,7 +3,15 @@ import ElectronicsCore
 
 @main
 struct ElectronicsCheck {
-    static func main() throws {
+    static func main() {
+        do { try run() }
+        catch {
+            FileHandle.standardError.write(Data("\(error)\n".utf8))
+            exit(1)
+        }
+    }
+
+    static func run() throws {
         let args = CommandLine.arguments
         guard args.count == 3 || args.count == 4 else {
             throw ElectronicsFailure([.init("usage", "electronics-check", "electronics-check documento.json cartella-output [UUID-variante]")])
