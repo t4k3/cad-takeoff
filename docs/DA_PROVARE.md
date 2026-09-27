@@ -48,6 +48,9 @@ sono le prove a mano, sull'interfaccia.
 - [ ] Un pezzo semplice (schizzo quotato + estrusione + raccordo): «Esporta per CAD Takeoff», aprilo qui. Nella barra di stato: «Da Fusion: N corpi modificabili…». Doppio clic sullo schizzo: quote e vincoli ci sono; cambia un parametro in «Parametri».
 - [ ] Rilancia lo script «Importa progetto in CAD Takeoff» su «025 RobotVolley»: riesporta tutto (i vecchi .ftk senza cronologia non vengono saltati). Mandami import-fusion.txt e i messaggi «non convertiti» dei pezzi che ti servono.
 
+## Export più liscio per la stampa
+- [ ] Esporta STL o 3MF: nel pannello «Qualità fine: curve lisce» (predefinita, ricordata) — un cilindro o un raccordo grande nello slicer non mostra più le faccette; «Qualità normale» = come prima. Il modello a schermo non cambia.
+
 ## Tavola a schermo
 - [ ] ⇧⌘P (o CREA/ESPORTA › Tavola): si apre la tavola come verrà stampata. Quota (D): clic su un estremo o metà di uno spigolo (i punti agganciabili si accendono), clic su un secondo punto della stessa vista, poi clic sopra/sotto (quota orizzontale), a lato (verticale) o in mezzo / con ⌥ (allineata). Seleziona: clic su una quota, trascinala per allontanarla o avvicinarla, Canc la toglie (una automatica torna con «Ripristina quote automatiche»). ⌘Z annulla. Esporta… → PDF o DXF con le stesse quote; chiudi e riapri il disegno: le quote restano.
 

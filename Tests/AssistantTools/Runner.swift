@@ -52,6 +52,13 @@ struct AssistantToolsTests {
         let data = Data(base64Encoded: export.structured?["data"]?.string ?? "")!
         expect(!export.isError && data.count == 684, "binary STL 12 triangles")
         expect(Array(data[80..<84]) == [12, 0, 0, 0], "STL triangle header")
+        // The cylinder: fine by default (256 facets per turn), normal as on screen (64).
+        let cylID = m.document.features.last!.id.uuidString
+        let fineSTL = await m.call("export_stl", arguments: ["feature_id": .string(cylID)])
+        let normalSTL = await m.call("export_stl", arguments: ["feature_id": .string(cylID), "quality": "normal"])
+        let fineTris = (fineSTL.structured?["data"]?.string).flatMap { Data(base64Encoded: $0) }.map { ($0.count - 84) / 50 } ?? 0
+        let normalTris = (normalSTL.structured?["data"]?.string).flatMap { Data(base64Encoded: $0) }.map { ($0.count - 84) / 50 } ?? 0
+        expect(normalTris == 4 * 64 - 4 && fineTris == 4 * 256 - 4, "export fine 4× finer than normal (\(fineTris) vs \(normalTris))")
         let badPath = await m.call("export_stl", arguments: ["path": "/tmp/should-not-write.stl"])
         expect(badPath.isError, "arbitrary path refused")
         _ = await edit("set_visibility", ["feature_id": id, "visible": false])

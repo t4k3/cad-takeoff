@@ -99,6 +99,33 @@ final class DesignModel {
         return result
     }
 
+    /// The export quality: «Fine» evaluates the design again with every curve cut 4× finer
+    /// (256 facets per turn: ≤ 0,004 mm off a Ø100), for printing and slicers; remembered.
+    static let fineFactor = 4
+    var exportFine: Bool {
+        get { UserDefaults.standard.object(forKey: "exportFine") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "exportFine") }
+    }
+    private let fineCache = EvaluationCache(capacity: 6)
+
+    /// The bodies to export: the model's, or the same history evaluated finer.
+    func exportEvaluation(fine: Bool) -> (bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue]) {
+        guard fine else { return evaluation() }
+        let doc = document, revision = designRevision + "-fine", components = componentResolver, cache = fineCache
+        return Tessellation.$factor.withValue(Self.fineFactor) {
+            DesignEvaluator.evaluate(doc, revision: revision, components: components, cache: cache)
+        }
+    }
+
+    /// A «Qualità» choice for the export panels.
+    static func qualityPopup(fine: Bool) -> NSPopUpButton {
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        popup.addItems(withTitles: ["Qualità fine: curve lisce (256 lati per giro)", "Qualità normale: come a schermo (64 lati)"])
+        popup.selectItem(at: fine ? 0 : 1)
+        popup.sizeToFit()
+        return popup
+    }
+
     /// Bodies of the design after running the active history with its booleans (cached per revision).
     func evaluation() -> (bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue]) {
         if let c = cachedEvaluation, c.revision == designRevision { return (c.bodies, c.issues) }
@@ -396,12 +423,15 @@ final class DesignModel {
     }
 
     func exportSTLWithPanel() {
-        let mesh = Mesh.merged(evaluation().bodies.filter(\.isVisible).map(\.mesh))
-        guard !mesh.isEmpty else { statusMessage = "Niente da esportare"; return }
+        guard evaluation().bodies.contains(where: \.isVisible) else { statusMessage = "Niente da esportare"; return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType(filenameExtension: "stl") ?? .data]
         panel.nameFieldStringValue = "Design.stl"
+        let quality = Self.qualityPopup(fine: exportFine)
+        panel.accessoryView = quality
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        exportFine = quality.indexOfSelectedItem == 0
+        let mesh = Mesh.merged(exportEvaluation(fine: exportFine).bodies.filter(\.isVisible).map(\.mesh))
         do {
             try STLExporter.binary(mesh).write(to: url)
             let r = MeshValidator.validate(mesh)
@@ -482,8 +512,8 @@ final class DesignModel {
     }
 
     /// Export visible parts, or the explicit feature even when hidden. Does not change the scene.
-    func export3MFData(featureID: UUID? = nil) throws -> Data {
-        let all = evaluation().bodies
+    func export3MFData(featureID: UUID? = nil, fine: Bool = false) throws -> Data {
+        let all = exportEvaluation(fine: fine).bodies
         let bodies: [DesignEvaluator.Body]
         if let featureID {
             guard let body = all.first(where: { $0.id == featureID }) else {
@@ -700,11 +730,15 @@ final class DesignModel {
 
     func export3MFWithPanel() {
         do {
-            let data = try export3MFData()
+            _ = try export3MFData()   // what is wrong shows before choosing where
             let panel = NSSavePanel()
             panel.allowedContentTypes = [UTType(filenameExtension: "3mf") ?? UTType(importedAs: "org.3mfconsortium.3mf", conformingTo: .data)]
             panel.nameFieldStringValue = "Design.3mf"
+            let quality = Self.qualityPopup(fine: exportFine)
+            panel.accessoryView = quality
             guard panel.runModal() == .OK, let url = panel.url else { return }
+            exportFine = quality.indexOfSelectedItem == 0
+            let data = try export3MFData(fine: exportFine)
             try data.write(to: url, options: .atomic)
             statusMessage = "Esportato \(url.lastPathComponent) — parti e colori; verificare i filamenti nello slicer"
         } catch { statusMessage = "Errore export 3MF: \(error.localizedDescription)" }

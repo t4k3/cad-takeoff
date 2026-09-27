@@ -249,7 +249,7 @@ extension DesignModel: CADToolProvider {
     }
 
     private func export(_ args: [String: JSONValue]) throws -> ToolResult {
-        let all = evaluation().bodies
+        let all = exportEvaluation(fine: args["quality"]?.string != "normal").bodies
         let bodies: [DesignEvaluator.Body]
         if args["feature_id"] != nil {
             let id = document.features[try index(args)].id
@@ -319,7 +319,7 @@ extension DesignModel: CADToolProvider {
 
     private func export3MF(_ args: [String: JSONValue]) throws -> ToolResult {
         let id = args["feature_id"] == nil ? nil : document.features[try index(args)].id
-        let data = try export3MFData(featureID: id)
+        let data = try export3MFData(featureID: id, fine: args["quality"]?.string != "normal")
         guard data.count <= 8 * 1024 * 1024 else { throw CADToolFailure("Export troppo grande per la chat (8 MiB). Usare il pannello esportazione.") }
         return result("3MF pronto: parti separate con colori sRGB", [
             "filename": "Design.3mf", "mime_type": "model/3mf", "encoding": "base64", "data": .string(data.base64EncodedString()),
