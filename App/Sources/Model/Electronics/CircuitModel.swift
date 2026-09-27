@@ -61,8 +61,6 @@ final class CircuitModel {
     @ObservationIgnored var pcbTask: Task<Void, Never>?
     /// The copper layer being drawn on (0 = top, layerCount − 1 = bottom).
     var activeLayer = 0
-    /// Width of the next tracks (mm).
-    var trackWidth = 0.25
     /// Pista: the route being drawn, the leg to the mouse, and whether the engine would take it.
     var route: Route?
     var routeCheck: RouteCheck?
@@ -75,6 +73,18 @@ final class CircuitModel {
     @ObservationIgnored var documentEpoch = 0
     /// Where the copper check chosen in VERIFICHE is (a ring on the board).
     var issueMark: PCBPoint?
+    /// Area vietata: the outline being drawn (its points so far), and the area selected.
+    var keepoutDraft: KeepoutDraft?
+    var keepoutSelection: UUID?
+    /// What the engine says of a rule change before it is confirmed (an area being drawn or
+    /// moved, a class being edited): checked in the background, the last request wins.
+    var ruleCheck: RuleCheck?
+    @ObservationIgnored var ruleCheckTask: Task<Void, Never>?
+    /// The CLASSI panel, and the rules the engine resolves for every net (one pass per revision,
+    /// off the main thread: each resolution validates the whole document).
+    var showNetClasses = false
+    var netRules: NetRulesCache?
+    @ObservationIgnored var netRulesTask: Task<Void, Never>?
     var schematicSelection: SchematicObject?
     var wireStart: WireEnd?
     var wireBends: [PCBPoint] = []
@@ -242,6 +252,8 @@ final class CircuitModel {
         case placeExisting(UUID)
         /// Pista: copper from a pad, via or track of a net, leg by leg (CircuitModel+PCB).
         case route
+        /// Area vietata: an outline clicked point by point on the layer being drawn on (CircuitModel+Rules).
+        case keepout
     }
 
     /// PCB: puts a component that has no board position yet (from the schematic) where clicked.
@@ -279,6 +291,7 @@ final class CircuitModel {
         didSet {
             if tool != .connect { connectFrom = nil }
             if tool != .route { route = nil }
+            if tool != .keepout { keepoutDraft = nil; ruleCheck = nil }
             prepareBoardGhost()
         }
     }
@@ -638,13 +651,17 @@ final class CircuitModel {
     }
 
     func refresh() {
+        // Sessions made on another revision are over (an undo, a change elsewhere).
+        if let r = route, r.baseRevision != document?.revision { route = nil; routeCheck = nil }
+        if let k = keepoutDraft, k.baseRevision != document?.revision { keepoutDraft = nil }
+        if let c = ruleCheck, c.revision != document?.revision { ruleCheckTask?.cancel(); ruleCheck = nil }
         refreshSchematic()
         refreshPCB()
         guard let d = design else { baseIssues = []; return }
         baseIssues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
     }
 
-    static func describe(_ error: Error) -> String {
+    nonisolated static func describe(_ error: Error) -> String {
         if let e = error as? CircuitEditError { return e.message }
         if let f = error as? ElectronicsFailure {
             return f.issues.map { $0.subject.isEmpty ? $0.message : "\($0.subject): \($0.message)" }.joined(separator: " · ")

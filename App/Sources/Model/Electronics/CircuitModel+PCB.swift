@@ -16,6 +16,9 @@ extension CircuitModel {
         var session = UUID()
         var netID: UUID
         var baseRevision: UInt64
+        /// The net's rules as the engine resolves them (its class, or the board's): the minima
+        /// to respect and the proposed track and via sizes.
+        var rules: PCBResolvedNetRules
         var width: Double
         /// The layers of the copper the route starts from (an SMD pad: its side only).
         var startLayers: [Int]
@@ -69,6 +72,8 @@ extension CircuitModel {
         pcbTask?.cancel(); pcb = nil
         routeCheckTask?.cancel(); route = nil; routeCheck = nil
         copperSelection = nil; issueMark = nil; activeLayer = 0
+        keepoutDraft = nil; keepoutSelection = nil; ruleCheckTask?.cancel(); ruleCheck = nil
+        netRulesTask?.cancel(); netRules = nil; showNetClasses = false
         schematicTask?.cancel(); schematic = nil
         ghostTask?.cancel(); ghostSession = nil; schematicGhost = []
         schematicSelection = nil; selection = nil
@@ -127,7 +132,11 @@ extension CircuitModel {
         if !layers.contains(activeLayer), let own = layers.first { activeLayer = own }
         let start = snapshot.snapTargets(near: p, radius: tolerance, layer: activeLayer, netID: net)
             .first { $0.kind != .grid }?.position ?? hit.position
-        route = Route(netID: net, baseRevision: document?.revision ?? 0, width: max(trackWidth, copperRules.minimumTrackWidth),
+        guard let d = design, let rules = try? ElectronicsPCB.resolvedRules(design: d, netID: net) else {
+            report("Regole della rete non disponibili: controlla le VERIFICHE.")
+            return
+        }
+        route = Route(netID: net, baseRevision: document?.revision ?? 0, rules: rules, width: rules.routing.trackWidth,
                       startLayers: layers, runs: [.init(layer: activeLayer, points: [start])])
         routeCheck = nil
     }
@@ -232,9 +241,8 @@ extension CircuitModel {
             let pts = ElectronicsPCB.simplifiedPoints(run.points)
             if pts.count > 1 { commands.append(.addTrack(PCBTrack(id: run.id, netID: r.netID, layer: run.layer, width: r.width, points: pts))) }
         }
-        let rules = copperRules
-        let drill = max(0.3, rules.minimumDrill), diameter = max(0.6, drill + 2 * rules.minimumAnnularRing)
-        for v in r.vias { commands.append(.addVia(PCBVia(id: v.id, netID: r.netID, position: v.position, diameter: diameter, drill: drill))) }
+        let via = r.rules.routing
+        for v in r.vias { commands.append(.addVia(PCBVia(id: v.id, netID: r.netID, position: v.position, diameter: via.viaDiameter, drill: via.viaDrill))) }
         guard !commands.isEmpty else { return nil }
         return commands.count == 1 ? commands[0] : .batch(commands)
     }
@@ -275,9 +283,14 @@ extension CircuitModel {
         return run(.pcb(.configure(layerCount: layerCount, rules: rules)))
     }
 
-    /// The track widths offered (the rule's minimum first).
-    var trackWidths: [Double] {
-        let minimum = copperRules.minimumTrackWidth
-        return ([minimum] + [0.2, 0.25, 0.3, 0.4, 0.5, 0.8, 1.0, 1.5, 2.0].filter { $0 > minimum + 1e-9 })
+    /// The track widths offered from a minimum (the net's), the minimum first.
+    static func trackWidths(from minimum: Double) -> [Double] {
+        [minimum] + [0.2, 0.25, 0.3, 0.4, 0.5, 0.8, 1.0, 1.5, 2.0].filter { $0 > minimum + 1e-9 }
+    }
+
+    /// The minimum width of a track of `net` (its class, else the board's rule).
+    func minimumTrackWidth(net: UUID) -> Double {
+        guard let d = design, let r = try? ElectronicsPCB.resolvedRules(design: d, netID: net) else { return copperRules.minimumTrackWidth }
+        return r.rules.minimumTrackWidth
     }
 }

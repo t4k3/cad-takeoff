@@ -227,6 +227,88 @@ struct CircuitTests {
         let copper = sc.design!.board.copper!
         check(sc.route == nil && copper.tracks.count == 3 && copper.vias.count == 2 && copper.vias.contains { $0.id == viaID }, "pista con due via in un passo (\(last))")
         check(!sc.board!.airwires.contains { $0.netID == air.netID }, "rete sbrogliata attraverso le via")
+
+        // CLASSI (T94 rules): the net in «Potenza» routes with the class's sizes; a tighter minimum
+        // is checked before Applica (errors on the copper already there), then applied.
+        guard let power = sc.addNetClass(name: "Potenza"), var klass = sc.netClasses.first(where: { $0.id == power }) else {
+            print("FALLITO: classe non creata (\(last))"); exit(1)
+        }
+        klass.routing = PCBRoutingDimensions(trackWidth: 0.5, viaDiameter: 0.8, viaDrill: 0.4)
+        check(sc.updateNetClass(klass) && sc.assign(nets: [air.netID], to: power) && sc.netClass(of: air.netID)?.id == power, "classe con misure e rete assegnata (\(last))")
+        await sc.pcbReady()
+        sc.tool = .route
+        sc.activeLayer = 0
+        sc.routeClick(at: air.from, tolerance: 0.5)
+        check(sc.route?.width == 0.5 && sc.route?.rules.routing.viaDiameter == 0.8 && sc.route?.rules.className == "Potenza", "pista con le misure della classe")
+        sc.switchLayer(to: 3)
+        if case let .batch(cmds)? = sc.routeCommand(sc.route!), case let .addVia(v)? = cmds.last { check(v.diameter == 0.8 && v.drill == 0.4, "via della classe") }
+        else if case let .addVia(v)? = sc.routeCommand(sc.route!) { check(v.diameter == 0.8 && v.drill == 0.4, "via della classe") }
+        else { check(false, "via della classe nel comando") }
+        sc.tool = .select
+        // The class as edited before its net was assigned: applying it keeps the net in the class.
+        var strict = klass
+        strict.constraints.minimumTrackWidth = 1.0
+        check(sc.edited(strict)?.netIDs == [air.netID], "la modifica della classe conserva le reti assegnate")
+        sc.checkRule(.updateNetClass(sc.edited(strict)!))
+        await sc.ruleCheckReady()
+        check(!(sc.ruleCheck?.newErrors ?? []).isEmpty && sc.ruleCheck?.refusal == nil, "classe più stretta: errori sul rame mostrati prima di applicare")
+        let beforeStrict = sc.document!.revision
+        check(sc.updateNetClass(strict, expectedRevision: sc.ruleCheck?.revision) && sc.document!.revision == beforeStrict + 1
+              && sc.netClass(of: air.netID)?.constraints.minimumTrackWidth == 1.0, "classe applicata, rete ancora nella classe, errori da correggere (\(last))")
+        // A class the engine refuses (a negative minimum): nothing changes, the edit can be corrected.
+        var broken = strict
+        broken.constraints.minimumTrackWidth = -1
+        let beforeBroken = sc.document!.revision
+        check(!sc.updateNetClass(broken) && sc.document!.revision == beforeBroken && sc.netClass(of: air.netID)?.constraints.minimumTrackWidth == 1.0,
+              "classe non valida rifiutata senza toccare il circuito (\(last))")
+        sc.refreshNetRules()
+        await sc.netRulesReady()
+        check(sc.currentNetRules?[air.netID]?.rules.minimumTrackWidth == 1.0, "regole risolte per rete, per revisione")
+        sc.undo(); sc.undo(); sc.undo(); sc.undo()
+        await sc.pcbReady()
+        check(sc.netClasses.isEmpty, "annulla toglie la classe")
+
+        // AREE VIETATE: two corners across a track → rectangle, previewed (conflict shown), confirmed
+        // with the previewed identity; moved; a track into it refused; deleted and undone.
+        let crossing = copper.tracks[0].points
+        let c0 = crossing[0], c1 = crossing[crossing.count - 1]
+        let centre = PCBPoint((c0.x + c1.x) / 2, (c0.y + c1.y) / 2)
+        sc.tool = .keepout
+        sc.activeLayer = copper.tracks[0].layer
+        sc.keepoutClick(at: PCBPoint(centre.x - 1, centre.y - 1), tolerance: 0.1)
+        sc.keepoutClick(at: PCBPoint(centre.x + 1, centre.y + 1), tolerance: 0.1)
+        let draftID = sc.keepoutDraft?.id
+        check(sc.keepoutDraft?.outline(with: sc.keepoutDraft?.points.last)?.count == 4
+              && sc.keepoutDraft?.outline(with: sc.keepoutDraft?.points.first)?.count == 4, "il mouse sull'ultimo o sul primo punto non cambia il rettangolo")
+        await sc.ruleCheckReady()
+        check(!(sc.ruleCheck?.newErrors ?? []).isEmpty, "area sopra la pista: conflitto mostrato prima di confermare")
+        check(sc.finishKeepout() && sc.keepouts.count == 1 && sc.keepouts[0].id == draftID && sc.keepoutSelection == draftID,
+              "area confermata con l'identità dell'anteprima (\(last))")
+        await sc.pcbReady()
+        check(sc.issues.contains { $0.code == "pcb_keepout" }, "conflitto dell'area nelle VERIFICHE")
+        check(sc.keepoutHit(at: centre, tolerance: 0.1)?.id == draftID, "area trovata sotto il mouse")
+        sc.moveKeepout(draftID!, by: PCBPoint(0, 30))
+        await sc.pcbReady()
+        check(abs(sc.keepouts[0].outline[0].y - (centre.y - 1 + 30)) < 1e-9 && !sc.issues.contains { $0.code == "pcb_keepout" }, "area spostata fuori dal rame")
+        sc.moveKeepout(draftID!, by: PCBPoint(0, -30))
+        let beforeInto = sc.document!.revision
+        sc.tool = .route
+        sc.routeClick(at: air.from, tolerance: 0.5)
+        sc.routeClick(at: PCBPoint(centre.x, centre.y), tolerance: 0.01)
+        check(!sc.finishRoute() && sc.document!.revision == beforeInto, "pista dentro l'area vietata rifiutata (\(last))")
+        sc.tool = .select
+        sc.removeKeepout(draftID!)
+        check(sc.keepouts.isEmpty, "area eliminata")
+        sc.undo(); sc.undo(); sc.undo(); sc.undo()
+        check(sc.keepouts.isEmpty, "annulla fino a prima dell'area")
+        // A draft made on an older revision is dropped (an undo while drawing).
+        sc.tool = .keepout
+        sc.keepoutClick(at: PCBPoint(1, 1), tolerance: 0.1)
+        sc.undo()
+        check(sc.keepoutDraft == nil, "bozza dell'area scartata al cambio di revisione")
+        sc.redo()
+        sc.tool = .select
+        await sc.pcbReady()
         // A leg over another net's pad is shown as not confirmable, and refused.
         if let other = sc.board!.pads.first(where: { $0.componentID == air.fromComponent && $0.netID != air.netID }) {
             sc.activeLayer = 0
@@ -268,6 +350,6 @@ struct CircuitTests {
         try? FileManager.default.removeItem(at: outS2)
 
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
-        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, annulla, salva e riapri")
+        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, annulla, salva e riapri")
     }
 }
