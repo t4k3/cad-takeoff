@@ -42,7 +42,10 @@ public enum TechnicalDrawing {
         (10, "10:1"), (5, "5:1"), (2, "2:1"), (1, "1:1"), (0.5, "1:2"), (0.2, "1:5"), (0.1, "1:10"), (0.05, "1:20"), (0.02, "1:50"), (0.01, "1:100"),
     ]
 
-    public static func make(_ bodies: [(mesh: Mesh, snapshot: BodySnapshot)], info: Info, format: SheetFormat = .a4) throws -> DrawingSheet {
+    /// `section`: the front view is the section A–A through the middle of the part (hatched cut
+    /// faces, no hidden lines), with the cutting line in the view from above.
+    public static func make(_ bodies: [(mesh: Mesh, snapshot: BodySnapshot)], info: Info, format: SheetFormat = .a4,
+                            section: Bool = false) throws -> DrawingSheet {
         let model = Model(bodies)
         guard let box = model.bounds else { throw KernelError.invalidParameter("disegno: nessun corpo visibile") }
         let (W, H) = format.size
@@ -83,9 +86,40 @@ public enum TechnicalDrawing {
         let leftAt = place(left, el, at: Vec2(colLeft, rowTop))
         let topAt = place(top, et, at: Vec2(colFront, rowTop - gap - h(et) * scale))
         let isoAt = place(iso, ei, at: Vec2(colIso, rowTop + (max(h(ef), h(el)) - h(ei)) * scale))
-        for (v, at) in [(front, frontAt), (left, leftAt), (top, topAt), (iso, isoAt)] {
+        for (v, at) in [(front, frontAt), (left, leftAt), (top, topAt), (iso, isoAt)] where !(section && v.look == front.look) {
             for seg in model.edges(for: v, hidden: v.look != iso.look) {
                 sheet.lines.append(.init(a: at(seg.a), b: at(seg.b), style: seg.visible ? .visible : .hidden))
+            }
+        }
+        if section {
+            // The half towards the viewer taken away; what is left seen from the front.
+            let yc = (box.min.y + box.max.y) / 2, pad = 10.0
+            let size = box.max - box.min
+            let tool = Feature(name: "sezione", kind: .box(width: size.x + 2 * pad, depth: yc - box.min.y + pad, height: size.z + 2 * pad),
+                               position: Vec3((box.min.x + box.max.x) / 2, (box.min.y - pad + yc) / 2, box.min.z - pad))
+            let toolSolid = CSGSolid(try PrimitiveKernel.build(tool).snapshot(revision: "section"))
+            let cut: [(mesh: Mesh, snapshot: BodySnapshot)] = bodies.compactMap { b in
+                let solid = CSGSolid(b.snapshot).subtracting(toolSolid)
+                guard !solid.isEmpty else { return nil }
+                let (mesh, triFace) = solid.triangulated()
+                return (mesh, DesignEvaluator.snapshot(of: solid, mesh: mesh, triangleFace: triFace, bodyID: b.snapshot.bodyID, revision: "section"))
+            }
+            let cutModel = Model(cut)
+            for seg in cutModel.edges(for: front, hidden: false) where seg.visible {
+                sheet.lines.append(.init(a: frontAt(seg.a), b: frontAt(seg.b), style: .visible))
+            }
+            for h in cutModel.hatch(plane: yc, view: front, spacing: 2.5 / scale) {
+                sheet.lines.append(.init(a: frontAt(h.0), b: frontAt(h.1), style: .thin))
+            }
+            // Title under the view, cutting line in the view from above (arrows: looking direction).
+            let above = frontAt(Vec2((ef.min.x + ef.max.x) / 2, ef.max.y))
+            sheet.texts.append(.init(at: above + Vec2(0, 5), text: "SEZIONE A-A", size: 3.5, align: .center))
+            let l0 = topAt(Vec2(et.min.x, yc)) - Vec2(6, 0), l1 = topAt(Vec2(et.max.x, yc)) + Vec2(6, 0)
+            sheet.lines.append(.init(a: l0, b: l1, style: .center))
+            for end in [l0, l1] {
+                sheet.lines.append(.init(a: end, b: end + Vec2(0, 5), style: .visible))
+                arrow(&sheet, tip: end + Vec2(0, 7), from: end + Vec2(0, 2))
+                sheet.texts.append(.init(at: end + Vec2(end.x < l1.x ? -3 : 3, 1), text: "A", size: 3.5, align: .center))
             }
         }
         // Overall dimensions: width and height on the front, depth on the view from the left.
@@ -112,18 +146,23 @@ public enum TechnicalDrawing {
             }
         }
         var labelled: [Vec2] = []
-        for c in circles.prefix(8) {
+        let shown = Array(circles.prefix(8))
+        for c in shown {
             let centre = topAt(c.centre), r = c.radius * scale
-            // Circles on the same centre (a groove, a counterbore) get their leaders fanned out.
+            // Circles on the same centre (a bore, a groove, a counterbore): leaders fanned out on
+            // alternate sides, all ending outside the largest of them.
             let before = labelled.filter { ($0 - centre).length < 1e-3 }.count
             labelled.append(centre)
-            let a = Double.pi / 4 + Double(before) * 0.7
+            let outer = shown.filter { (topAt($0.centre) - centre).length < 1e-3 }.map(\.radius).max()! * scale
+            let angles = [45.0, 135, 20, 160, 70, 110, 0, 180]
+            let a = angles[before % angles.count] * .pi / 180
             let dir = Vec2(cos(a), sin(a))
-            let tip = centre + dir * r, knee = centre + dir * (r + 6)
+            let tip = centre + dir * r, knee = centre + dir * (outer + 6 + Double(before / 2) * 5)
+            let right = dir.x >= 0
             sheet.lines.append(.init(a: tip, b: knee, style: .thin))
-            sheet.lines.append(.init(a: knee, b: knee + Vec2(12, 0), style: .thin))
+            sheet.lines.append(.init(a: knee, b: knee + Vec2(right ? 12 : -12, 0), style: .thin))
             arrow(&sheet, tip: tip, from: knee)
-            sheet.texts.append(.init(at: knee + Vec2(1, 1), text: "Ø" + number(2 * c.radius), size: 3.2, align: .left))
+            sheet.texts.append(.init(at: knee + Vec2(right ? 1 : -1, 1), text: "Ø" + number(2 * c.radius), size: 3.2, align: right ? .left : .right))
         }
         titleBlock(&sheet, x1: frame.x1, y0: frame.y0, width: titleW, height: titleH, info: info, scale: label, format: format)
         return sheet
@@ -242,6 +281,35 @@ public enum TechnicalDrawing {
                 } else { out.append((fit.c, radius, depth...depth)) }
             }
             return out.sorted { $0.1 > $1.1 }
+        }
+
+        /// 45° hatching of the faces lying on the plane y = `plane` and facing the viewer (a cut).
+        func hatch(plane: Double, view: View, spacing: Double) -> [(Vec2, Vec2)] {
+            let r = view.right, u = view.up
+            func p2(_ p: Vec3) -> Vec2 { Vec2(p.dot(r), p.dot(u)) }
+            let n = Vec2(-1, 1).normalized, dir = Vec2(1, 1).normalized
+            var segs: [(Vec2, Vec2, Bool)] = []
+            for tri in tris where tri.normal.dot(view.look) < -0.999 && tri.v.allSatisfy({ abs(points[$0].y - plane) < 1e-6 }) {
+                let q = tri.v.map { p2(points[$0]) }
+                let c = q.map { $0.dot(n) }
+                guard let lo = c.min(), let hi = c.max(), hi - lo > 1e-12 else { continue }
+                var k = (lo / spacing).rounded(.up)
+                while k * spacing <= hi {
+                    let level = k * spacing
+                    // Where the line n·p = level crosses the triangle's sides.
+                    var hits: [Vec2] = []
+                    for i in 0..<3 {
+                        let a = q[i], b = q[(i + 1) % 3], ca = c[i], cb = c[(i + 1) % 3]
+                        if (ca - level) * (cb - level) <= 0, abs(cb - ca) > 1e-12 { hits.append(a + (b - a) * ((level - ca) / (cb - ca))) }
+                    }
+                    if hits.count >= 2 {
+                        let sorted = hits.sorted { $0.dot(dir) < $1.dot(dir) }
+                        if (sorted.last! - sorted.first!).length > 1e-9 { segs.append((sorted.first!, sorted.last!, true)) }
+                    }
+                    k += 1
+                }
+            }
+            return merged(segs).map { ($0.a, $0.b) }
         }
 
         /// Collinear touching runs of the same kind joined (fewer, cleaner lines).

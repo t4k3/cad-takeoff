@@ -419,15 +419,18 @@ final class DesignModel {
         panel.allowedContentTypes = [.pdf, UTType(filenameExtension: "dxf") ?? .data]
         panel.nameFieldStringValue = "Tavola.pdf"
         panel.message = "Tavola tecnica: .pdf per stampare, .dxf per altri CAD"
+        let sectionBox = NSButton(checkboxWithTitle: "Vista di fronte in sezione A-A (pezzi torniti, fori interni)", target: nil, action: nil)
+        panel.accessoryView = sectionBox
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        let section = sectionBox.state == .on
         do {
             let info = TechnicalDrawing.Info(title: url.deletingPathExtension().lastPathComponent,
                                              material: sheetParts().first.map { $0.build.rule.material.name } ?? "")
             // A4 unless the part only fits it at 1:5 or smaller.
-            var sheet = try TechnicalDrawing.make(bodies, info: info, format: .a4)
+            var sheet = try TechnicalDrawing.make(bodies, info: info, format: .a4, section: section)
             if let scale = sheet.texts.first(where: { t in TechnicalDrawing.scales.contains { $0.1 == t.text } }),
                let value = TechnicalDrawing.scales.first(where: { $0.1 == scale.text })?.0, value <= 0.2 {
-                sheet = try TechnicalDrawing.make(bodies, info: info, format: .a3)
+                sheet = try TechnicalDrawing.make(bodies, info: info, format: .a3, section: section)
             }
             if url.pathExtension.lowercased() == "dxf" {
                 try DrawingDXF.dxf(sheet).write(to: url, atomically: true, encoding: .utf8)

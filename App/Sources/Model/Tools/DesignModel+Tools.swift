@@ -272,7 +272,8 @@ extension DesignModel: CADToolProvider {
         let title = args["title"]?.string ?? "Tavola"
         let format = SheetFormat(rawValue: args["format"]?.string ?? "A4") ?? .a4
         let sheet: DrawingSheet
-        do { sheet = try TechnicalDrawing.make(bodies, info: .init(title: title, material: args["material"]?.string ?? ""), format: format) }
+        do { sheet = try TechnicalDrawing.make(bodies, info: .init(title: title, material: args["material"]?.string ?? ""), format: format,
+                                                section: args["section"]?.bool ?? false) }
         catch { throw CADToolFailure(error.localizedDescription) }
         let data = PDFWriter.pdf(sheet)
         let scale = sheet.texts.first { t in TechnicalDrawing.scales.contains { $0.1 == t.text } }?.text ?? "?"

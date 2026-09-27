@@ -40,3 +40,17 @@ private func sheet(_ features: [Feature], format: SheetFormat = .a4) throws -> D
     #expect(DrawingDXF.encoded("Ø10 à 45°") == "%%c10 \\U+00E0 45%%d")
     #expect(throws: KernelError.self) { try TechnicalDrawing.make([], info: .init(title: "x")) }
 }
+
+@Test func sectionViewHatchesTheCutAndMarksItsLine() throws {
+    let p = Profile2D(points: [Vec2(6, 0), Vec2(12, 0), Vec2(12, 60), Vec2(6, 60)])   // a bush: bore Ø12
+    let bush = Feature(name: "Boccola", kind: .revolve(RevolveSpec(profile: p, plane: SketchPlane(origin: .zero, xAxis: Vec3(1, 0, 0), yAxis: Vec3(0, 0, 1)),
+                                                                    axisStart: Vec2(0, 0), axisEnd: Vec2(0, 1))))
+    let plain = try sheet([bush])
+    let cut = try TechnicalDrawing.make(DesignEvaluator.evaluate(CADDocument(features: [bush]), revision: "s").bodies.map { (mesh: $0.mesh, snapshot: $0.snapshot) },
+                                        info: .init(title: "Boccola"), section: true)
+    #expect(cut.texts.contains { $0.text == "SEZIONE A-A" } && cut.texts.filter { $0.text == "A" }.count == 2)
+    // Hatching: many thin 45° lines; and the bore is no longer hidden in the front view.
+    let hatch = cut.lines.filter { $0.style == .thin && abs(abs(($0.b - $0.a).normalized.x) - sqrt(0.5)) < 1e-6 }
+    #expect(hatch.count > 20)
+    #expect(cut.lines.filter { $0.style == .hidden }.count < plain.lines.filter { $0.style == .hidden }.count)
+}
