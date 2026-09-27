@@ -27,6 +27,7 @@ public struct LibrarySource: Codable, Equatable, Sendable {
     public var license: String
     /// Revision of the source data, not the mutable catalog's current version.
     public var sourceRevision: String
+    public var contentSHA256: String?
     public init(reference: String, license: String, sourceRevision: String) {
         self.reference = reference; self.license = license; self.sourceRevision = sourceRevision
     }
@@ -34,12 +35,19 @@ public struct LibrarySource: Codable, Equatable, Sendable {
 
 public enum PinElectricalType: String, Codable, Sendable {
     case passive, input, output, bidirectional, openDrain, powerInput, powerOutput, noConnect
+    case triState, free, unspecified, openCollector, openEmitter
 }
 
 public struct SymbolPin: Codable, Equatable, Sendable {
     public var id: UUID
     public var name: String
     public var electricalType: PinElectricalType
+    public var number: String?
+    public var position: PCBPoint?
+    public var rotationDegrees: Double?
+    public var length: Double?
+    public var graphicStyle: String?
+    public var unit: Int?
     public init(id: UUID = UUID(), name: String, electricalType: PinElectricalType = .passive) {
         self.id = id; self.name = name; self.electricalType = electricalType
     }
@@ -50,12 +58,14 @@ public struct SymbolDefinition: Codable, Equatable, Sendable {
     public var name: String
     public var pins: [SymbolPin]
     public var source: LibrarySource
+    public var graphics: [LibraryGraphic]?
+    public var properties: [String: String]?
     public init(key: LibraryRevision = .init(), name: String, pins: [SymbolPin], source: LibrarySource) {
         self.key = key; self.name = name; self.pins = pins; self.source = source
     }
 }
 
-public enum PadShape: String, Codable, Sendable { case circle, rectangle, oval }
+public enum PadShape: String, Codable, Sendable { case circle, rectangle, oval, roundedRectangle }
 public struct FootprintPad: Codable, Equatable, Sendable {
     public var id: UUID
     public var number: String
@@ -65,6 +75,9 @@ public struct FootprintPad: Codable, Equatable, Sendable {
     public var rotationDegrees: Double
     /// nil is a surface pad; a value is a plated through-hole diameter in mm.
     public var drillDiameter: Double?
+    public var cornerRadius: Double?
+    /// Source library layers, before placement-side transformation; nil denotes E0 defaults.
+    public var sourceLayers: [String]?
     public init(id: UUID = UUID(), number: String, center: PCBPoint, size: PCBPoint,
                 shape: PadShape = .rectangle, rotationDegrees: Double = 0, drillDiameter: Double? = nil) {
         self.id = id; self.number = number; self.center = center; self.size = size
@@ -91,6 +104,8 @@ public struct FootprintDefinition: Codable, Equatable, Sendable {
     public var assemblyCentroid: PCBPoint
     public var model3D: ComponentModel3D?
     public var source: LibrarySource
+    public var graphics: [LibraryGraphic]?
+    public var properties: [String: String]?
     public init(key: LibraryRevision = .init(), name: String, pads: [FootprintPad],
                 assemblyCentroid: PCBPoint = .init(), model3D: ComponentModel3D? = nil, source: LibrarySource) {
         self.key = key; self.name = name; self.pads = pads; self.assemblyCentroid = assemblyCentroid

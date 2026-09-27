@@ -1,0 +1,30 @@
+{
+  "attribution": "KiCad Library team; see KICAD_LICENSE.md. Component data only; no third-party software.",
+  "sources": [
+    {
+      "file": "R_0603_1608Metric.kicad_mod",
+      "url": "https://gitlab.com/kicad/libraries/kicad-footprints/-/raw/9.0.0/Resistor_SMD.pretty/R_0603_1608Metric.kicad_mod",
+      "sha256": "4704c9ccd300f50c721cdc6a7a1f3e06f9f1df0b6142a98b8600d00de1182a28",
+      "modifications": "none"
+    },
+    {
+      "file": "PinHeader_1x02.kicad_mod",
+      "url": "https://gitlab.com/kicad/libraries/kicad-footprints/-/raw/9.0.0/Connector_PinHeader_2.54mm.pretty/PinHeader_1x02_P2.54mm_Vertical.kicad_mod",
+      "sha256": "ec752bbcecf855e3d852409e516965b03a5a461abf45002765cb482266cdf973",
+      "modifications": "none"
+    },
+    {
+      "file": "KICAD_LICENSE.md",
+      "url": "https://gitlab.com/kicad/libraries/kicad-symbols/-/raw/9.0.0/LICENSE.md",
+      "sha256": "45d2bce75e5a4208f5afb01b8fb2c406e700371c4fe2b5f5cd5c443d46db4d8f",
+      "modifications": "none"
+    },
+    {
+      "file": "Device_R.kicad_sym",
+      "url": "https://gitlab.com/kicad/libraries/kicad-symbols/-/raw/9.0.0/Device.kicad_sym",
+      "upstreamSha256": "972f851ebf7c10dfe97eefd5d847406154b18ee6158013bd19165477d6364abd",
+      "sha256": "f9dadd4f5a551feb2d82e5ffcde03ab20a3cacd84e6cf70ddc7ba7ffd9594428",
+      "modifications": "Only symbol R extracted; test library header added. Symbol contents unchanged."
+    }
+  ]
+}

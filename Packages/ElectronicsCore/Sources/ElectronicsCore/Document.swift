@@ -10,7 +10,7 @@ public struct ElectronicsEdit: Codable, Equatable, Sendable {
 /// The history is persisted. Revision is monotonic even across undo/redo, so assistant calls
 /// cannot reuse a stale revision after an ABA (edit -> undo) transition.
 public struct ElectronicsDocument: Codable, Equatable, Sendable {
-    public private(set) var formatVersion: Int = 1
+    public private(set) var formatVersion: Int = 2
     public private(set) var revision: UInt64 = 0
     public private(set) var design: ElectronicsDesign
     public private(set) var past: [ElectronicsEdit] = []
@@ -54,15 +54,18 @@ public struct ElectronicsDocument: Codable, Equatable, Sendable {
     }
 
     public static func decode(_ data: Data) throws -> Self {
-        guard data.count <= 64 * 1024 * 1024 else { throw failure("document_too_large", "Limite E0: documento 64 MiB.") }
+        guard data.count <= 64 * 1024 * 1024 else { throw failure("document_too_large", "Documento oltre 64 MiB: suddividere il progetto.") }
         return try JSONDecoder().decode(Self.self, from: data)
     }
 
     private enum CodingKeys: String, CodingKey { case formatVersion, revision, design, past, future }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        formatVersion = try c.decode(Int.self, forKey: .formatVersion)
-        guard formatVersion == 1 else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(formatVersion).") }
+        let inputVersion = try c.decode(Int.self, forKey: .formatVersion)
+        guard (1...2).contains(inputVersion) else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(inputVersion). Aggiornare l’app prima di aprire il file.") }
+        // v1 has no E1 library geometry fields; missing optional fields decode as nil. Always
+        // write v2 so old E0 readers reject the document instead of silently losing those fields.
+        formatVersion = 2
         revision = try c.decode(UInt64.self, forKey: .revision)
         design = try c.decode(ElectronicsDesign.self, forKey: .design)
         past = try c.decode([ElectronicsEdit].self, forKey: .past)

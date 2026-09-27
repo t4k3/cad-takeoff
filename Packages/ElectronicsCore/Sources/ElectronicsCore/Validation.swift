@@ -6,6 +6,8 @@ public struct ElectronicsIssue: Codable, Equatable, Sendable {
     public var code: String
     public var subject: String
     public var message: String
+    public var subjectIDs: [UUID]?
+    public var position: PCBPoint?
     public init(_ code: String, _ subject: String, _ message: String, severity: Severity = .error) {
         self.code = code; self.subject = subject; self.message = message; self.severity = severity
     }
@@ -35,6 +37,9 @@ public enum ElectronicsValidation {
         }
         func source(_ value: LibrarySource, _ subject: String) {
             text(value.reference, subject); text(value.license, subject); text(value.sourceRevision, subject)
+            if let hash = value.contentSHA256, !hash.matches("^[0-9a-f]{64}$") {
+                add("invalid_source_hash", subject, "SHA-256 del sorgente non valido: ripetere l’importazione.")
+            }
         }
         let library = design.library
         unique(library.symbols.map(\.key), "symbols"); unique(library.footprints.map(\.key), "footprints")
@@ -50,15 +55,31 @@ public enum ElectronicsValidation {
         for symbol in library.symbols {
             text(symbol.name, "symbol"); source(symbol.source, symbol.name); unique(symbol.pins.map(\.id), symbol.name)
             if symbol.pins.isEmpty { add("empty_symbol", symbol.name, "Nessun pin elettrico.") }
-            for pin in symbol.pins { text(pin.name, symbol.name) }
+            unique(symbol.pins.compactMap(\.number), symbol.name + " pin numbers")
+            for pin in symbol.pins {
+                text(pin.name, symbol.name)
+                if let n = pin.number { text(n, symbol.name) }
+                if let p = pin.position, !ElectronicsGeometry.valid(p) { add("invalid_pin_geometry", symbol.name, "Posizione pin non valida.") }
+                if let a = pin.rotationDegrees, !ElectronicsGeometry.validAngle(a) { add("invalid_pin_geometry", symbol.name, "Angolo pin non valido.") }
+                if let l = pin.length, !ElectronicsGeometry.valid(l) || l < 0 { add("invalid_pin_geometry", symbol.name, "Lunghezza pin non valida.") }
+            }
+            issues += LibraryGraphics.validate(symbol.graphics ?? [], subject: symbol.name)
         }
         for footprint in library.footprints {
             text(footprint.name, "footprint"); source(footprint.source, footprint.name)
             unique(footprint.pads.map(\.id), footprint.name)
+            issues += LibraryGraphics.validate(footprint.graphics ?? [], subject: footprint.name)
             if footprint.pads.isEmpty { add("empty_footprint", footprint.name, "Nessuna piazzola elettrica.") }
             if !ElectronicsGeometry.valid(footprint.assemblyCentroid) { add("invalid_centroid", footprint.name, "Centro non valido.") }
             for pad in footprint.pads {
                 text(pad.number, footprint.name)
+                if let layers = pad.sourceLayers {
+                    let allowed = pad.drillDiameter == nil ? ["F.Cu", "F.Mask", "F.Paste"] : ["*.Cu", "*.Mask", "F.Mask", "B.Mask"]
+                    let copper = pad.drillDiameter == nil ? "F.Cu" : "*.Cu"
+                    if !layers.contains(copper) || Set(layers).count != layers.count || !layers.allSatisfy(allowed.contains) {
+                        add("invalid_pad_layers", footprint.name, "Strati della piazzola non supportati: controllare la libreria.")
+                    }
+                }
                 if !ElectronicsGeometry.valid(pad.center) || !ElectronicsGeometry.valid(pad.size) ||
                     pad.size.x <= 0 || pad.size.y <= 0 || !ElectronicsGeometry.validAngle(pad.rotationDegrees) {
                     add("invalid_pad", footprint.name, "Piazzola \(pad.number): dimensioni, posizione o angolo non validi.")
@@ -66,6 +87,11 @@ public enum ElectronicsValidation {
                 if pad.shape == .circle && pad.size.x != pad.size.y {
                     add("invalid_pad", footprint.name, "Piazzola circolare con diametri diversi.")
                 }
+                if pad.shape == .roundedRectangle {
+                    if let r = pad.cornerRadius, r.isFinite && r >= 0 && r <= min(pad.size.x, pad.size.y) / 2 {} else {
+                        add("invalid_corner_radius", footprint.name, "Raggio della piazzola arrotondata mancante o non valido.")
+                    }
+                } else if pad.cornerRadius != nil { add("invalid_corner_radius", footprint.name, "Raggio presente su una piazzola non arrotondata.") }
                 if let drill = pad.drillDiameter, !ElectronicsGeometry.valid(drill) || drill <= 0 || drill >= min(pad.size.x, pad.size.y) {
                     add("invalid_drill", footprint.name, "Foro privo di anello anulare positivo.")
                 }
@@ -147,7 +173,7 @@ public enum ElectronicsValidation {
     public static func electrical(_ design: ElectronicsDesign, excluding: Set<UUID> = []) -> [ElectronicsIssue] {
         guard integrity(design).isEmpty else { return [.init("invalid_design", "ERC", "Correggere prima gli errori di integrità.")] }
         var issues: [ElectronicsIssue] = []
-        var drivers: [UUID: [String]] = [:]
+        var drivers: [UUID: [(name: String, component: UUID, pin: UUID)]] = [:]
         for component in design.components where !excluding.contains(component.id) {
             guard let device = design.library.devices.first(where: { $0.key == component.device }),
                   let symbol = design.library.symbols.first(where: { $0.key == device.symbol }) else { continue }
@@ -156,16 +182,24 @@ public enum ElectronicsValidation {
                 let connection = design.connections.first { $0.pin == ref }
                 let subject = "\(component.reference).\(pin.name)"
                 if connection == nil && pin.electricalType != .noConnect {
-                    issues.append(.init("unconnected_pin", subject, "Pin senza rete né marcatore NC.", severity: .warning))
+                    var issue = ElectronicsIssue("unconnected_pin", subject, "Pin senza rete né marcatore NC.", severity: .warning)
+                    issue.subjectIDs = [component.id, pin.id]; issues.append(issue)
                 }
                 if let netID = connection?.netID {
-                    if pin.electricalType == .noConnect { issues.append(.init("nc_pin_connected", subject, "Pin NC collegato a una rete.")) }
-                    if pin.electricalType == .output || pin.electricalType == .powerOutput { drivers[netID, default: []].append(subject) }
+                    if pin.electricalType == .noConnect {
+                        var issue = ElectronicsIssue("nc_pin_connected", subject, "Pin NC collegato a una rete.")
+                        issue.subjectIDs = [component.id, pin.id, netID]; issues.append(issue)
+                    }
+                    if pin.electricalType == .output || pin.electricalType == .powerOutput {
+                        drivers[netID, default: []].append((subject, component.id, pin.id))
+                    }
                 }
             }
         }
         for net in design.nets where (drivers[net.id]?.count ?? 0) > 1 {
-            issues.append(.init("multiple_drivers", net.name, "Più uscite sulla rete: \(drivers[net.id]!.sorted().joined(separator: ", "))."))
+            let subjects = drivers[net.id]!.sorted { $0.name < $1.name }
+            var issue = ElectronicsIssue("multiple_drivers", net.name, "Più uscite sulla rete: \(subjects.map(\.name).joined(separator: ", ")).")
+            issue.subjectIDs = [net.id] + subjects.flatMap { [$0.component, $0.pin] }; issues.append(issue)
         }
         return issues
     }

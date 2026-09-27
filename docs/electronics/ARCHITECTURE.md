@@ -1,30 +1,33 @@
-# Elettronica Fusion Takeoff — contratto E0
+# Elettronica Fusion Takeoff — contratto E0/E1
 
-27 settembre 2026 · T91 · Codex · richiesta di Ross: EDA proprietario, componenti JLCPCB, assemblaggio produttivo e meccanico 3D.
+27 settembre 2026 · T91/T92 · Codex · richiesta di Ross: EDA proprietario, componenti JLCPCB, assemblaggio produttivo e meccanico 3D.
 
 ## Decisione e confini
 
 Il prodotto deve unire **schema → PCB → fabbricazione/assemblaggio → assieme meccanico** nello stesso progetto, con assistente capace di eseguire gli stessi comandi del progettista. Il motore sarà nostro. I cataloghi di componenti sono dati interoperabili, distinti dalle librerie software: consultarli o importarli non richiede incorporare un motore esterno.
 
-`Packages/ElectronicsCore` è un package Swift 6 per macOS 14+, con Foundation e libreria standard, **zero dipendenze software esterne**, nessun import UI/CADCore. Si può aprire direttamente in Xcode. Il package è già compilabile e verificabile, ma **non è ancora collegato all’app**. Nessuna modifica al documento `.ftk`, al renderer o alle viste esistenti in questa consegna.
+`Packages/ElectronicsCore` è un package Swift 6 per macOS 14+, con Foundation, libreria standard e CryptoKit Apple, **zero dipendenze software esterne**, nessun import UI/CADCore. Si può aprire direttamente in Xcode. Il package è già compilabile e verificabile; il collegamento all’app è il task separato T99 di Claude. Nessuna modifica al documento `.ftk`, al renderer o alle viste esistenti da parte di T91/T92.
 
-Codex possiede il core elettronico, i formati, i controlli e il contratto funzionale. La UX elettronica è proposta a Claude in T97; la registrazione in COLLAB è un messaggio condiviso, non una conferma di lettura. Il lavoro CAD già in corso resta di Claude. La revisione obiettiva deve separare evidenze automatiche, prove nell’app, accettazione del produttore e scheda fisica.
+Codex possiede il core elettronico, i formati, i controlli e il contratto funzionale. Claude ha confermato lettura e accordo nel registro del 27/09 alle 09:49: possiede CAD, app, UX elettronica T97, aggancio T99, strumenti MCP T100 e adattatore CAD T101. `AGENTS.md` e `docs/UX_RULES.md` regolano la collaborazione. La revisione obiettiva separa evidenze automatiche, prove nell’app, accettazione del produttore e scheda fisica.
 
 ## API implementate
 
 | Tipo/API | Contratto |
 |---|---|
 | `LibraryRevision` | UUID stabile + revisione positiva; i nomi non sono chiavi. |
-| `SymbolDefinition` | Pin logici con identità e tipo elettrico. La grafica del simbolo è E2. |
-| `FootprintDefinition` | Piazzole rettangolari/circolari/ovali, foro passante opzionale, centro di presa, riferimento modello 3D e provenienza. |
+| `SymbolDefinition` | Pin logici con identità, numero, tipo elettrico e geometria opzionale; primitive grafiche e proprietà importate in E1. Editor e schema completo sono E2. |
+| `FootprintDefinition` | Piazzole rettangolari/circolari/ovali/arrotondate, foro passante opzionale, centro di presa, riferimento modello 3D, provenienza e primitive grafiche. |
 | `DeviceDefinition` | Simbolo e impronta in revisioni esatte, mappatura esplicita pin→piazzole, produttore/MPN e identificativo JLC opzionale. |
 | `ElectronicsLibrary` | Snapshot incluso nel documento: riaprire non dipende da cataloghi online aggiornati. |
 | `ElectronicsDesign` | Componenti, reti, collegamenti/NC espliciti, contorno scheda, posizionamenti e varianti di montaggio. |
-| `ElectronicsDocument` | Formato 1, revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
+| `ElectronicsDocument` | Scrittura formato 2, lettura 1/2; revisione monotona, modifiche atomiche con `expectedRevision`, storico undo/redo salvato e verificato al caricamento. |
 | `ElectronicsValidation.integrity` | Identità duplicate, riferimenti/revisioni mancanti, pin-map, contorno semplice, quote/angoli finiti, piazzole e fori coerenti. |
 | `ElectronicsValidation.electrical` | Prime verifiche: pin senza connessione/NC, pin NC collegati, uscite multiple sulla rete. Non è ERC completo. |
 | `ElectronicsConnectivity.snapshot` | Piazzole in coordinate PCB con rete associata; collegamenti da sbrogliare deterministici tramite albero minimo. Nessuna pista fisica è generata. |
 | `ElectronicsAssembly.export` | BOM/CPL JLC, istanze meccaniche e collegamenti; un’unica selezione di variante. Errori bloccanti prima di produrre risultati. |
+| `ElectronicsLibraryCommands` | Importazione e creazione dispositivo tipizzate, anteprima su copia e conferma atomica. Stesse API per app/chat/MCP. |
+| `KiCadLibraryImporter`, `EasyEDAStandardImporter` | Importatori proprietari con sottoinsiemi espliciti, provenienza, SHA-256 e report. Vedere [LIBRARIES.md](LIBRARIES.md). |
+| `ComponentCatalogImporter`, `SupplierCatalogSnapshot` | CSV configurabile, snapshot offline validato, ricerca e legame produttore/MPN/codice fornitore. Nessuna disponibilità live implicita. |
 
 Il codice è in `Models.swift`, `Geometry.swift`, `Validation.swift`, `Document.swift`, `Connectivity.swift`, `Assembly.swift`. Non copiare logica di pin-map, trasformazioni o selezione varianti nella UI o negli strumenti MCP.
 
@@ -77,7 +80,7 @@ let saved = try document.encoded()
 
 L’adattatore UI dovrà usare identità, non indici, per individuare l’oggetto scelto; l’indice nell’esempio è solo una chiamata minima. Il catalogo di comandi tipizzati E2 dovrà servire UI e MCP con le stesse transazioni. L’undo del futuro assistente dovrà rispettare le modifiche successive dell’utente, come nel contratto CAD esistente.
 
-## Da concordare con Claude
+## Aggancio concordato con Claude, da implementare/verificare nell’app
 
 1. Collegamento del documento elettronico al progetto/Home senza migrazioni implicite del `.ftk` CAD.
 2. Workspace coordinati Libreria, Schema, PCB, Assieme e Preparazione produzione; selezione incrociata su UUID.
@@ -91,7 +94,7 @@ Consultate il 27/09/2026; nessun codice delle implementazioni esterne copiato o 
 
 - [Autodesk: documento Electronics](https://help.autodesk.com/view/fusion360/ENU/?contextId=LP-READ-P13N-SNP-GS-ECD-CRD-6): riferimento di copertura per sincronizzare schema, PCB 2D e PCB 3D. Non vincola il nostro formato o la UX.
 - [LibrePCB: concetto delle librerie](https://librepcb.org/features/library-concept/): identità stabili e separazione fra simboli, segnali e impronte. La nostra prima API adotta snapshot revisionati e mappatura esplicita; grafica simboli e varianti package più articolate sono successive.
-- [KiCad: formati documentati](https://dev-docs.kicad.org/en/file-formats/) e [S-expression](https://dev-docs.kicad.org/en/file-formats/sexpr-intro/): base per futuri lettori nostri, con errori sui costrutti non supportati. Nessun import KiCad/EasyEDA implementato in E0.
+- [KiCad: formati documentati](https://dev-docs.kicad.org/en/file-formats/) e [S-expression](https://dev-docs.kicad.org/en/file-formats/sexpr-intro/): base per i lettori nostri E1, con errori sui costrutti non rappresentabili. Copertura e fonti EasyEDA in [LIBRARIES.md](LIBRARIES.md).
 - [KiCad: architettura PNS router](https://docs.kicad.org/doxygen/classPNS_1_1ROUTER.html) e [replay di test](https://dev-docs.kicad.org/en/components/testing/index.html): riferimento per separare stato del routing, regole, interazione e commit; registrare casi riproducibili prima di implementare push/shove nostro.
 - [JLCPCB: campi BOM](https://jlcpcb.com/help/article/how-to-generate-the-bom-and-centroid-file-from-kicad), [CPL](https://jlcpcb.com/help/article/pick-place-file-for-pcb-assembly), [coerenza BOM/CPL](https://jlcpcb.com/help/article/advice-for-bom-and-cpl-files-preparation): campi, unità e riferimenti di assemblaggio. La guida CPL richiede mm e angoli positivi antiorari; la correzione per dispositivo/lato deve essere verificata, non dedotta dal solo nome del package.
 - [JLCAPI](https://api.jlcpcb.com/): Components API pubblicizzata per prezzi, inventario e specifiche; accesso tramite richiesta e applicazione sul portale. Non è stato autenticato né interrogato un account. Nessun endpoint privato dedotto e nessun ordine inviato.

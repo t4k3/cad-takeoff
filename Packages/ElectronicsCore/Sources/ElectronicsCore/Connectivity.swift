@@ -11,6 +11,8 @@ public struct PlacedPad: Codable, Equatable, Sendable {
     public var rotationDegrees: Double
     public var copperSides: [BoardSide]
     public var drillDiameter: Double?
+    public var cornerRadius: Double?
+    public var sourceLayers: [String]?
 }
 
 public struct Airwire: Codable, Equatable, Sendable {
@@ -49,7 +51,8 @@ public enum ElectronicsConnectivity {
                                   center: ElectronicsGeometry.boardPoint(pad.center, placement: placement), size: pad.size,
                                   shape: pad.shape, rotationDegrees: ElectronicsGeometry.normalizedDegrees(
                                     placement.rotationDegrees + (placement.side == .top ? 1 : -1) * pad.rotationDegrees),
-                                  copperSides: pad.drillDiameter == nil ? [placement.side] : [.top, .bottom], drillDiameter: pad.drillDiameter))
+                                  copperSides: pad.drillDiameter == nil ? [placement.side] : [.top, .bottom], drillDiameter: pad.drillDiameter,
+                                  cornerRadius: pad.cornerRadius, sourceLayers: pad.sourceLayers))
             }
         }
         var airwires: [Airwire] = []
