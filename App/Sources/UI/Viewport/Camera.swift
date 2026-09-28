@@ -106,8 +106,9 @@ final class CameraController {
     func orbit(dx: Float, dy: Float) {
         stopAnimation()
         pose.yaw -= dx * 0.008
-        // Ross 26/09: dragging down lowers the eye (the view turns towards the underside).
-        pose.pitch = min(.pi / 2 - 0.0001, max(-.pi / 2 + 0.0001, pose.pitch - dy * 0.008))
+        // Ross 28/09: the part follows the mouse, as if grabbed — dragging up turns it upwards
+        // (its front rises, the underside comes into view: the eye goes down).
+        pose.pitch = min(.pi / 2 - 0.0001, max(-.pi / 2 + 0.0001, pose.pitch + dy * 0.008))
     }
 
     /// Pan by a screen delta (points) so the grabbed point stays under the cursor.

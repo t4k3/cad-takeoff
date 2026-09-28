@@ -42,11 +42,12 @@ struct CameraTests {
                 }
             }
         }
-        // Orbit (Ross 26/09): dragging down lowers the eye, dragging right turns the part right.
+        // Orbit (Ross 28/09): the part follows the mouse — dragging up turns it upwards (the eye
+        // goes down), dragging right turns the part right.
         let cam = CameraController()
         let before = cam.pose
-        cam.orbit(dx: 0, dy: 20)
-        expect(cam.pose.pitch < before.pitch, "drag down lowers the eye")
+        cam.orbit(dx: 0, dy: -20)
+        expect(cam.pose.pitch < before.pitch, "drag up turns the part upwards (eye lower)")
         cam.orbit(dx: 20, dy: 0)
         expect(cam.pose.yaw < before.yaw, "drag right orbits the eye to the left")
         print("PASS: camera rays and pans match the drawn view in all orientations (\(checks) checks)")
