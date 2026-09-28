@@ -6,7 +6,7 @@ import Foundation
 @MainActor
 func circuitToolTests(fixture: URL, check: (Bool, String) -> Void) async throws {
     let m = CircuitModel()
-    check(m.tools.allSatisfy { $0.name.hasPrefix("circuit_") } && m.tools.count == 9, "strumenti circuit_* (\(m.tools.count))")
+    check(m.tools.allSatisfy { $0.name.hasPrefix("circuit_") } && m.tools.count == 10, "strumenti circuit_* (\(m.tools.count))")
     check(m.tools.filter { !$0.isReadOnly }.allSatisfy { ($0.inputSchema["required"]?.array ?? []).contains("expected_revision") },
           "ogni scrittura vuole expected_revision")
     let empty = await m.call("circuit_info", arguments: [:])

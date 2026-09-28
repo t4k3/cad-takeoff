@@ -69,7 +69,9 @@ extension CircuitModel: CADToolProvider {
             // copper or DRC to report as «done» or «passed».
             if let m = manufacturing {
                 switch name {
-                case "circuit_info": return manufacturingInfo(m)
+                case "circuit_info":
+                    await assemblyReady()
+                    return manufacturingInfo(manufacturing ?? m)
                 case "circuit_issues":
                     let list = issues
                     return result("\(list.count) segnalazioni del lotto «\(m.activeLot?.name ?? "")» (DRC ed ERC non applicabili a una scheda importata)",
@@ -89,6 +91,7 @@ extension CircuitModel: CADToolProvider {
                 return result(pcbIsCurrent ? "\(list.count) segnalazioni" : "\(list.count) segnalazioni; controllo del rame non ancora pronto",
                               ["issues": .array(list.map(Self.describe)), "copper_check": .string(pcbIsCurrent ? "current" : "pending")])
             case "circuit_library": return library()
+            case "circuit_models": return catalogModels()
             case "circuit_pins": return try pins(args)
             case "circuit_fabrication_check": return try await fabricationCheck(args)
             case "circuit_preview": return try await preview(args)
@@ -172,8 +175,20 @@ extension CircuitModel: CADToolProvider {
             "layers": .array(m.layers.map { ["name": .string($0.name), "kind": .string($0.kind.rawValue), "objects": .number(Double($0.primitives.count))] }),
             "drills": ["plated": .number(Double(m.drills.filter(\.isPlated).count)), "non_plated": .number(Double(m.drills.filter { !$0.isPlated }.count)),
                        "slots": .number(Double(m.drills.filter { $0.end != nil }.count))],
+            "board_thickness": assembly.map { .number($0.snapshot.boardThickness) } ?? .null,
+            "board_thickness_assumed": .bool(m.assemblySettings?.boardThickness == nil),
             "components": .array(m.components.map { c in
                 var o: [String: JSONValue] = ["id": .string(c.id.uuidString.lowercased()), "reference": .string(c.reference), "fitted": .bool(fitted.contains(c.id))]
+                if let i = assemblyInstance(c.id) {
+                    var model: [String: JSONValue] = ["quality": .string(i.quality.rawValue), "alignment_verified": .bool(i.alignmentVerified),
+                                                      "automatic": .bool(c.modelBinding == nil)]
+                    if let k = i.modelKey { model["key"] = .string(k) }
+                    if let n = i.modelName { model["name"] = .string(n) }
+                    if let b = c.modelBinding {
+                        model["offset"] = Self.point3(b.offset); model["rotation"] = Self.point3(b.rotationDegrees)
+                    }
+                    o["model"] = .object(model)
+                }
                 if let v = c.value { o["value"] = .string(v) }
                 if let v = c.footprint { o["footprint"] = .string(v) }
                 if let v = c.lcscPartNumber { o["lcsc"] = .string(v) }
@@ -186,12 +201,22 @@ extension CircuitModel: CADToolProvider {
             "lots": .array(m.lots.map { ["id": .string($0.id.uuidString.lowercased()), "name": .string($0.name),
                                           "fitted": .number(Double($0.fittedComponentIDs.count)), "active": .bool($0.id == m.activeLotID)] }),
             "active_lot": .string(m.activeLot?.name ?? ""),
-            "not_applicable": "Scheda importata da Gerber, BOM e CPL: schema, reti, piste modificabili, DRC/ERC, export rigenerato e modelli 3D non ci sono. Modifiche possibili: set_fitted, add_lot, select_lot.",
+            "not_applicable": "Scheda importata da Gerber, BOM e CPL: schema, reti, piste modificabili, DRC/ERC ed export rigenerato non ci sono. I corpi 3D sono modelli approssimati del catalogo (circuit_models), non certificati. Modifiche possibili: set_fitted, add_lot, select_lot, set_board_thickness, set_component_model.",
             "warnings": .number(Double(issues.filter { $0.severity == .warning }.count)),
             "errors": .number(Double(issues.filter { $0.severity == .error }.count)),
         ]
         return result("Scheda importata «\(m.name)»: \(m.components.count) componenti, \(fitted.count) montati nel lotto «\(m.activeLot?.name ?? "")», \(m.lots.count) lotti", fields)
     }
+
+    /// The engine's catalog of component bodies (all approximate): keys for set_component_model.
+    private func catalogModels() -> ToolResult {
+        let models = ManufacturingPackageCatalog.models
+        return result("\(models.count) modelli nel catalogo (tutti approssimati)", [
+            "models": .array(models.map { ["key": .string($0.key), "name": .string($0.name), "quality": .string($0.quality.rawValue), "source": .string($0.source)] }),
+        ])
+    }
+
+    nonisolated static func point3(_ p: PCBPoint3) -> JSONValue { ["x": .number(p.x), "y": .number(p.y), "z": .number(p.z)] }
 
     /// What can be added: the engine's generic models, then the devices of the circuit's library.
     private func library() -> ToolResult {
@@ -408,12 +433,43 @@ extension CircuitModel: CADToolProvider {
             case let other: throw CircuitEditError("Strato sconosciuto: \(other) (top o bottom).")
             }
         }
-        let lotActions: Set<String> = ["set_fitted", "add_lot", "select_lot"]
+        let lotActions: Set<String> = ["set_fitted", "add_lot", "select_lot", "set_board_thickness", "set_component_model"]
         if let m = d.manufacturing {
             guard lotActions.contains(action) else {
-                throw CircuitEditError("\(action) non vale su una scheda importata da file di produzione: solo set_fitted, add_lot, select_lot.")
+                throw CircuitEditError("\(action) non vale su una scheda importata da file di produzione: solo set_fitted, add_lot, select_lot, set_board_thickness, set_component_model.")
+            }
+            func cam(_ given: String) throws -> ManufacturingComponent {
+                let matches = m.components.filter { $0.id.uuidString.lowercased() == given.lowercased() || $0.reference.caseInsensitiveCompare(given) == .orderedSame }
+                guard let c = matches.first, matches.count == 1 else { throw CircuitEditError("Componente sconosciuto: \(given).") }
+                return c
+            }
+            func xyz(_ key: String) -> PCBPoint3? {
+                guard let o = args[key] else { return nil }
+                return PCBPoint3(o["x"]?.number ?? 0, o["y"]?.number ?? 0, o["z"]?.number ?? 0)
             }
             switch action {
+            case "set_board_thickness":
+                // Omitted: back to the declared 1.6 mm estimate.
+                return (.manufacturing(.setBoardThickness(args["thickness"]?.number)), [])
+            case "set_component_model":
+                guard let given = args["component"]?.string else { throw CircuitEditError("set_component_model vuole component (sigla come R1, o id).") }
+                let c = try cam(given)
+                let aligning = ["offset", "rotation", "alignment_verified"].contains { args[$0] != nil }
+                guard args["model_key"] != nil || aligning else {
+                    return (.manufacturing(.setComponentModel(componentID: c.id, binding: nil)), [c.id])   // automatic
+                }
+                guard let key = args["model_key"]?.string ?? c.modelBinding?.modelKey ?? ManufacturingPackageCatalog.suggestedModel(for: c)?.key else {
+                    throw CircuitEditError("\(c.reference) non ha un modello automatico: indicare model_key (chiavi in circuit_models).")
+                }
+                guard ManufacturingPackageCatalog.model(key: key) != nil else {
+                    throw CircuitEditError("Modello sconosciuto: \(key). Le chiavi sono in circuit_models.")
+                }
+                var b = c.modelBinding ?? ManufacturingModelBinding(modelKey: key)
+                if b.modelKey != key { b.modelKey = key; b.alignmentVerified = false }
+                if let v = xyz("offset") { b.offset = v }
+                if let v = xyz("rotation") { b.rotationDegrees = v }
+                if let v = args["alignment_verified"]?.bool { b.alignmentVerified = v }
+                return (.manufacturing(.setComponentModel(componentID: c.id, binding: b)), [c.id])
             case "set_fitted":
                 guard let given = args["component"]?.string else { throw CircuitEditError("set_fitted vuole component (sigla come R1, o id) e fitted.") }
                 guard let fitted = args["fitted"]?.bool else { throw CircuitEditError("set_fitted vuole fitted (true monta, false esclude).") }
@@ -542,6 +598,7 @@ extension CircuitModel: CADToolProvider {
         "add_track": ["net", "points", "layer", "width"], "add_via": ["net", "x", "y", "diameter", "drill"],
         "remove_copper": ["id"],
         "set_fitted": ["component", "fitted"], "add_lot": ["name"], "select_lot": ["lot"],
+        "set_board_thickness": ["thickness"], "set_component_model": ["component", "model_key", "offset", "rotation", "alignment_verified"],
     ]
 
     // MARK: Results
@@ -625,6 +682,7 @@ enum CircuitToolCatalog {
             tool("circuit_info", "Circuito", "The open circuit: identity, board outline and copper layers, components (id, reference, value, position, rotation, side), nets, tracks, vias, variants, connections still to route and error/warning counts. A board imported from manufacturing files returns kind manufacturing: layers, drills, components with fitted, lots."),
             tool("circuit_issues", "Controlli circuito", "Every electrical, placement and copper (DRC) issue of the open circuit, with subject ids and board position."),
             tool("circuit_library", "Libreria circuito", "Devices that can be added with circuit_preview add_component: device key, name, reference prefix, default value and pins (number, name, electrical type). Generic models first; verify footprint and pinout against the real part."),
+            tool("circuit_models", "Modelli componenti", "Catalog of component bodies for boards imported from manufacturing files: key, name, quality (all approximate), source. Use a key with circuit_preview set_component_model."),
             tool("circuit_pins", "Pin componente", "Pins of one component: «REF.number» names to use in connect/disconnect/no_connect, electrical type, net and no-connect mark.", [
                 "component": ["type": "string", "description": "Reference (R1) or id."],
             ], required: ["component"]),
@@ -634,13 +692,18 @@ enum CircuitToolCatalog {
                 "paste_inset": ["type": "number", "minimum": 0, "maximum": 5],
                 "tent_vias": ["type": "boolean"],
             ]),
-            tool("circuit_preview", "Anteprima modifica circuito", "Actions: add_component {device (from circuit_library), reference?, value?, x?, y?, side?} (placed on the board, default centre); connect {pins [R1.1, C1.2…], net?} (net name or id; new net N1… if omitted and no pin is on a net); disconnect {pins}; no_connect {pins} (mark unused pins); move_component {component, x, y}; rotate_component {component, degrees (CCW)}; flip_component {component} (other board side); remove_component {component}; set_board {width, height, thickness?} (rectangle from 0,0); rename_net {net, name}; add_track {net, points [{x,y}…], layer top|bottom, width?} (width defaults to the net's minimum); add_via {net, x, y, diameter?, drill?}; remove_copper {id} (track, via, plane or keepout). On a board imported from manufacturing files (circuit_info kind manufacturing) only: set_fitted {component, fitted} (mount or exclude in the active lot; excluded parts stay on the board); add_lot {name} (copy of the active lot); select_lot {lot}. Returns preview_id, can_apply, blocking_issues, new_issues; nothing changes until circuit_apply with that preview_id. component = reference (R1) or id; net = name or id. Copper errors created by the change block it; existing diagnostics do not.", [
-                "action": ["type": "string", "enum": ["add_component", "connect", "disconnect", "no_connect", "move_component", "rotate_component", "flip_component", "remove_component", "set_board", "rename_net", "add_track", "add_via", "remove_copper", "set_fitted", "add_lot", "select_lot"]],
+            tool("circuit_preview", "Anteprima modifica circuito", "Actions: add_component {device (from circuit_library), reference?, value?, x?, y?, side?} (placed on the board, default centre); connect {pins [R1.1, C1.2…], net?} (net name or id; new net N1… if omitted and no pin is on a net); disconnect {pins}; no_connect {pins} (mark unused pins); move_component {component, x, y}; rotate_component {component, degrees (CCW)}; flip_component {component} (other board side); remove_component {component}; set_board {width, height, thickness?} (rectangle from 0,0); rename_net {net, name}; add_track {net, points [{x,y}…], layer top|bottom, width?} (width defaults to the net's minimum); add_via {net, x, y, diameter?, drill?}; remove_copper {id} (track, via, plane or keepout). On a board imported from manufacturing files (circuit_info kind manufacturing) only: set_fitted {component, fitted} (mount or exclude in the active lot; excluded parts stay on the board); add_lot {name} (copy of the active lot); select_lot {lot}; set_board_thickness {thickness?} (omit thickness: back to the 1.6 mm estimate); set_component_model {component, model_key?, offset?, rotation?, alignment_verified?} (model_key from circuit_models; only component: back to the automatic model; offset mm and rotation degrees {x,y,z} in the model's frame; alignment_verified says orientation and pin 1 were checked, it does not make an approximate model exact). Returns preview_id, can_apply, blocking_issues, new_issues; nothing changes until circuit_apply with that preview_id. component = reference (R1) or id; net = name or id. Copper errors created by the change block it; existing diagnostics do not.", [
+                "action": ["type": "string", "enum": ["add_component", "connect", "disconnect", "no_connect", "move_component", "rotate_component", "flip_component", "remove_component", "set_board", "rename_net", "add_track", "add_via", "remove_copper", "set_fitted", "add_lot", "select_lot", "set_board_thickness", "set_component_model"]],
                 // Short (≤ 60 characters: the small on-device model sees them whole) and naming the
                 // actions each field belongs to.
                 "component": ["type": "string", "description": "R1 or id: move/rotate/flip/remove, set_fitted"],
                 "fitted": ["type": "boolean", "description": "set_fitted: true mounts, false excludes"],
                 "lot": ["type": "string", "description": "select_lot: lot name or id"],
+                "model_key": ["type": "string", "description": "set_component_model: key from circuit_models"],
+                "offset": object(["x": coordinate, "y": coordinate, "z": coordinate], required: []),
+                "rotation": object(["x": ["type": "number", "minimum": -360, "maximum": 360], "y": ["type": "number", "minimum": -360, "maximum": 360],
+                                    "z": ["type": "number", "minimum": -360, "maximum": 360]], required: []),
+                "alignment_verified": ["type": "boolean", "description": "set_component_model: orientation/pin 1 checked"],
                 "net": ["type": "string", "description": "Existing net name: rename_net, connect, add_track/via"],
                 "name": ["type": "string", "minLength": 1, "maxLength": 120, "description": "rename_net: NEW net name; add_lot: lot name"],
                 "id": ["type": "string", "description": "remove_copper: track/via/plane/keepout id"],

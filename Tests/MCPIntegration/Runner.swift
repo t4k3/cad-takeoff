@@ -30,7 +30,7 @@ import CADCore
         expect(initReply.0 == 200, "real loopback listener initialized")
         let list = try await send("tools/list")
         let names = list.1?["result"]?["tools"]?.array?.compactMap { $0["name"]?.string } ?? []
-        expect(names.count == 36 && names.filter { $0.hasPrefix("circuit_") }.count == 9, "27 CAD + 9 circuit tools via HTTP (\(names.count))")
+        expect(names.count == 37 && names.filter { $0.hasPrefix("circuit_") }.count == 10, "27 CAD + 10 circuit tools via HTTP (\(names.count))")
         let scene = try await send("tools/call", ["name": "scene_info", "arguments": [:]])
         let structured = scene.1!["result"]!["structuredContent"]!
         let text = scene.1!["result"]!["content"]!.array![0]["text"]!.string!

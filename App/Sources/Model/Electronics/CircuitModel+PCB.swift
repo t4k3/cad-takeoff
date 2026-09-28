@@ -79,6 +79,7 @@ extension CircuitModel {
         schematicTask?.cancel(); schematic = nil
         ghostTask?.cancel(); ghostSession = nil; schematicGhost = []
         schematicSelection = nil; selection = nil; camSelection = nil
+        assemblyTask?.cancel(); assembly = nil; assemblyKey = nil; assemblyFailure = nil; alignTask?.cancel(); alignDraft = nil; camView = .gerber
         tool = .select; schematicTool = .select
     }
 

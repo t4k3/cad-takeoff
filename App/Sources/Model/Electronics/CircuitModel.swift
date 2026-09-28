@@ -252,11 +252,15 @@ final class CircuitModel {
     func openWithPanel() {
         guard confirmDiscard() else { return }
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [Self.fileType, .json]
+        // By extension, not by content type: where the system has not registered .ftkc (a copy
+        // of the app, a folder not indexed) it calls it plain text and a type filter greys it
+        // out — also right after a save replaced the file (T111 QA).
+        let filter = CircuitFileFilter()
+        panel.delegate = filter
         panel.message = "Apri un circuito (.ftkc)"
         // From the current circuit's folder: its listing is read again (after a save the file is a new one).
         if let url { panel.directoryURL = url.deletingLastPathComponent() }
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard withExtendedLifetime(filter, { panel.runModal() }) == .OK, let url = panel.url else { return }
         Task {
             do { try await open(url) } catch let e as CircuitEditError where e.isSuperseded {} catch { report("Circuito non aperto: \(Self.describe(error))") }
         }
@@ -688,6 +692,17 @@ final class CircuitModel {
     /// CAM layers not shown (masks and paste at first) and the drills.
     var camHiddenLayers: Set<FabricationLayerKind> = [.topMask, .bottomMask, .topPaste, .bottomPaste]
     var camHideDrills = false
+    /// The imported board as Gerber, assembled (2D, one side) or in 3D; its assembly and a
+    /// model/alignment being tried on one component.
+    var camView: CAMView = .gerber
+    var assemblySide: BoardSide = .top
+    var showExcluded = true
+    var assembly: AssemblyState?
+    var assemblyFailure: String?
+    @ObservationIgnored var assemblyKey: AssemblyKey?
+    @ObservationIgnored var assemblyTask: Task<Void, Never>?
+    var alignDraft: AlignDraft?
+    @ObservationIgnored var alignTask: Task<Void, Never>?
     @ObservationIgnored var importTask: Task<Void, Never>?
     @ObservationIgnored var importRequest: UUID?
     var showCreateDevice = false
@@ -972,6 +987,7 @@ final class CircuitModel {
         refreshPCB()
         refreshFabrication()
         refreshManufacturingSnapshot()
+        refreshAssembly()
         if let s = camSelection, !(design?.manufacturing?.components.contains { $0.id == s } ?? false) { camSelection = nil }
         guard let d = design else { baseIssues = []; return }
         baseIssues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
@@ -1018,4 +1034,12 @@ struct CircuitEditError: Error, Sendable {
     init(_ message: String) { self.message = message }
     /// An open overtaken by a later one (or cancelled): nothing to tell.
     static let superseded: CircuitEditError = { var e = CircuitEditError("Apertura sostituita da una più recente."); e.isSuperseded = true; return e }()
+}
+
+/// Open panel: folders to browse, circuits (.ftkc) and JSON to choose.
+final class CircuitFileFilter: NSObject, NSOpenSavePanelDelegate {
+    func panel(_ sender: Any, shouldEnable url: URL) -> Bool {
+        if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return true }
+        return ["ftkc", "json"].contains(url.pathExtension.lowercased())
+    }
 }

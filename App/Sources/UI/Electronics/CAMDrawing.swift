@@ -70,11 +70,31 @@ struct CAMDrawing {
         }
     }
 
+    /// How a finished board looks from one side: green solder mask, copper under it a lighter
+    /// green, gold where the mask is open, white silkscreen (for the assembled views).
+    static func finished(_ kind: FabricationLayerKind) -> (Color, Double) {
+        switch kind {
+        case .topCopper, .bottomCopper: (Color(red: 0.16, green: 0.46, blue: 0.24), 1)
+        case .topMask, .bottomMask: (Color(red: 0.83, green: 0.69, blue: 0.36), 1)
+        case .topSilkscreen, .bottomSilkscreen: (Color(white: 0.95), 1)
+        case .topPaste, .bottomPaste, .profile: (.clear, 0)
+        }
+    }
+    static let maskGreen = Color(red: 0.07, green: 0.34, blue: 0.16)
+
+    /// The layers of one side of the finished board, from the laminate outwards.
+    static func finishedLayers(_ side: BoardSide) -> [FabricationLayerKind] {
+        side == .top ? [.topCopper, .topMask, .topSilkscreen] : [.bottomCopper, .bottomMask, .bottomSilkscreen]
+    }
+
     /// Draws the visible layers; `ctx` already maps board millimetres to the screen.
-    func draw(_ ctx: inout GraphicsContext, hidden: Set<FabricationLayerKind>, drills showDrills: Bool) {
-        for kind in Self.order where !hidden.contains(kind) {
+    func draw(_ ctx: inout GraphicsContext, hidden: Set<FabricationLayerKind>, drills showDrills: Bool,
+              palette: (FabricationLayerKind) -> (Color, Double) = CAMDrawing.colour,
+              order: [FabricationLayerKind] = CAMDrawing.order) {
+        for kind in order where !hidden.contains(kind) {
             guard let layer = layers.first(where: { $0.kind == kind }) else { continue }
-            let (colour, opacity) = Self.colour(kind)
+            let (colour, opacity) = palette(kind)
+            guard opacity > 0 else { continue }
             var layerCtx = ctx
             layerCtx.opacity = opacity
             layerCtx.drawLayer { l in

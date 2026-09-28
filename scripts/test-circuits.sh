@@ -9,5 +9,6 @@ xcrun swiftc -swift-version 6 -parse-as-library -I "$test_dir" -L "$test_dir" -l
     -Xlinker -rpath -Xlinker "$test_dir" \
     App/Sources/Model/Electronics/*.swift App/Sources/Integration/ToolBridge.swift \
     App/Sources/UI/DesignSystem/Theme.swift App/Sources/UI/Electronics/CAMDrawing.swift App/Sources/UI/Electronics/ManufacturingViews.swift \
+    App/Sources/UI/Electronics/Assembly2D.swift App/Sources/UI/Electronics/AssemblyMesh.swift App/Sources/UI/Electronics/AssemblyScene.swift \
     Tests/Circuits/*.swift -o "$test_dir/circuit-tests"
 "$test_dir/circuit-tests" "App/Resources/Circuiti/Esempio circuito.ftkc" "Packages/ElectronicsCore/Tests/ElectronicsCoreTests/Fixtures/Library"

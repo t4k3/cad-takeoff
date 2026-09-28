@@ -16,7 +16,7 @@ struct CircuitWorkspace: View {
                 VStack(spacing: 0) {
                     canvasBar
                     Divider()
-                    if circuits.isManufacturing { CAMBoardView() }
+                    if circuits.isManufacturing { if circuits.camView == .threeD { AssemblyView3D() } else { CAMBoardView() } }
                     else if circuits.canvas == .schematic { CircuitSchematicView() } else { CircuitBoardView() }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

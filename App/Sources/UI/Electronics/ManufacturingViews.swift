@@ -11,6 +11,8 @@ struct CAMBoardView: View {
     @State private var pan: CGSize = .zero
     @State private var panStart: CGSize?
     @State private var hovered: UUID?
+    /// The finished-board picture of the side shown in the assembled view.
+    @State private var picture: (key: String, image: CGImage)?
     @GestureState private var pinch: CGFloat = 1
 
     var body: some View {
@@ -24,7 +26,17 @@ struct CAMBoardView: View {
                 let art = drawing?.id == package.id ? drawing?.value : nil
                 let hidden = circuits.camHiddenLayers, showDrills = !circuits.camHideDrills
                 let chosen = circuits.camSelection, hover = hovered
+                let assembled = circuits.camView == .assembly
+                let snapshot = circuits.assembly?.snapshot, side = circuits.assemblySide, showExcluded = circuits.showExcluded
+                let draft = circuits.alignDraft?.preview
+                let pictureKey = "\(package.id)/\(side.rawValue)/\(snapshot != nil)"
+                let sidePicture = picture?.key == pictureKey ? picture?.image : nil
                 Canvas { ctx, _ in
+                    if assembled {
+                        CAMBoardView.drawAssembly(&ctx, m, picture: sidePicture, bounds: package.bounds, snapshot: snapshot, side: side,
+                                                  showExcluded: showExcluded, selection: chosen, hover: hover, draft: draft)
+                        return
+                    }
                     if let art {
                         var board = ctx
                         board.concatenate(m.transform)
@@ -47,7 +59,7 @@ struct CAMBoardView: View {
                 .background(Color(red: 0.11, green: 0.12, blue: 0.14))
                 .contentShape(Rectangle())
                 .onContinuousHover { phase in
-                    if case let .active(q) = phase { hovered = circuits.manufacturingComponent(at: m.board(q), tolerance: Double(8 / m.scale)) }
+                    if case let .active(q) = phase { hovered = pick(m.board(q), Double(8 / m.scale), assembled) }
                     else { hovered = nil }
                 }
                 .gesture(DragGesture(minimumDistance: 2)
@@ -58,14 +70,21 @@ struct CAMBoardView: View {
                     }
                     .onEnded { _ in panStart = nil })
                 .simultaneousGesture(SpatialTapGesture().onEnded { tap in
-                    circuits.camSelection = circuits.manufacturingComponent(at: m.board(tap.location), tolerance: Double(8 / m.scale))
+                    circuits.camSelection = pick(m.board(tap.location), Double(8 / m.scale), assembled)
                 })
                 .gesture(MagnifyGesture().updating($pinch) { value, state, _ in state = value.magnification }
                     .onEnded { value in zoom = min(max(zoom * value.magnification, 0.2), 60) })
                 .overlay(alignment: .bottomTrailing) { zoomButtons.padding(12) }
                 .overlay(alignment: .topLeading) { chip(package).padding(12) }
+                // Keyed also on the CAM drawing being ready: it arrives from another task.
+                .task(id: assembled ? pictureKey + "/\(art != nil)" : "") {
+                    guard assembled, let snapshot, let art, picture?.key != pictureKey else { return }
+                    let mesh = AssemblyMesh(snapshot, outline: package.bounds)
+                    let base = mesh.batches.first { $0.look == (side == .top ? .boardTop : .boardBottom) }?.positions ?? []
+                    if let image = BoardPicture.render(art, bounds: package.bounds, base: base, side: side) { picture = (pictureKey, image) }
+                }
                 .overlay {
-                    if art == nil {
+                    if art == nil || (assembled && (snapshot == nil || sidePicture == nil)) {
                         HStack(spacing: 8) { ProgressView().controlSize(.small); Text("Preparo gli strati…").font(.callout) }
                             .padding(10).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                     }
@@ -75,6 +94,10 @@ struct CAMBoardView: View {
                 if drawing?.id != package.id { drawing = (package.id, CAMDrawing(package)) }
             }
         }
+    }
+
+    private func pick(_ p: PCBPoint, _ tolerance: Double, _ assembled: Bool) -> UUID? {
+        assembled ? circuits.assemblyComponent(at: p, tolerance: tolerance) : circuits.manufacturingComponent(at: p, tolerance: tolerance)
     }
 
     private var zoomButtons: some View {
@@ -127,6 +150,10 @@ struct ManufacturingPanel: View {
                 }
                 Text("\(fitted.count) di \(package.components.count) componenti montati")
                     .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                BoardThicknessRow()
+                if let id = circuits.camSelection, let c = package.components.first(where: { $0.id == id }) {
+                    AssemblyComponentDetail(component: c)
+                }
                 TextField("Cerca sigla, valore, codice", text: $filter).textFieldStyle(.roundedBorder)
                 List(selection: Binding(get: { circuits.camSelection }, set: { circuits.camSelection = $0 })) {
                     ForEach(package.components.filter(matches), id: \.id) { c in
@@ -137,6 +164,10 @@ struct ManufacturingPanel: View {
                             Text(c.reference).font(.caption.monospaced()).frame(width: 44, alignment: .leading)
                             Text(c.value ?? "—").font(.caption).lineLimit(1)
                             Spacer(minLength: 0)
+                            if let i = circuits.assemblyInstance(c.id) {
+                                let q = AssemblyLook.quality(i.quality, aligned: i.alignmentVerified)
+                                Image(systemName: q.symbol).foregroundStyle(q.colour).help(q.text)
+                            }
                             if c.placement == nil {
                                 Image(systemName: "location.slash").foregroundStyle(.orange).help("Senza posizione nel CPL")
                             }
@@ -151,7 +182,7 @@ struct ManufacturingPanel: View {
                 }
                 .listStyle(.plain)
                 .frame(maxHeight: .infinity)
-                Text("Scheda importata dai file di produzione: niente schema, piste da modificare, verifiche DRC, export rigenerato o modelli 3D. Qui si sceglie cosa montare in ogni lotto.")
+                Text("Scheda importata dai file di produzione: niente schema, piste da modificare, verifiche DRC o export rigenerato. Qui si sceglie cosa montare in ogni lotto; i corpi dei componenti sono modelli approssimati da controllare.")
                     .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -179,8 +210,30 @@ struct CAMLayerToggles: View {
     @Environment(CircuitModel.self) private var circuits
 
     var body: some View {
+        @Bindable var c = circuits
+        HStack(spacing: 10) {
+            Picker("", selection: $c.camView) { ForEach(CircuitModel.CAMView.allCases) { Text($0.rawValue).tag($0) } }
+                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                .help("Gerber: gli strati del produttore · Assemblata: la scheda finita con i componenti, un lato alla volta · 3D")
+            if circuits.camView == .gerber { layerToggles }
+            if circuits.camView == .assembly {
+                Picker("", selection: $c.assemblySide) { Text("Sopra").tag(BoardSide.top); Text("Sotto").tag(BoardSide.bottom) }
+                    .pickerStyle(.segmented).labelsHidden().fixedSize()
+                    .help("Lato mostrato, sempre visto dall'alto come nei Gerber (il lato sotto non è specchiato)")
+            }
+            if circuits.camView != .gerber {
+                Button { circuits.showExcluded.toggle() } label: {
+                    Label("Esclusi", systemImage: circuits.showExcluded ? "checkmark.square" : "square").font(.caption)
+                }
+                .buttonStyle(.plain)
+                .help("Mostra, sbiaditi, i componenti esclusi dal lotto")
+            }
+        }
+    }
+
+    private var layerToggles: some View {
         let kinds = CAMDrawing.order.filter { k in circuits.manufacturing?.layers.contains { $0.kind == k } == true }
-        HStack(spacing: 4) {
+        return HStack(spacing: 4) {
             ForEach(kinds.reversed(), id: \.self) { kind in
                 let on = !circuits.camHiddenLayers.contains(kind)
                 Button {
