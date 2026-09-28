@@ -234,6 +234,7 @@ public struct AssemblyVariant: Codable, Equatable, Sendable {
 }
 
 public struct ElectronicsDesign: Codable, Equatable, Sendable {
+    public var manufacturing: ManufacturingPackage?
     public var schematic: SchematicCircuit?
     public var id: UUID
     public var name: String

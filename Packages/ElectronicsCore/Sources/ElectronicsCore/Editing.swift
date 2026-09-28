@@ -2,6 +2,7 @@ import Foundation
 
 /// Commands carry concrete identities: a preview and its confirmation must reuse the same value.
 public enum ElectronicsCommand: Codable, Equatable, Sendable {
+    case manufacturing(ManufacturingCommand)
     case library(ElectronicsLibraryCommand)
     case schematic(SchematicCommand)
     case pcb(PCBCommand)
@@ -24,6 +25,7 @@ public enum ElectronicsCommand: Codable, Equatable, Sendable {
 
     public var title: String {
         switch self {
+        case .manufacturing(let command): command.title
         case .library(let command): command.title
         case .schematic(let command): command.title
         case .pcb(let command): command.title
@@ -86,7 +88,9 @@ public enum ElectronicsCommands {
         try applyUncheckedDRC(command, to: &candidate, expectedRevision: expectedRevision)
         try Task.checkCancellation()
         let importIssues: [ElectronicsIssue]
-        if case .library(.importLibrary(let bundle)) = command { importIssues = bundle.issues } else { importIssues = [] }
+        if let manufacturing = candidate.design.manufacturing {
+            importIssues = ElectronicsManufacturingImport.diagnostics(manufacturing)
+        } else if case .library(.importLibrary(let bundle)) = command { importIssues = bundle.issues } else { importIssues = [] }
         let pcb = try ElectronicsPCB.snapshot(design: candidate.design, revision: document.revision)
         return .init(baseRevision: document.revision, design: candidate.design, board: pcb.board,
                      issues: importIssues + ElectronicsValidation.electrical(candidate.design) + genericIssues(candidate.design) + pcb.issues,
@@ -109,12 +113,18 @@ public enum ElectronicsCommands {
 
     private static func applyUncheckedDRC(_ command: ElectronicsCommand, to document: inout ElectronicsDocument,
                                           expectedRevision: UInt64) throws {
+        if document.design.manufacturing != nil {
+            guard case .manufacturing = command else {
+                throw ElectronicsManufacturingImport.failure("manufacturing_native_edit", "Scheda importata da file di produzione: usare gli strumenti del lotto; la modifica CAD richiede il progetto originale.")
+            }
+        }
         if case .library(let library) = command {
             try ElectronicsLibraryCommands.apply(library, to: &document, expectedRevision: expectedRevision)
             return
         }
         try document.edit(title: command.title, expectedRevision: expectedRevision) { design in
             switch command {
+            case .manufacturing(let edit): try ElectronicsManufacturingImport.mutate(edit, design: &design)
             case .library: break // Dispatched above, preserving exactly one transaction.
             case .schematic(let edit): try ElectronicsSchematic.mutate(edit, design: &design)
             case .pcb(let edit):

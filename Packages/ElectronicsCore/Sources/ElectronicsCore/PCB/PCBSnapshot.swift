@@ -107,6 +107,9 @@ extension ElectronicsPCB {
         primitives += filled.primitives
         let index = try PCBIndex(primitives)
         var issues: [ElectronicsIssue] = [], issueKeys = Set<String>()
+        if design.manufacturing != nil {
+            issues.append(.init("manufacturing_drc_unavailable", "Scheda importata", "DRC nativo non disponibile sui Gerber importati: le reti sono attributi del file di produzione.", severity: .warning))
+        }
         func add(_ code: String, _ message: String, _ items: [PCBItem], _ point: PCBPoint, severity: ElectronicsIssue.Severity = .error) {
             let key = code+items.map(\.key).sorted().joined(separator:"|")
             guard issueKeys.insert(key).inserted else { return }

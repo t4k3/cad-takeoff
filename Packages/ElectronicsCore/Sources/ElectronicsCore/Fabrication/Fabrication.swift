@@ -28,6 +28,9 @@ public enum ElectronicsFabrication {
             throw FabricationGeometry.issue("fabrication_profile","Distanze di produzione non valide: usare valori finiti tra 0,001 e 5 mm; espansione maschera e riduzione pasta possono essere zero.")
         }
         let design = document.design
+        if design.manufacturing != nil {
+            throw FabricationGeometry.issue("manufacturing_export_unsupported", "La scheda contiene Gerber importati: l’export CAD e il DRC nativo non si applicano a questo pacchetto.")
+        }
         let pcb = try ElectronicsPCB.snapshot(document)
         var issues = pcb.issues
         func add(_ code: String, _ message: String, _ ids: [UUID] = [], _ point: PCBPoint? = nil, warning: Bool = false) {

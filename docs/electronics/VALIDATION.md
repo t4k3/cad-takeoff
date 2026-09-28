@@ -1,5 +1,41 @@
 # Elettronica — prove del motore e dell’app
 
+## T108 — importazione Gerber/BOM/CPL e lotti, 28/09/2026
+
+[Contratto, sottoinsiemi e limiti](MANUFACTURING_IMPORT.md). Motore nativo senza
+package esterni; decompressione ZIP tramite libz del SDK Apple.
+
+- `bash scripts/test-electronics.sh`: exit0,219 test Swift (218PASS,1caso reale
+  opzionale saltato) e otto lettori Python PASS. Log `/tmp/ftk-t108-electronics.log`,
+  artefatti `build/electronics/run.FG2IM0`.
+- Caso privato con `FTK_MANUFACTURING_FIXTURE_DIR=/Users/ross/Downloads`, filtro
+  `testRealProductionManyLotEditsAndReopenWhenExplicitlySupplied`:1test PASS,
+  exit0,4,053s. Cento modifiche lotto, undo/salvataggio/riapertura/redo, geometria
+  conservata; file7.064.700byte. Log `/tmp/ftk-t108-real-history.log`.
+- `check_manufacturing.py` sui tre file originali:9strati,65×81mm,158forature
+  (150tondePTH,4NPTH,4asolePTH),86riferimenti,84montati. IC2soloGerber eT1soloCPL
+  esclusi dal lotto, J8senzaLCSC segnalato. Hash dei tre originali invariati.
+  Documento in `build/electronics/acceptance-108/real-verified/import.ftkc`.
+- Prestazioni osservate sul pacchetto reale: indice334,8ms in background,
+  pick+snap p95 su200query3,08ms; metriche misurate, non garanzie su ogni macchina.
+  Un'importazione salvata occupa1.940.594byte;100modifiche7.064.700byte.
+- Regressione CAD:202test PASS,exit0, `/tmp/ftk-t108-cad.log`.
+
+Copertura: ZIP CRC/percorsi/dimensioni/deflate; CSV quoting/quantità/DNP/duplicati;
+macro/regioni/archi/polarità e attributi Gerber, fori/asole; pick/snap indicizzati,
+composizione clear locale; transazioni, revisioni stale, no-op, omissioni, lotti
+indipendenti e conflitti di sostituzione; persistenza formato8 con geometria
+condivisa e rifiuto riferimenti corrotti anche negli stati passati/futuri.
+
+L'importazione preserva dati di fabbricazione. Non ricrea schema CAD, precedente
+storico, impronte native o modelli3D. ERC/DRC/exportCAD/assiemi nativi non devono
+produrre esiti apparentemente validi su questi dati: API protette e testate.
+L'errore di corda massimo degli archi è0,01mm; tolleranza pick conservativa sulle
+intersezioni ritagliate. Le fonti private non sono incluse nel repository.
+
+Integrazione e prova nativa app T97/Claude in corso: le prove sopra attestano
+il motore e la persistenza, non ancora il flusso del selettore file a schermo.
+
 ## T107 — anteprima revisioni nell'app e geometria esatta, 27/09/2026
 
 Integrazione T97 di Claude, motore/QA di Codex. [Procedura ripetibile](LIBRARY_APP_ACCEPTANCE.md),

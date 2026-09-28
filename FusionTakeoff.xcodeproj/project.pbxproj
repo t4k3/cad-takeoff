@@ -16,6 +16,7 @@
 		143812546439D97F9A094225 /* CADTakeoffImportProject.py in Resources */ = {isa = PBXBuildFile; fileRef = 3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */; };
 		15B9E5F66063E99E492FD242 /* Picking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A1E9EAC4951BAF080CE4885 /* Picking.swift */; };
 		173E8EA9856E39D23FF924EC /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36674A4AEA82A186CABEBEB /* WorkspaceView.swift */; };
+		175FD23B3FC0B9FC3D1E384D /* CircuitModel+Manufacturing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1E782971AA4CAADE1BCBBB /* CircuitModel+Manufacturing.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
 		17FA79E52AB1AF7C7382AC84 /* ThreadCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61621B158A78E63F2CB0D558 /* ThreadCommand.swift */; };
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
@@ -84,6 +85,7 @@
 		B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93A08B31D6229F004EC44D1 /* DesignModel+Files.swift */; };
 		BA4B4A5E328B8EC670C753FF /* InspectorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674F82AB15EE87E1E87FF63E /* InspectorPanel.swift */; };
 		BD0AF8F40A31137795FDABBB /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA251AD54A99FF5A9A16C764 /* Keychain.swift */; };
+		BF9F417840FA74672478A1F9 /* ManufacturingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FCA3FBA88B6FBB5367A3610 /* ManufacturingViews.swift */; };
 		C65CA1CC038EE303F8428FFB /* WorkspaceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2262B19DCE84C9BF60C57 /* WorkspaceState.swift */; };
 		CCBD9102B7D6DBA55DF94FBF /* ViewCube.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A604770FA67CFFA12BACDB /* ViewCube.swift */; };
 		CE170F2CBCC50AEF128AC113 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D65234D73DDB270D86ADBB51 /* Assets.xcassets */; };
@@ -186,6 +188,7 @@
 		6DF6A1F3233CD0230ACA6D4F /* CommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanel.swift; sourceTree = "<group>"; };
 		757F7069AB30F77F4CFBE67F /* ElectronicsCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ElectronicsCore; path = Packages/ElectronicsCore; sourceTree = SOURCE_ROOT; };
 		7F70EE3853262F3E9B036C38 /* CommandPanelPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPanelPreviews.swift; sourceTree = "<group>"; };
+		7FCA3FBA88B6FBB5367A3610 /* ManufacturingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManufacturingViews.swift; sourceTree = "<group>"; };
 		82A81CD8EBB1FFBE3F89DC77 /* CircuitSchematicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircuitSchematicView.swift; sourceTree = "<group>"; };
 		85701B6094A1266E30BAB2C6 /* FabricationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FabricationSheet.swift; sourceTree = "<group>"; };
 		86A604770FA67CFFA12BACDB /* ViewCube.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCube.swift; sourceTree = "<group>"; };
@@ -209,6 +212,7 @@
 		B8B4F44DB320DEEB502074D8 /* CombineCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombineCommand.swift; sourceTree = "<group>"; };
 		BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */ = {isa = PBXFileReference; path = CADTakeoffImportProject.manifest; sourceTree = "<group>"; };
 		BBD53B10C72D20DE93348377 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeProvider.swift; sourceTree = "<group>"; };
+		BC1E782971AA4CAADE1BCBBB /* CircuitModel+Manufacturing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CircuitModel+Manufacturing.swift"; sourceTree = "<group>"; };
 		BDE96AD369C37C4EFF3F264C /* ShaderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShaderSource.swift; sourceTree = "<group>"; };
 		BF1A31336F1CC0A7C4E7D00F /* FusionTakeoff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FusionTakeoff.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4F1938525A46708F9F642CA /* ToolRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRouter.swift; sourceTree = "<group>"; };
@@ -327,6 +331,7 @@
 				0431B3B1382987169BEB697A /* CircuitWorkspace.swift */,
 				85701B6094A1266E30BAB2C6 /* FabricationSheet.swift */,
 				A9BEB34B278C455C5F585591 /* LibraryImportSheet.swift */,
+				7FCA3FBA88B6FBB5367A3610 /* ManufacturingViews.swift */,
 			);
 			path = Electronics;
 			sourceTree = "<group>";
@@ -412,6 +417,7 @@
 			children = (
 				F1A5F02CE2EF0AEDD8D86251 /* CircuitModel.swift */,
 				6817EF5D8EFE4F1E0BA17D10 /* CircuitModel+Fabrication.swift */,
+				BC1E782971AA4CAADE1BCBBB /* CircuitModel+Manufacturing.swift */,
 				1910760B5F8D7EDB7F9D1502 /* CircuitModel+PCB.swift */,
 				0D7E4062145A9A8EA45189EC /* CircuitModel+Rules.swift */,
 				4A22EDDA6CFE7BB109C9224B /* CircuitModel+Schematic.swift */,
@@ -793,6 +799,7 @@
 				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
 				B259CC5F1CAD6C4C03EC0C3D /* ChatGPTSetupView.swift in Sources */,
 				80A196158C024C5AD959E030 /* CircuitModel+Fabrication.swift in Sources */,
+				175FD23B3FC0B9FC3D1E384D /* CircuitModel+Manufacturing.swift in Sources */,
 				99BD3748892C2F30C9DCB2D8 /* CircuitModel+PCB.swift in Sources */,
 				31399CA1BDEC34626648EB0E /* CircuitModel+Rules.swift in Sources */,
 				5A5FE040EE1622D222CE7B85 /* CircuitModel+Schematic.swift in Sources */,
@@ -831,6 +838,7 @@
 				5E7401FF1CD1FCB96A16B12E /* LocalHTTPTransport.swift in Sources */,
 				9113C820EBF63C2BA4DC2010 /* MCPHost.swift in Sources */,
 				E6AEE10EBD192FD2B549A582 /* MCPServer.swift in Sources */,
+				BF9F417840FA74672478A1F9 /* ManufacturingViews.swift in Sources */,
 				F7378BBBE11BB02FC3E8FCF0 /* MatrixMath.swift in Sources */,
 				17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */,
 				3B556AEB2AA490F04E2ACC8F /* MoveCommand.swift in Sources */,
@@ -964,7 +972,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.95;
+				MARKETING_VERSION = 1.0.96;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1028,7 +1036,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.95;
+				MARKETING_VERSION = 1.0.96;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

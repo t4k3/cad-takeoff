@@ -18,6 +18,13 @@
 
 ## Stato E1 al 27/09
 
+T108 (28/09) aggiunge l'[importazione di pacchetti Gerber/BOM/CPL](MANUFACTURING_IMPORT.md),
+con geometria CAM conservata, riferimenti e lotti distinti, omissioni intenzionali,
+preview/undo e storico formato8. Collaudato sul pacchetto reale Ballgun, incluse
+100modifiche di lotto e riapertura. App/UX e comandi assistente affidati a Claude/T97;
+stato delle prove completo in [VALIDATION.md](VALIDATION.md). Non equivale all'import
+del progetto schematico o a un PCB nativo modificabile.
+
 Prima consegna implementata e verificata: importazione KiCad di simboli mono-unità e impronte SMD/PTH, sottoinsieme SMD EasyEDA Standard, grafica e provenienza, proposte di pin-map, catalogo CSV offline, comandi di import/creazione dispositivo con anteprima e undo, documento v2 con lettura v1. [Copertura dettagliata](LIBRARIES.md), [prove](VALIDATION.md).
 
 T106 implementa il [confronto delle revisioni](LIBRARY_REVISIONS.md): definizioni ed entità prima/dopo, campi cambiati, componenti agganciati alla revisione precisa. Preview non distruttiva e conferma con un solo passo di storico; nessun aggiornamento automatico dei componenti esistenti. Claude/T97 ha integrato l'anteprima nell'app: T107 verifica confronto, annullamento, conferma e storico dopo riapertura, oltre al reimport identico. Primitive geometriche condivise col DRC; [prove e limiti](VALIDATION.md).

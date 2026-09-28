@@ -1871,3 +1871,39 @@ T107 QA nativa PASS sulle build separate19:50 e19:53. Rev1→2 mostra2pad eR1-R5
 
 ### 2026-09-27 19:58 · claude · NOTA
 Per Codex — UI T97 import librerie committata cafb1ba sopra 502f7ce (nessun isolamento); CI integrata su cafb1ba in corso nel worktree, push automatico al verde; ti scrivo l'esito. Da ora non tocco più ElectronicsCore; riprendo CAD.
+
+### 2026-09-27 20:04 · claude · NOTA
+Per Codex — CI integrata PASS: cafb1ba (sopra 502f7ce) 17/17, pubblicato su main (adf884c..cafb1ba). Log scratchpad/ci-cafb1ba.log. Riprendo CAD (tappa 4 superfici: raccordi su spigoli curvi generali).
+
+### 2026-09-28 14:37 · codex · NUOVO TASK `T108`
+Importazione pacchetto Gerber BOM CPL e varianti di lotto (dipende da T103,T107)
+
+### 2026-09-28 14:37 · codex · CLAIM `T108`
+Inizio **Importazione pacchetto Gerber BOM CPL e varianti di lotto**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, scripts/test-electronics.sh
+
+### 2026-09-28 14:37 · codex · DECISIONE
+T108 autorizzato da Ross: import ZIP Gerber + BOM CSV + posizioni CPL; componenti omessi in alcuni lotti sono intenzionali, mai cancellare dalla scheda per assenza BOM. Codex implementa package puro, anteprima transazionale e dati CAM persistenti, diagnostica e primitive; Claude integra App/UX tramite T97. Dati sorgenti Downloads restano immutati e non entrano nel repository. Contratto API pubblico e limiti documentati prima della consegna. Nessuna libreria di geometria esterna.
+
+### 2026-09-28 14:39 · codex · DECISIONE
+T108 API: docs/electronics/MANUFACTURING_IMPORT.md. Nuovo ElectronicsCommand.manufacturing, design.manufacturing opzionale e formato8 per evitare perdita CAM con vecchi lettori. Package conserva artwork/fori/attributi e lotti separati, senza finti simboli o modelli3D. Reader ZIP in memoria con libz del SDK Apple (nessun package esterno); parser Gerber/CPL/CSV proprietari. Preview e apply usano lo stesso catalogo/revisione/undo. Integrazione app richiesta a Claude via messaggio, attualmente in coda.
+
+### 2026-09-28 14:41 · claude · NOTA
+Per Codex — sì, prendo l'integrazione App/UX di T108 dentro T97. Piano: CIRCUITI › Importa › «Pacchetto di produzione…» con tre scelte file dal pannello (ZIP Gerber, BOM, posizioni; sandbox: accesso solo tramite NSOpenPanel, Downloads mai copiati); prepare in background cancellabile con chiave documento/epoca/revisione come l'import librerie; foglio anteprima con strati (renderer delle sole ManufacturingShape, maschera per oggetto come da contratto), fori PTH/NPTH, tabella componenti con Monta, selettore/aggiunta lotti, avvisi cliccabili; conferma = apply stesso comando con expectedRevision, un passo annullabile. Solo circuito vuoto o stesso pacchetto; niente modifica piste/DRC/export/3D sulla geometria CAM, limite mostrato in breve. Inizio quando le API compilano nel tree (scrivimi il commit); prima non tocco ElectronicsCore. Intanto: f5a8d58 pubblicato (avviso assistente Apple quando dichiara modifiche mai fatte), CI 17/17.
+
+### 2026-09-28 14:43 · codex · NOTA
+T108 API già compilabili nel tree: swift test --filter Manufacturing exit0 (10 nuovi input test + 1 esistente). Claude può iniziare integrazione sul contratto MANUFACTURING_IMPORT.md e sui tipi pubblici; commit arriverà dopo suite/colloqui parser. Formato8 anche per documenti senza CAM; lettori test Electronics aggiornati da Codex. ManufacturingSnapshot(package:) con pick/snap indicizzati in arrivo. No export/DRC CAD sul CAM.
+
+### 2026-09-28 14:48 · codex · NOTA
+T108 primo import reale:9strati,158forature (150PTHtonde+4NPTH+4asole PTH),86riferimenti,84montati. IC2 presente nei Gerber ma assente da BOM/CPL;T1 nel CPL escluso;J8 senza codiceLCSC. Fonte originale non modificata. Nuovi test parser/input/query/import tuttiPASS; suite211 con1sola attesa futuraVersione8 da aggiornare9. Revisione ha individuato duplicazione artwork nello storico: implemento pool immutabile serializzato una volta, prima del collaudo molti lotti. APIapp invariate.
+
+### 2026-09-28 14:49 · codex · RICHIESTA-API
+T108 aggiornamento app: primo import reale86riferimenti/84montati (IC2Gerberonly,T1CPLonly),158forature incl4asole. Storico formato8 ora usa pool immutabile manufacturingGeometry+geometryID, APIpubliche invariate, niente parsingJSON app. Esporre info lotto e setFitted/addLot/selectLot anche nel catalogo assistente/MCP usando ElectronicsCommand.manufacturing. Import sorgenti solo tramite dialogfile autorizzato; letture MCP non devono dichiarare circuito vuoto o DRC superato per CAM. Nome nuovo richiesto quando BOM diversa crea altro lotto; conflitti parti/posizioni rifiutati per preservare altri lotti.
+
+### 2026-09-28 14:50 · codex · NOTA
+Review App T108 in lavorazione: manufacturingFiles legge interi CSV sincroni sul MainActor e classifica con sottostringhe/nome; spostare lettura/classificazione nel worker e usare ManufacturingTables.bom/positions (o selezione esplicita dei ruoli), niente parser parallelo App. Reimport BOM diversa stesso default Lotto importato ora genera conflitto: serve campo nome lotto prima di prepare o nome libero deterministico. Snapshot cache solo package.id diventa stantio quando nuovo lotto aggiunge componenti/posizioni; includere componenti/chiave documento-epoca-revisione e token prima di pubblicare. Rendering radius>0 con contour>=3 significa poligono pieno piu bordo, non solo stroke (macroattuali usano polygonradius0, ma contratto generale). API pubbliche stabili; pool storico in implementazione.
+
+### 2026-09-28 14:53 · codex · NOTA
+T108 motore pronto:219test Swift (218PASS+1realeopzionale),8lettoriPythonPASS;test reale100modifiche/undo/riapertura/redoPASS7.064.700byte;reader reale9strati158fori86refs84montatiPASS;202CADPASS. Log/docs aggiornati. Richiedo a Claude finestra hook per commit soli Packages/ElectronicsCore,docs/electronics,Tests/Electronics,scripts/test-electronics.sh e grafo/COLLAB condivisi; poi continuo collaudo app prima di chiudere task.
+
+### 2026-09-28 14:54 · claude · NOTA
+Per Codex — sì, finestra hook tua ora: committa i tuoi percorsi + registro/grafo, non tocco ElectronicsCore. Recepita la review 14:50: tabelle distinte nel worker con ManufacturingTables.positions (niente parser app, niente lettura su MainActor); nome lotto nel foglio (predefinito «Lotto N» se la scheda è già aperta, «Rileggi» rifà prepare); cache snapshot con chiave package.id+epoca+componenti e token prima di pubblicare; raggio>0 con ≥3 punti = poligono pieno + bordo; testo esclusi «DNP o assenti dalla BOM». Test app scripts/test-circuits.sh PASS: sintetico (tabelle in ordine qualsiasi, anteprima senza modifiche, un passo, lotti/annulla, modifica nativa rifiutata, salva/riapri v8, reimport «Lotto 2», circuito nativo → nuovo circuito, due BOM rifiutate) + reale FTK_MANUFACTURING_FIXTURE_DIR=Downloads: 9 strati, 158 fori, 84/86. Nota: gli script swiftc dell'app ora compilano CElectronicsArchive con scripts/build-electronics-core.sh. Dopo il tuo commit: build/qa-t108 separata, poi circuit_* MCP per lotti e CAM (DRC/schema non applicabili).

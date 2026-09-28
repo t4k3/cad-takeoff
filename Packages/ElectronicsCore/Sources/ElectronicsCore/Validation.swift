@@ -24,6 +24,14 @@ public enum ElectronicsValidation {
     /// geometry are not. This is deliberately distinct from electrical and manufacturing checks.
     public static func integrity(_ design: ElectronicsDesign) -> [ElectronicsIssue] {
         var issues: [ElectronicsIssue] = []
+        if let package = design.manufacturing {
+            do { try ElectronicsManufacturingImport.requireIntegrity(package) }
+            catch let failure as ElectronicsFailure { issues += failure.issues }
+            catch { issues.append(.init("manufacturing_cancelled", "Importazione scheda", "Verifica del pacchetto interrotta.")) }
+            if !ElectronicsManufacturingImport.isNativeEmpty(design) {
+                issues.append(.init("manufacturing_native_board", "Importazione scheda", "Geometria di produzione e progetto nativo non possono sovrapporsi nello stesso documento."))
+            }
+        }
         func add(_ code: String, _ subject: String, _ message: String) {
             issues.append(.init(code, subject, message))
         }
@@ -173,6 +181,9 @@ public enum ElectronicsValidation {
 
     /// Initial logical checks only: no analog analysis, power-domain solver or full ERC matrix.
     public static func electrical(_ design: ElectronicsDesign, excluding: Set<UUID> = []) -> [ElectronicsIssue] {
+        if design.manufacturing != nil {
+            return [.init("manufacturing_erc_unavailable", "Scheda importata", "Verifica elettrica non disponibile: il pacchetto non contiene lo schema originale.", severity: .warning)]
+        }
         guard integrity(design).isEmpty else { return [.init("invalid_design", "ERC", "Correggere prima gli errori di integrità.")] }
         var issues: [ElectronicsIssue] = []
         var drivers: [UUID: [(name: String, component: UUID, pin: UUID)]] = [:]

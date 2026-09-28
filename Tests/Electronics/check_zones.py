@@ -60,7 +60,7 @@ def groups(cells, bridge=False):
 
 for name, expected in [('connected',True),('split',False),('bridged',True),('undo',False),('redo',True)]:
     data=read(f'zones-{name}.json'); doc=read(f'zones-{name}.ftkc')
-    assert doc['formatVersion']==7
+    assert doc['formatVersion']==8
     assert not any(i['severity']=='error' for i in data['issues'])
     zone=data['zones'][0]; cells=[[point(p) for p in c] for c in zone['cells']]
     assert cells and all(area(c)>0 for c in cells)

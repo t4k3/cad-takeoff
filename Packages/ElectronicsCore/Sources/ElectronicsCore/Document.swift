@@ -10,7 +10,7 @@ public struct ElectronicsEdit: Codable, Equatable, Sendable {
 /// The history is persisted. Revision is monotonic even across undo/redo, so assistant calls
 /// cannot reuse a stale revision after an ABA (edit -> undo) transition.
 public struct ElectronicsDocument: Codable, Equatable, Sendable {
-    public private(set) var formatVersion: Int = 7
+    public private(set) var formatVersion: Int = 8
     public private(set) var revision: UInt64 = 0
     public private(set) var design: ElectronicsDesign
     public private(set) var past: [ElectronicsEdit] = []
@@ -30,6 +30,7 @@ public struct ElectronicsDocument: Codable, Equatable, Sendable {
         guard candidate.id == design.id else { throw failure("changed_design_id", "L’identità del progetto non può cambiare.") }
         try ElectronicsValidation.requireIntegrity(candidate)
         try Self.checkLibraryRevisions([candidate] + allStates)
+        _ = try ManufacturingDocumentStorage.pool(for: [candidate] + allStates)
         guard candidate != design else { return }
         let step = ElectronicsEdit(title: title, before: design, after: candidate)
         design = candidate; past.append(step); future.removeAll(); revision += 1
@@ -49,8 +50,15 @@ public struct ElectronicsDocument: Codable, Equatable, Sendable {
 
     public func encoded() throws -> Data {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(self)
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        if !allStates.contains(where: { $0.manufacturing != nil }) {
+            encoder.outputFormatting.insert(.prettyPrinted)
+        }
+        let data = try encoder.encode(self)
+        guard data.count <= 64 * 1024 * 1024 else {
+            throw Self.failure("document_too_large", "Documento oltre 64 MiB: suddividere il progetto prima di salvarlo.")
+        }
+        return data
     }
 
     public static func decode(_ data: Data) throws -> Self {
@@ -58,18 +66,36 @@ public struct ElectronicsDocument: Codable, Equatable, Sendable {
         return try JSONDecoder().decode(Self.self, from: data)
     }
 
-    private enum CodingKeys: String, CodingKey { case formatVersion, revision, design, past, future }
+    private enum CodingKeys: String, CodingKey { case formatVersion, revision, design, past, future, manufacturingGeometry }
+    public func encode(to encoder: any Encoder) throws {
+        let pool = try ManufacturingDocumentStorage.pool(for: allStates)
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(formatVersion, forKey: .formatVersion)
+        try c.encode(revision, forKey: .revision)
+        try c.encode(ManufacturingDocumentStorage.Design(value: design), forKey: .design)
+        try c.encode(past.map { ManufacturingDocumentStorage.Edit(value: $0) }, forKey: .past)
+        try c.encode(future.map { ManufacturingDocumentStorage.Edit(value: $0) }, forKey: .future)
+        if !pool.isEmpty { try c.encode(pool, forKey: .manufacturingGeometry) }
+    }
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let inputVersion = try c.decode(Int.self, forKey: .formatVersion)
-        guard (1...7).contains(inputVersion) else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(inputVersion). Aggiornare l’app prima di aprire il file.") }
-        // Missing optional library/schema fields decode as nil. Always write v7 so older
-        // readers reject schematic/copper/rules documents instead of silently dropping drawings/history.
-        formatVersion = 7
+        guard (1...8).contains(inputVersion) else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(inputVersion). Aggiornare l’app prima di aprire il file.") }
+        // Missing optional fields decode as nil. Older readers must reject CAM data,
+        // rather than silently drop artwork and manufacturing lots on save.
+        formatVersion = 8
         revision = try c.decode(UInt64.self, forKey: .revision)
-        design = try c.decode(ElectronicsDesign.self, forKey: .design)
-        past = try c.decode([ElectronicsEdit].self, forKey: .past)
-        future = try c.decode([ElectronicsEdit].self, forKey: .future)
+        let geometry = try c.decodeIfPresent(ManufacturingDocumentStorage.Pool.self, forKey: .manufacturingGeometry) ?? [:]
+        guard inputVersion == 8 || geometry.isEmpty else {
+            throw Self.failure("unsupported_version", "Archivio geometrie presente in un formato precedente.")
+        }
+        design = try ManufacturingDocumentStorage.design(from: c.superDecoder(forKey: .design), pool: geometry)
+        past = try ManufacturingDocumentStorage.edits(from: c.superDecoder(forKey: .past), pool: geometry)
+        future = try ManufacturingDocumentStorage.edits(from: c.superDecoder(forKey: .future), pool: geometry)
+        if inputVersion < 8, allStates.contains(where: { $0.manufacturing != nil }) {
+            throw Self.failure("unsupported_version", "Dati di produzione presenti in un formato precedente: correggere la versione del documento.")
+        }
+        try ManufacturingDocumentStorage.validate(geometry, states: allStates)
         for state in allStates {
             guard state.id == design.id else { throw Self.failure("invalid_history", "Lo storico contiene un altro progetto.") }
             try ElectronicsValidation.requireIntegrity(state)

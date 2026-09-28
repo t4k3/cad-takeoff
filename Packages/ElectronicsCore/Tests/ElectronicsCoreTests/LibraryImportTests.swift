@@ -187,14 +187,14 @@ final class LibraryImportTests: XCTestCase {
         let old = try XCTUnwrap(JSONSerialization.jsonObject(with: oldData) as? [String: Any])
         XCTAssertEqual(old["formatVersion"] as? Int, 1)
         var document = try ElectronicsDocument.decode(oldData)
-        XCTAssertEqual(document.formatVersion, 7)
+        XCTAssertEqual(document.formatVersion, 8)
         let before = document.design
         try document.edit(title: "Verifica migrazione", expectedRevision: document.revision) { $0.name = "Migrated" }
         document = try ElectronicsDocument.decode(document.encoded())
         try document.undo(expectedRevision: document.revision)
         XCTAssertEqual(document.design, before)
         let saved = try XCTUnwrap(JSONSerialization.jsonObject(with: document.encoded()) as? [String: Any])
-        XCTAssertEqual(saved["formatVersion"] as? Int, 7)
+        XCTAssertEqual(saved["formatVersion"] as? Int, 8)
         XCTAssertEqual(try ElectronicsDocument.decode(document.encoded()), document)
     }
 

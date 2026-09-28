@@ -170,7 +170,7 @@ final class PCBZoneThermalTests: XCTestCase {
         }
         var json = legacy(try JSONSerialization.jsonObject(with:d.encoded())) as! [String:Any]; json["formatVersion"] = 6
         var migrated = try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject:json))
-        XCTAssertEqual(migrated,d); XCTAssertEqual(migrated.formatVersion,7)
+        XCTAssertEqual(migrated,d); XCTAssertEqual(migrated.formatVersion,8)
         z.connection = .thermal; z.minimumWidth = 0.2
         let before = migrated
         let p = try ElectronicsCommands.preview(.pcb(.updateZone(z)),document:migrated,expectedRevision:migrated.revision)

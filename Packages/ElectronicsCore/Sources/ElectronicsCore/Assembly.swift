@@ -29,6 +29,9 @@ public enum ElectronicsAssembly {
     /// unmapped, missing a supplier number, or missing the required side's rotation rule.
     public static func export(_ document: ElectronicsDocument, variantID: UUID? = nil) throws -> AssemblyData {
         let design = document.design
+        guard design.manufacturing == nil else {
+            throw ElectronicsManufacturingImport.failure("manufacturing_assembly_unsupported", "Il pacchetto importato non contiene modelli 3D o impronte native: usare i dati del lotto, senza generare un assieme fittizio.")
+        }
         try ElectronicsValidation.requireIntegrity(design)
         let excluded: Set<UUID>
         if let variantID {

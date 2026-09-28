@@ -2105,6 +2105,25 @@
       "notes": [
         "2026-09-27 19:57 codex: Confronto librerie collaudato in app19:50 e19:53, cinque salvataggi indipendenti verificati: annulla/conferma/undo/riapertura/redo/reimport identico. API LibraryGeometry con le stesse primitive del DRC;169test elettronici+sette lettori+197CAD PASS. Corretti con Claude worker obsoleti e rendering. Documenti/procedura aggiornati; CI sul commit integrato affidata a Claude dopo il commit motore."
       ]
+    },
+    {
+      "id": "T108",
+      "title": "Importazione pacchetto Gerber BOM CPL e varianti di lotto",
+      "phase": "Altro",
+      "status": "in_progress",
+      "deps": [
+        "T103",
+        "T107"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics",
+        "scripts/test-electronics.sh"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-28 14:37"
     }
   ]
 }
