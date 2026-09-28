@@ -330,6 +330,8 @@ extension DesignModel: CADToolProvider {
 
     private func describe(_ f: Feature) -> JSONValue {
         var value: [String: JSONValue] = ["id": .string(f.id.uuidString), "name": .string(f.name), "position": vector(f.position), "visible": .bool(f.isVisible), "color": .string(f.color.hex), "operation": .string(f.operation.rawValue)]
+        // Where its body is and how big (an imported part has no dimensions of its own).
+        if let body = evaluation().bodies.first(where: { $0.id == f.id }), let b = body.mesh.bounds { value["bounds"] = bounds(b) }
         switch f.kind {
         case let .box(w, d, h): value.merge(["kind": "box", "width": .number(w), "depth": .number(d), "height": .number(h)]) { _, b in b }
         case let .cylinder(r, h): value.merge(["kind": "cylinder", "radius": .number(r), "height": .number(h)]) { _, b in b }

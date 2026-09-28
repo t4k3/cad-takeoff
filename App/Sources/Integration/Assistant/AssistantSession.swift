@@ -122,10 +122,51 @@ final class AssistantSession {
             }
         }
         isRunning = true
+        let start = entries.count
         task = Task { [weak self] in
+            await self?.prepareSmallModelContext()
             await self?.loop()
+            self?.checkClaims(since: start)
             self?.isRunning = false
         }
+    }
+
+    /// The small on-device model gets the design's bodies and sizes with the request (read here
+    /// with list_features, nothing changes).
+    private func prepareSmallModelContext() async {
+        guard let apple = provider as? AppleIntelligenceProvider, focus == .cad, let tools,
+              tools.tools.contains(where: { $0.name == "list_features" }) else { return }
+        let result = await tools.call("list_features", arguments: [:])
+        guard !result.isError, let features = result.structured?["features"]?.array else { return }
+        func n(_ v: JSONValue?) -> String { v?.number.map { String(format: "%.1f", $0) } ?? "?" }
+        let lines = features.prefix(12).compactMap { f -> String? in
+            guard let name = f["name"]?.string else { return nil }
+            let kind = f["kind"]?.string ?? ""
+            guard let b = f["bounds"] else { return "\(name) (\(kind))" }
+            return "\(name) (\(kind)) da (\(n(b["min"]?["x"])), \(n(b["min"]?["y"])), \(n(b["min"]?["z"]))) a (\(n(b["max"]?["x"])), \(n(b["max"]?["y"])), \(n(b["max"]?["z"]))), misure \(n(b["size"]?["x"])) × \(n(b["size"]?["y"])) × \(n(b["size"]?["z"]))"
+        }
+        apple.context = lines.isEmpty ? nil : lines.joined(separator: "; ")
+    }
+
+    /// A reply that says it made or changed something while no tool did (a small model can):
+    /// said plainly, so nobody looks for a part that does not exist.
+    func checkClaims(since start: Int) {
+        guard start <= entries.count else { return }
+        let turn = entries[start...]
+        // Only a tool that writes counts (reading the design changes nothing).
+        let writers = Set((tools?.tools ?? []).filter { !$0.isReadOnly }.map(\.name))
+        let changed = turn.contains { if case let .tool(run) = $0.kind { run.status == .done && writers.contains(run.name) } else { false } }
+        guard !changed else { return }
+        let said = turn.compactMap { if case let .assistant(text, _) = $0.kind { text.lowercased() } else { nil } }.joined(separator: " ")
+        guard Self.claimsAChange(said) else { return }
+        entries.append(Entry(kind: .notice("Attenzione: la risposta parla di una modifica, ma nessuno strumento è stato eseguito: il disegno non è cambiato. Riprova con una richiesta più precisa (misure, posizione) o con Claude.", isError: true)))
+    }
+
+    static func claimsAChange(_ text: String) -> Bool {
+        let verbs = ["ho creato", "ho aggiunto", "ho modificato", "ho spostato", "ho eliminato", "ho rimosso", "ho cambiato",
+                     "ho fatto", "ho realizzato", "ho posizionato", "ho unito", "ho tagliato", "ho forato", "ho rinominato",
+                     "ho collegato", "ho applicato", "ho esteso", "ho ridotto", "ho aumentato", "ho impostato", "ho inserito"]
+        return verbs.contains { text.contains($0) }
     }
 
     private func loop() async {

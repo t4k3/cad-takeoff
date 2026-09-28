@@ -22,6 +22,9 @@ final class AppleIntelligenceProvider: AssistantProvider {
     @ObservationIgnored private var sessionKey: [String] = []
     /// Where the user is (set by the session before each turn): CAD or CIRCUITI.
     @ObservationIgnored var focus: AssistantFocus = .cad
+    /// The design as it is, read by the session just before the turn: the small model gets the
+    /// bodies and their sizes with the request instead of having to call a reading tool first.
+    @ObservationIgnored var context: String?
     @ObservationIgnored private var pending = ""
 
     var isConfigured: Bool { SystemLanguageModel.default.isAvailable }
@@ -49,8 +52,10 @@ final class AppleIntelligenceProvider: AssistantProvider {
     i suoi argomenti nel testo e non ripetere la richiesta).
     Non chiedere dati che non servono: senza posizione indicata metti il pezzo all'origine (ometti la \
     posizione); se manca una misura secondaria scegli un valore ragionevole, dichiaralo e procedi.
-    Per modificare un pezzo esistente leggi prima lo stato (list_features). Dopo una modifica di' in una \
-    frase cosa hai fatto e le misure. Se nessuno strumento fa ciò che serve, dillo.
+    Per modificare un pezzo esistente o farne uno che gli si adatti (un coperchio per una scatola) leggi \
+    prima lo stato con list_features: bounds dà ingombro e misure di ogni corpo. Non dire mai di aver \
+    creato o modificato qualcosa se non hai chiamato lo strumento e avuto il suo risultato. Dopo una \
+    modifica di' in una frase cosa hai fatto e le misure. Se nessuno strumento fa ciò che serve, dillo.
     """
 
     static let circuitInstructions = """
@@ -146,7 +151,10 @@ final class AppleIntelligenceProvider: AssistantProvider {
             session = LanguageModelSession(model: model, tools: fmTools, instructions: instructions)
         }
         guard let session else { return .done }
-        let prompt = pending
+        // The request first; the design's bodies after it, as a note (before it, the model tended
+        // to answer in text instead of calling the tool).
+        let prompt = pending + (context.map { "\n\n(Corpi nel disegno, mm: \($0))" } ?? "")
+        context = nil
         pending = ""
         var shown = ""
         do {

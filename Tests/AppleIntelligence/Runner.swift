@@ -89,7 +89,29 @@ struct AppleIntelligenceTests {
         check(compactText.contains("abc-123") && compactText.contains("tok@7#x-1") && compactText.contains("\"can_apply\":false")
               && compactText.count <= 1500 && compactText.contains("altri 35"), "risultato compatto: preview_id, revisione e can_apply sempre, liste accorciate")
 
+        // A reply that claims a change no tool made is flagged (Ross, 28/09: «ho creato il coperchio»).
+        check(AssistantSession.claimsAChange("ho creato il coperchio, ma non appare") && !AssistantSession.claimsAChange("il volume è 12 cm³"),
+              "frasi che dicono di aver cambiato il disegno riconosciute")
+
         if ProcessInfo.processInfo.environment["FTK_LIVE_FM"] == "1" {
+            // An imported tray (no dimensions of its own): «a lid for this box» must build a body over it.
+            let tray = DesignModel()
+            tray.newDesign()
+            let shell = try PrimitiveKernel.build(Feature(name: "t", kind: .box(width: 60, depth: 40, height: 20), position: Vec3(0, 0, 0))).mesh
+            tray.document.features = [Feature(name: "Scatola", kind: .importedMesh(ImportedMesh(mesh: shell, source: "scatola.stl")))]
+            let lidChat = AssistantSession(providers: [AppleIntelligenceProvider()])
+            lidChat.tools = tray
+            if lidChat.provider.isConfigured {
+                lidChat.send("crea un coperchio per questa scatola")
+                while lidChat.isRunning { try await Task.sleep(for: .milliseconds(200)) }
+                for e in lidChat.entries { print("· coperchio", e.kind) }
+                let lid = tray.document.features.dropFirst().first
+                let flagged = lidChat.entries.contains { if case let .notice(t, _) = $0.kind { t.contains("nessuno strumento") } else { false } }
+                check(lid != nil || flagged, "dal vivo: coperchio creato, o risposta falsa segnalata")
+                if let lid, let b = DesignEvaluator.evaluate(tray.document, revision: "l").bodies.first(where: { $0.id == lid.id })?.mesh.bounds {
+                    print("· coperchio ingombro", b.min, b.max)
+                }
+            }
             let model = DesignModel()
             model.newDesign()
             let session = AssistantSession(providers: [AppleIntelligenceProvider()])
