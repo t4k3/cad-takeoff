@@ -161,6 +161,13 @@ func manufacturingTests(check: (Bool, String) -> Void) async throws {
     native.closeCircuit()
     check(native.document == nil && native.url == nil && native.title == "Circuito", "chiudi circuito salvato")
 
+    // Apri: circuits enabled by extension, also as file references; other files not.
+    let filter = CircuitFileFilter()
+    let savedRef = (saved as NSURL).fileReferenceURL() ?? saved
+    check(filter.panel(NSObject(), shouldEnable: saved) && filter.panel(NSObject(), shouldEnable: savedRef)
+          && !filter.panel(NSObject(), shouldEnable: bom) && filter.panel(NSObject(), shouldEnable: dir),
+          "Apri: .ftkc abilitato (anche come riferimento), .csv no, cartelle sì")
+
     // Two tables that are both BOMs: said so, nothing prepared.
     let other = dir.appendingPathComponent("altra.csv")
     try FileManager.default.copyItem(at: bom, to: other)

@@ -257,6 +257,7 @@ final class CircuitModel {
         // out — also right after a save replaced the file (T111 QA).
         let filter = CircuitFileFilter()
         panel.delegate = filter
+        panel.canChooseFiles = true; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
         panel.message = "Apri un circuito (.ftkc)"
         // From the current circuit's folder: its listing is read again (after a save the file is a new one).
         if let url { panel.directoryURL = url.deletingLastPathComponent() }
@@ -1039,7 +1040,10 @@ struct CircuitEditError: Error, Sendable {
 /// Open panel: folders to browse, circuits (.ftkc) and JSON to choose.
 final class CircuitFileFilter: NSObject, NSOpenSavePanelDelegate {
     func panel(_ sender: Any, shouldEnable url: URL) -> Bool {
-        if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return true }
-        return ["ftkc", "json"].contains(url.pathExtension.lowercased())
+        // A file reference (…/.file/id=…) has no extension of its own: its path first. The
+        // extension decides without touching the disk; only other names are asked if folders.
+        let file = (url as NSURL).filePathURL ?? url
+        if ["ftkc", "json"].contains(file.pathExtension.lowercased()) { return true }
+        return file.hasDirectoryPath || (try? file.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
     }
 }
