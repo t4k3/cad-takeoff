@@ -19,6 +19,7 @@
 		175FD23B3FC0B9FC3D1E384D /* CircuitModel+Manufacturing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1E782971AA4CAADE1BCBBB /* CircuitModel+Manufacturing.swift */; };
 		17765BB4F943E5303AB4977B /* MetalViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F5B171C498A222AE59BB15 /* MetalViewport.swift */; };
 		17FA79E52AB1AF7C7382AC84 /* ThreadCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61621B158A78E63F2CB0D558 /* ThreadCommand.swift */; };
+		18FB21B2D7D1EE9069D4AF9B /* CAMDrawing.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E15EC67C47F347B3448094 /* CAMDrawing.swift */; };
 		1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD86656AEFB6BC95A8C96A9 /* ConnectorsPanel.swift */; };
 		1FC83F9D76AE1F7D4E42C566 /* SketchCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = E739A2954E6A9A303F24F96F /* SketchCommands.swift */; };
 		276866352B05274ABB9B1948 /* PartColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D04A4DB715945B73E88E2B /* PartColorPicker.swift */; };
@@ -227,6 +228,7 @@
 		DA831E610F555E8A4BC81923 /* AssistantSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSession.swift; sourceTree = "<group>"; };
 		DD59C218754E0D11BA7F1DD8 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		DFE879D6C00C0DC93695E617 /* DesignModel+Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Tools.swift"; sourceTree = "<group>"; };
+		E6E15EC67C47F347B3448094 /* CAMDrawing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CAMDrawing.swift; sourceTree = "<group>"; };
 		E739A2954E6A9A303F24F96F /* SketchCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SketchCommands.swift; sourceTree = "<group>"; };
 		E8DCACC31C8A1D1083704390 /* Ribbon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ribbon.swift; sourceTree = "<group>"; };
 		E98CD345010D437D5502B155 /* SheetMetalCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetMetalCommand.swift; sourceTree = "<group>"; };
@@ -327,6 +329,7 @@
 		43EAA6447D566CA8D86F3361 /* Electronics */ = {
 			isa = PBXGroup;
 			children = (
+				E6E15EC67C47F347B3448094 /* CAMDrawing.swift */,
 				82A81CD8EBB1FFBE3F89DC77 /* CircuitSchematicView.swift */,
 				0431B3B1382987169BEB697A /* CircuitWorkspace.swift */,
 				85701B6094A1266E30BAB2C6 /* FabricationSheet.swift */,
@@ -794,6 +797,7 @@
 				0B08FDCFD560B3F7E6B34565 /* BrowserPanel.swift in Sources */,
 				4AF0F80F02AFC0EADE2DC571 /* CADToolCatalog.swift in Sources */,
 				4C996C3025DEADD358451F17 /* CADToolValidation.swift in Sources */,
+				18FB21B2D7D1EE9069D4AF9B /* CAMDrawing.swift in Sources */,
 				9F5347637A122C50E1BABB0A /* Camera.swift in Sources */,
 				9E390BBDAE0C6659CE5ECBC6 /* ChamferCommand.swift in Sources */,
 				7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */,
@@ -972,7 +976,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.99;
+				MARKETING_VERSION = 1.0.100;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1036,7 +1040,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.99;
+				MARKETING_VERSION = 1.0.100;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

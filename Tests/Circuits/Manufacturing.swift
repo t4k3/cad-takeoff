@@ -1,5 +1,7 @@
+import AppKit
 import ElectronicsCore
 import Foundation
+import SwiftUI
 
 /// PRODUZIONE › Importa in the app (T108 with Codex's engine): three files chosen in any order,
 /// the tables told apart by the engine, preview then one step, lots, picking, native edits
@@ -48,6 +50,17 @@ func manufacturingTests(check: (Bool, String) -> Void) async throws {
     c.confirmManufacturingImport()
     check(c.isManufacturing && c.document?.past.count == 1, "importata in un passo (\(last))")
     check(c.issues.contains { $0.code == "manufacturing_not_fitted" && $0.subjectIDs == [t1!.id] }, "T1 segnalato escluso")
+    // The board view as the app shows it: the layers in the first frames, without mouse, hover or
+    // zoom (T110: they appeared only at the next unrelated redraw), and a layer switched off.
+    let view = CAMFrame(c)
+    var blue = 0
+    for _ in 0..<60 where blue == 0 { try await Task.sleep(for: .milliseconds(50)); blue = view.samples(bottomCopper: true) }
+    check(blue > 5, "vista CAM: rame sotto visibile nel primo fotogramma senza interazione (\(blue) campioni)")
+    c.camHiddenLayers.insert(.bottomCopper)
+    var hiddenBlue = blue
+    for _ in 0..<20 where hiddenBlue > 0 { try await Task.sleep(for: .milliseconds(50)); hiddenBlue = view.samples(bottomCopper: true) }
+    check(hiddenBlue == 0, "strato spento: sparisce senza interazione (\(hiddenBlue))")
+    c.camHiddenLayers.remove(.bottomCopper)
     await c.camSnapshotTask?.value
     check(c.manufacturingComponent(at: PCBPoint(11, 10.1), tolerance: 0.5) == r1!.id, "clic sul marcatore di R1")
 
@@ -175,5 +188,28 @@ extension CircuitModel {
         guard (try? m.newCircuit()) != nil else { return false }
         let r = await m.call("circuit_preview", arguments: ["action": "add_lot", "name": "X", "expected_revision": .string(m.designRevision)])
         return r.isError && r.text.contains("solo per una scheda importata")
+    }
+}
+
+/// CAMBoardView hosted in an offscreen window, read back as pixels.
+@MainActor
+final class CAMFrame {
+    let host: NSHostingView<AnyView>
+    let window: NSWindow
+    init(_ c: CircuitModel) {
+        _ = NSApplication.shared
+        host = NSHostingView(rootView: AnyView(CAMBoardView().environment(c).frame(width: 1000, height: 800)))
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 800), styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+    }
+    /// Samples (every 8 px) of the bottom copper's blue.
+    func samples(bottomCopper: Bool) -> Int {
+        host.layoutSubtreeIfNeeded(); host.display()
+        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return -1 }
+        host.cacheDisplay(in: host.bounds, to: rep)
+        var n = 0
+        for y in stride(from: 0, to: rep.pixelsHigh, by: 8) { for x in stride(from: 0, to: rep.pixelsWide, by: 8) {
+            if let c = rep.colorAt(x: x, y: y), c.blueComponent > 0.6, c.redComponent < 0.45, c.greenComponent > 0.3, c.greenComponent < 0.75 { n += 1 } } }
+        return n
     }
 }
