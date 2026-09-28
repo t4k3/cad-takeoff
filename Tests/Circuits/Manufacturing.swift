@@ -154,6 +154,10 @@ func manufacturingTests(check: (Bool, String) -> Void) async throws {
     check(native.manufacturingProposal?.inNewCircuit == true && !native.isManufacturing, "circuito nativo: import proposto in un circuito nuovo (\(last))")
     native.cancelImport()
 
+    // Close (the tab's X, ⌘W): a saved circuit closes; the native one kept its board.
+    native.closeCircuit()
+    check(native.document == nil && native.url == nil && native.title == "Circuito", "chiudi circuito salvato")
+
     // Two tables that are both BOMs: said so, nothing prepared.
     let other = dir.appendingPathComponent("altra.csv")
     try FileManager.default.copyItem(at: bom, to: other)

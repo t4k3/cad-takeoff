@@ -231,6 +231,16 @@ final class CircuitModel {
         report("Nuovo circuito: scheda 50 × 30 mm")
     }
 
+    /// The X of the circuit's tab / ⌘W in CIRCUITI: closed after asking about unsaved changes.
+    func closeCircuit() {
+        guard document != nil, confirmDiscard() else { return }
+        let name = title
+        forgetDrawings()
+        document = nil; url = nil; isDirty = false
+        refresh()
+        report("Chiuso \(name)")
+    }
+
     func save(to target: URL? = nil) throws {
         guard let document, let destination = target ?? url else { return }
         try document.encoded().write(to: destination, options: .atomic)

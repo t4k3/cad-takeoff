@@ -20,8 +20,10 @@ struct FusionTakeoffApp: App {
                 .environment(library)
                 .environment(sketches)
                 .environment(circuits)
-                .navigationTitle(library.currentName + (library.isDirty(model) ? " — modificato" : ""))
-                .navigationSubtitle(library.currentURL.flatMap { library.project(of: $0) } ?? "")
+                .navigationTitle(circuits.isFrontmost && circuits.document != nil
+                                 ? circuits.title + (circuits.isDirty ? " — modificato" : "")
+                                 : library.currentName + (library.isDirty(model) ? " — modificato" : ""))
+                .navigationSubtitle((circuits.isFrontmost && circuits.document != nil ? circuits.url : library.currentURL).flatMap { library.project(of: $0) } ?? "")
                 .task {
                     // One provider for MCP clients and the in-app chat: the CAD design's tools (T48)
                     // and CIRCUITI's circuit_* tools (T100), kept alive here (both hold it weakly).
@@ -53,8 +55,12 @@ struct FusionTakeoffApp: App {
                 Button("Home") { library.showHome.toggle() }.keyboardShortcut("h", modifiers: [.command, .shift])
                 Button("Nuovo disegno") { library.newUntitled(model: model) }.keyboardShortcut("n")
                 Button("Apri…") { library.openWithPanel(model: model) }.keyboardShortcut("o")
-                Button("Chiudi disegno") { library.closeDesign(model: model) }.keyboardShortcut("w")
-                    .disabled(library.currentURL == nil && model.document.features.isEmpty && model.document.sketches.isEmpty)
+                Button(circuits.isFrontmost ? "Chiudi circuito" : "Chiudi disegno") {
+                    if circuits.isFrontmost { circuits.closeCircuit() } else { library.closeDesign(model: model) }
+                }
+                .keyboardShortcut("w")
+                .disabled(circuits.isFrontmost ? circuits.document == nil
+                          : library.currentURL == nil && model.document.features.isEmpty && model.document.sketches.isEmpty)
                 Button("Importa mesh (STL, OBJ, 3MF)…") { model.importMeshWithPanel() }.keyboardShortcut("i", modifiers: [.command, .shift])
                 Button("Installa add-in in Fusion 360…") { model.statusMessage = FusionAddInInstaller.installWithPanel() }
             }
