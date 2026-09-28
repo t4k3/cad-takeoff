@@ -96,6 +96,8 @@ final class WorkspaceState {
     var command: CommandSession?
     /// Hole centres being placed while the Hole panel is open.
     var holePlacement: HolePlacement?
+    /// Specchio: a click on a planar face gives the mirror plane (a point of it, its normal).
+    @ObservationIgnored var mirrorFacePick: ((Vec3, Vec3) -> Void)?
 
     func startHole(model: DesignModel, editing feature: Feature? = nil) {
         command?.onCancel()

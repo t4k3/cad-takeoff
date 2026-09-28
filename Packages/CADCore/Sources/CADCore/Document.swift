@@ -34,7 +34,9 @@ public struct PatternSpec: Codable, Sendable, Equatable {
     public enum MirrorPlane: String, Codable, Sendable, CaseIterable {
         case yz, xz, xy
         public var label: String { switch self { case .yz: "Piano YZ (specchia X)"; case .xz: "Piano XZ (specchia Y)"; case .xy: "Piano XY (specchia Z)" } }
-        var axis: Vec3 { switch self { case .yz: Vec3(1, 0, 0); case .xz: Vec3(0, 1, 0); case .xy: Vec3(0, 0, 1) } }
+        var axis: Vec3 { axisVector }
+        /// The plane's normal (the axis it mirrors).
+        public var axisVector: Vec3 { switch self { case .yz: Vec3(1, 0, 0); case .xz: Vec3(0, 1, 0); case .xy: Vec3(0, 0, 1) } }
     }
 
     /// Feature that created the body to copy.
@@ -52,6 +54,9 @@ public struct PatternSpec: Codable, Sendable, Equatable {
     /// Mirror: plane and its offset along its normal (e.g. x = offset for YZ).
     public var plane: MirrorPlane
     public var offset: Double
+    /// Mirror in any plane (a face of the part, picked in the viewport): its normal, with
+    /// `offset` = normal · a point of the plane. Nil: the plane parallel to XY, XZ or YZ.
+    public var mirrorNormal: Vec3?
     /// Join the copies to the original body instead of making a new one.
     public var join: Bool
     /// Copies at given places instead of the kind's grid, circle or plane (a pattern of bodies
@@ -92,6 +97,11 @@ public struct PatternSpec: Codable, Sendable, Equatable {
             }
         case .mirror:
             guard offset.isFinite else { throw KernelError.invalidParameter("specchio: posizione del piano non valida") }
+            if let n = mirrorNormal {
+                guard n.x.isFinite, n.y.isFinite, n.z.isFinite, n.length > 1e-9 else {
+                    throw KernelError.invalidParameter("specchio: direzione del piano non valida")
+                }
+            }
         }
     }
 
@@ -128,7 +138,7 @@ public struct PatternSpec: Codable, Sendable, Equatable {
                 return ({ rotate($0 - c) + c }, rotate)
             }, false)
         case .mirror:
-            let n = plane.axis, o = offset
+            let n = mirrorNormal.map { $0 * (1 / $0.length) } ?? plane.axis, o = offset
             let reflect: (Vec3) -> Vec3 = { v in v - n * (2 * v.dot(n)) }
             return ([({ p in reflect(p) + n * (2 * o) }, reflect)], true)
         }

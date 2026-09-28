@@ -89,3 +89,21 @@ private func run(_ spec: PatternSpec, extra: [Feature] = []) -> ([DesignEvaluato
     #expect(six.issues.isEmpty && MeshValidator.validate(six.bodies[0].mesh).isWatertight)
     #expect(abs((discVol - six.bodies[0].mesh.volume) - 6 * (discVol - oneHole)) < 1e-3)
 }
+
+/// Specchio on a face of any direction (Ross 28/09): the plane through the cube's vertical edge
+/// at (15, 5), normal (1, 1, 0). The copy is a solid, outward, centred on the reflected centre;
+/// the plane is saved and read back.
+@Test func mirrorInAnInclinedPlane() {
+    var spec = PatternSpec(body: cube.id, kind: .mirror)
+    let n = Vec3(1, 1, 0)
+    spec.mirrorNormal = n
+    spec.offset = Vec3(15, 5, 0).dot(n * (1 / n.length))
+    let (m, issues) = run(spec)
+    #expect(issues.isEmpty && m.count == 2 && abs(m[1].mesh.volume - 1000) < 1e-6 && MeshValidator.validate(m[1].mesh).isWatertight)
+    let c = m[1].mesh.bounds!.center
+    #expect(abs(c.x - 20) < 1e-6 && abs(c.y - 10) < 1e-6 && abs(c.z - 5) < 1e-6)
+    var bad = spec; bad.mirrorNormal = Vec3(0, 0, 0)
+    #expect(throws: KernelError.self) { try bad.validate() }
+    let saved = CADDocument(features: [cube, Feature(name: "S", kind: .pattern(spec))])
+    #expect(try! CADDocument.decode(saved.encoded()) == saved)
+}

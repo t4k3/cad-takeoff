@@ -304,6 +304,13 @@ struct ViewportContainer: View {
             sketch.click(p)
             return
         }
+        if let pick = workspace.mirrorFacePick, workspace.command != nil {
+            if let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind,
+               let (origin, normal) = model.evaluation().bodies.first(where: { $0.id == ref.feature })?.snapshot.flatPlane(of: id) {
+                pick(origin, normal)
+            } else { model.statusMessage = "Per lo specchio clicca una faccia piana del pezzo." }
+            return
+        }
         if let placement = workspace.holePlacement, let bodies = viewport.renderer?.visibleBodies {
             if let msg = placement.click(ray, bodies: bodies, tolerance: viewport.screenTolerance(12)), !msg.isEmpty { model.statusMessage = msg }
             return
