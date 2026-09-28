@@ -223,7 +223,12 @@ struct CAMLayerToggles: View {
             }
             if circuits.camView != .gerber {
                 Button { circuits.showExcluded.toggle() } label: {
-                    Label("Esclusi", systemImage: circuits.showExcluded ? "checkmark.square" : "square").font(.caption)
+                    HStack(spacing: 3) {
+                        Image(systemName: circuits.showExcluded ? "checkmark.square" : "square")
+                        Text("Esclusi")
+                    }
+                    .font(.caption)
+                    .fixedSize()
                 }
                 .buttonStyle(.plain)
                 .help("Mostra, sbiaditi, i componenti esclusi dal lotto")

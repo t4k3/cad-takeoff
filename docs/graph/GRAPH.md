@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-28 15:45. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-28 17:22. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -134,6 +134,7 @@ flowchart LR
     T108["T108 · Importazione pacchetto Gerber BOM CPL e varianti di lotto<br/><i>codex</i>"]:::done
     T109["T109 · Diagnosi e collaudo salvataggio delle schede importate nella Home<br/><i>codex</i>"]:::done
     T110["T110 · Diagnosi e collaudo rendering Gerber della scheda importata<br/><i>codex</i>"]:::done
+    T111["T111 · Scheda assemblata: modelli componenti proprietari, allineamento e vista 2D/3D<br/><i>codex</i>"]:::done
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
@@ -393,6 +394,8 @@ flowchart LR
   T107 --> T108
   T108 --> T109
   T108 --> T110
+  T108 --> T111
+  T110 --> T111
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -523,3 +526,4 @@ flowchart LR
 | T108 | Importazione pacchetto Gerber BOM CPL e varianti di lotto | done | codex | T103, T107 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T109 | Diagnosi e collaudo salvataggio delle schede importate nella Home | done | codex | T108 | docs/electronics<br>Tests/Electronics |
 | T110 | Diagnosi e collaudo rendering Gerber della scheda importata | done | codex | T108 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>build/electronics/acceptance-110 |
+| T111 | Scheda assemblata: modelli componenti proprietari, allineamento e vista 2D/3D | done | codex | T108, T110 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh<br>build/electronics/acceptance-111 |

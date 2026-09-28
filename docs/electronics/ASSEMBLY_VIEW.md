@@ -1,6 +1,7 @@
 # Scheda assemblata — T111
 
-Contratto Codex → Claude, 28 settembre 2026. Implementazione in corso.
+Contratto Codex → Claude, 28 settembre 2026. Motore e app integrati;
+prove e limiti effettivi in [VALIDATION.md](VALIDATION.md).
 
 Obiettivo: vedere i componenti sulla scheda Gerber/BOM/CPL, selezionarli con gli stessi
 UUID della distinta, distinguere montati/esclusi e qualità del modello. Non ricostruisce
@@ -59,6 +60,33 @@ dimensionale verificato. I controlli offset e rotazione devono avere anteprima/O
 Persistenza formato **9**, lettura 1–8 compatibile; i nuovi campi sono opzionali per i
 vecchi documenti. Le app precedenti rifiutano il 9 anziché perdere i nuovi dati.
 Assemblaggio e allineamenti sopravvivono a salva/riapri/annulla/ripeti e cambio lotto.
+
+## Uso nell'app e nell'assistente
+
+Aprire il documento `.ftkc` da **Circuiti → Apri** oppure importare Gerber/BOM/CPL.
+Il selettore **Gerber / Assemblata / 3D** passa dagli strati di produzione alla scheda
+con componenti. Assemblata mostra un lato alla volta, mantenendo le coordinate Gerber
+(il lato sotto non viene specchiato). Il 3D usa il substrato realmente forato e i corpi
+del motore; l'immagine CAM viene applicata alle facce della scheda. **Esclusi** permette
+di vedere i componenti omessi sbiaditi oppure nasconderli, senza cancellarli dalla distinta.
+
+Selezionando una riga si leggono modello, qualità e assunzioni. **Regola allineamento**
+prova offset e rotazioni locali; **OK** salva un passo, **Annulla** non modifica il
+documento. La conferma di orientamento/pin 1 resta distinta dalla qualità dimensionale.
+Il campo **Spessore** imposta il valore reale; vuoto significa stima dichiarata di 1,6 mm.
+
+La chat e MCP usano gli stessi comandi transazionali dell'app:
+
+- `circuit_models`: chiavi, nomi, qualità e fonti del catalogo disponibile.
+- `circuit_info`: spessore e sua natura stimata, modello e allineamento dei componenti.
+- `circuit_preview`, azione `set_component_model`: componente, chiave modello,
+  offset/rotazione XYZ e conferma orientamento; solo componente ripristina Automatico.
+- `circuit_preview`, azione `set_board_thickness`: valore in mm; omesso ripristina la stima.
+- `circuit_apply`: conferma della specifica anteprima, con controllo della revisione;
+  segue lo stesso storico della modifica manuale.
+
+La copertura degli strumenti è verificata nel ponte app e nei test MCP. Questo non
+costituisce una prova di una chiamata reale a Claude/ChatGPT cloud o di accesso a JLCPCB.
 
 ## Limiti della prima consegna
 

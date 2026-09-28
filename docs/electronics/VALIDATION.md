@@ -1,5 +1,98 @@
 # Elettronica — prove del motore e dell’app
 
+## T111 — scheda assemblata, 28/09/2026
+
+[Contratto e limiti](ASSEMBLY_VIEW.md). Motore proprietario; generazione del substrato
+da profilo e forature, 15 package parametrici revisionati, corpi/pin 1 in coordinate
+documento, selezione indicizzata, allineamenti distinti dalla CPL e storico formato9.
+
+- `FTK_MANUFACTURING_FIXTURE_DIR=/Users/ross/Downloads bash scripts/test-electronics.sh`:
+  **exit0,254 test Swift PASS**, inclusi i due casi privati reali, e tutti i lettori
+  Python indipendenti PASS (nove chiamate principali nello script). Log
+  `/tmp/ftk-t111-electronics-final.log`, artefatti `build/electronics/run.7x0dfg`.
+- `swift test --package-path Packages/CADCore`: **exit0,202 test PASS**,
+  `/tmp/ftk-t111-cad.log`. Nessun sorgente CAD modificato da Codex.
+- CLI `electronics-assembly` sul documento utente formato8 `ballgunCANBUS.ftkc`,
+  letto senza modificarlo: **73 modelli approssimati sui84 componenti montati**;
+  13 riferimenti senza modello, di cui11 montati e2 esclusi. Il substrato65×81 mm
+  ha46.972 vertici e94.572 triangoli, con158 forature incluse4 asole. Spessore1,6 mm
+  **stimato**, non ricavato dal Gerber. Report derivato di3.999.457 byte in
+  `build/electronics/acceptance-111/ballgun-assembly-first.json`.
+- Il lettore Python separato verifica chiusura per spigoli orientati, volume positivo,
+  matrici con determinante+1 anche sotto, identità/riferimenti/lotti e assenza di
+  posizioni inventate. PASS in3,37s totali (CLI, JSON, lettore e controllo anti-sovrascrittura).
+  Log `/tmp/ftk-t111-real-mesh.log`.
+
+I test del substrato verificano anche che i triangoli superiori non tappino i fori,
+volumi analitici con tolleranza di tessellazione, contorni concavi e aperture interne.
+I test dei comandi coprono anteprima senza mutazione, annulla/riapri/ripeti, revisioni
+obsolete, input non finiti, formato9 anche nei rami futuri e import di nuovi lotti senza
+perdere correzioni. Non si può confermare l'orientamento di un componente senza CPL.
+Il riuso dello snapshot conserva i buffer del substrato solo con profilo/fori/spessore
+identici; cambi di geometria o diagnostica sono invalidati, lotti/istanze aggiornati.
+
+Regressione ordine 2D: il nuovo test top/bottom con rotazioni CPL/locali fallisceva
+prima della correzione (18 asserzioni: terminali sovrapposti al corpo del condensatore).
+Dopo la correzione, 15/15 test snapshot PASS e suite completa sopra PASS. Le sagome
+per parte sono ordinate dal fondo; per parti inclinate/intersecanti resta un limite
+esplicito della vista 2D, senza alterare le mesh 3D.
+
+QA nativa App/T97 eseguita da Codex su copie separate, v1.0.103/5e0c379+:
+la build `qa-t111` delle 16:57 ha mostrato l'inversione Y della texture 3D;
+la build `qa-t111b` delle 17:09 la corregge. Nel confronto visivo i connettori
+J9/J7/J8 e la serigrafia +5V/DTx coincidono sul bordo posteriore, J2/J3 e i segni
++/− sul bordo anteriore. Fori e asole rimangono aperti. Il 2D mostra i terminali dei
+condensatori sotto i corpi; il lato inferiore mostra il proprio rame e il marcatore
+sbiadito di T1, senza i corpi del lato superiore.
+
+Controlli indipendenti JSON dopo i salvataggi reali della UI, in
+`build/electronics/acceptance-111`:
+
+- Offset locale X 1 mm e rotazione Z 90° di R1 in anteprima → Annulla → Salva:
+  revisione 1, disegno identico all'originale (`ui-cancelled.ftkc`).
+- Stessa modifica → OK → Salva: revisione 2, un solo nuovo passo; solo `modelBinding`
+  modificato, geometria e CPL identiche (`ui-aligned.ftkc`).
+- Annulla → Salva: revisione 3, passato 1/futuro 1, disegno originale ripristinato.
+  Chiusura app, avvio build 17:09, riapertura dal pannello, Ripeti → Salva:
+  revisione 4, disegno e geometria identici alla precedente conferma
+  (`ui-reopened-before-redo.ftkc`, `ui-redone-after-reopen.ftkc`).
+- Campo spessore con virgola italiana 2,4 mm → Salva: impostazione persistita e
+  un solo passo aggiunto (`ui-thickness.ftkc`, revisione 5).
+- C1 escluso dal lotto e nascosto nel 3D: corpo assente, 83 montati ma tutti gli
+  86 componenti conservati nel file (`ui-excluded-c1.ftkc`). Annulla ripristina 84.
+- A fine prova, la copia mostrata `ui-undone.ftkc` è a revisione 7 con disegno e
+  geometria identici all'originale: annullate tutte le correzioni introdotte per QA.
+  I quattro SHA-256 originali (ZIP, BOM, CPL, documento utente) sono invariati.
+
+`FTK_MANUFACTURING_FIXTURE_DIR=/Users/ross/Downloads bash scripts/test-circuits.sh`:
+**PASS, exit 0**, eseguito indipendentemente da Codex, log
+`/tmp/ftk-t111-app-independent.log`. Include anteprima/storico/revisioni obsolete,
+strumenti assistente, picking con occlusione del substrato, primo frame 2D senza input,
+texture arrivata dopo lo snapshot e rendering RealityKit fuori schermo: campione di
+una pista asimmetrica confrontato col suo punto speculare, per rilevare l'inversione Y.
+
+Riapertura ricollaudata nella build `qa-t111c` delle **17:18, v1.0.105/4da29d9+**:
+Circuiti → Apri → percorso della copia salvata, pulsante Apri abilitato già nella prima
+lettura UI dopo Invio, file aperto e storico Ripeti conservato. Il filtro risolve i
+riferimenti ai file prima dell'estensione e configura esplicitamente il pannello.
+`scripts/build.sh` della stessa build riporta **BUILD SUCCEEDED**, riscontrato anche
+nel log `build/xcodebuild.log`; il suo exit status è quello di xcodebuild.
+
+CI integrata di Claude (17 passaggi, worktree pulito dal commit): **17/17 PASS** su
+`4da29d9` (motore `66fd700` + app) e di nuovo su `9dbb7ea` (filtro Apri), log
+`build/ci/run.gnD1PD` e `build/ci/run.Fn9TaY` nel worktree di CI, `08-app` BUILD SUCCEEDED.
+Ultimo ritocco T97 dopo la QA: etichetta «Esclusi» nella vista Assemblata 2D mostrata
+come icona + testo a misura fissa (nel 3D era già corretta); verifica nella CI del
+commit documentale che pubblica il tutto.
+
+Commit locali: motore `66fd700`, app/strumenti `4da29d9`, filtro file `9dbb7ea`.
+CI integrata sul commit finale in esecuzione da Claude: non ancora dichiarata PASS qui.
+Rifinitura visiva consegnata a Claude/T97: in Assemblata 2D il pulsante Esclusi è
+funzionante ma può perdere l'etichetta per compressione del layout (nel 3D è corretta).
+Nessuna prova nel viewer JLCPCB o su scheda fisica; nessun componente del catalogo v1
+è un modello specifico certificato. Mancano modelli dei11 componenti montati speciali,
+import di asset3D specifici, associazione all'assieme CAD e controllo delle interferenze.
+
 ## T108 — importazione Gerber/BOM/CPL e lotti, 28/09/2026
 
 [Contratto, sottoinsiemi e limiti](MANUFACTURING_IMPORT.md). Motore nativo senza

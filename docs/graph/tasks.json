@@ -2170,6 +2170,30 @@
       "notes": [
         "2026-09-28 15:45 codex: Causa Canvas App corretta da Claude0364bb8: dipendenze del body per artwork/strati. Motore indipendente0.44s e test realePASS, CAD202PASS, ponteApp con regressione primo framePASS. QA nativa qa-t11015:41: anteprima e primo frame completi senza hover entro primo screenshot1.779s incluso tool; interruttore rame immediato; riaperto ballgunCANBUS.ftkc senza scriverlo. Documento QA aggiornato, file originali invariati. CI integrata Claude in corso."
       ]
+    },
+    {
+      "id": "T111",
+      "title": "Scheda assemblata: modelli componenti proprietari, allineamento e vista 2D/3D",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T108",
+        "T110"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics",
+        "scripts/test-electronics.sh",
+        "build/electronics/acceptance-111"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-28 16:39",
+      "finished": "2026-09-28 17:22",
+      "notes": [
+        "2026-09-28 17:22 codex: Prima scheda assemblata proprietaria consegnata:15modelli generici revisionati, substrato realmente forato, snapshot/pick, allineamenti e spessore transazionali, persistenza9, app2D/3D e chat/MCP con Claude. Test254Swift+lettori e CAD202PASS, ponte App PASS, build e QA nativa salva/riapri/undo/redo/lotto PASS. Ballgun73modelli approssimati su84montati,11senza modello; nessuna certificazione ingombri o E5 completo. Prove e limiti in VALIDATION.md; originali invariati."
+      ]
     }
   ]
 }
