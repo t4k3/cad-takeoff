@@ -59,6 +59,7 @@
 		78C8326AFABC33FCF9670163 /* FusionTakeoffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1B5C7164014C07C5C31BC /* FusionTakeoffApp.swift */; };
 		7A45829B787DC333268E4F31 /* ChatGPTConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01192770DA5C6CA750312AB6 /* ChatGPTConnector.swift */; };
 		7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F28DA722F5CEA29D56B8C6 /* DesignTabs.swift */; };
+		7E920FD6EEEFED77A6F9430F /* DesignModel+Slicers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE60968931C46AB699AA8D4 /* DesignModel+Slicers.swift */; };
 		80A196158C024C5AD959E030 /* CircuitModel+Fabrication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6817EF5D8EFE4F1E0BA17D10 /* CircuitModel+Fabrication.swift */; };
 		829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */ = {isa = PBXBuildFile; fileRef = 2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */; };
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
@@ -153,6 +154,7 @@
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
 		29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitCommand.swift; sourceTree = "<group>"; };
 		2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */ = {isa = PBXFileReference; path = FusionTakeoffExport.manifest; sourceTree = "<group>"; };
+		2AE60968931C46AB699AA8D4 /* DesignModel+Slicers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Slicers.swift"; sourceTree = "<group>"; };
 		3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = CADTakeoffImportProject.py; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
 		3770472710CAC4D5EE4F671D /* fusion_history.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = fusion_history.py; sourceTree = "<group>"; };
@@ -560,6 +562,7 @@
 			isa = PBXGroup;
 			children = (
 				5B20A8FC97A9ABF79AEA9CD6 /* DesignModel.swift */,
+				2AE60968931C46AB699AA8D4 /* DesignModel+Slicers.swift */,
 				79EE699ACBBB6969A0CAA525 /* Electronics */,
 				9471C69835015BE9175391CA /* Tools */,
 			);
@@ -806,6 +809,7 @@
 				865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */,
 				1D1A43D30ABB4C6A139B7FA7 /* ConnectorsPanel.swift in Sources */,
 				B48F98947A948B2AF41FEF8B /* DesignModel+Files.swift in Sources */,
+				7E920FD6EEEFED77A6F9430F /* DesignModel+Slicers.swift in Sources */,
 				777BDBC9FE2323C253CECC23 /* DesignModel+Tools.swift in Sources */,
 				DA96A4AB664D740100D0BECE /* DesignModel.swift in Sources */,
 				7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */,
@@ -960,7 +964,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.93;
+				MARKETING_VERSION = 1.0.94;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1024,7 +1028,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				MARKETING_VERSION = 1.0.93;
+				MARKETING_VERSION = 1.0.94;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

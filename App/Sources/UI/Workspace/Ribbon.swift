@@ -446,6 +446,21 @@ struct Ribbon: View {
                 .disabled(model.document.features.isEmpty)
                 .help("Tavola tecnica ISO (primo diedro) a schermo: aggiungi, sposta o togli quote, poi PDF o DXF (⇧⌘P)")
         }
+        // The slicers installed on this Mac: the part opens there, ready to slice.
+        let slicers = DesignModel.installedSlicers
+        if !slicers.isEmpty {
+            ToolGroup("INVIA A") {
+                ForEach(slicers) { slicer in
+                    Button { model.send(to: slicer, name: library.currentName) } label: {
+                        Label { Text(slicer.name) } icon: {
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: slicer.url.path)).resizable().frame(width: 22, height: 22)
+                        }
+                    }
+                    .disabled(model.document.features.isEmpty)
+                    .help("Apre i corpi visibili in \(slicer.name) (3MF con parti e colori, risoluzione fine), pronti da stampare")
+                }
+            }
+        }
     }
 }
 
