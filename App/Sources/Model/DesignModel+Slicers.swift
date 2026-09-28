@@ -31,7 +31,7 @@ extension DesignModel {
     /// Writes the 3MF next to the app's temporary files and opens it with `slicer`.
     func send(to slicer: Slicer, name: String) {
         do {
-            let data = try export3MFData(fine: true)
+            let (data, open) = try export3MF(fine: true, forSlicer: true)
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Invio allo slicer", isDirectory: true)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let clean = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
@@ -43,7 +43,7 @@ extension DesignModel {
             NSWorkspace.shared.open([url], withApplicationAt: slicer.url, configuration: configuration) { [weak self] _, error in
                 Task { @MainActor in
                     self?.statusMessage = error.map { "\(slicer.name) non ha aperto il file: \($0.localizedDescription)" }
-                        ?? "Inviato a \(slicer.name): \(url.lastPathComponent) — parti e colori, verifica i filamenti"
+                        ?? "Inviato a \(slicer.name): \(url.lastPathComponent) — parti e colori, verifica i filamenti" + Self.openNote(open)
                 }
             }
         } catch {

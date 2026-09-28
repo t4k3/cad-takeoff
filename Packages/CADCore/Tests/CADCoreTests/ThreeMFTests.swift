@@ -48,6 +48,46 @@ struct ThreeMFTests {
         #expect(bytes.contains("<component objectid=\"2\"/>"))
     }
 
+    /// Ross 28/09: pieces placed apart are separate objects on the slicer's plate — also two
+    /// pieces of one body; touching parts (a two-colour insert) stay one object with its parts;
+    /// a void stays inside its piece.
+    @Test func separatePiecesAreSeparateObjects() throws {
+        func items(_ data: Data) -> Int { String(decoding: data, as: UTF8.self).components(separatedBy: "<item ").count - 1 }
+        func names(_ data: Data) -> [String] {
+            String(decoding: data, as: UTF8.self).components(separatedBy: "type=\"model\" name=\"").dropFirst().map { String($0.prefix { $0 != "\"" }) }
+        }
+        let a = ThreeMFPart(name: "Vaso", mesh: box)
+        let b = ThreeMFPart(name: "Base", mesh: box.translated(by: Vec3(100, 0, 0)))
+        #expect(items(try ThreeMFExporter.archive(parts: [a, b])) == 2)
+        // One body, two pieces apart: two objects «Corpo 1», «Corpo 2».
+        var two = box
+        let far = box.translated(by: Vec3(0, 80, 0)), base = UInt32(two.vertices.count)
+        two.vertices += far.vertices; two.indices += far.indices.map { $0 + base }
+        let split = try ThreeMFExporter.archive(parts: [ThreeMFPart(name: "Corpo", mesh: two)])
+        #expect(items(split) == 2 && names(split).contains("Corpo 1") && names(split).contains("Corpo 2"))
+        // An insert on its base: one object, two parts.
+        let insert = ThreeMFPart(name: "Inserto", mesh: Primitives.box(width: 10, depth: 10, height: 8).translated(by: Vec3(0, 0, 5)))
+        #expect(items(try ThreeMFExporter.archive(parts: [a, insert])) == 1)
+        // A hollow box (inner shell turned inwards): one piece.
+        var hollow = Primitives.box(width: 20, depth: 20, height: 20)
+        var inner = Primitives.box(width: 10, depth: 10, height: 10).translated(by: Vec3(0, 0, 5))
+        for i in stride(from: 0, to: inner.indices.count, by: 3) { inner.indices.swapAt(i, i + 1) }
+        let hb = UInt32(hollow.vertices.count)
+        hollow.vertices += inner.vertices; hollow.indices += inner.indices.map { $0 + hb }
+        #expect(ThreeMFExporter.shells(hollow).count == 1)
+        #expect(items(try ThreeMFExporter.archive(parts: [ThreeMFPart(name: "Cavo", mesh: hollow)])) == 1)
+    }
+
+    /// For a slicer an open surface goes anyway (it repairs small gaps); broken indices never.
+    @Test func openSurfaceForTheSlicer() throws {
+        var open = box; open.indices.removeLast(3)
+        let part = ThreeMFPart(name: "Aperta", mesh: open)
+        #expect(throws: ThreeMFExportError.self) { try ThreeMFExporter.archive(parts: [part]) }
+        #expect(try ThreeMFExporter.archive(parts: [part], allowOpen: true).count > 100)
+        var broken = box; broken.indices[0] = UInt32.max
+        #expect(throws: ThreeMFExportError.self) { try ThreeMFExporter.archive(parts: [ThreeMFPart(name: "Rotta", mesh: broken)], allowOpen: true) }
+    }
+
     @Test func rejectsInvalidMeshWithoutIndexTraps() {
         var invalidIndex = box; invalidIndex.indices[0] = UInt32.max
         var partialTriangle = box; partialTriangle.indices.removeLast()

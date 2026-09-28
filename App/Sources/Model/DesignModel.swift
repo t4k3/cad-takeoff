@@ -583,7 +583,13 @@ final class DesignModel {
     }
 
     /// Export visible parts, or the explicit feature even when hidden. Does not change the scene.
-    func export3MFData(featureID: UUID? = nil, fine: Bool = false) throws -> Data {
+    /// `forSlicer`: a body whose surface is not closed goes anyway (the slicer repairs small
+    /// gaps) and is named in `openBodies`; otherwise it is refused.
+    func export3MFData(featureID: UUID? = nil, fine: Bool = false, forSlicer: Bool = false) throws -> Data {
+        try export3MF(featureID: featureID, fine: fine, forSlicer: forSlicer).data
+    }
+
+    func export3MF(featureID: UUID? = nil, fine: Bool = false, forSlicer: Bool = false) throws -> (data: Data, openBodies: [String]) {
         let all = exportEvaluation(fine: fine).bodies
         let bodies: [DesignEvaluator.Body]
         if let featureID {
@@ -594,11 +600,15 @@ final class DesignModel {
             }
             bodies = [body]
         } else { bodies = all.filter(\.isVisible) }
+        var open: [String] = []
         let parts = try bodies.map { body -> ThreeMFPart in
-            try CADToolValidation.mesh(body.mesh)
+            do { try CADToolValidation.mesh(body.mesh) } catch {
+                guard forSlicer, !body.mesh.isEmpty else { throw error }
+                open.append(body.source.name)
+            }
             return ThreeMFPart(id: body.id, name: body.source.name, mesh: body.mesh, color: body.source.color)
         }
-        return try ThreeMFExporter.archive(parts: parts)
+        return (try ThreeMFExporter.archive(parts: parts, allowOpen: forSlicer), open)
     }
 
     // MARK: Import (T74)
@@ -799,9 +809,14 @@ final class DesignModel {
         } catch { statusMessage = "Errore export DXF: \(error.localizedDescription)" }
     }
 
+    /// Bodies sent with an open surface: said, so the slicer's repair is expected.
+    static func openNote(_ open: [String]) -> String {
+        open.isEmpty ? "" : " · superficie non chiusa in \(open.joined(separator: ", ")): lo slicer la ripara, controlla l'anteprima"
+    }
+
     func export3MFWithPanel() {
         do {
-            _ = try export3MFData()   // what is wrong shows before choosing where
+            _ = try export3MFData(forSlicer: true)   // what is wrong shows before choosing where
             let panel = NSSavePanel()
             panel.allowedContentTypes = [UTType(filenameExtension: "3mf") ?? UTType(importedAs: "org.3mfconsortium.3mf", conformingTo: .data)]
             panel.nameFieldStringValue = "Design.3mf"
@@ -809,9 +824,10 @@ final class DesignModel {
             panel.accessoryView = quality
             guard panel.runModal() == .OK, let url = panel.url else { return }
             exportFine = quality.indexOfSelectedItem == 0
-            let data = try export3MFData(fine: exportFine)
+            let (data, open) = try export3MF(fine: exportFine, forSlicer: true)
             try data.write(to: url, options: .atomic)
             statusMessage = "Esportato \(url.lastPathComponent) — parti e colori; verificare i filamenti nello slicer"
+                + Self.openNote(open)
         } catch { statusMessage = "Errore export 3MF: \(error.localizedDescription)" }
     }
 }
