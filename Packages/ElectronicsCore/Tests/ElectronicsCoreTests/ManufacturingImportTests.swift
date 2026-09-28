@@ -33,7 +33,7 @@ final class ManufacturingImportTests: XCTestCase {
         document = try ElectronicsDocument.decode(document.encoded())
         try document.redo(expectedRevision: 2)
         XCTAssertEqual(document.design.manufacturing, package)
-        XCTAssertEqual(document.formatVersion, 8)
+        XCTAssertEqual(document.formatVersion, 9)
         XCTAssertEqual(try ElectronicsDocument.decode(document.encoded()), document)
     }
 
@@ -136,12 +136,12 @@ final class ManufacturingImportTests: XCTestCase {
         let encoder = JSONEncoder()
         var old = try XCTUnwrap(JSONSerialization.jsonObject(with: document.encoded()) as? [String: Any])
         old["formatVersion"] = 7
-        XCTAssertEqual(try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject: old)).formatVersion, 8)
+        XCTAssertEqual(try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject: old)).formatVersion, 9)
         try ElectronicsCommands.apply(.manufacturing(.importPackage(fixture())), to: &document, expectedRevision: 0)
         old = try XCTUnwrap(JSONSerialization.jsonObject(with: encoder.encode(document)) as? [String: Any])
         old["formatVersion"] = 7
         XCTAssertThrowsError(try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject: old)))
-        old["formatVersion"] = 9
+        old["formatVersion"] = 10
         XCTAssertThrowsError(try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject: old)))
     }
 

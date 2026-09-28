@@ -107,10 +107,16 @@ public enum ElectronicsManufacturingImport {
                       current.drills == incoming.drills, current.bounds == incoming.bounds else {
                     throw failure("manufacturing_different_board", "Il pacchetto appartiene a un’altra scheda: aprire un circuito nuovo.")
                 }
+                if let settings = incoming.assemblySettings, settings != current.assemblySettings {
+                    throw failure("manufacturing_assembly_conflict", "Spessore o impostazioni di assemblaggio diversi: modificare la scheda con il comando dedicato.", [current.id])
+                }
                 // A new lot may omit entries from BOTH tables. Retain their known metadata/positions.
                 for c in incoming.components {
                     if let i = current.components.firstIndex(where: { $0.id == c.id }) {
                         let old = current.components[i]
+                        if let binding = c.modelBinding, binding != old.modelBinding {
+                            throw failure("manufacturing_assembly_conflict", "\(c.reference): allineamento diverso. Usare il comando del modello senza alterare i lotti precedenti.", [c.id])
+                        }
                         for (previous, next) in [(old.value, c.value), (old.footprint, c.footprint), (old.lcscPartNumber, c.lcscPartNumber)] {
                             if let previous, let next, previous != next {
                                 throw failure("manufacturing_part_conflict", "\(c.reference): valore, impronta o codice LCSC diverso. I lotti precedenti non vengono modificati: importare questa distinta in un circuito separato.", [c.id])
@@ -174,6 +180,19 @@ public enum ElectronicsManufacturingImport {
                 throw failure("manufacturing_lot", "Lotto inesistente: rileggere il pacchetto.", [id])
             }
             p.activeLotID = id; design.manufacturing = p
+        case .setBoardThickness(let thickness):
+            guard var p = design.manufacturing else {
+                throw failure("manufacturing_missing", "Aprire una scheda importata prima di impostare lo spessore.")
+            }
+            p.assemblySettings = thickness.map { .init(boardThickness: $0) }
+            design.manufacturing = p
+        case .setComponentModel(let id, let binding):
+            guard var p = design.manufacturing,
+                  let i = p.components.firstIndex(where: { $0.id == id }) else {
+                throw failure("manufacturing_component", "Componente inesistente: rileggere la scheda.", [id])
+            }
+            p.components[i].modelBinding = binding
+            design.manufacturing = p
         }
     }
 

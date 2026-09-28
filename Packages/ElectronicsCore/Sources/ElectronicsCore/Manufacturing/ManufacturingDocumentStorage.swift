@@ -103,6 +103,7 @@ enum ManufacturingDocumentStorage {
             try c.encode(value.activeLotID, forKey: .activeLotID)
             try c.encode(value.sources, forKey: .sources)
             try c.encode(value.issues, forKey: .issues)
+            try c.encodeIfPresent(value.assemblySettings, forKey: .assemblySettings)
         }
     }
 
@@ -127,14 +128,15 @@ enum ManufacturingDocumentStorage {
             lots: try c.decode([ManufacturingLot].self, forKey: .lots),
             activeLotID: try c.decode(UUID.self, forKey: .activeLotID),
             sources: try c.decode([ManufacturingSource].self, forKey: .sources), bounds: geometry.bounds,
-            issues: try c.decode([ElectronicsIssue].self, forKey: .issues))
+            issues: try c.decode([ElectronicsIssue].self, forKey: .issues),
+            assemblySettings: try c.decodeIfPresent(ManufacturingAssemblySettings.self, forKey: .assemblySettings))
     }
 
     private enum DesignKeys: String, CodingKey {
         case manufacturing, schematic, id, name, library, components, nets, connections, board, variants
     }
     private enum PackageKeys: String, CodingKey {
-        case id, name, geometryID, layers, drills, components, lots, activeLotID, sources, bounds, issues
+        case id, name, geometryID, layers, drills, components, lots, activeLotID, sources, bounds, issues, assemblySettings
     }
     private enum EditKeys: String, CodingKey { case title, before, after }
     private static func failure(_ message: String) -> ElectronicsFailure {

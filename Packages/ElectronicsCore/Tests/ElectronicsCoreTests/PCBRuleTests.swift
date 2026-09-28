@@ -195,7 +195,7 @@ final class PCBRuleTests: XCTestCase {
         }
         json = strip(json) as! [String:Any]; json["formatVersion"] = 4
         var migrated = try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject:json))
-        XCTAssertEqual(migrated.formatVersion,8); XCTAssertEqual(migrated,d)
+        XCTAssertEqual(migrated.formatVersion,9); XCTAssertEqual(migrated,d)
         try migrated.undo(expectedRevision:migrated.revision)
         try migrated.redo(expectedRevision:migrated.revision); XCTAssertEqual(migrated.design,d.design)
     }

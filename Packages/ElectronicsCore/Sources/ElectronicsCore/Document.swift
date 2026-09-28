@@ -10,7 +10,7 @@ public struct ElectronicsEdit: Codable, Equatable, Sendable {
 /// The history is persisted. Revision is monotonic even across undo/redo, so assistant calls
 /// cannot reuse a stale revision after an ABA (edit -> undo) transition.
 public struct ElectronicsDocument: Codable, Equatable, Sendable {
-    public private(set) var formatVersion: Int = 8
+    public private(set) var formatVersion: Int = 9
     public private(set) var revision: UInt64 = 0
     public private(set) var design: ElectronicsDesign
     public private(set) var past: [ElectronicsEdit] = []
@@ -80,13 +80,13 @@ public struct ElectronicsDocument: Codable, Equatable, Sendable {
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let inputVersion = try c.decode(Int.self, forKey: .formatVersion)
-        guard (1...8).contains(inputVersion) else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(inputVersion). Aggiornare l’app prima di aprire il file.") }
+        guard (1...9).contains(inputVersion) else { throw Self.failure("unsupported_version", "Versione elettronica non supportata: \(inputVersion). Aggiornare l’app prima di aprire il file.") }
         // Missing optional fields decode as nil. Older readers must reject CAM data,
         // rather than silently drop artwork and manufacturing lots on save.
-        formatVersion = 8
+        formatVersion = 9
         revision = try c.decode(UInt64.self, forKey: .revision)
         let geometry = try c.decodeIfPresent(ManufacturingDocumentStorage.Pool.self, forKey: .manufacturingGeometry) ?? [:]
-        guard inputVersion == 8 || geometry.isEmpty else {
+        guard inputVersion >= 8 || geometry.isEmpty else {
             throw Self.failure("unsupported_version", "Archivio geometrie presente in un formato precedente.")
         }
         design = try ManufacturingDocumentStorage.design(from: c.superDecoder(forKey: .design), pool: geometry)
@@ -94,6 +94,11 @@ public struct ElectronicsDocument: Codable, Equatable, Sendable {
         future = try ManufacturingDocumentStorage.edits(from: c.superDecoder(forKey: .future), pool: geometry)
         if inputVersion < 8, allStates.contains(where: { $0.manufacturing != nil }) {
             throw Self.failure("unsupported_version", "Dati di produzione presenti in un formato precedente: correggere la versione del documento.")
+        }
+        if inputVersion < 9, allStates.contains(where: {
+            $0.manufacturing.map { $0.assemblySettings != nil || $0.components.contains { $0.modelBinding != nil } } ?? false
+        }) {
+            throw Self.failure("unsupported_version", "Allineamenti dei modelli presenti in un formato precedente: correggere la versione del documento.")
         }
         try ManufacturingDocumentStorage.validate(geometry, states: allStates)
         for state in allStates {

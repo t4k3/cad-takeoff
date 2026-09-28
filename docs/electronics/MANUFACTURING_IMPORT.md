@@ -23,16 +23,19 @@ ManufacturingCommand.selectLot(UUID)
 
 Usare `ElectronicsCommands.preview/apply` con `expectedRevision`, stessa istanza
 di comando tra anteprima e conferma. Stato in `design.manufacturing` opzionale,
-persistenza formato 8 (lettura 1–8). Un passo per importazione o modifica lotto.
+persistenza attuale formato 9 (lettura 1–9; T108 introdusse il formato 8).
+Un passo per importazione o modifica lotto.
 Parser, validazione e snapshot in background cancellabile; l'app aggiunge chiave
 documento/epoca/revisione e token come l'importatore di librerie. Nessuna rete o
 I/O nel core. Il lettore ZIP lavora in memoria, usa solo libz del sistema Apple
 per la decompressione; nessun package esterno.
 
 `ManufacturingPackage`: `id`, `name`, `layers`, `drills`, `components`, `lots`,
-`activeLotID`, `sources`, `bounds`, `issues`. `activeLot` e `isFitted(UUID)`.
+`activeLotID`, `sources`, `bounds`, `issues`, `assemblySettings` opzionale.
+`activeLot` e `isFitted(UUID)`.
 `ManufacturingComponent`: ID stabile, `reference`, `value`, `footprint`,
-`lcscPartNumber`, `placement` opzionale (position, rotationDegrees, side).
+`lcscPartNumber`, `placement` opzionale (position, rotationDegrees, side),
+`modelBinding` opzionale per l'allineamento visuale, senza cambiare la CPL.
 `ManufacturingLot`: `id`, `name`, `fittedComponentIDs`, `bomSHA256` opzionale.
 Assenza di posizione o codice non equivale a componente assente.
 
@@ -61,8 +64,9 @@ Importare in un circuito vuoto oppure aggiungere un lotto allo stesso pacchetto
 geometrico; mai sovrapporre silenziosamente una scheda importata a un PCB nativo.
 Mostrare gli strati, i fori e i riferimenti alle posizioni, tabella componenti con
 controllo Monta, selettore lotti e avvisi. Conservare quelli esclusi sul disegno.
-Non abilitare modifiche delle piste native, DRC/ERC nativi, export di produzione
-rigenerato o montaggio 3D su questa geometria CAM: servono contratti dedicati.
+Non abilitare modifiche delle piste native, DRC/ERC nativi o export di produzione
+rigenerato su questa geometria CAM. T111 introduce il contratto dedicato
+[Scheda assemblata](ASSEMBLY_VIEW.md), con modelli generici esplicitamente approssimati.
 Schema originale, storico precedente e modelli 3D non sono presenti nei tre file.
 Mostrare questo limite in modo breve; lo storico dell'importazione è invece reale.
 
@@ -81,7 +85,7 @@ La prova nell'app è registrata separatamente in VALIDATION.md.
 
 ## Storico e conservazione dei lotti
 
-Formato8: `manufacturingGeometry` alla radice del documento conserva una volta
+Dal formato8, anche nel formato9: `manufacturingGeometry` alla radice del documento conserva una volta
 sola layers/drills/bounds per UUID pacchetto. Gli stati correnti/past/future
 mantengono i metadati e i lotti e referenziano `geometryID`. La lettura espande in
 memoria array condivisi; nessuna duplicazione dell'artwork a ogni casella Monta.

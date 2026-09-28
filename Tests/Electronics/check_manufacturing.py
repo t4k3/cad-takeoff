@@ -24,7 +24,7 @@ def run(archive, bom, cpl, output, good=True):
 
 def load(path):
     doc = json.loads(path.read_text())
-    assert doc['formatVersion'] == 8 and doc['revision'] == 1
+    assert doc['formatVersion'] == 9 and doc['revision'] == 1
     assert len(doc['past']) == 1 and not doc['future']
     assert doc['past'][0]['after'] == doc['design']
     assert doc['past'][0]['before'].get('manufacturing') is None

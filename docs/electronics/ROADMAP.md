@@ -18,6 +18,14 @@
 
 ## Stato E1 al 27/09
 
+T111 (28/09) introduce la [scheda assemblata da file di produzione](ASSEMBLY_VIEW.md):
+catalogo proprietario di 15 package generici, substrato forato, corpi/pin 1 e selezione
+nel sistema del documento, allineamenti e spessore nello storico formato9. Primo
+controllo Ballgun:73 modelli approssimati su84 montati,11 montati ancora senza modello.
+App2D/3D in integrazione con Claude/T97; esiti effettivi in [VALIDATION.md](VALIDATION.md).
+Non chiude T96: mancano modelli specifici verificati, collegamento associativo al CAD
+e controllo delle interferenze con l'involucro.
+
 T108 (28/09) aggiunge l'[importazione di pacchetti Gerber/BOM/CPL](MANUFACTURING_IMPORT.md),
 con geometria CAM conservata, riferimenti e lotti distinti, omissioni intenzionali,
 preview/undo e storico formato8. Collaudato sul pacchetto reale Ballgun, incluse

@@ -88,7 +88,7 @@ def check(root, saved, mode):
     actual = read(saved)
     baseline = initial['design']
     identity = read(root / 'manifest.json')['libraryID']
-    assert actual['formatVersion'] == 8
+    assert actual['formatVersion'] == 9
     if mode in ('unchanged', 'undone'):
         assert actual['design'] == baseline
         if mode == 'unchanged':

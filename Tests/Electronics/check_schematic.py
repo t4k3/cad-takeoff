@@ -15,7 +15,7 @@ def terminal(encoded):
 
 def check_document(name, expected_nets):
     doc = json.loads((root / name).read_text())
-    assert doc['formatVersion'] == 8
+    assert doc['formatVersion'] == 9
     design = doc['design']
     schema = design['schematic']
     parent = {}

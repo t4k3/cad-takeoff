@@ -24,7 +24,7 @@ def dist(p,a,b):
 for name in ('solid','connected','filtered','starved','undo','redo','isolated'):
     data=read(f'thermals-{name}.json'); doc=read(f'thermals-{name}.ftkc')
     polygons=cells(data); zone=data['zones'][0]
-    assert doc['formatVersion']==8 and all(area(c)>0 for c in polygons)
+    assert doc['formatVersion']==9 and all(area(c)>0 for c in polygons)
     assert abs(sum(map(area,polygons))-zone['area'])<1e-7
     assert all(a['after']==b['before'] for a,b in zip(doc['past'],doc['past'][1:]))
     assert doc['past'][-1]['after']==doc['design']

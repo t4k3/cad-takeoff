@@ -5,6 +5,11 @@ extension ElectronicsManufacturingImport {
     public static func requireIntegrity(_ package: ManufacturingPackage) throws {
         try Task.checkCancellation()
         try requireName(package.name)
+        if let thickness = package.assemblySettings?.boardThickness {
+            guard thickness.isFinite, (0.1...20).contains(thickness) else {
+                throw failure("manufacturing_board_thickness", "Spessore scheda non valido: inserire da 0,1 a 20 mm.", [package.id])
+            }
+        }
         guard package.layers.count <= 9, package.drills.count <= 100_000,
               package.components.count <= 20_000, (1...1_000).contains(package.lots.count),
               package.sources.count <= 10_000, package.issues.count <= 20_000 else {
@@ -70,6 +75,18 @@ extension ElectronicsManufacturingImport {
                 guard p.reference.uppercased() == c.reference.uppercased(), ElectronicsGeometry.valid(p.position),
                       ElectronicsGeometry.validAngle(p.rotationDegrees) else {
                     throw failure("manufacturing_position", "Posizione componente non valida.", [c.id])
+                }
+            }
+            if let binding = c.modelBinding {
+                guard !binding.alignmentVerified || c.placement != nil else {
+                    throw failure("manufacturing_model_alignment", "\(c.reference): manca la posizione CPL. Non è possibile confermare l’orientamento prima del posizionamento.", [c.id])
+                }
+                guard ManufacturingPackageCatalog.model(key: binding.modelKey) != nil else {
+                    throw failure("manufacturing_model_key", "\(c.reference): modello non disponibile. Scegliere un modello del catalogo.", [c.id])
+                }
+                guard [binding.offset.x, binding.offset.y, binding.offset.z].allSatisfy({ $0.isFinite && abs($0) <= 1000 }),
+                      [binding.rotationDegrees.x, binding.rotationDegrees.y, binding.rotationDegrees.z].allSatisfy(ElectronicsGeometry.validAngle) else {
+                    throw failure("manufacturing_model_alignment", "\(c.reference): allineamento non valido. Usare offset entro ±1000 mm e rotazioni finite.", [c.id])
                 }
             }
         }

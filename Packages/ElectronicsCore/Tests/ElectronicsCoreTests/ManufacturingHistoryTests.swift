@@ -51,6 +51,7 @@ final class ManufacturingHistoryTests: XCTestCase {
         try ElectronicsCommands.apply(.manufacturing(.importPackage(fixture(primitiveCount: 3))), to: &document, expectedRevision: 0)
         try document.undo(expectedRevision: 1)
         var old = try object(document.encoded())
+        old["formatVersion"] = 8
         old.removeValue(forKey: "manufacturingGeometry")
         // Domain types retain their original complete inline Codable representation.
         old["design"] = try object(JSONEncoder().encode(document.design))
@@ -120,7 +121,7 @@ final class ManufacturingHistoryTests: XCTestCase {
         let document = try ElectronicsDocument.empty()
         let native = try object(document.encoded())
         XCTAssertNil(native["manufacturingGeometry"])
-        for version in 1...7 {
+        for version in 1...8 {
             var old = native; old["formatVersion"] = version
             let restored = try ElectronicsDocument.decode(JSONSerialization.data(withJSONObject: old))
             XCTAssertEqual(restored, document)

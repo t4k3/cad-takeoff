@@ -22,4 +22,6 @@ python3 Tests/Electronics/check_thermals.py "$electronics_run_dir/pcb"
 python3 Tests/Electronics/check_fabrication.py "$electronics_run_dir/fabrication" \
   Packages/ElectronicsCore/Tests/ElectronicsCoreTests/Fixtures/fabrication.json "$electronics_bin_dir/electronics-fabrication"
 python3 Tests/Electronics/check_manufacturing.py "$electronics_bin_dir/electronics-import" "$electronics_run_dir/manufacturing"
+python3 Tests/Electronics/check_manufacturing_assembly.py "$electronics_bin_dir/electronics-assembly" \
+  "$electronics_run_dir/manufacturing/one.ftkc" "$electronics_run_dir/manufacturing/assembly.json"
 printf 'Risultati elettronica: %s\n' "$electronics_run_dir"

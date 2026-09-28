@@ -11,6 +11,7 @@ let package = Package(
         .executable(name: "electronics-pcb", targets: ["ElectronicsPCBCheck"]),
         .executable(name: "electronics-fabrication", targets: ["ElectronicsFabricationCLI"]),
         .executable(name: "electronics-import", targets: ["ElectronicsImportCLI"]),
+        .executable(name: "electronics-assembly", targets: ["ElectronicsAssemblyCLI"]),
         .executable(name: "electronics-schematic", targets: ["ElectronicsSchematicCheck"])
     ],
     targets: [
@@ -20,6 +21,7 @@ let package = Package(
         .executableTarget(name: "ElectronicsPCBCheck", dependencies: ["ElectronicsCore"]),
         .executableTarget(name: "ElectronicsFabricationCLI", dependencies: ["ElectronicsCore"]),
         .executableTarget(name: "ElectronicsImportCLI", dependencies: ["ElectronicsCore"]),
+        .executableTarget(name: "ElectronicsAssemblyCLI", dependencies: ["ElectronicsCore"]),
         .executableTarget(name: "ElectronicsSchematicCheck", dependencies: ["ElectronicsCore"]),
         .executableTarget(name: "ElectronicsLibraryCLI", dependencies: ["ElectronicsCore"]),
         .testTarget(name: "ElectronicsCoreTests", dependencies: ["ElectronicsCore"],

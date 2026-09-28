@@ -24,10 +24,14 @@ public struct ManufacturingComponent: Codable, Equatable, Sendable {
     public var footprint: String?
     public var lcscPartNumber: String?
     public var placement: ManufacturingPlacement?
+    /// Optional visual model correction; never alters the production placement.
+    public var modelBinding: ManufacturingModelBinding?
     public init(id: UUID, reference: String, value: String? = nil, footprint: String? = nil,
-                lcscPartNumber: String? = nil, placement: ManufacturingPlacement? = nil) {
+                lcscPartNumber: String? = nil, placement: ManufacturingPlacement? = nil,
+                modelBinding: ManufacturingModelBinding? = nil) {
         self.id = id; self.reference = reference; self.value = value; self.footprint = footprint
         self.lcscPartNumber = lcscPartNumber; self.placement = placement
+        self.modelBinding = modelBinding
     }
 }
 
@@ -54,14 +58,17 @@ public struct ManufacturingPackage: Codable, Equatable, Sendable {
     public let bounds: ManufacturingBounds
     /// Import diagnostics. Use `diagnostics` for the current lot after editing.
     public let issues: [ElectronicsIssue]
+    public var assemblySettings: ManufacturingAssemblySettings?
     public var activeLot: ManufacturingLot? { lots.first { $0.id == activeLotID } }
     public func isFitted(_ id: UUID) -> Bool { activeLot?.fittedComponentIDs.contains(id) == true }
     public init(id: UUID, name: String, layers: [ManufacturingLayer], drills: [ManufacturingDrill],
                 components: [ManufacturingComponent], lots: [ManufacturingLot], activeLotID: UUID,
-                sources: [ManufacturingSource], bounds: ManufacturingBounds, issues: [ElectronicsIssue] = []) {
+                sources: [ManufacturingSource], bounds: ManufacturingBounds, issues: [ElectronicsIssue] = [],
+                assemblySettings: ManufacturingAssemblySettings? = nil) {
         self.id = id; self.name = name; self.layers = layers; self.drills = drills
         self.components = components; self.lots = lots; self.activeLotID = activeLotID
         self.sources = sources; self.bounds = bounds; self.issues = issues
+        self.assemblySettings = assemblySettings
     }
 }
 
@@ -70,12 +77,16 @@ public enum ManufacturingCommand: Codable, Equatable, Sendable {
     case setFitted(componentID: UUID, fitted: Bool)
     case addLot(id: UUID, name: String)
     case selectLot(UUID)
+    case setBoardThickness(Double?)
+    case setComponentModel(componentID: UUID, binding: ManufacturingModelBinding?)
     public var title: String {
         switch self {
         case .importPackage: "Importa scheda e lotto"
         case .setFitted: "Modifica montaggio del lotto"
         case .addLot: "Crea lotto"
         case .selectLot: "Seleziona lotto"
+        case .setBoardThickness: "Imposta spessore scheda"
+        case .setComponentModel: "Allinea modello componente"
         }
     }
 }
