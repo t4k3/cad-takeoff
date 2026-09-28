@@ -33,8 +33,49 @@ produrre esiti apparentemente validi su questi dati: API protette e testate.
 L'errore di corda massimo degli archi è0,01mm; tolleranza pick conservativa sulle
 intersezioni ritagliate. Le fonti private non sono incluse nel repository.
 
-Integrazione e prova nativa app T97/Claude in corso: le prove sopra attestano
-il motore e la persistenza, non ancora il flusso del selettore file a schermo.
+Prova nativa app T97/Claude, build Debug **14:57, 1.0.96 / 0f4bb99+**,
+copia separata `build/qa-t108`, eseguita da Codex:
+
+- Selettore macOS con i tre file insieme: copie QA identiche byte per byte agli
+  originali. Anteprima corretta, inclusi IC2/T1 esclusi e J8 senza LCSC; disegno
+  strati, sagoma e asole ispezionato. Annulla lascia il circuito vuoto senza
+  operazioni; conferma presenta un solo passo «Importa scheda e lotto».
+- Lotto «QA senza C1»: 83/86 montati, originale 84/86; C1 conservato fra gli86
+  riferimenti. Verificato anche tornando al lotto iniziale nel selettore.
+- Salvataggio dalla ribbon, undo, salvataggio e riapertura, redo e salvataggio:
+  revisioni3/4/5 con3/2/3 passi passati e0/1/0 futuri. Lettore Python indipendente
+  conferma geometria identica e disegno dopo redo identico a prima dell'undo.
+  Copie di prova `acceptance-108/ui-excluded.ftkc`, `ui-imported.ftkc` (undo),
+  `ui-redone.ftkc`; `ui-undone.ftkc` è il file di lavoro riaperto, poi risalvato con redo e cambio lotto.
+- Ricerca/selezione IC2 e T1; esclusi presenti in tabella, nessun marcatore
+  inventato per IC2. Disattivare Rame sopra e Fori cambia solo la vista;
+  disegno del rame inferiore e marcatori dei componenti ancora visibili.
+
+Nella build14:57 emersi tre difetti UI consegnati a Claude: barra inferiore con
+conteggi del circuito nativo vuoto, suggerimenti chat nativi non adatti al CAM,
+Cmd+S instradato al salvataggio CAD anziché al circuito (ribbon Salva corretta).
+Correzioni UI verificate nella build seguente; CI integrata sul commit finale affidata a Claude. Nessun progetto dell'utente
+modificato e nessun invio dei file al produttore.
+
+Test del ponte App eseguito indipendentemente da Codex:
+`FTK_MANUFACTURING_FIXTURE_DIR=/Users/ross/Downloads bash scripts/test-circuits.sh`
+**PASS, exit0**, log `/tmp/ftk-t108-app-final.log`. Include CAM reale, azioni
+`circuit_*`, preview/apply/undo, rifiuto comandi CAD nativi, salvataggio e lotti.
+Il nuovo test del worker inizialmente si fermava per un gate di test rilasciato
+prima dell'arrivo del CSV: quei run sono stati interrotti e non contati come PASS.
+Correzione di Claude: sospendere solo la prima lettura ZIP, riaprire il documento,
+rilasciare il gate e attendere il task catturato; il run finale passa anche questa
+prova e il rifiuto della conferma dopo una revisione cambiata.
+
+
+Rifiniture native **PASS nella build15:06**, copia `build/qa-t108b`, stessa
+etichetta1.0.96/0f4bb99+: barra86componenti/83montati/2lotti, riepilogo di apertura
+corretto, quattro suggerimenti chat pertinenti al CAM. `⇧⌘S` propone `.ftkc`,
+`⌘Z` e `⌘S` salvano rev6 con84montati e un passo futuro; `⇧⌘Z` e `⌘S` salvano
+rev7 con83montati e disegno identico al rev5. Verifica indipendente JSON delle
+copie `ui-shortcuts-undo.ftkc` e `ui-shortcuts.ftkc` PASS. Hash dei tre originali
+Downloads ricontrollati invariati. Le prove degli strumenti coprono il ponte
+app; nessuna chiamata reale a un provider cloud o ordine JLCPCB in questo collaudo.
 
 ## T107 — anteprima revisioni nell'app e geometria esatta, 27/09/2026
 

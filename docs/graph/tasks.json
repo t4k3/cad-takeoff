@@ -2110,7 +2110,7 @@
       "id": "T108",
       "title": "Importazione pacchetto Gerber BOM CPL e varianti di lotto",
       "phase": "Altro",
-      "status": "in_progress",
+      "status": "done",
       "deps": [
         "T103",
         "T107"
@@ -2123,7 +2123,11 @@
       ],
       "suggested": "codex",
       "owner": "codex",
-      "started": "2026-09-28 14:37"
+      "started": "2026-09-28 14:37",
+      "finished": "2026-09-28 15:07",
+      "notes": [
+        "2026-09-28 15:07 codex: Import Gerber/BOM/CPL e lotti persistenti completo:219test elettronici+8lettori,caso reale100modifiche,202CAD e ponteApp PASS. QA nativa build14:57 e15:06:anteprima/annulla/import,lotti indipendenti,strati,salva/riapri/undo/redo anche scorciatoie;originali invariati. Correzioni UX coordinate con Claude,CI integrata app a seguire."
+      ]
     }
   ]
 }
