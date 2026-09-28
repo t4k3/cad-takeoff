@@ -73,6 +73,10 @@ struct CircuitWorkspace: View {
             }
             }
             Spacer()
+            // Which file this is (a save without a panel writes here).
+            Label(circuits.title + (circuits.isDirty ? " — modificato" : ""), systemImage: circuits.url == nil ? "doc.badge.ellipsis" : "doc")
+                .font(.caption).foregroundStyle(Theme.Palette.textSecondary).lineLimit(1)
+                .help(circuits.url.map { "\($0.path)\n⌘S salva qui, ⇧⌘S salva con nome" } ?? "Non ancora salvato: ⌘S chiede nome e cartella")
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .background(Theme.Palette.panel)

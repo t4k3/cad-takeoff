@@ -133,7 +133,11 @@ struct HomeView: View {
             .fixedSize()
             .disabled(folder == nil)
             .help(folder == nil ? "Scegli prima un progetto" : "Crea in questa cartella un pezzo 3D (clic) o, dal menu, un circuito")
-            if library.currentURL != nil || !model.document.features.isEmpty {
+            // Back to what was open: the circuit when CIRCUITI was shown (or only a circuit is open).
+            if circuits.document != nil, workspace.tab == .circuits || (library.currentURL == nil && model.document.features.isEmpty) {
+                Button { library.showHome = false; workspace.tab = .circuits } label: { Label("Torna al circuito «\(circuits.title)»", systemImage: "cpu") }
+                    .keyboardShortcut(.cancelAction)
+            } else if library.currentURL != nil || !model.document.features.isEmpty {
                 Button { library.showHome = false } label: { Label("Torna a «\(library.currentName)»", systemImage: "cube") }
                     .keyboardShortcut(.cancelAction)
             }

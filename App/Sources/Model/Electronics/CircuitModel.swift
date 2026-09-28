@@ -27,6 +27,10 @@ final class CircuitModel {
     @ObservationIgnored var movingHistory = false
     /// CIRCUITI is the tab shown: ⌘S / ⇧⌘S save the circuit, not the 3D design.
     var isFrontmost = false
+    /// The project folder a new circuit is saved into (the library's), and who hears of a save
+    /// (Home's «Recenti»).
+    @ObservationIgnored var defaultFolder: () -> URL? = { nil }
+    @ObservationIgnored var saved: (URL) -> Void = { _ in }
     private(set) var url: URL?
     /// Pads where they are on the board, with their nets, and the connections still to route
     /// (from the copper drawing `pcb`, built off the main thread: the last one until the new is ready).
@@ -231,7 +235,8 @@ final class CircuitModel {
         guard let document, let destination = target ?? url else { return }
         try document.encoded().write(to: destination, options: .atomic)
         url = destination; isDirty = false
-        report("Salvato \(destination.lastPathComponent)")
+        saved(destination)
+        report("Salvato \(destination.lastPathComponent) in \(destination.deletingLastPathComponent().lastPathComponent)")
     }
 
     func openWithPanel() {
@@ -253,6 +258,9 @@ final class CircuitModel {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [Self.fileType]
         panel.nameFieldStringValue = title + ".ftkc"
+        panel.message = "Salva il circuito «\(title)» (.ftkc)"
+        // Where the circuit already is, else the project folder of the workspace.
+        if let folder = url?.deletingLastPathComponent() ?? defaultFolder() { panel.directoryURL = folder }
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do { try save(to: url) } catch { report("Salvataggio non riuscito: \(Self.describe(error))") }
     }

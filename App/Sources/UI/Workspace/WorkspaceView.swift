@@ -74,6 +74,8 @@ struct WorkspaceView: View {
         }
         .onAppear {
             circuits.report = { [weak circuits] in circuits?.message = $0 }
+            circuits.defaultFolder = { [weak library] in library?.currentURL?.deletingLastPathComponent() ?? library?.projects.first?.url }
+            circuits.saved = { [weak library] in library?.noteRecent($0) }
             workspace.sketchStore = sketches; workspace.model = model
             model.finishPendingEdits = { [weak workspace] in
                 if workspace?.sketch != nil { workspace?.exitSketch() }

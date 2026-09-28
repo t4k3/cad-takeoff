@@ -303,7 +303,10 @@ struct Ribbon: View {
                 .help("Apri un circuito (.ftkc)")
             Button { circuits.saveWithPanel() } label: { Label("Salva", systemImage: "square.and.arrow.down") }
                 .disabled(circuits.document == nil)
-                .help("Salva il circuito (.ftkc)")
+                .help(circuits.url.map { "Salva in \($0.path) (⌘S)" } ?? "Salva il circuito (.ftkc): scegli nome e cartella (⌘S)")
+            Button { circuits.saveWithPanel(asNew: true) } label: { Label("Salva come", systemImage: "square.and.arrow.down.on.square") }
+                .disabled(circuits.document == nil)
+                .help("Salva una copia con un altro nome o in un'altra cartella (⇧⌘S)")
             Button { circuits.openExample() } label: { Label("Esempio", systemImage: "sparkles") }
                 .help("Il circuito di prova del motore (componenti fittizi, da non ordinare)")
         }
