@@ -16,19 +16,21 @@ struct CircuitWorkspace: View {
                 VStack(spacing: 0) {
                     canvasBar
                     Divider()
-                    if circuits.canvas == .schematic { CircuitSchematicView() } else { CircuitBoardView() }
+                    if circuits.isManufacturing { CAMBoardView() }
+                    else if circuits.canvas == .schematic { CircuitSchematicView() } else { CircuitBoardView() }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 Divider()
-                CircuitChecksPanel()
-                    .frame(width: 280)
+                if circuits.isManufacturing { ManufacturingPanel().frame(width: 300) }
+                else { CircuitChecksPanel().frame(width: 280) }
             }
             .sheet(isPresented: $c.showAddComponent) { AddComponentSheet() }
             .sheet(isPresented: $c.showBoard) { BoardSheet() }
             .sheet(isPresented: $c.showNetClasses) { NetClassesSheet() }
             .sheet(isPresented: Binding(get: { circuits.showFabrication }, set: { if !$0 { circuits.closeFabrication() } })) { FabricationSheet() }
             .sheet(isPresented: $c.showCreateDevice) { CreateDeviceSheet() }
-            .sheet(isPresented: Binding(get: { circuits.importProposal != nil || circuits.importing != nil }, set: { if !$0 { circuits.cancelImport() } })) { ImportPreviewSheet() }
+            .sheet(isPresented: Binding(get: { circuits.importProposal != nil || (circuits.importing != nil && !circuits.importingCAM) }, set: { if !$0 { circuits.cancelImport() } })) { ImportPreviewSheet() }
+            .sheet(isPresented: Binding(get: { circuits.manufacturingProposal != nil || (circuits.importing != nil && circuits.importingCAM) }, set: { if !$0 { circuits.cancelImport() } })) { ManufacturingImportSheet() }
             .sheet(isPresented: Binding(get: { circuits.symbolChoice != nil }, set: { if !$0 { circuits.cancelImport() } })) { SymbolChoiceSheet() }
             .sheet(isPresented: Binding(get: { circuits.labelTarget != nil }, set: { if !$0 { circuits.labelTarget = nil } })) { LabelSheet() }
         }
@@ -38,6 +40,10 @@ struct CircuitWorkspace: View {
     private var canvasBar: some View {
         @Bindable var c = circuits
         return HStack(spacing: 10) {
+            if circuits.isManufacturing {
+                Label("Scheda da file di produzione", systemImage: "square.stack.3d.up").font(.caption.weight(.semibold))
+                CAMLayerToggles()
+            } else {
             Picker("", selection: $c.canvas) {
                 ForEach(CircuitModel.Canvas.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -65,6 +71,7 @@ struct CircuitWorkspace: View {
                 }
                 .help("Componenti disegnati nello schema e non ancora sulla scheda: clic, poi clic sulla scheda per ciascuno")
             }
+            }
             Spacer()
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
@@ -84,6 +91,9 @@ struct CircuitWorkspace: View {
                     .help("Il circuito di prova del motore (componenti fittizi, da non ordinare)")
             }
             .controlSize(.large)
+            Button { circuits.importManufacturingWithPanel() } label: { Label("Importa Gerber, BOM e posizioni…", systemImage: "square.and.arrow.down.on.square") }
+                .buttonStyle(.link)
+                .help("Una scheda già fatta: lo ZIP dei Gerber, la BOM e il CPL del produttore, per scegliere cosa montare nei lotti")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.Palette.canvas)

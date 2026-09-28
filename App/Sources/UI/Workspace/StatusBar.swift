@@ -15,10 +15,18 @@ struct StatusBar: View {
                 if let design = circuits.design {
                     let errors = circuits.issues.filter { $0.severity == .error }.count
                     let warnings = circuits.issues.count - errors
-                    Label("\(design.components.count) componenti", systemImage: "cpu")
-                    Label("\(design.nets.count) reti", systemImage: "point.3.connected.trianglepath.dotted")
-                    Label("\(circuits.board?.airwires.count ?? 0) da sbrogliare", systemImage: "line.diagonal")
-                        .help("Collegamenti logici ancora senza pista")
+                    if let m = design.manufacturing {
+                        // An imported board: its parts and the lot shown; no nets or routing here.
+                        Label("\(m.components.count) componenti", systemImage: "cpu")
+                        Label("\(m.activeLot?.fittedComponentIDs.count ?? 0) montati · \(m.activeLot?.name ?? "")", systemImage: "checkmark.square")
+                            .help("Componenti montati nel lotto mostrato; gli esclusi restano sulla scheda")
+                        Label("\(m.lots.count) lott\(m.lots.count == 1 ? "o" : "i")", systemImage: "square.stack")
+                    } else {
+                        Label("\(design.components.count) componenti", systemImage: "cpu")
+                        Label("\(design.nets.count) reti", systemImage: "point.3.connected.trianglepath.dotted")
+                        Label("\(circuits.board?.airwires.count ?? 0) da sbrogliare", systemImage: "line.diagonal")
+                            .help("Collegamenti logici ancora senza pista")
+                    }
                     if errors > 0 { Label("\(errors) errori", systemImage: "xmark.octagon").foregroundStyle(.red) }
                     if warnings > 0 { Label("\(warnings) avvisi", systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
                     Text("mm · vista dall'alto")

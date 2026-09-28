@@ -78,7 +78,7 @@ extension CircuitModel {
         netRulesTask?.cancel(); netRules = nil; showNetClasses = false
         schematicTask?.cancel(); schematic = nil
         ghostTask?.cancel(); ghostSession = nil; schematicGhost = []
-        schematicSelection = nil; selection = nil
+        schematicSelection = nil; selection = nil; camSelection = nil
         tool = .select; schematicTool = .select
     }
 

@@ -59,8 +59,17 @@ struct FusionTakeoffApp: App {
                 Button("Installa add-in in Fusion 360…") { model.statusMessage = FusionAddInInstaller.installWithPanel() }
             }
             CommandGroup(replacing: .saveItem) {
-                Button("Salva") { library.save(model: model) }.keyboardShortcut("s")
-                Button("Salva con nome…") { library.saveAs(model: model) }.keyboardShortcut("s", modifiers: [.command, .shift])
+                // In CIRCUITI the circuit (.ftkc), elsewhere the design (.ftk).
+                Button(circuits.isFrontmost ? "Salva circuito" : "Salva") {
+                    if circuits.isFrontmost { circuits.saveWithPanel() } else { library.save(model: model) }
+                }
+                .keyboardShortcut("s")
+                .disabled(circuits.isFrontmost && circuits.document == nil)
+                Button(circuits.isFrontmost ? "Salva circuito con nome…" : "Salva con nome…") {
+                    if circuits.isFrontmost { circuits.saveWithPanel(asNew: true) } else { library.saveAs(model: model) }
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .disabled(circuits.isFrontmost && circuits.document == nil)
                 Button("Esporta STL…") { model.exportSTLWithPanel() }.keyboardShortcut("e")
                 Button("Esporta 3MF (con colori)…") { model.export3MFWithPanel() }.keyboardShortcut("e", modifiers: [.command, .shift])
                 Button("Esporta STEP…") { model.exportSTEPWithPanel() }

@@ -46,7 +46,7 @@ extension CircuitModel {
     }
 
     func openFabrication() {
-        guard document != nil else { return }
+        guard document != nil, !isManufacturing else { return }
         // A variant of another circuit (or removed) is not this one's.
         if let v = fabricationVariant, design?.variants.contains(where: { $0.id == v }) != true { fabricationVariant = nil }
         showFabrication = true

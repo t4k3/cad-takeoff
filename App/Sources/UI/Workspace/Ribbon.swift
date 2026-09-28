@@ -307,7 +307,18 @@ struct Ribbon: View {
             Button { circuits.openExample() } label: { Label("Esempio", systemImage: "sparkles") }
                 .help("Il circuito di prova del motore (componenti fittizi, da non ordinare)")
         }
-        if circuits.canvas == .schematic {
+        if circuits.isManufacturing {
+            ToolGroup("LOTTO") {
+                Button { if let c = circuits.camSelection { circuits.setFitted(c, true) } } label: { Label("Monta", systemImage: "checkmark.square") }
+                    .disabled(circuits.camSelection.map { circuits.manufacturing?.isFitted($0) != false } ?? true)
+                    .help("Monta il componente scelto nel lotto mostrato")
+                Button { if let c = circuits.camSelection { circuits.setFitted(c, false) } } label: { Label("Escludi", systemImage: "square") }
+                    .disabled(circuits.camSelection.map { circuits.manufacturing?.isFitted($0) != true } ?? true)
+                    .help("Escludi dal lotto il componente scelto: resta sulla scheda")
+                Button { circuits.addLot(named: circuits.nextLotName()) } label: { Label("Nuovo lotto", systemImage: "plus.square.on.square") }
+                    .help("Un lotto nuovo, copia di quello mostrato (il nome si sceglie anche dal + nel pannello)")
+            }
+        } else if circuits.canvas == .schematic {
             ToolGroup("SCHEMA") {
                 Button { circuits.schematicTool = .select; circuits.showAddComponent = true } label: { Label("Componente", systemImage: "cpu") }
                     .disabled(circuits.document == nil)
@@ -406,6 +417,7 @@ struct Ribbon: View {
                 .help("Elimina la pista, la via, l'area vietata o il piano selezionato, o il componente con i suoi collegamenti (Canc)")
         }
         }
+        if !circuits.isManufacturing {
         ToolGroup("LIBRERIA") {
             Button { circuits.tool = .select; circuits.importWithPanel() } label: { Label("Importa", systemImage: "square.and.arrow.down.on.square") }
                 .disabled(circuits.document == nil)
@@ -414,12 +426,15 @@ struct Ribbon: View {
                 .disabled(circuits.document == nil)
                 .help("Unisci un simbolo e un'impronta della libreria in un componente da posare (pin ↔ piazzole proposti, da verificare sul datasheet)")
         }
+        }
         ToolGroup("PRODUZIONE") {
+            Button { circuits.tool = .select; circuits.importManufacturingWithPanel() } label: { Label("Importa", systemImage: "square.and.arrow.down.on.square") }
+                .help("Importa una scheda dai file del produttore: ZIP dei Gerber, BOM e posizioni (CPL). Chi manca nella BOM resta sulla scheda, escluso dal lotto")
             Button { circuits.tool = .select; circuits.openFabrication() } label: { Label("Gerber", systemImage: "square.stack.3d.up") }
-                .disabled(circuits.document == nil)
+                .disabled(circuits.document == nil || circuits.isManufacturing)
                 .help("Verifica di produzione, anteprima degli strati e export Gerber, forature, BOM e CPL in una cartella nuova")
             Button { circuits.exportJLCWithPanel() } label: { Label("JLCPCB", systemImage: "shippingbox") }
-                .disabled(circuits.document == nil)
+                .disabled(circuits.document == nil || circuits.isManufacturing)
                 .help("BOM e CPL per il montaggio JLCPCB (CSV). Il motore blocca l'export se manca qualcosa e dice cosa.")
         }
     }

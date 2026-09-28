@@ -672,9 +672,10 @@ struct CircuitTests {
         try? FileManager.default.removeItem(at: parent)
 
         try await circuitToolTests(fixture: fabFixture, check: check)
+        try await manufacturingTests(check: check)
 
         if failures > 0 { fatalError("\(failures) verifiche fallite") }
-        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, piani di rame, produzione, strumenti circuit_* dell'assistente, annulla, salva e riapri")
+        print("OK: circuiti — PCB e schema da nuovo: componenti, fili, etichette, NC, giunzioni, posa sul PCB, piste, via e strati, classi di rete, aree vietate, piani di rame, produzione, strumenti circuit_* dell'assistente, import Gerber/BOM/CPL e lotti, annulla, salva e riapri")
     }
 }
 

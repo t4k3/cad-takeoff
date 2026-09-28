@@ -68,6 +68,7 @@ struct WorkspaceView: View {
         // ⌘Z in CIRCUITI undoes the circuit's steps; elsewhere the design's (or the sketch's).
         .onChange(of: workspace.tab) { old, new in
             assistant.focus = new == .circuits ? .circuits : .cad
+            circuits.isFrontmost = new == .circuits
             if new == .circuits { model.localUndoTarget = circuits }
             else if old == .circuits, model.localUndoTarget === circuits { model.localUndoTarget = nil }
         }

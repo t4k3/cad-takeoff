@@ -25,6 +25,14 @@ struct AssistantPanel: View {
         "La scheda è pronta per la produzione?",
     ]
 
+    /// On a board imported from manufacturing files: its lots, not native editing.
+    static let manufacturingSuggestions = [
+        "Quali componenti non sono montati nel lotto e perché?",
+        "Crea un lotto «Prototipi» ed escludi i componenti senza codice LCSC",
+        "Quali componenti montati non hanno il codice LCSC?",
+        "Riassumi strati, fori e lotti della scheda",
+    ]
+
     private var inCircuits: Bool { workspace.tab == .circuits }
 
     var body: some View {
@@ -184,7 +192,7 @@ struct AssistantPanel: View {
                 .padding(10)
                 .background(Theme.Palette.panel.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
             }
-            ForEach(inCircuits ? Self.circuitSuggestions : Self.suggestions, id: \.self) { s in
+            ForEach(!inCircuits ? Self.suggestions : circuits.isManufacturing ? Self.manufacturingSuggestions : Self.circuitSuggestions, id: \.self) { s in
                 Button { send(s) } label: {
                     HStack {
                         Text(s).font(Theme.Typeface.body).multilineTextAlignment(.leading)

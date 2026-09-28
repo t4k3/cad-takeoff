@@ -25,6 +25,8 @@ final class CircuitModel {
         }
     }
     @ObservationIgnored var movingHistory = false
+    /// CIRCUITI is the tab shown: ⌘S / ⇧⌘S save the circuit, not the 3D design.
+    var isFrontmost = false
     private(set) var url: URL?
     /// Pads where they are on the board, with their nets, and the connections still to route
     /// (from the copper drawing `pcb`, built off the main thread: the last one until the new is ready).
@@ -655,7 +657,19 @@ final class CircuitModel {
     var importProposal: ImportProposal?
     /// Reading and comparing in the background (the panel waits; a new import or another file
     /// makes it moot).
-    private(set) var importing: String?
+    var importing: String?
+    /// PRODUZIONE › Importa: the engine's package and preview, waiting for Conferma.
+    var manufacturingProposal: ManufacturingProposal?
+    /// The CAM index of an imported board (picking) and the component chosen on it.
+    var camSnapshot: CAMSnapshot?
+    @ObservationIgnored var camSnapshotTask: Task<Void, Never>?
+    @ObservationIgnored var camSnapshotKey: CAMSnapshot.Key?
+    var camSelection: UUID?
+    /// The reading in progress is a manufacturing import (its own sheet).
+    var importingCAM = false
+    /// CAM layers not shown (masks and paste at first) and the drills.
+    var camHiddenLayers: Set<FabricationLayerKind> = [.topMask, .bottomMask, .topPaste, .bottomPaste]
+    var camHideDrills = false
     @ObservationIgnored var importTask: Task<Void, Never>?
     @ObservationIgnored var importRequest: UUID?
     var showCreateDevice = false
@@ -799,7 +813,14 @@ final class CircuitModel {
     func cancelImport() {
         importTask?.cancel(); importTask = nil
         importRequest = nil; importing = nil
-        importProposal = nil; symbolChoice = nil
+        importProposal = nil; symbolChoice = nil; manufacturingProposal = nil; importingCAM = false
+    }
+
+    /// An imported board confirmed: on the open circuit (one more step) or as a new circuit.
+    func installManufacturing(_ doc: ElectronicsDocument, asNewCircuit: Bool) {
+        if asNewCircuit { forgetDrawings(); url = nil }
+        document = doc; isDirty = true
+        refresh()
     }
 
     func confirmImport() {
@@ -912,6 +933,9 @@ final class CircuitModel {
 
     var summary: String {
         guard let d = design else { return "" }
+        if let m = d.manufacturing {
+            return "scheda importata, \(m.components.count) componenti, \(m.activeLot?.fittedComponentIDs.count ?? 0) montati nel lotto «\(m.activeLot?.name ?? "")», \(m.lots.count) lotti"
+        }
         let errors = issues.filter { $0.severity == .error }.count, warnings = issues.count - errors
         var s = "\(d.components.count) componenti, \(d.nets.count) reti"
         if let b = board { s += ", \(b.airwires.count) collegamenti da sbrogliare" }
@@ -929,8 +953,11 @@ final class CircuitModel {
         refreshSchematic()
         refreshPCB()
         refreshFabrication()
+        refreshManufacturingSnapshot()
+        if let s = camSelection, !(design?.manufacturing?.components.contains { $0.id == s } ?? false) { camSelection = nil }
         guard let d = design else { baseIssues = []; return }
         baseIssues = ElectronicsValidation.integrity(d) + ElectronicsValidation.electrical(d) + ElectronicsCommands.genericIssues(d)
+            + (d.manufacturing.map(ElectronicsManufacturingImport.diagnostics) ?? [])
     }
 
     /// Why a circuit file could not be read, in words to act on.

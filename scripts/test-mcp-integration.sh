@@ -8,10 +8,7 @@ while IFS= read -r -d '' source; do core_sources+=("$source"); done < <(find Pac
 xcrun swiftc -swift-version 6 -emit-library -emit-module -module-name CADCore \
     "${core_sources[@]}" \
     -emit-module-path "$test_dir/CADCore.swiftmodule" -o "$test_dir/libCADCore.dylib"
-electronics_sources=()
-while IFS= read -r -d '' source; do electronics_sources+=("$source"); done < <(find Packages/ElectronicsCore/Sources/ElectronicsCore -type f -name '*.swift' -print0)
-xcrun swiftc -swift-version 6 -emit-library -emit-module -module-name ElectronicsCore "${electronics_sources[@]}" \
-    -emit-module-path "$test_dir/ElectronicsCore.swiftmodule" -o "$test_dir/libElectronicsCore.dylib"
+scripts/build-electronics-core.sh "$test_dir"
 xcrun swiftc -swift-version 6 -parse-as-library -I "$test_dir" -L "$test_dir" -lCADCore -lElectronicsCore \
     -Xlinker -rpath -Xlinker "$test_dir" \
     App/Sources/Integration/ToolBridge.swift App/Sources/Integration/ToolRouter.swift App/Sources/Model/Electronics/*.swift \
