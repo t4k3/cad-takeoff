@@ -2128,6 +2128,48 @@
       "notes": [
         "2026-09-28 15:07 codex: Import Gerber/BOM/CPL e lotti persistenti completo:219test elettronici+8lettori,caso reale100modifiche,202CAD e ponteApp PASS. QA nativa build14:57 e15:06:anteprima/annulla/import,lotti indipendenti,strati,salva/riapri/undo/redo anche scorciatoie;originali invariati. Correzioni UX coordinate con Claude,CI integrata app a seguire."
       ]
+    },
+    {
+      "id": "T109",
+      "title": "Diagnosi e collaudo salvataggio delle schede importate nella Home",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T108"
+      ],
+      "paths": [
+        "docs/electronics",
+        "Tests/Electronics"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-28 15:23",
+      "finished": "2026-09-28 15:26",
+      "notes": [
+        "2026-09-28 15:26 codex: Diagnosi: Salva con URL esistente scrive direttamente senza pannello; Salva circuito con nome (ShiftCmdS) sceglie nome/destinazione. Trovato salvataggio reale delle15:22:55, formato8 rev1,9strati158forature86componenti84montati,lotto e storico validi. Nessun sorgente modificato. Input CUA attuali non disponibili: nessuna nuova conferma UI dichiarata; esigenza UX percorso/titolo/ritornoHome annotata per Claude."
+      ]
+    },
+    {
+      "id": "T110",
+      "title": "Diagnosi e collaudo rendering Gerber della scheda importata",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T108"
+      ],
+      "paths": [
+        "Packages/ElectronicsCore",
+        "docs/electronics",
+        "Tests/Electronics",
+        "build/electronics/acceptance-110"
+      ],
+      "suggested": "codex",
+      "owner": "codex",
+      "started": "2026-09-28 15:35",
+      "finished": "2026-09-28 15:45",
+      "notes": [
+        "2026-09-28 15:45 codex: Causa Canvas App corretta da Claude0364bb8: dipendenze del body per artwork/strati. Motore indipendente0.44s e test realePASS, CAD202PASS, ponteApp con regressione primo framePASS. QA nativa qa-t11015:41: anteprima e primo frame completi senza hover entro primo screenshot1.779s incluso tool; interruttore rame immediato; riaperto ballgunCANBUS.ftkc senza scriverlo. Documento QA aggiornato, file originali invariati. CI integrata Claude in corso."
+      ]
     }
   ]
 }

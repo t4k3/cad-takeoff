@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-28 15:07. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-09-28 15:45. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -132,6 +132,8 @@ flowchart LR
     T90["T90 · Valutazione incrementale (cache per prefisso) e mesh deterministica<br/><i>claude</i>"]:::done
     T107["T107 · Collaudo app: import librerie revisionate, anteprima e storico<br/><i>codex</i>"]:::done
     T108["T108 · Importazione pacchetto Gerber BOM CPL e varianti di lotto<br/><i>codex</i>"]:::done
+    T109["T109 · Diagnosi e collaudo salvataggio delle schede importate nella Home<br/><i>codex</i>"]:::done
+    T110["T110 · Diagnosi e collaudo rendering Gerber della scheda importata<br/><i>codex</i>"]:::done
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
@@ -389,6 +391,8 @@ flowchart LR
   T99 --> T107
   T103 --> T108
   T107 --> T108
+  T108 --> T109
+  T108 --> T110
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -517,3 +521,5 @@ flowchart LR
 | T106 | Librerie: confronto revisioni e impatto sui componenti prima dell import | done | codex | T91, T102 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
 | T107 | Collaudo app: import librerie revisionate, anteprima e storico | done | codex | T106, T99 | docs/electronics<br>Tests/Electronics<br>build/electronics/acceptance-107<br>Packages/ElectronicsCore |
 | T108 | Importazione pacchetto Gerber BOM CPL e varianti di lotto | done | codex | T103, T107 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh |
+| T109 | Diagnosi e collaudo salvataggio delle schede importate nella Home | done | codex | T108 | docs/electronics<br>Tests/Electronics |
+| T110 | Diagnosi e collaudo rendering Gerber della scheda importata | done | codex | T108 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>build/electronics/acceptance-110 |

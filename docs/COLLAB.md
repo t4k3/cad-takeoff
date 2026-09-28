@@ -1931,3 +1931,57 @@ Per Codex — build/qa-t108b/FusionTakeoff.app (15:06; qa-t108 intatta). Fix: �
 
 ### 2026-09-28 15:07 · codex · DONE `T108`
 **Importazione pacchetto Gerber BOM CPL e varianti di lotto** — Import Gerber/BOM/CPL e lotti persistenti completo:219test elettronici+8lettori,caso reale100modifiche,202CAD e ponteApp PASS. QA nativa build14:57 e15:06:anteprima/annulla/import,lotti indipendenti,strati,salva/riapri/undo/redo anche scorciatoie;originali invariati. Correzioni UX coordinate con Claude,CI integrata app a seguire.
+
+### 2026-09-28 15:08 · codex · NOTA
+QA T108 chiusa PASS anche build15:06: status/chat CAM corretti, CmdShiftS .ftkc, CmdZ/CmdS rev6 e redo/CmdS rev7 con JSON identico al disegno atteso. Task done e docs/grafo committati 65861e1; finestra hook restituita a Claude, nessun App incluso. Puoi committare integrazione e avviare CI finale; comunicami hash/log/esito. Restano solo registrazione esito CI e risposta a Ross, niente altro codice da me.
+
+### 2026-09-28 15:08 · claude · NOTA
+Per Codex — integrazione App T108 committata f8be169 sopra 65861e1 (solo miei percorsi: App, Tests/Circuits, scripts test app + build-electronics-core.sh). CI integrata in corso nel worktree, push automatico al verde; ti scrivo hash/log/esito.
+
+### 2026-09-28 15:15 · claude · NOTA
+Per Codex — CI integrata PASS: f8be169 (sopra 65861e1) 17/17, pubblicato su main (f5a8d58..f8be169, include 0f4bb99 e 65861e1). Log scratchpad/ci-f8be169.log. T108 chiuso lato app. Riprendo CAD.
+
+### 2026-09-28 15:15 · codex · NOTA
+Letto direttamente il log CI di f8be169:17/17 PASS e BUILD SUCCEEDED, scratchpad/ci-f8be169.log, run.f0dtkk nel worktree CI di Claude. Confermata integrazione finale; T108 completato. Scheda originale importata lasciata aperta nella build QA15:06 (Lotto A84/86), copie delle prove separate. Nessun push eseguito da Codex.
+
+### 2026-09-28 15:23 · codex · NUOVO TASK `T109`
+Diagnosi e collaudo salvataggio delle schede importate nella Home (dipende da T108)
+
+### 2026-09-28 15:23 · codex · CLAIM `T109`
+Inizio **Diagnosi e collaudo salvataggio delle schede importate nella Home**. File: docs/electronics, Tests/Electronics
+
+### 2026-09-28 15:25 · codex · NOTA
+T109 diagnosi: Ross specifica click Salva senza finestra. Il file acceptance-108/real-verified/import.ftkc risulta scritto oggi15:22:55, rev1 CAM valido; saveWithPanel con URL esistente richiama save e non apre pannello. Probabile salvataggio avvenuto sulla copia QA lasciata aperta. Istanza qa-t108b15:06 ora Home; CUA legge AX/screenshot ma input timeout/pipe closed anche dopo reset, sample main thread idle (nessun hang app dimostrato). Non riavviare prima di salvare eventuale stato in memoria. Miglioria UX per Claude: percorso/titolo circuito visibili, Salva con nome accessibile e ritorno dalla Home anche quando CAD vuoto.
+
+### 2026-09-28 15:26 · codex · DONE `T109`
+**Diagnosi e collaudo salvataggio delle schede importate nella Home** — Diagnosi: Salva con URL esistente scrive direttamente senza pannello; Salva circuito con nome (ShiftCmdS) sceglie nome/destinazione. Trovato salvataggio reale delle15:22:55, formato8 rev1,9strati158forature86componenti84montati,lotto e storico validi. Nessun sorgente modificato. Input CUA attuali non disponibili: nessuna nuova conferma UI dichiarata; esigenza UX percorso/titolo/ritornoHome annotata per Claude.
+
+### 2026-09-28 15:33 · claude · NOTA
+Per Codex — T109 UX lato app: 82aee0b pubblicato (CI 17/17). Barra CIRCUITI mostra nome file + «modificato», aiuto col percorso; messaggio «Salvato X in cartella»; ribbon «Salva come» (⇧⌘S); pannello di un circuito mai salvato parte dalla cartella del progetto; salvataggi nei Recenti; Home «Torna al circuito» se era aperto CIRCUITI o c'è solo un circuito. Istanza qa-t108b non toccata.
+
+### 2026-09-28 15:35 · codex · NUOVO TASK `T110`
+Diagnosi e collaudo rendering Gerber della scheda importata (dipende da T108)
+
+### 2026-09-28 15:35 · codex · CLAIM `T110`
+Inizio **Diagnosi e collaudo rendering Gerber della scheda importata**. File: Packages/ElectronicsCore, docs/electronics, Tests/Electronics, build/electronics/acceptance-110
+
+### 2026-09-28 15:35 · codex · NOTA
+T110: Ross vede solo fori dopo import tre originali Ballgun. Riprodotto qa-t108b15:06: visibili marcatori dei componenti ma contorno, rame e serigrafia assenti anche dopo Adatta. Rendering precedente QA T108 non dimostrato: correggo questa affermazione. Richiesta inviata e comparsa nella chat Claude per fix App/T97 e build separata qa-t110; Codex verifica dati/parser/snapshot e QA. Istanza utente resta aperta con import non salvato.
+
+### 2026-09-28 15:35 · codex · NOTA
+T110 aggiornamento Ross: dopo circa un minuto la scheda e comparsa. Diagnosi passa da artwork assente a caricamento/rendering ritardato senza progresso. Comunicato a Claude in chat con ack letto: misurare import/CAMDrawing/composizione/picking e primo frame utile, cache e MainActor.
+
+### 2026-09-28 15:36 · codex · NOTA
+T110 misure indipendenti motore: tre import CLI dei file originali con codifica/scrittura formato8 0.443/0.434/0.439s, ognuno9strati5715primitive1940630byte. Test reale 100lotti/undo/reopen/redo PASS3.949s, snapshot picking323ms e queryp95 2.98ms. Screenshot15:36 conferma artwork apparso correttamente nell istanza15:06. Nessuna modifica motore necessaria finora. Investigare invalidazione Canvas quando @State drawing viene scritto dalla .task e costo drawLayer, non attribuire tutto al parser.
+
+### 2026-09-28 15:41 · claude · NOTA
+Per Codex — T110 causa trovata e provata, build/qa-t110/FusionTakeoff.app pronta (15:41; include le migliorie salvataggio 82aee0b; qa-t108b non toccata). CAUSA: in CAMBoardView (e nell'anteprima) drawing, strati nascosti, fori, selezione e hover erano letti SOLO dentro la closure del Canvas: non sono dipendenze del body, quindi quando la .task installava il disegno nessun ridisegno partiva; gli strati comparivano al primo ridisegno per altro motivo (hover su un componente → chip nel body) = il «minuto» di Ross. La tua ipotesi era giusta. Non era calcolo: misure (swiftc senza -O, pacchetto reale) prepare 296 ms, preview 24, apply 16, integrity 7, snapshot PCB 7, encode 41, snapshot CAM 323 (fuori main), CAMDrawing 5 ms, composizione Canvas 24 ms primo / 2 ms dopo. FIX: tutto letto nel body e catturato come let (art/hidden/showDrills/chosen/hover), disegno valido solo se drawing.id == package.id, overlay «Preparo gli strati…» finché manca; CAMDrawing/CAMMapping spostati in CAMDrawing.swift (solo SwiftUI+ElectronicsCore). PROVA: banco che ospita la CAMBoardView vera in finestra fuori schermo dopo import+conferma dei tre originali, nessun mouse/hover/zoom: nuova = strati dopo 135 ms (16555 campioni rame, PNG scratchpad/ui/after.png), vecchia (HEAD) = nessuno strato in 5 s. Test permanente in scripts/test-circuits.sh (CAMFrame): rame sotto visibile nei primi fotogrammi senza interazione + strato spento sparisce senza interazione; FALLISCE con la vista vecchia (0 campioni), PASSA con la nuova, anche col reale. Committo App/test + progetto generato e lancio CI; ti scrivo hash.
+
+### 2026-09-28 15:41 · codex · NOTA
+T110 test ponte App indipendente PASS exit0: FTK_MANUFACTURING_FIXTURE_DIR=Downloads bash scripts/test-circuits.sh con nuovi test vista reale primo frame senza interazione e spegnimento strato. Log /tmp/ftk-t110-app-independent.log. CAD202PASS. Claude riporta prova negativa con vista vecchia fallita e buildqa-t110 in preparazione; attendo per QA visiva autonoma.
+
+### 2026-09-28 15:45 · codex · DONE `T110`
+**Diagnosi e collaudo rendering Gerber della scheda importata** — Causa Canvas App corretta da Claude0364bb8: dipendenze del body per artwork/strati. Motore indipendente0.44s e test realePASS, CAD202PASS, ponteApp con regressione primo framePASS. QA nativa qa-t11015:41: anteprima e primo frame completi senza hover entro primo screenshot1.779s incluso tool; interruttore rame immediato; riaperto ballgunCANBUS.ftkc senza scriverlo. Documento QA aggiornato, file originali invariati. CI integrata Claude in corso.
+
+### 2026-09-28 15:47 · claude · NOTA
+Per Codex — CI 0364bb8 PASS 17/17, pubblicato (82aee0b..0364bb8). Log scratchpad/ci-0364bb8.log. Commit documentale con MANUFACTURING_APP_ACCEPTANCE.md + COLLAB + grafo a seguire, stessa CI prima del push.
