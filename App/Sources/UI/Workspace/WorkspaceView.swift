@@ -73,6 +73,8 @@ struct WorkspaceView: View {
             else if old == .circuits, model.localUndoTarget === circuits { model.localUndoTarget = nil }
         }
         .onAppear {
+            // Local names, so the callbacks below hold them weakly (not the view's strongly).
+            let circuits = circuits, library = library, workspace = workspace
             circuits.report = { [weak circuits] in circuits?.message = $0 }
             circuits.defaultFolder = { [weak library] in library?.currentURL?.deletingLastPathComponent() ?? library?.projects.first?.url }
             circuits.saved = { [weak library] in library?.noteRecent($0) }

@@ -179,7 +179,7 @@ struct AssemblyComponentDetail: View {
         .background(Theme.Palette.canvas.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
     }
 
-    private func axes(_ title: String, _ v: PCBPoint3, step: Double, _ set: @escaping (PCBPoint3) -> Void) -> some View {
+    private func axes(_ title: String, _ v: PCBPoint3, step: Double, _ set: @escaping @MainActor (PCBPoint3) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title).font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
             HStack(spacing: 4) {
@@ -190,7 +190,7 @@ struct AssemblyComponentDetail: View {
         }
     }
 
-    private func field(_ axis: String, _ value: Double, _ step: Double, _ set: @escaping (Double) -> Void) -> some View {
+    private func field(_ axis: String, _ value: Double, _ step: Double, _ set: @escaping @MainActor (Double) -> Void) -> some View {
         HStack(spacing: 2) {
             Text(axis).font(.caption2)
             TextField(axis, value: Binding(get: { value }, set: set), format: .number.precision(.fractionLength(0...3)))

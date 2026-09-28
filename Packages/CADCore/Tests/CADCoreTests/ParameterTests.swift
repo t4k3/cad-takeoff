@@ -71,7 +71,7 @@ private func near(_ a: Double, _ b: Double, _ tol: Double = 1e-9) -> Bool { abs(
     // A parameter the sketch cannot follow: an error, the document untouched.
     doc.parameters[0].expression = "manca + 1"
     let before = doc
-    #expect(throws: ExpressionError.self) { var d = doc; try d.applyParameters() }
+    #expect(throws: ExpressionError.self) { var d = doc; _ = try d.applyParameters() }
     #expect(doc == before)
 }
 

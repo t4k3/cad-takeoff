@@ -57,7 +57,6 @@ enum JointCommand {
                 switch ref.kind {
                 case let .edge(id): frame = b.snapshot.edges.first { $0.id == id }.flatMap(JointFrame.from(edge:))
                 case let .face(id): frame = JointFrame.from(face: id, in: b.snapshot)
-                default: frame = nil
                 }
                 if let frame { out.append((b, frame.origin, frame.axis)) }
                 if out.count == 2 { break }

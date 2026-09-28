@@ -663,7 +663,6 @@ struct ViewportContainer: View {
                         switch ref.kind {
                         case let .face(id): return Measure.shape(face: id, in: body.snapshot)
                         case let .edge(id): return body.snapshot.edges.first { $0.id == id }.map(Measure.shape(edge:))
-                        default: return nil
                         }
                     }
                     if shapes.count == 2, let d = Measure.distance(shapes[0], shapes[1]) {
