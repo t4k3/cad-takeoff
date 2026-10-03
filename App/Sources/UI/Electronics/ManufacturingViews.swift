@@ -318,6 +318,9 @@ struct ManufacturingImportSheet: View {
                     ForEach([p.files.archive, p.files.bom, p.files.positions], id: \.self) { url in
                         Text(url.lastPathComponent).font(.caption.monospaced()).foregroundStyle(Theme.Palette.textSecondary)
                     }
+                    if !p.ignored.isEmpty {
+                        Text("Non usati: " + p.ignored.joined(separator: ", ")).font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+                    }
                 }
                 Text("Scheda \(CAMDrawing.mm(package.bounds.width)) × \(CAMDrawing.mm(package.bounds.height))").font(.callout)
                 Text("\(package.layers.count) strati: " + CAMDrawing.order.reversed().filter { k in package.layers.contains { $0.kind == k } }.map(CAMDrawing.name).joined(separator: ", "))

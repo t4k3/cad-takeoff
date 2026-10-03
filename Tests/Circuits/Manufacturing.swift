@@ -168,6 +168,33 @@ func manufacturingTests(check: (Bool, String) -> Void) async throws {
           && !filter.panel(NSObject(), shouldEnable: bom) && filter.panel(NSObject(), shouldEnable: dir),
           "Apri: .ftkc abilitato (anche come riferimento), .csv no, cartelle sì")
 
+    // One ZIP chosen: the package inside it (as KiCad exports it for JLCPCB), extras named.
+    let pack = dir.appendingPathComponent("pacchetto")
+    try FileManager.default.createDirectory(at: pack, withIntermediateDirectories: true)
+    for f in [zip, bom, cpl] { try FileManager.default.copyItem(at: f, to: pack.appendingPathComponent(f.lastPathComponent)) }
+    try "R1:1\nT1:1\n".write(to: pack.appendingPathComponent("designators.csv"), atomically: true, encoding: .utf8)
+    let bundle = dir.appendingPathComponent("scheda_2026-09-30.zip")
+    let zipper = Process()
+    zipper.executableURL = URL(fileURLWithPath: "/usr/bin/zip"); zipper.currentDirectoryURL = pack
+    zipper.arguments = ["-q", bundle.path, zip.lastPathComponent, bom.lastPathComponent, cpl.lastPathComponent, "designators.csv"]
+    try zipper.run(); zipper.waitUntilExit()
+    let fromBundle = CircuitModel()
+    var bundleLast = ""
+    fromBundle.report = { bundleLast = $0 }
+    try fromBundle.newCircuit()
+    fromBundle.prepareManufacturingImport([bundle])
+    await fromBundle.importReady()
+    let bp = fromBundle.manufacturingProposal
+    check(bp?.files.bom.lastPathComponent == bom.lastPathComponent && bp?.files.positions.lastPathComponent == cpl.lastPathComponent
+          && bp?.ignored == ["designators.csv"] && bp?.package.components.count == 2, "pacchetto in un solo ZIP: BOM e posizioni trovate, extra dichiarati (\(bundleLast))")
+    let alone = CircuitModel()
+    var aloneLast = ""
+    alone.report = { aloneLast = $0 }
+    try alone.newCircuit()
+    alone.prepareManufacturingImport([zip])
+    await alone.importReady()
+    check(alone.manufacturingProposal == nil && aloneLast.contains("non contiene un pacchetto"), "solo lo ZIP dei Gerber: chiesto di aggiungere BOM e posizioni")
+
     // Two tables that are both BOMs: said so, nothing prepared.
     let other = dir.appendingPathComponent("altra.csv")
     try FileManager.default.copyItem(at: bom, to: other)

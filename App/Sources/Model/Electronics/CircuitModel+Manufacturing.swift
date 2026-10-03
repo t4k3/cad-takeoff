@@ -19,6 +19,8 @@ extension CircuitModel {
     struct ManufacturingProposal {
         var urls: [URL]
         var files: ManufacturingFiles
+        /// Files of a chosen package not used (designators, IPC netlist…).
+        var ignored: [String] = []
         var package: ManufacturingPackage
         var command: ElectronicsCommand
         var issues: [ElectronicsIssue]
@@ -43,7 +45,7 @@ extension CircuitModel {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.allowedContentTypes = [.zip, .commaSeparatedText, .plainText]
-        panel.message = "Scegli insieme i tre file del produttore: lo ZIP dei Gerber, la BOM (.csv) e le posizioni CPL (.csv)"
+        panel.message = "Scegli lo ZIP del pacchetto (Gerber, BOM e posizioni dentro, come lo esporta KiCad per JLCPCB), oppure insieme i tre file: lo ZIP dei Gerber, la BOM (.csv) e le posizioni CPL (.csv)"
         panel.prompt = "Importa"
         guard panel.runModal() == .OK else { return }
         do {
@@ -69,8 +71,8 @@ extension CircuitModel {
         let lotName = lotName ?? defaultLotName
         cancelImport()
         let zips = urls.filter { $0.pathExtension.lowercased() == "zip" }
-        guard zips.count == 1, urls.count == 3 else {
-            report("Servono tre file: uno ZIP con i Gerber e le forature, la BOM e le posizioni (CSV). Scelti: \(urls.map(\.lastPathComponent).joined(separator: ", ")).")
+        guard zips.count == 1, urls.count == 3 || urls.count == 1 else {
+            report("Servono lo ZIP del pacchetto, oppure tre file: uno ZIP con i Gerber e le forature, la BOM e le posizioni (CSV). Scelti: \(urls.map(\.lastPathComponent).joined(separator: ", ")).")
             return
         }
         importing = zips[0].lastPathComponent
@@ -107,6 +109,30 @@ extension CircuitModel {
         prepareManufacturingImport(p.urls, lotName: name)
     }
 
+    /// The files to import: the three chosen, or — one ZIP chosen — the package inside it (a ZIP of
+    /// Gerbers and drills, the BOM and the positions; other files such as designators or an IPC
+    /// netlist are left out and named). Inner files are keyed as paths under the package.
+    nonisolated static func resolve(_ urls: [URL], _ data: [URL: Data]) throws -> (files: ManufacturingFiles, data: [URL: Data], ignored: [String]) {
+        guard urls.count == 1, let outer = urls.first else { return (try manufacturingFiles(urls, data: data), data, []) }
+        let entries = try ManufacturingArchive.read(data[outer] ?? Data())
+        let inner = entries.filter { $0.name.lowercased().hasSuffix(".zip") }
+        let tables = entries.filter { $0.name.lowercased().hasSuffix(".csv") }
+        guard inner.count == 1, tables.count >= 2 else {
+            throw CircuitEditError("«\(outer.lastPathComponent)» non contiene un pacchetto (uno ZIP dei Gerber con BOM e posizioni): se sono i soli Gerber, sceglilo insieme alla BOM e alle posizioni.")
+        }
+        let positions = tables.filter { (try? ManufacturingTables.positions($0.data)) != nil }
+        let boms = tables.filter { t in !positions.contains(t) && (try? ManufacturingTables.bom(t.data)) != nil }
+        guard positions.count == 1, boms.count == 1 else {
+            throw CircuitEditError("Nel pacchetto non riconosco una sola BOM e un solo file di posizioni (\(tables.map(\.name).joined(separator: ", "))).")
+        }
+        func url(_ name: String) -> URL { outer.appendingPathComponent(name) }
+        let used = [inner[0], boms[0], positions[0]]
+        var d: [URL: Data] = [:]
+        for f in used { d[url(f.name)] = f.data }
+        let ignored = entries.filter { !used.contains($0) }.map(\.name)
+        return (ManufacturingFiles(archive: url(inner[0].name), bom: url(boms[0].name), positions: url(positions[0].name)), d, ignored)
+    }
+
     /// Which table is which: the one the engine reads as positions (X, Y, rotation, side) is the
     /// CPL, the other the BOM.
     nonisolated static func manufacturingFiles(_ urls: [URL], data: [URL: Data]) throws -> ManufacturingFiles {
@@ -127,7 +153,7 @@ extension CircuitModel {
     nonisolated static func manufacturingProposal(urls: [URL], data: [URL: Data], name: String, lotName: String,
                                                   document: ElectronicsDocument, key: ImportKey) -> Result<ManufacturingProposal, CircuitEditError> {
         do {
-            let files = try manufacturingFiles(urls, data: data)
+            let (files, data, ignored) = try resolve(urls, data)
             let package = try ElectronicsManufacturingImport.prepare(archive: data[files.archive] ?? Data(), bom: data[files.bom] ?? Data(),
                                                                      positions: data[files.positions] ?? Data(),
                                                                      name: name, lotName: lotName)
@@ -143,7 +169,7 @@ extension CircuitModel {
                 preview = try ElectronicsCommands.preview(command, document: target, expectedRevision: target.revision)
             }
             let lot = document.design.manufacturing?.id == package.id && !inNew ? document.design.manufacturing?.name : nil
-            return .success(ManufacturingProposal(urls: urls, files: files, package: package, command: command,
+            return .success(ManufacturingProposal(urls: urls, files: files, ignored: ignored, package: package, command: command,
                                                   issues: preview.issues, canApply: preview.canApply, key: key,
                                                   target: target, inNewCircuit: inNew, addsLotTo: lot))
         } catch {
