@@ -55,7 +55,7 @@ public enum ElectronicsFabrication {
             issues += assembly!.issues.filter { ["missing_3d_model","supplier_availability_unchecked","model_assets_unchecked"].contains($0.code) }
         } catch let failure as ElectronicsFailure { issues += failure.issues }
 
-        var layers = Dictionary(uniqueKeysWithValues:FabricationLayerKind.allCases.map { ($0,[FabricationObject]()) })
+        var layers = Dictionary(uniqueKeysWithValues:FabricationLayerKind.twoLayer.map { ($0,[FabricationObject]()) })
         var drills: [FabricationDrill] = []
         for p in pcb.primitives {
             try Task.checkCancellation()
@@ -159,7 +159,7 @@ public enum ElectronicsFabrication {
             }
         }
         // Output uses six integer/six fractional places; reject loss of geometry rather than clamp.
-        for layer in FabricationLayerKind.allCases {
+        for layer in FabricationLayerKind.twoLayer {
             for object in layers[layer]! {
                 try Task.checkCancellation()
                 if object.core.contains(where: { !validOutputPoint($0,origin:design.board.assemblyOrigin) }) ||
@@ -183,7 +183,7 @@ public enum ElectronicsFabrication {
         var seen = Set<String>()
         issues = issues.filter { seen.insert($0.code+"/"+$0.subject+"/"+($0.subjectIDs ?? []).map(\.uuidString).joined(separator:"/")).inserted }
         return (.init(designID:design.id,revision:document.revision,variantID:variantID,origin:design.board.assemblyOrigin,profile:profile,
-                      layers:FabricationLayerKind.allCases.map { .init(kind:$0,objects:layers[$0]!) },drills:drills,issues:issues),assembly)
+                      layers:FabricationLayerKind.twoLayer.map { .init(kind:$0,objects:layers[$0]!) },drills:drills,issues:issues),assembly)
     }
     static func validOutputPoint(_ p: PCBPoint, origin: PCBPoint) -> Bool {
         [p.x-origin.x,p.y-origin.y].allSatisfy { $0.isFinite && abs($0) < 999999 }

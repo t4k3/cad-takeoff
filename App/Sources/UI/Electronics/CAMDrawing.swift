@@ -42,9 +42,14 @@ struct CAMDrawing {
         }
     }
 
-    /// Bottom side first, the top over it, the outline last.
-    static let order: [FabricationLayerKind] = [.bottomSilkscreen, .bottomPaste, .bottomMask, .bottomCopper,
-                                                .topCopper, .topMask, .topPaste, .topSilkscreen, .profile]
+    /// Bottom side first, the inner copper upwards (the last inner layer is the lowest), the top
+    /// over it, the outline last.
+    static let order: [FabricationLayerKind] = [.bottomSilkscreen, .bottomPaste, .bottomMask, .bottomCopper]
+        + (1...30).reversed().compactMap(FabricationLayerKind.inner)
+        + [.topCopper, .topMask, .topPaste, .topSilkscreen, .profile]
+
+    /// Inner layers start switched off: their planes would cover everything.
+    static let innerLayers = Set(FabricationLayerKind.allCases.filter { $0.innerIndex != nil })
 
     static func colour(_ kind: FabricationLayerKind) -> (Color, Double) {
         switch kind {
@@ -55,6 +60,9 @@ struct CAMDrawing {
         case .topSilkscreen: (Color.white, 0.9)
         case .bottomSilkscreen: (Color(white: 0.75), 0.6)
         case .profile: (Color.yellow, 1)
+        default:
+            // Inner copper: alternating violet and teal, so neighbours differ.
+            (kind.innerIndex.map { $0.isMultiple(of: 2) } == true ? Color(red: 0.3, green: 0.75, blue: 0.7) : Color(red: 0.72, green: 0.45, blue: 0.9), 0.65)
         }
     }
 
@@ -67,6 +75,7 @@ struct CAMDrawing {
         case .topPaste: "Pasta sopra"; case .bottomPaste: "Pasta sotto"
         case .topSilkscreen: "Serigrafia sopra"; case .bottomSilkscreen: "Serigrafia sotto"
         case .profile: "Contorno"
+        default: "Rame interno \(kind.innerIndex ?? 0)"
         }
     }
 
@@ -78,6 +87,7 @@ struct CAMDrawing {
         case .topMask, .bottomMask: (Color(red: 0.83, green: 0.69, blue: 0.36), 1)
         case .topSilkscreen, .bottomSilkscreen: (Color(white: 0.95), 1)
         case .topPaste, .bottomPaste, .profile: (.clear, 0)
+        default: (.clear, 0)   // inner copper: inside the laminate, not seen
         }
     }
     static let maskGreen = Color(red: 0.07, green: 0.34, blue: 0.16)

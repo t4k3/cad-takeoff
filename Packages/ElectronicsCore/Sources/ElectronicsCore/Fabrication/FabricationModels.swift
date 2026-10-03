@@ -22,22 +22,38 @@ public struct FabricationProfile: Codable, Equatable, Sendable {
 
 public enum FabricationLayerKind: String, Codable, CaseIterable, Sendable {
     case topCopper, bottomCopper, topMask, bottomMask, topPaste, bottomPaste, topSilkscreen, bottomSilkscreen, profile
+    /// Inner copper of an IMPORTED multilayer board (In1 = L2 under the top). The native export
+    /// writes `twoLayer` only.
+    case inner1, inner2, inner3, inner4, inner5, inner6, inner7, inner8, inner9, inner10, inner11, inner12, inner13, inner14, inner15, inner16, inner17, inner18, inner19, inner20, inner21, inner22, inner23, inner24, inner25, inner26, inner27, inner28, inner29, inner30
+
+    /// The layers of a two-layer board: what the native fabrication export writes.
+    public static let twoLayer: [FabricationLayerKind] = [.topCopper, .bottomCopper, .topMask, .bottomMask, .topPaste,
+                                                          .bottomPaste, .topSilkscreen, .bottomSilkscreen, .profile]
+    /// 1 for In1 … nil for the outer layers.
+    public var innerIndex: Int? { rawValue.hasPrefix("inner") ? Int(rawValue.dropFirst(5)) : nil }
+    public static func inner(_ index: Int) -> FabricationLayerKind? { FabricationLayerKind(rawValue: "inner\(index)") }
+    public var isCopper: Bool { self == .topCopper || self == .bottomCopper || innerIndex != nil }
+
     public var fileName: String {
-        switch self {
+        if let n = innerIndex { return "board-In\(n)_Cu.gbr" }
+        return switch self {
         case .topCopper: "board-F_Cu.gbr"; case .bottomCopper: "board-B_Cu.gbr"
         case .topMask: "board-F_Mask.gbr"; case .bottomMask: "board-B_Mask.gbr"
         case .topPaste: "board-F_Paste.gbr"; case .bottomPaste: "board-B_Paste.gbr"
         case .topSilkscreen: "board-F_Silkscreen.gbr"; case .bottomSilkscreen: "board-B_Silkscreen.gbr"
         case .profile: "board-Profile.gbr"
+        default: "board-\(rawValue).gbr"
         }
     }
     public var fileFunction: String {
-        switch self {
+        if let n = innerIndex { return "Copper,L\(n + 1),Inr" }
+        return switch self {
         case .topCopper: "Copper,L1,Top"; case .bottomCopper: "Copper,L2,Bot"
         case .topMask: "Soldermask,Top"; case .bottomMask: "Soldermask,Bot"
         case .topPaste: "Paste,Top"; case .bottomPaste: "Paste,Bot"
         case .topSilkscreen: "Legend,Top"; case .bottomSilkscreen: "Legend,Bot"
         case .profile: "Profile,NP"
+        default: "Other"
         }
     }
     public var polarity: String { self == .topMask || self == .bottomMask ? "Negative" : "Positive" }

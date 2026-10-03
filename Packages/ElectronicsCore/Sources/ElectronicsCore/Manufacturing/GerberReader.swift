@@ -14,7 +14,9 @@ public enum GerberReader {
 }
 
 private struct GerberParser {
-    struct Aperture { var shapes: [ManufacturingShape]; var strokeRadius: Double? }
+    /// `isNull`: a zero-size aperture (allowed by the specification, used by KiCad): flashes and
+    /// draws with it leave no image.
+    struct Aperture { var shapes: [ManufacturingShape]; var strokeRadius: Double?; var isNull = false }
     let name: String
     let root: UUID
     var unit: Double?
@@ -89,7 +91,13 @@ private struct GerberParser {
             let top = parts.contains("Top"), bottom = parts.contains("Bot")
             switch parts.first {
             case "Copper":
-                guard top != bottom, !parts.contains("Inr") else { throw fail("Strato rame interno o ambiguo non supportato.") }
+                if parts.contains("Inr") {
+                    // Inner copper: «Copper,L2,Inr» is In1 (L1 is the top).
+                    guard let l = parts.first(where: { $0.hasPrefix("L") }).flatMap({ Int($0.dropFirst()) }),
+                          let kind = FabricationLayerKind.inner(l - 1) else { throw fail("Strato rame interno senza numero valido: \(function).") }
+                    return kind
+                }
+                guard top != bottom else { throw fail("Strato rame ambiguo non supportato.") }
                 return top ? .topCopper : .bottomCopper
             case "Soldermask": if top != bottom { return top ? .topMask : .bottomMask }
             case "Paste": if top != bottom { return top ? .topPaste : .bottomPaste }
@@ -104,6 +112,10 @@ private struct GerberParser {
             "gts": .topMask, "gbs": .bottomMask, "gtp": .topPaste, "gbp": .bottomPaste,
             "gto": .topSilkscreen, "gbo": .bottomSilkscreen, "gm1": .profile, "gko": .profile]
         if let kind = extensions[ext] { return kind }
+        // KiCad inner copper: .g1, .g2… and «-In1_Cu.»
+        if ext.hasPrefix("g"), let n = Int(ext.dropFirst()), let kind = FabricationLayerKind.inner(n) { return kind }
+        if let r = lower.range(of: "-in"), let n = Int(lower[r.upperBound...].prefix { $0.isNumber }),
+           lower[r.upperBound...].drop(while: { $0.isNumber }).hasPrefix("_cu."), let kind = FabricationLayerKind.inner(n) { return kind }
         let aliases: [(String, FabricationLayerKind)] = [("-f_cu.", .topCopper), ("-b_cu.", .bottomCopper),
             ("-f_mask.", .topMask), ("-b_mask.", .bottomMask), ("-f_paste.", .topPaste), ("-b_paste.", .bottomPaste),
             ("-f_silkscreen.", .topSilkscreen), ("-b_silkscreen.", .bottomSilkscreen),
@@ -238,6 +250,7 @@ private struct GerberParser {
         if op == 3 {
             guard !inRegion, coordinates["I"] == nil, coordinates["J"] == nil,
                   let selected, let a = apertures[selected] else { throw fail("Flash senza apertura o dentro una regione.") }
+            if a.isNull { current = target; return }
             let shapes = a.shapes.map { shape in ManufacturingShape(contours: shape.contours.map { $0.map { .init($0.x + target.x, $0.y + target.y) } }, radius: shape.radius, isDark: shape.isDark) }
             try append(shapes); current = target; return
         }
@@ -257,6 +270,7 @@ private struct GerberParser {
             contour.append(contentsOf: path.dropFirst())
         } else {
             guard let selected, let a = apertures[selected], let radius = a.strokeRadius else { throw fail("Tracciato con apertura non circolare o forata non supportato.") }
+            if a.isNull { current = target; return }
             var shapes: [ManufacturingShape] = []
             for index in 1..<path.count { shapes.append(.init(contours: [[path[index-1], path[index]]], radius: radius)) }
             try append(shapes)
@@ -332,7 +346,11 @@ private struct GerberParser {
         switch template {
         case "C":
             guard (1...2).contains(values.count) else { throw fail("Apertura C: attesi diametro e foro opzionale.") }
-            let diameter = values[0]*unit; try positive(diameter)
+            let diameter = values[0]*unit
+            if diameter == 0, values.count == 1 || values[1] == 0 {
+                apertures[number] = .init(shapes: [], strokeRadius: 0, isNull: true); return
+            }
+            try positive(diameter)
             shapes = [.init(contours: [[.init()]], radius: diameter/2)]
             hole = values.count == 2 ? values[1]*unit : nil
             if hole == nil || hole == 0 { strokeRadius = diameter/2 }

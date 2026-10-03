@@ -10,7 +10,7 @@ extension ElectronicsManufacturingImport {
                 throw failure("manufacturing_board_thickness", "Spessore scheda non valido: inserire da 0,1 a 20 mm.", [package.id])
             }
         }
-        guard package.layers.count <= 9, package.drills.count <= 100_000,
+        guard package.layers.count <= 39, package.drills.count <= 100_000,   // 9 outer + up to 30 inner copper
               package.components.count <= 20_000, (1...1_000).contains(package.lots.count),
               package.sources.count <= 10_000, package.issues.count <= 20_000 else {
             throw failure("manufacturing_limit", "Pacchetto troppo grande: suddividere scheda o lotti.")

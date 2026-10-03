@@ -27,8 +27,11 @@ public enum ElectronicsManufacturingImport {
                 if let layer = try GerberReader.read(file.data, name: file.name) {
                     layers.append(layer); identity += file.name + "\0" + hash + "\n"
                 }
-            } else if ext.hasPrefix("g"), ext.dropFirst().allSatisfy(\.isNumber) {
-                throw failure("manufacturing_layer", "Strato interno non supportato: \(file.name). Importare un pacchetto a due strati.")
+            } else if ext.hasPrefix("g"), ext.count > 1, ext.dropFirst().allSatisfy(\.isNumber) {
+                // Inner copper of a multilayer board (KiCad .g1, .g2…).
+                if let layer = try GerberReader.read(file.data, name: file.name) {
+                    layers.append(layer); identity += file.name + "\0" + hash + "\n"
+                }
             } else if ["pdf", "gbrjob"].contains(ext) || (file.name as NSString).lastPathComponent == ".DS_Store" || file.name.hasPrefix("__MACOSX/") {
                 importIssues.append(.init("manufacturing_ancillary_file", file.name, "\(file.name): allegato accessorio non disegnato; provenienza conservata.", severity: .warning))
             } else {

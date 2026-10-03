@@ -691,7 +691,7 @@ final class CircuitModel {
     /// The reading in progress is a manufacturing import (its own sheet).
     var importingCAM = false
     /// CAM layers not shown (masks and paste at first) and the drills.
-    var camHiddenLayers: Set<FabricationLayerKind> = [.topMask, .bottomMask, .topPaste, .bottomPaste]
+    var camHiddenLayers: Set<FabricationLayerKind> = Set(FabricationLayerKind.allCases.filter { $0.innerIndex != nil }).union([.topMask, .bottomMask, .topPaste, .bottomPaste])
     var camHideDrills = false
     /// The imported board as Gerber, assembled (2D, one side) or in 3D; its assembly and a
     /// model/alignment being tried on one component.

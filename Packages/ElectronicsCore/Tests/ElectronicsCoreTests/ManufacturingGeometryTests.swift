@@ -99,10 +99,28 @@ final class ManufacturingGeometryTests: XCTestCase {
         let invalid = ["%SRX2Y2I10J10*%", "%AB D10*%", "%LMX*%", "%LR90*%", "%LS2*%", "G91*", "G74*", "%ADD10C,-1*%", "%ADD10C,1X2*%", "%AMBad*6,1,2,3*%%ADD10Bad*%", "G36*X0Y0D02*X100Y0D01*G37*", "%ADD10R,1X1*%D10*X0Y0D02*X1000000D01*", "%TO.N,NetA,NetB*%"]
         for body in invalid { XCTAssertThrowsError(try gerber(body), body) }
         XCTAssertThrowsError(try gerber("", name: "unknown.gbr"))
-        XCTAssertThrowsError(try gerber("%TF.FileFunction,Copper,L2,Inr*%"))
+        XCTAssertThrowsError(try gerber("%TF.FileFunction,Copper,Inr*%"))   // inner copper without its L number
         XCTAssertThrowsError(try gerber("%TF.FilePolarity,Negative*%"))
         XCTAssertThrowsError(try GerberReader.read(Data((header + "%ADD10C,1*%").utf8), name: "test.gtl"))
         XCTAssertNil(try GerberReader.read(Data((header + "%TF.FileFunction,Drillmap*%M02*").utf8), name: "map.gbr"))
+    }
+
+    /// KiCad 9 packages (Ross, forcedeck 30/09): a zero-size aperture is legal and leaves no
+    /// image; inner copper layers are read (FileFunction L2 = In1, or .g1 / «-In1_Cu.»), and the
+    /// native two-layer export is unchanged.
+    func testZeroSizeApertureAndInnerCopperLayers() throws {
+        let layer = try gerber("%ADD10C,0.000000*%%ADD11C,1*%D10*X0Y0D03*X1000000Y0D01*D11*X2000000Y0D03*")
+        XCTAssertEqual(layer.primitives.count, 1)
+        XCTAssertEqual(layer.primitives[0].shapes[0].contours, [[.init(2, 0)]])
+        XCTAssertThrowsError(try gerber("%ADD10C,0X0.5*%"))   // a hole in nothing
+        XCTAssertEqual(try gerber("%TF.FileFunction,Copper,L2,Inr*%").kind, .inner1)
+        XCTAssertEqual(try gerber("%TF.FileFunction,Copper,L3,Inr*%").kind, .inner2)
+        XCTAssertEqual(try gerber("", name: "board-In1_Cu.gbr").kind, .inner1)
+        XCTAssertEqual(try gerber("", name: "board.g3").kind, .inner3)
+        XCTAssertEqual(FabricationLayerKind.inner1.fileFunction, "Copper,L2,Inr")
+        XCTAssertTrue(FabricationLayerKind.inner2.isCopper)
+        XCTAssertEqual(FabricationLayerKind.twoLayer.count, 9)
+        XCTAssertFalse(FabricationLayerKind.twoLayer.contains { $0.innerIndex != nil })
     }
 
     func testDrillsSlotsUnitsAndPlating() throws {

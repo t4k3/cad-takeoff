@@ -128,3 +128,18 @@ versione gestisce omissioni, non sostituzioni di componenti tra lotti.
 `bash scripts/test-electronics.sh`:219 test Swift (uno reale opzionale saltato)
 e otto lettori Python PASS. Test reale eseguito separatamente:100 modifiche lotto,
 undo/riapertura/redo PASS, documento7.064.700byte. Vedere VALIDATION.md per log.
+
+## Multistrato e aperture zero — 03/10/2026 (Claude, su richiesta di Ross)
+
+Pacchetto reale KiCad 9.0.7 a 4 strati (forcedeck, non nel repository). Il lettore accetta:
+
+- aperture circolari di dimensione zero (`%ADD10C,0.000000*%`, ammesse dalla specifica):
+  flash e tratti con esse non producono immagine; un foro in un'apertura zero resta errore;
+- rame interno: `FileFunction Copper,Ln,Inr` (L2 = In1), estensioni KiCad `.g1`, `.g2`… e
+  nomi `-In1_Cu.`. Nuovi `FabricationLayerKind.inner1…inner30` (`innerIndex`, `isCopper`,
+  `inner(_:)`). L'export di fabbricazione nativo usa `FabricationLayerKind.twoLayer` (i nove
+  strati di sempre): una scheda nativa non scrive strati interni. Limite strati del pacchetto 39.
+
+L'app li mostra nella vista Gerber (spenti all'inizio: i piani coprirebbero tutto), non nella
+scheda finita. Lo ZIP-pacchetto (ZIP dei Gerber + BOM + posizioni dentro uno ZIP) si importa
+scegliendo il solo ZIP; altri file (designators, netlist IPC) sono elencati e non usati.

@@ -206,6 +206,23 @@ func manufacturingTests(check: (Bool, String) -> Void) async throws {
     await wrong.importReady()
     check(wrong.manufacturingProposal == nil && wrongLast.contains("distinguere"), "due BOM: rifiutato con il motivo (\(wrongLast))")
 
+    // A real four-layer KiCad package in one ZIP, when given (Ross's forcedeck, never in the repo).
+    if let path = ProcessInfo.processInfo.environment["FTK_FORCEDECK_BUNDLE"] {
+        let fd = CircuitModel()
+        var fdLast = ""
+        fd.report = { fdLast = $0 }
+        try fd.newCircuit()
+        fd.prepareManufacturingImport([URL(fileURLWithPath: path)])
+        await fd.importReady()
+        fd.confirmManufacturingImport()
+        let m = fd.manufacturing
+        print("· forcedeck: \(m?.layers.map(\.kind.rawValue) ?? []) \(m?.drills.count ?? 0) fori, \(m?.activeLot?.fittedComponentIDs.count ?? 0)/\(m?.components.count ?? 0) — \(fdLast)")
+        check(m?.layers.contains { $0.kind == .inner1 } == true && m?.layers.contains { $0.kind == .inner2 } == true
+              && m?.components.count == 111, "forcedeck a 4 strati importato dal pacchetto")
+        await fd.assemblyReady()
+        check(fd.assembly != nil, "forcedeck: scheda assemblata (\(fd.assemblyFailure ?? ""))")
+    }
+
     // The real package, when given (Ross's files stay in Downloads).
     if let path = ProcessInfo.processInfo.environment["FTK_MANUFACTURING_FIXTURE_DIR"] {
         let folder = URL(fileURLWithPath: path)

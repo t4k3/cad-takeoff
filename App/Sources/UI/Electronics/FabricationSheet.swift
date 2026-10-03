@@ -34,7 +34,7 @@ struct FabricationSheet: View {
             .frame(width: 320)
             VStack(alignment: .leading, spacing: 8) {
                 Picker("", selection: $layer) {
-                    ForEach(FabricationLayerKind.allCases, id: \.self) { Text(Self.name($0)).tag($0) }
+                    ForEach(FabricationLayerKind.twoLayer, id: \.self) { Text(Self.name($0)).tag($0) }
                 }
                 .labelsHidden()
                 FabricationLayerView(preview: circuits.currentFabrication?.preview, layer: layer,
@@ -167,6 +167,7 @@ struct FabricationSheet: View {
         case .topPaste: "Pasta sopra"; case .bottomPaste: "Pasta sotto"
         case .topSilkscreen: "Serigrafia sopra"; case .bottomSilkscreen: "Serigrafia sotto"
         case .profile: "Contorno"
+        default: CAMDrawing.name(kind)
         }
     }
 }
@@ -196,6 +197,7 @@ struct FabricationLayerView: View {
             case .topPaste, .bottomPaste: .gray
             case .topSilkscreen, .bottomSilkscreen: .white
             case .profile: .yellow
+            default: .purple
             }
             for object in preview.layers.first(where: { $0.kind == layer })?.objects ?? [] {
                 let core = object.core
