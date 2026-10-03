@@ -300,7 +300,7 @@ struct Ribbon: View {
             Button { if circuits.confirmDiscard() { try? circuits.newCircuit() } } label: { Label("Nuovo", systemImage: "plus.square") }
                 .help("Nuovo circuito: scheda 50 × 30 mm")
             Button { circuits.openWithPanel() } label: { Label("Apri", systemImage: "folder") }
-                .help("Apri un circuito (.ftkc)")
+                .help("Apri un circuito (.ftkc), o lo ZIP di una scheda dal produttore per importarla")
             Button { circuits.saveWithPanel() } label: { Label("Salva", systemImage: "square.and.arrow.down") }
                 .disabled(circuits.document == nil)
                 .help(circuits.url.map { "Salva in \($0.path) (⌘S)" } ?? "Salva il circuito (.ftkc): scegli nome e cartella (⌘S)")
@@ -431,7 +431,7 @@ struct Ribbon: View {
         }
         }
         ToolGroup("PRODUZIONE") {
-            Button { circuits.tool = .select; circuits.importManufacturingWithPanel() } label: { Label("Importa", systemImage: "square.and.arrow.down.on.square") }
+            Button { circuits.tool = .select; circuits.importManufacturingWithPanel() } label: { Label("Importa scheda", systemImage: "square.and.arrow.down.on.square") }
                 .help("Importa una scheda dai file del produttore: ZIP dei Gerber, BOM e posizioni (CPL). Chi manca nella BOM resta sulla scheda, escluso dal lotto")
             Button { circuits.tool = .select; circuits.openFabrication() } label: { Label("Gerber", systemImage: "square.stack.3d.up") }
                 .disabled(circuits.document == nil || circuits.isManufacturing)

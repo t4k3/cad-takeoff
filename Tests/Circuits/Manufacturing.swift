@@ -165,8 +165,9 @@ func manufacturingTests(check: (Bool, String) -> Void) async throws {
     let filter = CircuitFileFilter()
     let savedRef = (saved as NSURL).fileReferenceURL() ?? saved
     check(filter.panel(NSObject(), shouldEnable: saved) && filter.panel(NSObject(), shouldEnable: savedRef)
-          && !filter.panel(NSObject(), shouldEnable: bom) && filter.panel(NSObject(), shouldEnable: dir),
-          "Apri: .ftkc abilitato (anche come riferimento), .csv no, cartelle sì")
+          && !filter.panel(NSObject(), shouldEnable: bom) && filter.panel(NSObject(), shouldEnable: dir)
+          && filter.panel(NSObject(), shouldEnable: zip),
+          "Apri: .ftkc e .zip di produzione abilitati (anche come riferimento), .csv no, cartelle sì")
 
     // One ZIP chosen: the package inside it (as KiCad exports it for JLCPCB), extras named.
     let pack = dir.appendingPathComponent("pacchetto")

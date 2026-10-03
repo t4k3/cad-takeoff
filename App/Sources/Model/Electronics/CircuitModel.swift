@@ -258,10 +258,16 @@ final class CircuitModel {
         let filter = CircuitFileFilter()
         panel.delegate = filter
         panel.canChooseFiles = true; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
-        panel.message = "Apri un circuito (.ftkc)"
+        panel.message = "Apri un circuito (.ftkc), oppure lo ZIP di una scheda dal produttore (Gerber, BOM e posizioni) per importarla"
         // From the current circuit's folder: its listing is read again (after a save the file is a new one).
         if let url { panel.directoryURL = url.deletingLastPathComponent() }
         guard withExtendedLifetime(filter, { panel.runModal() }) == .OK, let url = panel.url else { return }
+        // A package from the manufacturer: the import with its preview (PRODUZIONE › Importa scheda).
+        if url.pathExtension.lowercased() == "zip" {
+            if document == nil { try? newCircuit(name: url.deletingPathExtension().lastPathComponent) }
+            prepareManufacturingImport([url])
+            return
+        }
         Task {
             do { try await open(url) } catch let e as CircuitEditError where e.isSuperseded {} catch { report("Circuito non aperto: \(Self.describe(error))") }
         }
@@ -1037,13 +1043,13 @@ struct CircuitEditError: Error, Sendable {
     static let superseded: CircuitEditError = { var e = CircuitEditError("Apertura sostituita da una più recente."); e.isSuperseded = true; return e }()
 }
 
-/// Open panel: folders to browse, circuits (.ftkc) and JSON to choose.
+/// Open panel: folders to browse, circuits (.ftkc), JSON and manufacturing packages (.zip) to choose.
 final class CircuitFileFilter: NSObject, NSOpenSavePanelDelegate {
     func panel(_ sender: Any, shouldEnable url: URL) -> Bool {
         // A file reference (…/.file/id=…) has no extension of its own: its path first. The
         // extension decides without touching the disk; only other names are asked if folders.
         let file = (url as NSURL).filePathURL ?? url
-        if ["ftkc", "json"].contains(file.pathExtension.lowercased()) { return true }
+        if ["ftkc", "json", "zip"].contains(file.pathExtension.lowercased()) { return true }
         return file.hasDirectoryPath || (try? file.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
     }
 }
