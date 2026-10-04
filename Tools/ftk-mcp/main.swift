@@ -3,7 +3,9 @@
 //
 // Reads newline-delimited JSON-RPC from stdin, POSTs each message to the app's local
 // endpoint with its bearer token (from the app's discovery file) and writes the
-// response on stdout. Logs go to stderr only. Launches the app if it is not running.
+// response on stdout. Logs go to stderr only. While the app is not running, the handshake
+// (initialize, tools/list, ping) is answered from the app's saved handshake file; the app is
+// launched only for a tool call (Ross 04/10: it started with every Claude session).
 import AppKit
 import Foundation
 
@@ -15,13 +17,60 @@ let realHome = URL(fileURLWithPath: String(cString: getpwuid(getuid()).pointee.p
 
 /// Where the app publishes url+token: App Group container (TestFlight / signed builds),
 /// then the app's own container (local builds without the App Group).
-let discoveryCandidates: [URL] = [
+/// FTK_MCP_DISCOVERY_DIR (tests only): read mcp.json and mcp-handshake.json from there, never
+/// launch the app.
+let testDirectory = ProcessInfo.processInfo.environment["FTK_MCP_DISCOVERY_DIR"].map { URL(fileURLWithPath: $0) }
+let discoveryCandidates: [URL] = testDirectory.map { [$0.appendingPathComponent("mcp.json")] } ?? [
     FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?.appendingPathComponent("mcp.json"),
     realHome.appendingPathComponent("Library/Group Containers/\(appGroup)/mcp.json"),
     realHome.appendingPathComponent("Library/Containers/\(bundleID)/Data/Library/Application Support/FusionTakeoff/mcp.json"),
 ].compactMap { $0 }
 
 struct Endpoint { let url: URL; let token: String }
+
+/// Server info and tool list the app saved when it last ran (mcp-handshake.json beside mcp.json).
+func savedHandshake() -> [String: Any]? {
+    for url in discoveryCandidates {
+        let file = url.deletingLastPathComponent().appendingPathComponent("mcp-handshake.json")
+        if let data = try? Data(contentsOf: file), let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           obj["tools"] is [Any] { return obj }
+    }
+    return nil
+}
+
+/// The handshake answered here when the app is not running (nil: forward, launching it if needed).
+func localReply(_ message: Data) -> (handled: Bool, reply: Data?) {
+    guard readEndpoint() == nil, let saved = savedHandshake(),
+          let obj = try? JSONSerialization.jsonObject(with: message) as? [String: Any],
+          let method = obj["method"] as? String else { return (false, nil) }
+    let id = obj["id"]
+    func reply(_ result: [String: Any]) -> (Bool, Data?) {
+        guard let id else { return (true, nil) }
+        return (true, try? JSONSerialization.data(withJSONObject: ["jsonrpc": "2.0", "id": id, "result": result]))
+    }
+    switch method {
+    case "initialize":
+        let supported = saved["supportedVersions"] as? [String] ?? []
+        let requested = (obj["params"] as? [String: Any])?["protocolVersion"] as? String
+        let version = requested.flatMap { supported.contains($0) ? $0 : nil } ?? supported.first ?? "2025-06-18"
+        return reply(["protocolVersion": version, "capabilities": ["tools": ["listChanged": false]],
+                      "serverInfo": saved["serverInfo"] ?? [:], "instructions": saved["instructions"] ?? ""])
+    case "tools/list": return reply(["tools": saved["tools"] ?? []])
+    case "ping": return reply([:])
+    default:
+        if method.hasPrefix("notifications/") { return (true, nil) }
+        return (false, nil)
+    }
+}
+
+/// The app to launch: the one this bridge is inside (…/X.app/Contents/MacOS/ftk-mcp), not
+/// whichever copy Launch Services knows about (an old build).
+func appToLaunch() -> URL? {
+    let own = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath()
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    if own.pathExtension == "app", Bundle(url: own)?.bundleIdentifier == bundleID { return own }
+    return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+}
 
 func log(_ s: String) { FileHandle.standardError.write(Data("ftk-mcp: \(s)\n".utf8)) }
 
@@ -43,14 +92,14 @@ func readEndpoint() -> Endpoint? {
 /// Finds the running app's endpoint, launching the app and waiting up to ~20 s if needed.
 func endpoint() async -> Endpoint? {
     if let e = readEndpoint() { return e }
-    if NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty,
-       let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+    if testDirectory == nil, NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty,
+       let appURL = appToLaunch() {
         log("avvio CAD Takeoff…")
         let config = NSWorkspace.OpenConfiguration()
         config.activates = false
         _ = try? await NSWorkspace.shared.openApplication(at: appURL, configuration: config)
     }
-    for _ in 0..<40 {
+    for _ in 0..<(testDirectory == nil ? 40 : 1) {
         try? await Task.sleep(for: .milliseconds(500))
         if let e = readEndpoint() { return e }
     }
@@ -97,7 +146,8 @@ let stdout = FileHandle.standardOutput
 for try await line in FileHandle.standardInput.bytes.lines {
     let trimmed = line.trimmingCharacters(in: .whitespaces)
     guard !trimmed.isEmpty else { continue }
-    if let reply = await forward(Data(trimmed.utf8)) {
+    let local = localReply(Data(trimmed.utf8))
+    if let reply = local.handled ? local.reply : await forward(Data(trimmed.utf8)) {
         var out = reply.filter { $0 != 0x0A && $0 != 0x0D } // one message per line
         out.append(0x0A)
         stdout.write(out)

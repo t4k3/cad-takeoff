@@ -62,17 +62,7 @@ final class MCPServer {
         case "ping":
             return result(id, [:])
         case "tools/list":
-            let tools = (provider?.tools ?? []).map { t -> JSONValue in
-                [
-                    "name": .string(t.name),
-                    "title": .string(t.title),
-                    "description": .string(t.description),
-                    "inputSchema": t.inputSchema,
-                    "annotations": ["title": .string(t.title), "readOnlyHint": .bool(t.isReadOnly),
-                                    "destructiveHint": .bool(false), "openWorldHint": false],
-                ]
-            }
-            return result(id, ["tools": .array(tools)])
+            return result(id, ["tools": toolList])
         case "tools/call":
             guard let name = params["name"]?.string else {
                 return errorResponse(id: id ?? .null, code: -32602, message: "Missing tool name")
@@ -98,6 +88,29 @@ final class MCPServer {
         default:
             return isNotification ? nil : errorResponse(id: id ?? .null, code: -32601, message: "Method not found: \(method)")
         }
+    }
+
+    /// The tools as tools/list gives them.
+    var toolList: JSONValue {
+        .array((provider?.tools ?? []).map { t -> JSONValue in
+            [
+                "name": .string(t.name),
+                "title": .string(t.title),
+                "description": .string(t.description),
+                "inputSchema": t.inputSchema,
+                "annotations": ["title": .string(t.title), "readOnlyHint": .bool(t.isReadOnly),
+                                "destructiveHint": .bool(false), "openWorldHint": false],
+            ]
+        })
+    }
+
+    /// What the stdio bridge needs to answer a client's handshake (initialize, tools/list) while
+    /// the app is not running, without launching it: the app starts only for a tool call.
+    var handshake: JSONValue {
+        ["supportedVersions": .array(Self.supportedVersions.map(JSONValue.string)),
+         "serverInfo": ["name": .string(serverName), "title": "CAD Takeoff", "version": .string(serverVersion)],
+         "instructions": .string(Self.instructions),
+         "tools": toolList]
     }
 
     private func result(_ id: JSONValue?, _ result: JSONValue) -> JSONValue? {

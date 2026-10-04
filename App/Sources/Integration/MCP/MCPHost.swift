@@ -99,7 +99,12 @@ final class MCPHost {
         let json: JSONValue = ["url": .string(url), "token": .string(token), "pid": .number(Double(ProcessInfo.processInfo.processIdentifier))]
         try? Data(json.jsonString.utf8).write(to: file, options: .atomic)
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        // Kept after the app quits: the bridge answers handshakes from it without launching us.
+        try? Data(server.handshake.jsonString.utf8).write(to: Self.handshakeURL, options: .atomic)
     }
+
+    /// Next to the discovery file: server info and tool list for the bridge (no token inside).
+    static var handshakeURL: URL { discoveryURL.deletingLastPathComponent().appendingPathComponent("mcp-handshake.json") }
 
     private func record(_ e: MCPEvent) {
         let (text, isError): (String, Bool) = switch e {
