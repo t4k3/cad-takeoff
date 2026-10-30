@@ -15,7 +15,7 @@ struct SketchInspector: View {
                         TextField("Nome", text: $sketch.sketch.name).textFieldStyle(.plain)
                             .font(.system(size: 13, weight: .semibold))
                     }
-                    section("Entità (\(sketch.shapes.count))") {
+                    section(String(localized: "Entità (\(sketch.shapes.count))")) {
                         if sketch.shapes.isEmpty {
                             Text("Disegna con gli strumenti della barra SCHIZZO.").font(.caption)
                                 .foregroundStyle(Theme.Palette.textSecondary)
@@ -25,7 +25,7 @@ struct SketchInspector: View {
                         }
                     }
                     if let id = sketch.selection, let shape = sketch.shape(id) {
-                        section(shape.typeName) { ShapeParameters(sketch: sketch, id: id, shape: shape) }
+                        section(shape.localizedTypeName) { ShapeParameters(sketch: sketch, id: id, shape: shape) }
                     }
                 }
                 .padding(Theme.Metrics.pad + 2)
@@ -38,7 +38,7 @@ struct SketchInspector: View {
         let selected = sketch.selection == s.id
         return Button { sketch.selection = s.id } label: { entityLabel(s, index: index, selected: selected) }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(s.typeName) \(index), \(summary(s))")
+            .accessibilityLabel(Text(verbatim: "\(s.localizedTypeName) \(index), \(summary(s))"))
             .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -46,7 +46,7 @@ struct SketchInspector: View {
         HStack(spacing: 6) {
             Image(systemName: symbol(s)).frame(width: 16)
                 .foregroundStyle(selected ? Theme.Palette.accent : Theme.Palette.sketch)
-            Text("\(s.typeName) \(index)").font(Theme.Typeface.body)
+            Text(verbatim: "\(s.localizedTypeName) \(index)").font(Theme.Typeface.body)
             if s.isConstruction { Text("costr.").font(.caption2).foregroundStyle(Theme.Palette.textSecondary) }
             Spacer()
             Text(summary(s)).font(Theme.Typeface.mono).foregroundStyle(Theme.Palette.textSecondary).lineLimit(1)
@@ -76,7 +76,7 @@ struct SketchInspector: View {
         case let .polygon(_, r, _, _, _): "R\(fmt(r))"
         case let .slot(a, b, w): "\(fmt(hypot(b.x - a.x, b.y - a.y)))×\(fmt(w))"
         case let .arc(_, r, _, _): "R\(fmt(r))"
-        case let .spline(p, _): "\(p.count) punti"
+        case let .spline(p, _): String(localized: "\(p.count) punti")
         }
     }
 
@@ -102,24 +102,24 @@ private struct ShapeParameters: View {
                 if p.count == 2 { line(p[0], p[1]) } else { polyline(p, closed: closed) }
             case let .rectangle(c, w, h):
                 let x0 = min(c.x, c.x + w), y0 = min(c.y, c.y + h)
-                field("Angolo X", x0) { set(.rectangle(corner: Vec2($0, y0), width: abs(w), height: abs(h))) }
-                field("Angolo Y", y0) { set(.rectangle(corner: Vec2(x0, $0), width: abs(w), height: abs(h))) }
-                field("Larghezza", abs(w), positive: true) { set(.rectangle(corner: Vec2(x0, y0), width: $0, height: abs(h))) }
-                field("Altezza", abs(h), positive: true) { set(.rectangle(corner: Vec2(x0, y0), width: abs(w), height: $0)) }
+                field(String(localized: "Angolo X"), x0) { set(.rectangle(corner: Vec2($0, y0), width: abs(w), height: abs(h))) }
+                field(String(localized: "Angolo Y"), y0) { set(.rectangle(corner: Vec2(x0, $0), width: abs(w), height: abs(h))) }
+                field(String(localized: "Larghezza"), abs(w), positive: true) { set(.rectangle(corner: Vec2(x0, y0), width: $0, height: abs(h))) }
+                field(String(localized: "Altezza"), abs(h), positive: true) { set(.rectangle(corner: Vec2(x0, y0), width: abs(w), height: $0)) }
             case let .circle(c, r):
-                field("Centro X", c.x) { set(.circle(center: Vec2($0, c.y), radius: r)) }
-                field("Centro Y", c.y) { set(.circle(center: Vec2(c.x, $0), radius: r)) }
-                field("Diametro", 2 * r, positive: true) { set(.circle(center: c, radius: $0 / 2)) }
+                field(String(localized: "Centro X"), c.x) { set(.circle(center: Vec2($0, c.y), radius: r)) }
+                field(String(localized: "Centro Y"), c.y) { set(.circle(center: Vec2(c.x, $0), radius: r)) }
+                field(String(localized: "Diametro"), 2 * r, positive: true) { set(.circle(center: c, radius: $0 / 2)) }
             case let .polygon(c, r, n, rot, circ):
-                field("Centro X", c.x) { set(.polygon(center: Vec2($0, c.y), radius: r, sides: n, rotation: rot, circumscribed: circ)) }
-                field("Centro Y", c.y) { set(.polygon(center: Vec2(c.x, $0), radius: r, sides: n, rotation: rot, circumscribed: circ)) }
-                field(circ ? "Raggio (apotema)" : "Raggio (vertici)", r, positive: true) {
+                field(String(localized: "Centro X"), c.x) { set(.polygon(center: Vec2($0, c.y), radius: r, sides: n, rotation: rot, circumscribed: circ)) }
+                field(String(localized: "Centro Y"), c.y) { set(.polygon(center: Vec2(c.x, $0), radius: r, sides: n, rotation: rot, circumscribed: circ)) }
+                field(circ ? String(localized: "Raggio (apotema)") : String(localized: "Raggio (vertici)"), r, positive: true) {
                     set(.polygon(center: c, radius: $0, sides: n, rotation: rot, circumscribed: circ))
                 }
                 Stepper(value: Binding(get: { n }, set: { set(.polygon(center: c, radius: r, sides: $0, rotation: rot, circumscribed: circ)) }), in: 3...64) {
-                    HStack { label("Lati"); Spacer(); Text("\(n)").font(Theme.Typeface.mono) }
+                    HStack { label(String(localized: "Lati")); Spacer(); Text("\(n)").font(Theme.Typeface.mono) }
                 }
-                field("Rotazione", rot * 180 / .pi, unit: "°") { set(.polygon(center: c, radius: r, sides: n, rotation: $0 * .pi / 180, circumscribed: circ)) }
+                field(String(localized: "Rotazione"), rot * 180 / .pi, unit: "°") { set(.polygon(center: c, radius: r, sides: n, rotation: $0 * .pi / 180, circumscribed: circ)) }
                 Picker("Tipo", selection: Binding(get: { circ }, set: { set(.polygon(center: c, radius: r, sides: n, rotation: rot, circumscribed: $0)) })) {
                     Text("Inscritto").tag(false)
                     Text("Circoscritto").tag(true)
@@ -128,27 +128,27 @@ private struct ShapeParameters: View {
             case let .slot(a, b, wdt):
                 let len = hypot(b.x - a.x, b.y - a.y), ang = atan2(b.y - a.y, b.x - a.x)
                 let endFrom = { (s: Vec2, l: Double, t: Double) in Vec2(s.x + l * cos(t), s.y + l * sin(t)) }
-                field("Centro 1 X", a.x) { let s = Vec2($0, a.y); set(.slot(start: s, end: endFrom(s, len, ang), width: wdt)) }
-                field("Centro 1 Y", a.y) { let s = Vec2(a.x, $0); set(.slot(start: s, end: endFrom(s, len, ang), width: wdt)) }
-                field("Interasse", len, positive: true) { set(.slot(start: a, end: endFrom(a, $0, ang), width: wdt)) }
-                field("Angolo", ang * 180 / .pi, unit: "°") { set(.slot(start: a, end: endFrom(a, len, $0 * .pi / 180), width: wdt)) }
-                field("Larghezza", wdt, positive: true) { set(.slot(start: a, end: b, width: $0)) }
-                info("Lunghezza totale", "\(fmt(len + wdt)) mm")
+                field(String(localized: "Centro 1 X"), a.x) { let s = Vec2($0, a.y); set(.slot(start: s, end: endFrom(s, len, ang), width: wdt)) }
+                field(String(localized: "Centro 1 Y"), a.y) { let s = Vec2(a.x, $0); set(.slot(start: s, end: endFrom(s, len, ang), width: wdt)) }
+                field(String(localized: "Interasse"), len, positive: true) { set(.slot(start: a, end: endFrom(a, $0, ang), width: wdt)) }
+                field(String(localized: "Angolo"), ang * 180 / .pi, unit: "°") { set(.slot(start: a, end: endFrom(a, len, $0 * .pi / 180), width: wdt)) }
+                field(String(localized: "Larghezza"), wdt, positive: true) { set(.slot(start: a, end: b, width: $0)) }
+                info(String(localized: "Lunghezza totale"), "\(fmt(len + wdt)) mm")
             case let .spline(p, closed):
                 ForEach(p.indices, id: \.self) { i in
-                    field("Punto \(i + 1) X", p[i].x) { var q = p; q[i].x = $0; set(.spline(points: q, closed: closed)) }
-                    field("Punto \(i + 1) Y", p[i].y) { var q = p; q[i].y = $0; set(.spline(points: q, closed: closed)) }
+                    field(String(localized: "Punto \(i + 1) X"), p[i].x) { var q = p; q[i].x = $0; set(.spline(points: q, closed: closed)) }
+                    field(String(localized: "Punto \(i + 1) Y"), p[i].y) { var q = p; q[i].y = $0; set(.spline(points: q, closed: closed)) }
                 }
-                info("Lunghezza", "\(fmt(shape.length)) mm")
+                info(String(localized: "Lunghezza"), "\(fmt(shape.length)) mm")
             case let .arc(c, r, a0, a1):
-                field("Centro X", c.x) { set(.arc(center: Vec2($0, c.y), radius: r, start: a0, end: a1)) }
-                field("Centro Y", c.y) { set(.arc(center: Vec2(c.x, $0), radius: r, start: a0, end: a1)) }
-                field("Raggio", r, positive: true) { set(.arc(center: c, radius: $0, start: a0, end: a1)) }
-                field("Angolo iniziale", a0 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: $0 * .pi / 180, end: a1)) }
-                field("Angolo finale", a1 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: a0, end: $0 * .pi / 180)) }
+                field(String(localized: "Centro X"), c.x) { set(.arc(center: Vec2($0, c.y), radius: r, start: a0, end: a1)) }
+                field(String(localized: "Centro Y"), c.y) { set(.arc(center: Vec2(c.x, $0), radius: r, start: a0, end: a1)) }
+                field(String(localized: "Raggio"), r, positive: true) { set(.arc(center: c, radius: $0, start: a0, end: a1)) }
+                field(String(localized: "Angolo iniziale"), a0 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: $0 * .pi / 180, end: a1)) }
+                field(String(localized: "Angolo finale"), a1 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: a0, end: $0 * .pi / 180)) }
             }
-            if shape.isClosed { info("Area", "\(fmt(shape.area)) mm²") }
-            info(shape.isClosed ? "Perimetro" : "Lunghezza", "\(fmt(shape.length)) mm")
+            if shape.isClosed { info(String(localized: "Area"), "\(fmt(shape.area)) mm²") }
+            info(shape.isClosed ? String(localized: "Perimetro") : String(localized: "Lunghezza"), "\(fmt(shape.length)) mm")
             Toggle("Geometria di costruzione", isOn: Binding(get: { shape.isConstruction },
                                                              set: { v in sketch.update(id) { $0.isConstruction = v } }))
                 .toggleStyle(.switch).controlSize(.small).font(Theme.Typeface.body)
@@ -162,10 +162,10 @@ private struct ShapeParameters: View {
     @ViewBuilder private func line(_ p0: Vec2, _ p1: Vec2) -> some View {
         let len = hypot(p1.x - p0.x, p1.y - p0.y), ang = atan2(p1.y - p0.y, p1.x - p0.x)
         let end = { (s: Vec2, l: Double, t: Double) in [s, Vec2(s.x + l * cos(t), s.y + l * sin(t))] }
-        field("Inizio X", p0.x) { set(.polyline(end(Vec2($0, p0.y), len, ang), closed: false)) }
-        field("Inizio Y", p0.y) { set(.polyline(end(Vec2(p0.x, $0), len, ang), closed: false)) }
-        field("Lunghezza", len, positive: true) { set(.polyline(end(p0, $0, ang), closed: false)) }
-        field("Angolo", ang * 180 / .pi, unit: "°") { set(.polyline(end(p0, len, $0 * .pi / 180), closed: false)) }
+        field(String(localized: "Inizio X"), p0.x) { set(.polyline(end(Vec2($0, p0.y), len, ang), closed: false)) }
+        field(String(localized: "Inizio Y"), p0.y) { set(.polyline(end(Vec2(p0.x, $0), len, ang), closed: false)) }
+        field(String(localized: "Lunghezza"), len, positive: true) { set(.polyline(end(p0, $0, ang), closed: false)) }
+        field(String(localized: "Angolo"), ang * 180 / .pi, unit: "°") { set(.polyline(end(p0, len, $0 * .pi / 180), closed: false)) }
     }
 
     // Polyline/profile: each vertex editable.
@@ -197,9 +197,26 @@ private struct ShapeParameters: View {
             .textFieldStyle(.roundedBorder).font(Theme.Typeface.mono).multilineTextAlignment(.trailing)
     }
 
-    private func label(_ s: String) -> some View { Text(s).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary) }
+    private func label(_ s: String) -> some View { Text(LocalizedStringKey(s)).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary) }
 
     private func info(_ t: String, _ v: String) -> some View {
-        HStack { label(t); Spacer(); Text(v).font(Theme.Typeface.mono) }
+        HStack { label(t); Spacer(); Text(LocalizedStringKey(v)).font(Theme.Typeface.mono) }
+    }
+}
+
+/// The entity type as shown to the user. CADCore's `typeName` is Italian source text; the app
+/// localizes it here, where the catalog lives.
+extension SketchShape {
+    var localizedTypeName: String {
+        switch kind {
+        case let .polyline(p, closed):
+            closed ? String(localized: "Profilo") : (p.count == 2 ? String(localized: "Linea") : String(localized: "Polilinea"))
+        case .rectangle: String(localized: "Rettangolo")
+        case .circle: String(localized: "Cerchio")
+        case let .polygon(_, _, n, _, _): String(localized: "Poligono (\(n) lati)")
+        case .slot: String(localized: "Asola")
+        case .arc: String(localized: "Arco")
+        case .spline: String(localized: "Spline")
+        }
     }
 }

@@ -15,7 +15,7 @@ enum CombineCommand {
             spec = existing
         } else {
             guard let id = model.selection, bodies.contains(id) else {
-                model.statusMessage = "Seleziona prima il corpo da modificare (l'obiettivo)."
+                model.statusMessage = String(localized: "Seleziona prima il corpo da modificare (l'obiettivo).")
                 return nil
             }
             spec = CombineSpec(target: id, tools: [], operation: .join)
@@ -23,18 +23,18 @@ enum CombineCommand {
         // Bodies that exist before this step (editing: also the ones it removed, i.e. its tools).
         let candidates = (bodies + spec.tools + [spec.target]).reduce(into: [UUID]()) { if !$0.contains($1) { $0.append($1) } }
         guard candidates.count > 1 else {
-            model.statusMessage = "Combina vuole almeno due corpi."
+            model.statusMessage = String(localized: "Combina vuole almeno due corpi.")
             return nil
         }
         let original = feature
         func name(_ id: UUID) -> String { names[id] ?? "corpo" }
         var fields: [CommandField] = [
-            .init(id: "target", label: "Obiettivo", kind: .choice(candidates.map(name)), value: .index(candidates.firstIndex(of: spec.target) ?? 0),
-                  help: "Il corpo che cambia"),
-            .init(id: "operation", label: "Operazione", kind: .choice(operations.map(\.label)), value: .index(operations.firstIndex(of: spec.operation) ?? 0)),
-            .init(id: "keep", label: "Mantieni strumenti", kind: .toggle, value: .flag(spec.keepTools),
-                  help: "Gli strumenti restano corpi a sé"),
-            .init(id: "note", label: "Strumenti:", kind: .note(warning: false), value: .flag(false)),
+            .init(id: "target", label: String(localized: "Obiettivo"), kind: .choice(candidates.map(name)), value: .index(candidates.firstIndex(of: spec.target) ?? 0),
+                  help: String(localized: "Il corpo che cambia")),
+            .init(id: "operation", label: String(localized: "Operazione"), kind: .choice(operations.map(\.label)), value: .index(operations.firstIndex(of: spec.operation) ?? 0)),
+            .init(id: "keep", label: String(localized: "Mantieni strumenti"), kind: .toggle, value: .flag(spec.keepTools),
+                  help: String(localized: "Gli strumenti restano corpi a sé")),
+            .init(id: "note", label: String(localized: "Strumenti:"), kind: .note(warning: false), value: .flag(false)),
         ]
         for id in candidates {
             fields.append(.init(id: "tool:" + id.uuidString, label: name(id), kind: .toggle, value: .flag(spec.tools.contains(id))))
@@ -55,12 +55,12 @@ enum CombineCommand {
                 doc.features[i].kind = .combine(s)
                 return (doc, doc.features[i])
             }
-            let f = Feature(name: "Combina " + name(s.target), kind: .combine(s), color: doc.features.first { $0.id == s.target }?.color ?? .defaultColor)
+            let f = Feature(name: String(localized: "Combina \(name(s.target))"), kind: .combine(s), color: doc.features.first { $0.id == s.target }?.color ?? .defaultColor)
             doc.features.append(f)
             return (doc, f)
         }
         let created = CommandSession(
-            title: original == nil ? "Combina" : "Modifica \(original!.name)", symbol: "square.on.square.intersection.dashed",
+            title: original == nil ? String(localized: "Combina") : String(localized: "Modifica \(original!.name)"), symbol: "square.on.square.intersection.dashed",
             fields: fields,
             onPreview: { f in
                 let s = read(f)
@@ -70,9 +70,9 @@ enum CombineCommand {
             onCommit: { f in
                 defer { workspace.requestPreview(nil) }
                 let s = read(f)
-                guard !s.tools.isEmpty else { model.statusMessage = "Combina: spunta almeno un corpo strumento."; return }
+                guard !s.tools.isEmpty else { model.statusMessage = String(localized: "Combina: spunta almeno un corpo strumento."); return }
                 let (doc, feature) = document(with: s)
-                model.edit(original == nil ? feature.name : "Modifica \(feature.name)", selected: .some(s.target), changed: [feature.id]) { $0 = doc }
+                model.edit(original == nil ? feature.name : String(localized: "Modifica \(feature.name)"), selected: .some(s.target), changed: [feature.id]) { $0 = doc }
                 if let issue = model.evaluation().issues.first(where: { $0.featureID == feature.id }) { model.statusMessage = issue.message }
             },
             onCancel: { workspace.requestPreview(nil) })

@@ -47,12 +47,18 @@ enum UndoRouter {
 /// Asks before quitting with unsaved changes; closing the only window quits the app.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor static var confirmQuit: () -> Bool = { true }
+    /// Set once the launch windows are arranged: the Home hides the workspace behind it.
+    @MainActor static var arrangedLaunchWindows = false
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         MainActor.assumeIsolated { Self.confirmQuit() } ? .terminateNow : .terminateCancel
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+    /// No state restoration (the macOS 14 fallback for `restorationBehavior(.disabled)`):
+    /// otherwise macOS reopens last session's workspace behind the welcome window.
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { false }
 }
 
 /// Edit-menu items as a View, so their titles and enabled state follow the observed model.

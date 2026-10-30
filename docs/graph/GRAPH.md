@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-09-28 17:22. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-10-31 02:49. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -135,6 +135,9 @@ flowchart LR
     T109["T109 · Diagnosi e collaudo salvataggio delle schede importate nella Home<br/><i>codex</i>"]:::done
     T110["T110 · Diagnosi e collaudo rendering Gerber della scheda importata<br/><i>codex</i>"]:::done
     T111["T111 · Scheda assemblata: modelli componenti proprietari, allineamento e vista 2D/3D<br/><i>codex</i>"]:::done
+    T112["T112 · UI: Liquid Glass (HIG macOS) + i18n it/en/zh-Hans (String Catalog)<br/><i>claude</i>"]:::done
+    T113["T113 · T112 seguito: i18n pulita (it/en/zh-Hans) + Home stile Pixelmator<br/><i>claude</i>"]:::done
+    T114["T114 · i18n della chiave API nell'assistente + issue Xcode (format spec, chiavi stale, recommended settings)<br/><i>claude</i>"]:::done
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
@@ -177,6 +180,18 @@ flowchart LR
   end
   subgraph P29["E1"]
     T106["T106 · Librerie: confronto revisioni e impatto sui componenti prima dell import<br/><i>codex</i>"]:::done
+  end
+  subgraph P30["UI"]
+    T115["T115 · UI: barra del titolo stile Xcode (schede e modalità in alto) e finestra di benvenuto separata stile Pixelmator<br/><i>claude</i>"]:::done
+    T116["T116 · Home stile Strophe, estensione .ftk in cinese corretta e hint del viewport al centro<br/><i>claude</i>"]:::done
+    T118["T118 · Avvio: solo la finestra di benvenuto (niente workspace dietro) e Home senza striscia vuota in alto<br/><i>claude</i>"]:::done
+    T119["T119 · UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza<br/><i>claude</i>"]:::done
+  end
+  subgraph P31["build"]
+    T117["T117 · Firma: team in Config/Local.xcconfig così xcodegen non lo sovrascrive più<br/><i>claude</i>"]:::done
+  end
+  subgraph P32["Build"]
+    T120["T120 · Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113<br/><i>claude</i>"]:::done
   end
   T00 --> T02
   T00 --> T03
@@ -396,6 +411,15 @@ flowchart LR
   T108 --> T110
   T108 --> T111
   T110 --> T111
+  T17 --> T112
+  T112 --> T113
+  T113 --> T114
+  T112 --> T115
+  T115 --> T116
+  T116 --> T117
+  T117 --> T118
+  T118 --> T119
+  T119 --> T120
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -527,3 +551,12 @@ flowchart LR
 | T109 | Diagnosi e collaudo salvataggio delle schede importate nella Home | done | codex | T108 | docs/electronics<br>Tests/Electronics |
 | T110 | Diagnosi e collaudo rendering Gerber della scheda importata | done | codex | T108 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>build/electronics/acceptance-110 |
 | T111 | Scheda assemblata: modelli componenti proprietari, allineamento e vista 2D/3D | done | codex | T108, T110 | Packages/ElectronicsCore<br>docs/electronics<br>Tests/Electronics<br>scripts/test-electronics.sh<br>build/electronics/acceptance-111 |
+| T112 | UI: Liquid Glass (HIG macOS) + i18n it/en/zh-Hans (String Catalog) | done | claude | T17 | App/Sources/UI<br>App/Resources/Localizable.xcstrings<br>project.yml<br>App/Sources/UI/Workspace<br>FusionTakeoff.xcodeproj |
+| T113 | T112 seguito: i18n pulita (it/en/zh-Hans) + Home stile Pixelmator | done | claude | T112 | App/Sources/UI<br>App/Sources/Integration/Projects<br>App/Sources/Model<br>App/Resources/Localizable.xcstrings<br>docs/DA_PROVARE.md<br>App/Sources/UI/Home |
+| T114 | i18n della chiave API nell'assistente + issue Xcode (format spec, chiavi stale, recommended settings) | done | claude | T113 | project.yml<br>FusionTakeoff.xcodeproj<br>App/Sources/Integration<br>App/Sources/UI/Assistant<br>App/Resources/Localizable.xcstrings<br>docs/DA_PROVARE.md |
+| T115 | UI: barra del titolo stile Xcode (schede e modalità in alto) e finestra di benvenuto separata stile Pixelmator | done | claude | T112 | App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Home/HomeView.swift<br>App/Sources/UI/Workspace/WorkspaceView.swift<br>App/Sources/UI/Workspace/DesignTabs.swift<br>App/Sources/UI/Workspace/Ribbon.swift<br>App/Resources/Localizable.xcstrings<br>docs/DA_PROVARE.md |
+| T116 | Home stile Strophe, estensione .ftk in cinese corretta e hint del viewport al centro | done | claude | T115 | App/Sources/Integration/Projects/ProjectLibrary.swift<br>App/Sources/UI/Home/HomeView.swift<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Resources/Localizable.xcstrings<br>docs/DA_PROVARE.md |
+| T117 | Firma: team in Config/Local.xcconfig così xcodegen non lo sovrascrive più | done | claude | T116 | project.yml<br>Config/Signing.xcconfig<br>Config/Local.xcconfig<br>.gitignore<br>docs/DA_PROVARE.md |
+| T118 | Avvio: solo la finestra di benvenuto (niente workspace dietro) e Home senza striscia vuota in alto | done | claude | T117 | App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Home/HomeView.swift<br>App/Sources/UI/Workspace/WorkspaceView.swift<br>docs/DA_PROVARE.md |
+| T119 | UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza | done | claude | T118 | App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Workspace/WorkspaceView.swift<br>App/Sources/UI/Workspace/StatusBar.swift<br>App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Sources/UI/Connectors/ConnectorsPanel.swift<br>App/Sources/UI/Connectors/ChatGPTSetupView.swift<br>App/Resources/Localizable.xcstrings<br>docs/DA_PROVARE.md |
+| T120 | Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113 | done | claude | T119 | project.yml<br>Packages/CADCore/Package.swift<br>Packages/ElectronicsCore/Package.swift<br>App/Sources<br>App/Resources<br>Packages/ElectronicsCore/Sources/ElectronicsCore/Assembly.swift<br>docs/DA_PROVARE.md |

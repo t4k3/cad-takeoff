@@ -19,10 +19,11 @@ enum AssemblyLook {
 
     static func quality(_ q: ManufacturingModelQuality, aligned: Bool) -> (symbol: String, colour: Color, text: String) {
         switch q {
-        case .verified: ("checkmark.seal.fill", .green, "Modello verificato")
+        case .verified: ("checkmark.seal.fill", .green, String(localized: "Modello verificato"))
         case .approximate: (aligned ? "cube.fill" : "cube.transparent", .orange,
-                            aligned ? "Modello approssimato, orientamento controllato" : "Modello approssimato, orientamento da controllare")
-        case .missing: ("questionmark.square.dashed", .red, "Senza modello: solo il centro dalla CPL")
+                            aligned ? String(localized: "Modello approssimato, orientamento controllato")
+                                    : String(localized: "Modello approssimato, orientamento da controllare"))
+        case .missing: ("questionmark.square.dashed", .red, String(localized: "Senza modello: solo il centro dalla CPL"))
         }
     }
 }
@@ -139,7 +140,9 @@ struct AssemblyComponentDetail: View {
                 Label(q.text, systemImage: q.symbol).font(.caption).foregroundStyle(q.colour)
                 if let source = shown.modelSource { Text(source).font(.caption2).foregroundStyle(Theme.Palette.textSecondary).lineLimit(2) }
             }
-            Menu(binding.flatMap { ManufacturingPackageCatalog.model(key: $0.modelKey)?.name } ?? "Automatico" + (ManufacturingPackageCatalog.suggestedModel(for: component).map { " (\($0.name))" } ?? " (nessuno)")) {
+            let automatic = ManufacturingPackageCatalog.suggestedModel(for: component).map { String(localized: "Automatico (\($0.name))") }
+                ?? String(localized: "Automatico (nessuno)")
+            Menu(binding.flatMap { ManufacturingPackageCatalog.model(key: $0.modelKey)?.name } ?? automatic) {
                 Button("Automatico") { circuits.draftAlignment(component.id, nil) }
                 Divider()
                 ForEach(ManufacturingPackageCatalog.models, id: \.key) { model in
@@ -152,8 +155,8 @@ struct AssemblyComponentDetail: View {
             }
             .help("Modello del corpo: tutti quelli del catalogo sono approssimati")
             if let b = binding {
-                axes("Spostamento (mm)", b.offset, step: 0.05) { var n = b; n.offset = $0; circuits.draftAlignment(component.id, n) }
-                axes("Rotazione (°)", b.rotationDegrees, step: 90) { var n = b; n.rotationDegrees = $0; circuits.draftAlignment(component.id, n) }
+                axes(String(localized: "Spostamento (mm)"), b.offset, step: 0.05) { var n = b; n.offset = $0; circuits.draftAlignment(component.id, n) }
+                axes(String(localized: "Rotazione (°)"), b.rotationDegrees, step: 90) { var n = b; n.rotationDegrees = $0; circuits.draftAlignment(component.id, n) }
                 Toggle("Orientamento e pin 1 controllati", isOn: Binding(get: { b.alignmentVerified }, set: { var n = b; n.alignmentVerified = $0; circuits.draftAlignment(component.id, n) }))
                     .font(.caption)
                     .help("Dice che hai controllato orientamento e pin 1 sulla scheda; non rende esatto un modello approssimato")

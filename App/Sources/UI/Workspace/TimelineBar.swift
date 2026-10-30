@@ -46,9 +46,9 @@ struct TimelineBar: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8)
-        .frame(height: Theme.Metrics.timelineHeight)
-        .background(Theme.Palette.panel)
+        .padding(.horizontal, 2)
+        .frame(height: 30)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: Marker
@@ -142,10 +142,10 @@ struct TimelineBar: View {
     private func help(_ item: TimelineItem, index: Int, active: Bool) -> String {
         let kind = switch item.content {
         case let .feature(f): f.kind.typeName
-        case .sketch: "Schizzo"
+        case .sketch: String(localized: "Schizzo")
         }
-        let state = item.isSuppressed ? " — soppresso" : (active ? "" : " — dopo il marker")
-        return "\(index + 1). \(item.name) — \(kind)\(state). Doppio clic per modificare."
+        let state = item.isSuppressed ? String(localized: " — soppresso") : (active ? "" : String(localized: " — dopo il marker"))
+        return String(localized: "\(index + 1). \(item.name) — \(kind)\(state). Doppio clic per modificare.")
     }
 
     private func step(_ delta: Int) {

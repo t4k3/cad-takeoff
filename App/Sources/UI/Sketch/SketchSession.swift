@@ -36,24 +36,25 @@ final class SketchSession {
             case .point: "smallcircle.filled.circle"
             }
         }
+        /// Tooltip shown in the tool dock and in the canvas hint (localized at runtime).
         var hint: String {
             switch self {
-            case .select: "Clicca un'entità (o dentro un profilo) per vederne e modificarne i parametri."
-            case .line: "Clicca i vertici: si aggancia a punti, linee e cerchi. Clicca il primo punto per chiudere · doppio clic, Invio o Esc per finire."
-            case .rectangle: "Clicca il primo angolo, poi l'angolo opposto."
-            case .circle: "Clicca il centro, poi un punto sulla circonferenza."
-            case .polygon: "Clicca il centro, poi un vertice (o il punto medio di un lato se circoscritto)."
-            case .slot: "Clicca il primo centro, il secondo centro, poi la larghezza."
-            case .arc: "Clicca l'inizio, la fine, poi un punto dell'arco."
-            case .spline: "Clicca i punti della curva. Clicca il primo punto per chiuderla · doppio clic, Invio o Esc per finire."
-            case .fillet: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato."
-            case .chamfer: "Clicca l'angolo tra due linee: lo taglia una linea alla distanza impostata su entrambi i lati."
-            case .trim: "Clicca il pezzo da togliere: si taglia fino alle linee che lo incrociano (in rosso sotto il cursore)."
-            case .extend: "Clicca vicino all'estremo libero di una linea o di un arco: si allunga fino alla prima curva che incontra."
-            case .offset: "Clicca una forma (con le linee e gli archi uniti a lei), poi il lato dove creare la copia alla distanza impostata."
-            case .mirror: "Clicca la linea d'asse, poi le forme da specchiare: le copie restano simmetriche all'originale."
-            case .dimension: "Clicca una linea (lunghezza), un cerchio (diametro), due punti (distanza) o due linee (angolo), poi scrivi il valore."
-            case .point: "Clicca per mettere un punto: riferimento per vincoli e quote, e centro per i fori."
+            case .select: String(localized: "Clicca un'entità (o dentro un profilo) per vederne e modificarne i parametri.")
+            case .line: String(localized: "Clicca i vertici: si aggancia a punti, linee e cerchi. Clicca il primo punto per chiudere · doppio clic, Invio o Esc per finire.")
+            case .rectangle: String(localized: "Clicca il primo angolo, poi l'angolo opposto.")
+            case .circle: String(localized: "Clicca il centro, poi un punto sulla circonferenza.")
+            case .polygon: String(localized: "Clicca il centro, poi un vertice (o il punto medio di un lato se circoscritto).")
+            case .slot: String(localized: "Clicca il primo centro, il secondo centro, poi la larghezza.")
+            case .arc: String(localized: "Clicca l'inizio, la fine, poi un punto dell'arco.")
+            case .spline: String(localized: "Clicca i punti della curva. Clicca il primo punto per chiuderla · doppio clic, Invio o Esc per finire.")
+            case .fillet: String(localized: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato.")
+            case .chamfer: String(localized: "Clicca l'angolo tra due linee: lo taglia una linea alla distanza impostata su entrambi i lati.")
+            case .trim: String(localized: "Clicca il pezzo da togliere: si taglia fino alle linee che lo incrociano (in rosso sotto il cursore).")
+            case .extend: String(localized: "Clicca vicino all'estremo libero di una linea o di un arco: si allunga fino alla prima curva che incontra.")
+            case .offset: String(localized: "Clicca una forma (con le linee e gli archi uniti a lei), poi il lato dove creare la copia alla distanza impostata.")
+            case .mirror: String(localized: "Clicca la linea d'asse, poi le forme da specchiare: le copie restano simmetriche all'originale.")
+            case .dimension: String(localized: "Clicca una linea (lunghezza), un cerchio (diametro), due punti (distanza) o due linee (angolo), poi scrivi il valore.")
+            case .point: String(localized: "Clicca per mettere un punto: riferimento per vincoli e quote, e centro per i fori.")
             }
         }
         var key: String? {
@@ -245,11 +246,11 @@ final class SketchSession {
     }
 
     private static func describe(_ old: Sketch, _ new: Sketch) -> String {
-        if new.shapes.count > old.shapes.count, let s = new.shapes.last { return "Aggiungi \(s.typeName.lowercased())" }
-        if new.shapes.count < old.shapes.count { return "Elimina entità" }
-        if old.name != new.name { return "Rinomina schizzo" }
-        if let s = zip(old.shapes, new.shapes).first(where: { $0 != $1 })?.1 { return "Modifica \(s.typeName.lowercased())" }
-        return "Modifica schizzo"
+        if new.shapes.count > old.shapes.count, let s = new.shapes.last { return String(localized: "Aggiungi \(s.localizedTypeName.lowercased())") }
+        if new.shapes.count < old.shapes.count { return String(localized: "Elimina entità") }
+        if old.name != new.name { return String(localized: "Rinomina schizzo") }
+        if let s = zip(old.shapes, new.shapes).first(where: { $0 != $1 })?.1 { return String(localized: "Modifica \(s.localizedTypeName.lowercased())") }
+        return String(localized: "Modifica schizzo")
     }
 
     var shapes: [SketchShape] { sketch.shapes }
@@ -272,7 +273,7 @@ final class SketchSession {
         var next = sketch
         change(&next.shapes[i])
         if !next.constraints.isEmpty, !next.solve() {
-            notice = "La modifica non rispetta i vincoli dello schizzo: togli un vincolo o cambia una quota."
+            notice = String(localized: "La modifica non rispetta i vincoli dello schizzo: togli un vincolo o cambia una quota.")
         }
         sketch = next
     }
@@ -669,33 +670,34 @@ final class SketchSession {
             return "\(fmt(dist(last, c))) mm · \(fmt(atan2(c.y - last.y, c.x - last.x) * 180 / .pi))°"
         case .spline:
             guard !pending.isEmpty else { return xy }
-            return "\(pending.count + 1) punti · \(fmt(SketchShape(kind: .spline(points: pending + [c], closed: false)).length)) mm"
+            return String(localized: "\(pending.count + 1) punti · \(fmt(SketchShape(kind: .spline(points: pending + [c], closed: false)).length)) mm")
         case .rectangle:
             guard let a = pending.first else { return xy }
             return "\(fmt(abs(c.x - a.x))) × \(fmt(abs(c.y - a.y))) mm"
         case .circle:
-            guard let ctr = pending.first else { return "Centro " + xy }
+            guard let ctr = pending.first else { return String(localized: "Centro \(xy)") }
             return "Ø \(fmt(2 * dist(ctr, c))) mm"
         case .polygon:
-            guard let ctr = pending.first else { return "Centro " + xy }
-            return "R \(fmt(dist(ctr, c))) mm · \(polygonSides) lati \(polygonCircumscribed ? "circoscritto" : "inscritto")"
+            guard let ctr = pending.first else { return String(localized: "Centro \(xy)") }
+            let form = polygonCircumscribed ? String(localized: "circoscritto") : String(localized: "inscritto")
+            return String(localized: "R \(fmt(dist(ctr, c))) mm · \(polygonSides) lati \(form)")
         case .slot:
             switch pending.count {
-            case 0: return "Centro 1 " + xy
-            case 1: return "Interasse \(fmt(dist(pending[0], c))) mm"
-            default: return "Larghezza \(fmt(2 * distanceToLine(c, pending[0], pending[1]))) mm"
+            case 0: return String(localized: "Centro 1 \(xy)")
+            case 1: return String(localized: "Interasse \(fmt(dist(pending[0], c))) mm")
+            default: return String(localized: "Larghezza \(fmt(2 * distanceToLine(c, pending[0], pending[1]))) mm")
             }
         case .arc:
             switch pending.count {
-            case 0: return "Inizio " + xy
-            case 1: return "Corda \(fmt(dist(pending[0], c))) mm"
+            case 0: return String(localized: "Inizio \(xy)")
+            case 1: return String(localized: "Corda \(fmt(dist(pending[0], c))) mm")
             default:
                 if case let .arc(_, r, a0, a1)? = arcKind(pending[0], pending[1], through: c) { return "R \(fmt(r)) mm · \(fmt(SketchShape.sweep(a0, a1) * 180 / .pi))°" }
                 return nil
             }
         case .fillet: return "R \(fmt(filletRadius)) mm"
-        case .chamfer: return "Smusso \(fmt(chamferDistance)) mm"
-        case .offset: return offsetSource == nil ? nil : "Offset \(fmt(offsetDistance)) mm"
+        case .chamfer: return String(localized: "Smusso \(fmt(chamferDistance)) mm")
+        case .offset: return offsetSource == nil ? nil : String(localized: "Offset \(fmt(offsetDistance)) mm")
         case .point: return xy
         case .select, .dimension, .trim, .extend, .mirror: return nil
         }

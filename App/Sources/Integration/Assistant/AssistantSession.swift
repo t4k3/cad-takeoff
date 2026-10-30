@@ -104,7 +104,7 @@ final class AssistantSession {
         provider.addUserMessage(text)
         // Apple's on-device model calls the tools inside its own turn: through the same execution
         // (shown in the conversation, undoable), started here.
-        if let apple = provider as? AppleIntelligenceProvider {
+        if #available(macOS 27.0, *), let apple = provider as? AppleIntelligenceProvider {
             apple.focus = focus
             apple.executor = { [weak self] name, arguments in
                 guard let self else { return .error("Assistente chiuso.") }
@@ -134,6 +134,7 @@ final class AssistantSession {
     /// The small on-device model gets the design's bodies and sizes with the request (read here
     /// with list_features, nothing changes).
     private func prepareSmallModelContext() async {
+        guard #available(macOS 27.0, *) else { return }
         guard let apple = provider as? AppleIntelligenceProvider, focus == .cad, let tools,
               tools.tools.contains(where: { $0.name == "list_features" }) else { return }
         let result = await tools.call("list_features", arguments: [:])

@@ -7,7 +7,7 @@ extension SketchSession {
 
     func trim(_ p: Vec2) {
         var next = sketch
-        guard next.trim(at: p, tolerance: editTolerance) else { notice = "Niente da tagliare qui: clicca su una linea, un arco o un cerchio."; return }
+        guard next.trim(at: p, tolerance: editTolerance) else { notice = String(localized: "Niente da tagliare qui: clicca su una linea, un arco o un cerchio."); return }
         notice = nil
         selection = nil
         sketch = next
@@ -16,7 +16,7 @@ extension SketchSession {
     func extend(_ p: Vec2) {
         var next = sketch
         guard next.extend(at: p, tolerance: editTolerance) else {
-            notice = "Niente da estendere: clicca vicino all'estremo libero di una linea o di un arco che punta verso un'altra curva."
+            notice = String(localized: "Niente da estendere: clicca vicino all'estremo libero di una linea o di un arco che punta verso un'altra curva.")
             return
         }
         notice = nil
@@ -25,10 +25,10 @@ extension SketchSession {
 
     func offsetClick(_ p: Vec2) {
         guard let source = offsetSource else {
-            guard let id = pick(p) else { notice = "Clicca una forma da copiare in offset."; return }
+            guard let id = pick(p) else { notice = String(localized: "Clicca una forma da copiare in offset."); return }
             offsetSource = id
             selection = id
-            notice = "Ora clicca il lato dove mettere la copia (distanza \(fmt(offsetDistance)) mm)."
+            notice = String(localized: "Ora clicca il lato dove mettere la copia (distanza \(fmt(offsetDistance)) mm).")
             return
         }
         var next = sketch
@@ -39,27 +39,27 @@ extension SketchSession {
             selection = made.first
             offsetSource = nil
         } catch {
-            notice = "Offset: " + error.localizedDescription
+            notice = String(localized: "Offset: \(error.localizedDescription)")
         }
     }
 
     func mirrorClick(_ p: Vec2) {
         guard let axis = mirrorAxis else {
-            guard let ref = pickRef(p, kinds: [.segment]) else { notice = "Clicca una linea: sarà l'asse di simmetria."; return }
+            guard let ref = pickRef(p, kinds: [.segment]) else { notice = String(localized: "Clicca una linea: sarà l'asse di simmetria."); return }
             mirrorAxis = ref
-            notice = "Ora clicca le forme da specchiare (Esc per finire)."
+            notice = String(localized: "Ora clicca le forme da specchiare (Esc per finire).")
             return
         }
-        guard let id = pick(p) else { notice = "Clicca una forma da specchiare."; return }
+        guard let id = pick(p) else { notice = String(localized: "Clicca una forma da specchiare."); return }
         var next = sketch
         do {
             let made = try next.mirror([id], about: axis)
-            guard next.solve() else { notice = "Specchio in conflitto con i vincoli dello schizzo."; return }
-            notice = "Specchiato. Clicca altre forme, o Esc per finire."
+            guard next.solve() else { notice = String(localized: "Specchio in conflitto con i vincoli dello schizzo."); return }
+            notice = String(localized: "Specchiato. Clicca altre forme, o Esc per finire.")
             sketch = next
             selection = made.first
         } catch {
-            notice = "Specchio: " + error.localizedDescription
+            notice = String(localized: "Specchio: \(error.localizedDescription)")
         }
     }
 

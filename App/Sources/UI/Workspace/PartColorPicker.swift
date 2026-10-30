@@ -10,11 +10,11 @@ struct PartColorPicker: View {
     let feature: Feature
 
     static let swatches: [(String, PartColor)] = [
-        ("Bianco", PartColor(red: 245, green: 245, blue: 240)), ("Grigio", PartColor(red: 166, green: 178, blue: 195)),
-        ("Nero", PartColor(red: 38, green: 38, blue: 40)), ("Rosso", PartColor(red: 214, green: 45, blue: 45)),
-        ("Arancione", PartColor(red: 245, green: 130, blue: 32)), ("Giallo", PartColor(red: 247, green: 208, blue: 45)),
-        ("Verde", PartColor(red: 60, green: 170, blue: 80)), ("Blu", PartColor(red: 36, green: 99, blue: 210)),
-        ("Azzurro", PartColor(red: 80, green: 180, blue: 230)), ("Viola", PartColor(red: 130, green: 80, blue: 190)),
+        (String(localized: "Bianco"), PartColor(red: 245, green: 245, blue: 240)), (String(localized: "Grigio"), PartColor(red: 166, green: 178, blue: 195)),
+        (String(localized: "Nero"), PartColor(red: 38, green: 38, blue: 40)), (String(localized: "Rosso"), PartColor(red: 214, green: 45, blue: 45)),
+        (String(localized: "Arancione"), PartColor(red: 245, green: 130, blue: 32)), (String(localized: "Giallo"), PartColor(red: 247, green: 208, blue: 45)),
+        (String(localized: "Verde"), PartColor(red: 60, green: 170, blue: 80)), (String(localized: "Blu"), PartColor(red: 36, green: 99, blue: 210)),
+        (String(localized: "Azzurro"), PartColor(red: 80, green: 180, blue: 230)), (String(localized: "Viola"), PartColor(red: 130, green: 80, blue: 190)),
     ]
 
     @State private var wellColor = Color.gray
@@ -58,7 +58,7 @@ struct PartColorPicker: View {
 
     private func apply(_ c: PartColor) {
         do { try model.setFeatureColor(feature.id, color: c) }
-        catch { model.statusMessage = "Colore non applicato: \(error.localizedDescription)" }
+        catch { model.statusMessage = String(localized: "Colore non applicato: \(error.localizedDescription)") }
     }
 }
 

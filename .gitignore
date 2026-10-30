@@ -8,3 +8,5 @@ xcuserdata/
 
 docs/graph/.lock
 .occ/
+# Personal signing team (Config/Signing.xcconfig includes it): not shared.
+Config/Local.xcconfig

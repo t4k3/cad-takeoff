@@ -83,7 +83,7 @@ final class DesignModel {
     @ObservationIgnored private var cachedFlat: (snapshot: DesignSnapshot, bends: [(Vec3, Vec3, SheetBendDirection, Bool)])?
     @ObservationIgnored private var cachedEvaluation: (revision: String, bodies: [DesignEvaluator.Body], issues: [DesignEvaluator.Issue])?
     var selection: Feature.ID?
-    var statusMessage = "Pronto"
+    var statusMessage = String(localized: "Pronto")
 
     var selectedIndex: Int? { document.features.firstIndex { $0.id == selection } }
 
@@ -191,7 +191,7 @@ final class DesignModel {
     /// A «Qualità» choice for the export panels.
     static func qualityPopup(fine: Bool) -> NSPopUpButton {
         let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-        popup.addItems(withTitles: ["Qualità fine: curve lisce (256 lati per giro)", "Qualità normale: come a schermo (64 lati)"])
+        popup.addItems(withTitles: [String(localized: "Qualità fine: curve lisce (256 lati per giro)"), String(localized: "Qualità normale: come a schermo (64 lati)")])
         popup.selectItem(at: fine ? 0 : 1)
         popup.sizeToFit()
         return popup
@@ -228,7 +228,7 @@ final class DesignModel {
     private func add(_ f: Feature) {
         var next = document
         next.features.append(f)
-        commitEdit(next, selected: f.id, title: "Aggiungi \(f.name)", changed: [f.id])
+        commitEdit(next, selected: f.id, title: String(localized: "Aggiungi \(f.name)"), changed: [f.id])
     }
 
     func deleteSelected() {
@@ -244,13 +244,13 @@ final class DesignModel {
         let i = max(0, min(index, document.timeline.count))
         let target: Int? = i >= document.timeline.count ? nil : i
         guard target != document.rollback else { return }
-        edit(target == nil ? "Marker alla fine" : "Marker dopo il passo \(i)") { $0.rollback = target }
+        edit(target == nil ? String(localized: "Marker alla fine") : String(localized: "Marker dopo il passo \(i)")) { $0.rollback = target }
     }
 
     func setSuppressed(_ id: UUID, _ suppressed: Bool) {
         guard let i = document.timeline.firstIndex(where: { $0.id == id }) else { return }
         let name = document.timeline[i].name
-        edit(suppressed ? "Sopprimi \(name)" : "Ripristina \(name)") { $0.timeline[i].isSuppressed = suppressed }
+        edit(suppressed ? String(localized: "Sopprimi \(name)") : String(localized: "Ripristina \(name)")) { $0.timeline[i].isSuppressed = suppressed }
     }
 
     /// Deletes one history step (solid, sketch or sheet-metal part). Links to it are dropped;
@@ -258,7 +258,7 @@ final class DesignModel {
     func deleteStep(_ id: UUID) {
         guard let i = document.timeline.firstIndex(where: { $0.id == id }) else { return }
         let name = document.timeline[i].name
-        edit("Elimina \(name)", selected: .some(selection == id ? nil : selection)) { doc in
+        edit(String(localized: "Elimina \(name)"), selected: .some(selection == id ? nil : selection)) { doc in
             doc.timeline.remove(at: i)
             if let r = doc.rollback, i < r { doc.rollback = r - 1 }
             doc.sketchLinks.removeAll { $0.featureID == id || $0.sketchID == id }
@@ -275,11 +275,11 @@ final class DesignModel {
     /// The inspector and the assistant use the same transaction history for colour edits.
     func setFeatureColor(_ id: UUID, color: PartColor) throws {
         guard let i = document.features.firstIndex(where: { $0.id == id }) else {
-            throw CADToolFailure("Geometria non trovata.")
+            throw CADToolFailure(String(localized: "Geometria non trovata."))
         }
         var next = document
         next.features[i].color = color
-        commitEdit(next, selected: selection, title: "Colore: \(next.features[i].name)", changed: [id])
+        commitEdit(next, selected: selection, title: String(localized: "Colore: \(next.features[i].name)"), changed: [id])
     }
 
     func commitEdit(_ next: CADDocument, selected: UUID?, title: String, changed: [UUID]) {
@@ -305,7 +305,7 @@ final class DesignModel {
         statusMessage = status
     }
 
-    func newDesign() { replaceDocument(CADDocument(), status: "Nuovo design") }
+    func newDesign() { replaceDocument(CADDocument(), status: String(localized: "Nuovo design")) }
 
     // MARK: Tabs (several designs open, one shown)
 
@@ -372,7 +372,7 @@ final class DesignModel {
                 }
                 await MainActor.run {
                     guard let self else { return }
-                    self.replaceDocument(doc, status: doc.importReport.map { "Aperto \(name) — \($0)" } ?? "Aperto \(name)")
+                    self.replaceDocument(doc, status: doc.importReport.map { String(localized: "Aperto \(name) — \($0)") } ?? String(localized: "Aperto \(name)"))
                     // The evaluation just made is the one for this document: no second pass.
                     self.designRevision = revision
                     self.cachedEvaluation = (revision, bodies, issues)
@@ -402,7 +402,7 @@ final class DesignModel {
         guard let entry = history.undo.popLast() else { return nil }
         apply(entry.before, selection: entry.selectionBefore)
         history.redo.append(entry)
-        statusMessage = "Annullato: \(entry.title)"
+        statusMessage = String(localized: "Annullato: \(entry.title)")
         return entry
     }
 
@@ -411,7 +411,7 @@ final class DesignModel {
         guard let entry = history.redo.popLast() else { return nil }
         apply(entry.after, selection: entry.selectionAfter)
         history.undo.append(entry)
-        statusMessage = "Ripetuto: \(entry.title)"
+        statusMessage = String(localized: "Ripetuto: \(entry.title)")
         return entry
     }
 
@@ -447,25 +447,25 @@ final class DesignModel {
 
     /// Human title for a change ("Annulla <titolo>") and a merge key for consecutive edits.
     static func describe(_ old: CADDocument, _ new: CADDocument) -> (title: String, key: String?) {
-        if old.rollback != new.rollback { return ("Sposta marker", nil) }
+        if old.rollback != new.rollback { return (String(localized: "Sposta marker"), nil) }
         for (o, n) in zip(old.timeline, new.timeline) where o.id == n.id && o.isSuppressed != n.isSuppressed {
-            return (n.isSuppressed ? "Sopprimi \(n.name)" : "Ripristina \(n.name)", nil)
+            return (n.isSuppressed ? String(localized: "Sopprimi \(n.name)") : String(localized: "Ripristina \(n.name)"), nil)
         }
-        if new.features.count > old.features.count, let f = new.features.last { return ("Aggiungi \(f.name)", nil) }
+        if new.features.count > old.features.count, let f = new.features.last { return (String(localized: "Aggiungi \(f.name)"), nil) }
         if new.features.count < old.features.count,
-           let f = old.features.first(where: { o in !new.features.contains { $0.id == o.id } }) { return ("Elimina \(f.name)", nil) }
+           let f = old.features.first(where: { o in !new.features.contains { $0.id == o.id } }) { return (String(localized: "Elimina \(f.name)"), nil) }
         for (o, n) in zip(old.features, new.features) where o != n {
             let id = n.id.uuidString
             if o.isVisible != n.isVisible, o.kind == n.kind, o.position == n.position {
-                return (n.isVisible ? "Mostra \(n.name)" : "Nascondi \(n.name)", nil)
+                return (n.isVisible ? String(localized: "Mostra \(n.name)") : String(localized: "Nascondi \(n.name)"), nil)
             }
-            if o.color != n.color, o.kind == n.kind { return ("Colore: \(n.name)", "color:\(id)") }
-            if o.name != n.name, o.kind == n.kind { return ("Rinomina \(n.name)", "name:\(id)") }
-            if o.position != n.position, o.kind == n.kind { return ("Sposta \(n.name)", "position:\(id)") }
-            return ("Modifica \(n.name)", "kind:\(id)")
+            if o.color != n.color, o.kind == n.kind { return (String(localized: "Colore: \(n.name)"), "color:\(id)") }
+            if o.name != n.name, o.kind == n.kind { return (String(localized: "Rinomina \(n.name)"), "name:\(id)") }
+            if o.position != n.position, o.kind == n.kind { return (String(localized: "Sposta \(n.name)"), "position:\(id)") }
+            return (String(localized: "Modifica \(n.name)"), "kind:\(id)")
         }
-        if old.sketches != new.sketches || old.sketchLinks != new.sketchLinks { return ("Modifica schizzo", "sketch") }
-        return ("Modifica", nil)
+        if old.sketches != new.sketches || old.sketchLinks != new.sketchLinks { return (String(localized: "Modifica schizzo"), "sketch") }
+        return (String(localized: "Modifica"), nil)
     }
 
     // MARK: Files
@@ -479,8 +479,8 @@ final class DesignModel {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try document.encoded().write(to: url)
-            statusMessage = "Salvato \(url.lastPathComponent)"
-        } catch { statusMessage = "Errore salvataggio: \(error.localizedDescription)" }
+            statusMessage = String(localized: "Salvato \(url.lastPathComponent)")
+        } catch { statusMessage = String(localized: "Errore salvataggio: \(error.localizedDescription)") }
     }
 
     func openWithPanel() {
@@ -489,12 +489,12 @@ final class DesignModel {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let doc = try CADDocument.decode(Data(contentsOf: url))
-            replaceDocument(doc, status: doc.importReport.map { "Aperto \(url.lastPathComponent) — \($0)" } ?? "Aperto \(url.lastPathComponent)")
-        } catch { statusMessage = "Errore apertura: \(error.localizedDescription)" }
+            replaceDocument(doc, status: doc.importReport.map { String(localized: "Aperto \(url.lastPathComponent) — \($0)") } ?? String(localized: "Aperto \(url.lastPathComponent)"))
+        } catch { statusMessage = String(localized: "Errore apertura: \(error.localizedDescription)") }
     }
 
     func exportSTLWithPanel() {
-        guard evaluation().bodies.contains(where: \.isVisible) else { statusMessage = "Niente da esportare"; return }
+        guard evaluation().bodies.contains(where: \.isVisible) else { statusMessage = String(localized: "Niente da esportare"); return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType(filenameExtension: "stl") ?? .data]
         panel.nameFieldStringValue = "Design.stl"
@@ -506,9 +506,9 @@ final class DesignModel {
         do {
             try STLExporter.binary(mesh).write(to: url)
             let r = MeshValidator.validate(mesh)
-            statusMessage = "Esportato \(url.lastPathComponent) — \(mesh.triangleCount) triangoli, "
-                + (r.isWatertight ? "chiuso ✓" : "NON chiuso (\(r.boundaryEdges) bordi aperti)")
-        } catch { statusMessage = "Errore export: \(error.localizedDescription)" }
+            statusMessage = String(localized: "Esportato \(url.lastPathComponent) — \(mesh.triangleCount) triangoli, ")
+                + (r.isWatertight ? String(localized: "chiuso ✓") : String(localized: "NON chiuso (\(r.boundaryEdges) bordi aperti)"))
+        } catch { statusMessage = String(localized: "Errore export: \(error.localizedDescription)") }
     }
 
     /// The TAVOLA window (the drawing on screen, dimensions added and moved by hand, export).
@@ -519,7 +519,7 @@ final class DesignModel {
     /// fits A4 at 1:5 or smaller.
     func drawingSheet(title: String, section: Bool) throws -> DrawingSheet {
         let bodies = evaluation().bodies.filter(\.isVisible).map { (mesh: $0.mesh, snapshot: $0.snapshot) }
-        guard !bodies.isEmpty else { throw KernelError.invalidParameter("niente da disegnare") }
+        guard !bodies.isEmpty else { throw KernelError.invalidParameter(String(localized: "niente da disegnare")) }
         let info = TechnicalDrawing.Info(title: title, material: sheetParts().first.map { $0.build.rule.material.name } ?? "")
         let dims = drawingDimensions(), notes = document.drawing
         var sheet = try TechnicalDrawing.make(bodies, info: info, format: .a4, section: section, dimensions: dims, annotations: notes)
@@ -532,11 +532,11 @@ final class DesignModel {
 
     /// PDF or DXF by the chosen extension; the file name is the drawing's title.
     func exportDrawingWithPanel(section: Bool = false) {
-        guard evaluation().bodies.contains(where: \.isVisible) else { statusMessage = "Niente da disegnare"; return }
+        guard evaluation().bodies.contains(where: \.isVisible) else { statusMessage = String(localized: "Niente da disegnare"); return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.pdf, UTType(filenameExtension: "dxf") ?? .data]
         panel.nameFieldStringValue = "Tavola.pdf"
-        panel.message = "Tavola tecnica: .pdf per stampare, .dxf per altri CAD"
+        panel.message = String(localized: "Tavola tecnica: .pdf per stampare, .dxf per altri CAD")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let sheet = try drawingSheet(title: url.deletingPathExtension().lastPathComponent, section: section)
@@ -545,8 +545,8 @@ final class DesignModel {
             } else {
                 try PDFWriter.pdf(sheet).write(to: url)
             }
-            statusMessage = "Tavola salvata: \(url.lastPathComponent)"
-        } catch { statusMessage = "Tavola non riuscita: \(error.localizedDescription)" }
+            statusMessage = String(localized: "Tavola salvata: \(url.lastPathComponent)")
+        } catch { statusMessage = String(localized: "Tavola non riuscita: \(error.localizedDescription)") }
     }
 
     /// Dimensions of the sketches that shape the visible bodies (not moved since), for the
@@ -570,7 +570,7 @@ final class DesignModel {
         let parts = evaluation().bodies.filter(\.isVisible).map {
             STEPExporter.Part(name: $0.source.name, mesh: $0.mesh, snapshot: $0.snapshot, color: $0.source.color)
         }
-        guard !parts.isEmpty else { statusMessage = "Niente da esportare"; return }
+        guard !parts.isEmpty else { statusMessage = String(localized: "Niente da esportare"); return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType(filenameExtension: "step") ?? .data]
         panel.nameFieldStringValue = "Design.step"
@@ -578,8 +578,10 @@ final class DesignModel {
         do {
             let name = url.deletingPathExtension().lastPathComponent
             try STEPExporter.export(parts, name: name).write(to: url, atomically: true, encoding: .utf8)
-            statusMessage = "Esportato \(url.lastPathComponent) — \(parts.count) \(parts.count == 1 ? "solido" : "solidi") STEP AP214 in mm"
-        } catch { statusMessage = "Errore export STEP: \(error.localizedDescription)" }
+            statusMessage = parts.count == 1
+                ? String(localized: "Esportato \(url.lastPathComponent) — 1 solido STEP AP214 in mm")
+                : String(localized: "Esportato \(url.lastPathComponent) — \(parts.count) solidi STEP AP214 in mm")
+        } catch { statusMessage = String(localized: "Errore export STEP: \(error.localizedDescription)") }
     }
 
     /// Export visible parts, or the explicit feature even when hidden. Does not change the scene.
@@ -595,8 +597,8 @@ final class DesignModel {
         if let featureID {
             guard let body = all.first(where: { $0.id == featureID }) else {
                 throw CADToolFailure(document.features.contains { $0.id == featureID }
-                    ? "Questa operazione non crea un corpo (taglio/unione): esporta il corpo che modifica."
-                    : "Geometria non trovata.")
+                    ? String(localized: "Questa operazione non crea un corpo (taglio/unione): esporta il corpo che modifica.")
+                    : String(localized: "Geometria non trovata."))
             }
             bodies = [body]
         } else { bodies = all.filter(\.isVisible) }
@@ -621,7 +623,7 @@ final class DesignModel {
             Feature(name: p.name.isEmpty ? (parts.count == 1 ? base : "\(base) \(i + 1)") : p.name,
                     kind: .importedMesh(ImportedMesh(mesh: p.mesh, source: url.lastPathComponent)))
         }
-        edit("Importa \(url.lastPathComponent)", selected: .some(features.first?.id), changed: features.map(\.id)) {
+        edit(String(localized: "Importa \(url.lastPathComponent)"), selected: .some(features.first?.id), changed: features.map(\.id)) {
             $0.features.append(contentsOf: features)
         }
         return features.count
@@ -630,14 +632,16 @@ final class DesignModel {
     func importMeshWithPanel() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = ["stl", "obj", "3mf"].compactMap { UTType(filenameExtension: $0) }
-        panel.message = "Importa una mesh (STL, OBJ o 3MF), ad esempio esportata da Fusion 360. Unità: millimetri (il 3MF dichiara le sue)."
+        panel.message = String(localized: "Importa una mesh (STL, OBJ o 3MF), ad esempio esportata da Fusion 360. Unità: millimetri (il 3MF dichiara le sue).")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let n = try importMesh(from: url)
             let issues = evaluation().issues.filter { i in document.features.suffix(n).contains { $0.id == i.featureID } }
-            statusMessage = "Importat\(n == 1 ? "o" : "i") \(n) corp\(n == 1 ? "o" : "i") da \(url.lastPathComponent)"
+            statusMessage = (n == 1
+                ? String(localized: "Importato 1 corpo da \(url.lastPathComponent)")
+                : String(localized: "Importati \(n) corpi da \(url.lastPathComponent)"))
                 + (issues.isEmpty ? "" : " — " + (issues.first?.message ?? ""))
-        } catch { statusMessage = "Import non riuscito: \(error.localizedDescription)" }
+        } catch { statusMessage = String(localized: "Import non riuscito: \(error.localizedDescription)") }
     }
 
     // MARK: Assemblies
@@ -682,7 +686,7 @@ final class DesignModel {
 
     func exportBOMWithPanel() {
         let rows = billOfMaterials()
-        guard !rows.isEmpty else { statusMessage = "Nessun componente nell'assieme."; return }
+        guard !rows.isEmpty else { statusMessage = String(localized: "Nessun componente nell'assieme."); return }
         func field(_ s: String) -> String { "\"" + s.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }
         var csv = "Pos;Pezzo;Quantità;Materiale;Volume cad. (cm³);Massa cad. (kg);File\n"
         for (i, r) in rows.enumerated() {
@@ -696,8 +700,8 @@ final class DesignModel {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try csv.write(to: url, atomically: true, encoding: .utf8)
-            statusMessage = "Esportata \(url.lastPathComponent) (separatore ; per Excel italiano)"
-        } catch { statusMessage = "Errore export distinta: \(error.localizedDescription)" }
+            statusMessage = String(localized: "Esportata \(url.lastPathComponent) (separatore ; per Excel italiano)")
+        } catch { statusMessage = String(localized: "Errore export distinta: \(error.localizedDescription)") }
     }
 
     // MARK: Sheet metal (T79)
@@ -759,7 +763,7 @@ final class DesignModel {
     func sheetPart(_ id: UUID? = nil) throws -> (feature: Feature, build: SheetMetalBuild, flat: SheetFlatPattern, skippedHoles: Int) {
         let parts = sheetParts()
         guard let part = id.flatMap({ id in parts.first { $0.feature.id == id } }) ?? (parts.count == 1 ? parts.first : nil) else {
-            throw CADToolFailure(parts.isEmpty ? "Nessuna lamiera nel disegno." : "Seleziona la lamiera da sviluppare.")
+            throw CADToolFailure(parts.isEmpty ? String(localized: "Nessuna lamiera nel disegno.") : String(localized: "Seleziona la lamiera da sviluppare."))
         }
         return part
     }
@@ -778,7 +782,7 @@ final class DesignModel {
             let panel = NSSavePanel()
             panel.allowedContentTypes = [.pdf, UTType(filenameExtension: "dxf") ?? .data]
             panel.nameFieldStringValue = "\(part.feature.name) - tavola di piega.pdf"
-            panel.message = "Tavola di piega: .pdf per stampare, .dxf per altri CAD"
+            panel.message = String(localized: "Tavola di piega: .pdf per stampare, .dxf per altri CAD")
             guard panel.runModal() == .OK, let url = panel.url else { return }
             let info = TechnicalDrawing.Info(title: part.feature.name)
             var sheet = try TechnicalDrawing.flatPattern(part.flat, rule: part.build.rule, info: info, format: .a4)
@@ -791,8 +795,8 @@ final class DesignModel {
             } else {
                 try PDFWriter.pdf(sheet).write(to: url)
             }
-            statusMessage = "Tavola di piega salvata: \(url.lastPathComponent) — \(part.flat.bends.count) pieghe, \(part.flat.holes.count) fori"
-        } catch { statusMessage = "Tavola di piega non riuscita: \(error.localizedDescription)" }
+            statusMessage = String(localized: "Tavola di piega salvata: \(url.lastPathComponent) — \(part.flat.bends.count) pieghe, \(part.flat.holes.count) fori")
+        } catch { statusMessage = String(localized: "Tavola di piega non riuscita: \(error.localizedDescription)") }
     }
 
     func exportFlatDXFWithPanel(_ id: UUID? = nil) {
@@ -804,14 +808,16 @@ final class DesignModel {
             guard panel.runModal() == .OK, let url = panel.url else { return }
             try dxf.write(to: url, atomically: true, encoding: .utf8)
             let skipped = sheetParts().first { $0.feature.name == name }?.skippedHoles ?? 0
-            statusMessage = "Esportato \(url.lastPathComponent) — taglio (CUT), fori e linee di piega, in mm"
-                + (skipped > 0 ? " · \(skipped) for\(skipped == 1 ? "o/taglio" : "i/tagli") su pieghe o non passant\(skipped == 1 ? "e" : "i") non riportat\(skipped == 1 ? "o" : "i")" : "")
-        } catch { statusMessage = "Errore export DXF: \(error.localizedDescription)" }
+            statusMessage = String(localized: "Esportato \(url.lastPathComponent) — taglio (CUT), fori e linee di piega, in mm")
+                + (skipped > 0 ? (skipped == 1
+                    ? String(localized: " · 1 foro/taglio su pieghe o non passante non riportato")
+                    : String(localized: " · \(skipped) fori/tagli su pieghe o non passanti non riportati")) : "")
+        } catch { statusMessage = String(localized: "Errore export DXF: \(error.localizedDescription)") }
     }
 
     /// Bodies sent with an open surface: said, so the slicer's repair is expected.
     static func openNote(_ open: [String]) -> String {
-        open.isEmpty ? "" : " · superficie non chiusa in \(open.joined(separator: ", ")): lo slicer la ripara, controlla l'anteprima"
+        open.isEmpty ? "" : String(localized: " · superficie non chiusa in \(open.joined(separator: ", ")): lo slicer la ripara, controlla l'anteprima")
     }
 
     func export3MFWithPanel() {
@@ -826,16 +832,16 @@ final class DesignModel {
             exportFine = quality.indexOfSelectedItem == 0
             let (data, open) = try export3MF(fine: exportFine, forSlicer: true)
             try data.write(to: url, options: .atomic)
-            statusMessage = "Esportato \(url.lastPathComponent) — parti e colori; verificare i filamenti nello slicer"
+            statusMessage = String(localized: "Esportato \(url.lastPathComponent) — parti e colori; verificare i filamenti nello slicer")
                 + Self.openNote(open)
-        } catch { statusMessage = "Errore export 3MF: \(error.localizedDescription)" }
+        } catch { statusMessage = String(localized: "Errore export 3MF: \(error.localizedDescription)") }
     }
 }
 
 extension DesignModel {
     /// New user parameters, with every dimension and size that uses them re-evaluated and the
     /// extrusions of the changed sketches regenerated, as one undoable step.
-    func setParameters(_ parameters: [UserParameter], title: String = "Parametri") throws {
+    func setParameters(_ parameters: [UserParameter], title: String = String(localized: "Parametri")) throws {
         try edit(title) { doc in
             doc.parameters = parameters
             for id in try doc.applyParameters() {

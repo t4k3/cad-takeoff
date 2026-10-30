@@ -61,7 +61,7 @@ struct DrawingWindow: View {
                         .onKeyPress(.escape) { escape(); return .handled }
                         .onKeyPress("d") { setTool(tool == .dimension ? .select : .dimension); return .handled }
                 } else {
-                    Text(failure ?? "Preparo la tavola…").foregroundStyle(Theme.Palette.textSecondary)
+                    Text(failure ?? String(localized: "Preparo la tavola…")).foregroundStyle(Theme.Palette.textSecondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
@@ -90,7 +90,7 @@ struct DrawingWindow: View {
             Toggle("Sezione A-A", isOn: $section).toggleStyle(.checkbox)
                 .help("Vista di fronte in sezione (pezzi torniti, fori interni)")
             Button("Ripristina quote automatiche") {
-                model.edit("Ripristina quote della tavola") { $0.drawing.hidden = []; $0.drawing.moved = [:] }
+                model.edit(String(localized: "Ripristina quote della tavola")) { $0.drawing.hidden = []; $0.drawing.moved = [:] }
             }
             .disabled(model.document.drawing.hidden.isEmpty && model.document.drawing.moved.isEmpty)
             .help("Rimette le quote automatiche tolte o spostate")
@@ -117,12 +117,12 @@ struct DrawingWindow: View {
         if !hint.isEmpty { return hint }
         switch tool {
         case .select:
-            return selected == nil ? "Clic su una quota per sceglierla · D per aggiungerne una" : "Trascina la quota per spostarla · Canc la toglie · Esc deseleziona"
+            return selected == nil ? String(localized: "Clic su una quota per sceglierla · D per aggiungerne una") : String(localized: "Trascina la quota per spostarla · Canc la toglie · Esc deseleziona")
         case .dimension:
             switch picked.count {
-            case 0: return "Quota: clicca il primo punto (estremo o metà di uno spigolo, centro di un foro)"
-            case 1: return "Quota: clicca il secondo punto nella stessa vista · Esc ricomincia"
-            default: return "Quota: clicca dove va la linea — sopra/sotto orizzontale, a lato verticale, ⌥ o in mezzo allineata · Esc annulla"
+            case 0: return String(localized: "Quota: clicca il primo punto (estremo o metà di uno spigolo, centro di un foro)")
+            case 1: return String(localized: "Quota: clicca il secondo punto nella stessa vista · Esc ricomincia")
+            default: return String(localized: "Quota: clicca dove va la linea — sopra/sotto orizzontale, a lato verticale, ⌥ o in mezzo allineata · Esc annulla")
             }
         }
     }
@@ -131,11 +131,11 @@ struct DrawingWindow: View {
 
     private func rebuild() {
         do {
-            sheet = try model.drawingSheet(title: library.currentName.isEmpty ? "Tavola" : library.currentName, section: section)
+            sheet = try model.drawingSheet(title: library.currentName.isEmpty ? String(localized: "Tavola") : library.currentName, section: section)
             failure = nil
         } catch {
             sheet = nil
-            failure = "Tavola non disponibile: \(error.localizedDescription)"
+            failure = String(localized: "Tavola non disponibile: \(error.localizedDescription)")
         }
         if let s = sheet, let key = selected, !s.marks.contains(where: { $0.key == key }) { selected = nil }
         // Points picked on the old sheet: their places may have moved.
@@ -155,9 +155,9 @@ struct DrawingWindow: View {
     private func deleteSelected() {
         guard let key = selected else { return }
         if key.hasPrefix("manual/"), let id = UUID(uuidString: String(key.dropFirst("manual/".count))) {
-            model.edit("Togli quota dalla tavola") { $0.drawing.dimensions.removeAll { $0.id == id } }
+            model.edit(String(localized: "Togli quota dalla tavola")) { $0.drawing.dimensions.removeAll { $0.id == id } }
         } else {
-            model.edit("Togli quota dalla tavola") { doc in
+            model.edit(String(localized: "Togli quota dalla tavola")) { doc in
                 if !doc.drawing.hidden.contains(key) { doc.drawing.hidden.append(key) }
                 doc.drawing.moved[key] = nil
             }
@@ -242,13 +242,13 @@ struct DrawingWindow: View {
 
     private func move(_ mark: DrawingSheet.DimensionMark, by delta: Double) {
         if let id = mark.manual {
-            model.edit("Sposta quota sulla tavola") { doc in
+            model.edit(String(localized: "Sposta quota sulla tavola")) { doc in
                 guard let i = doc.drawing.dimensions.firstIndex(where: { $0.id == id }) else { return }
                 let o = doc.drawing.dimensions[i].offset
                 doc.drawing.dimensions[i].offset = (o < 0 ? -1 : 1) * max(abs(o) + delta, 2)
             }
         } else {
-            model.edit("Sposta quota sulla tavola") { $0.drawing.moved[mark.key, default: 0] += delta }
+            model.edit(String(localized: "Sposta quota sulla tavola")) { $0.drawing.moved[mark.key, default: 0] += delta }
         }
     }
 
@@ -261,15 +261,15 @@ struct DrawingWindow: View {
         case .dimension:
             if picked.count == 2 {
                 let d = candidate(picked[0], picked[1], mouse: p, aligned: NSEvent.modifierFlags.contains(.option))
-                guard d.value > 1e-6 else { hint = "Quota nulla: scegli due punti distanti."; picked = []; return }
-                model.edit("Quota sulla tavola") { $0.drawing.dimensions.append(d) }
+                guard d.value > 1e-6 else { hint = String(localized: "Quota nulla: scegli due punti distanti."); picked = []; return }
+                model.edit(String(localized: "Quota sulla tavola")) { $0.drawing.dimensions.append(d) }
                 selected = "manual/" + d.id.uuidString
                 picked = []
                 return
             }
             guard let snap = nearestSnap(p, s, f, view: picked.first?.view) else {
-                hint = picked.isEmpty ? "Clicca vicino a un estremo o alla metà di uno spigolo, o al centro di un foro."
-                    : "Il secondo punto va nella stessa vista del primo."
+                hint = picked.isEmpty ? String(localized: "Clicca vicino a un estremo o alla metà di uno spigolo, o al centro di un foro.")
+                    : String(localized: "Il secondo punto va nella stessa vista del primo.")
                 return
             }
             if let first = picked.first, (first.local - snap.local).length < 1e-9 { return }

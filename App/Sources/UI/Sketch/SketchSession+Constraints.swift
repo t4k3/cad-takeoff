@@ -19,6 +19,22 @@ enum ConstraintTool: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Name shown in the tool dock and in tooltips (localized at runtime).
+    var title: String {
+        switch self {
+        case .horizontalVertical: String(localized: "Oriz./Vert.")
+        case .coincident: String(localized: "Coincidente")
+        case .parallel: String(localized: "Parallelo")
+        case .perpendicular: String(localized: "Perpendicolare")
+        case .tangent: String(localized: "Tangente")
+        case .equal: String(localized: "Uguale")
+        case .concentric: String(localized: "Concentrico")
+        case .midpoint: String(localized: "Punto medio")
+        case .symmetric: String(localized: "Simmetrico")
+        case .fix: String(localized: "Fisso")
+        }
+    }
+
     var symbol: String {
         switch self {
         case .horizontalVertical: "arrow.up.and.down.and.arrow.left.and.right"
@@ -34,18 +50,19 @@ enum ConstraintTool: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Tooltip (localized at runtime).
     var hint: String {
         switch self {
-        case .horizontalVertical: "Clicca una linea: diventa orizzontale o verticale (la più vicina)."
-        case .coincident: "Clicca due punti (o un punto e una linea o un cerchio)."
-        case .parallel: "Clicca due linee."
-        case .perpendicular: "Clicca due linee."
-        case .tangent: "Clicca una linea e un cerchio, o due cerchi."
-        case .equal: "Clicca due linee (stessa lunghezza) o due cerchi (stesso raggio)."
-        case .concentric: "Clicca due cerchi."
-        case .midpoint: "Clicca un punto, poi la linea."
-        case .symmetric: "Clicca due punti, poi la linea d'asse: i punti diventano simmetrici."
-        case .fix: "Clicca un punto: resta dov'è."
+        case .horizontalVertical: String(localized: "Clicca una linea: diventa orizzontale o verticale (la più vicina).")
+        case .coincident: String(localized: "Clicca due punti (o un punto e una linea o un cerchio).")
+        case .parallel: String(localized: "Clicca due linee.")
+        case .perpendicular: String(localized: "Clicca due linee.")
+        case .tangent: String(localized: "Clicca una linea e un cerchio, o due cerchi.")
+        case .equal: String(localized: "Clicca due linee (stessa lunghezza) o due cerchi (stesso raggio).")
+        case .concentric: String(localized: "Clicca due cerchi.")
+        case .midpoint: String(localized: "Clicca un punto, poi la linea.")
+        case .symmetric: String(localized: "Clicca due punti, poi la linea d'asse: i punti diventano simmetrici.")
+        case .fix: String(localized: "Clicca un punto: resta dov'è.")
         }
     }
 }
@@ -91,7 +108,10 @@ extension SketchSession {
         case (.symmetric, 0), (.symmetric, 1): [.point]
         case (.symmetric, _): [.segment]
         }
-        guard let ref = pickRef(p, kinds: wanted) else { notice = "Niente da vincolare qui: " + tool.hint; return }
+        guard let ref = pickRef(p, kinds: wanted) else {
+            notice = String(localized: "Niente da vincolare qui: \(tool.hint)")
+            return
+        }
         if picked.last == ref { return }
         picked.append(ref)
         let a = picked[0], b = picked.count > 1 ? picked[1] : nil
@@ -115,7 +135,7 @@ extension SketchSession {
         case .tangent: if let b { kind = .tangent(a, b) } else { return }
         case .equal:
             guard let b else { return }
-            guard sameKind(a, b) else { picked = [a]; notice = "Uguale: due linee o due cerchi."; return }
+            guard sameKind(a, b) else { picked = [a]; notice = String(localized: "Uguale: due linee o due cerchi."); return }
             kind = .equal(a, b)
         case .concentric: if let b { kind = .concentric(a, b) } else { return }
         case .midpoint: if let b { kind = .midpoint(a, b) } else { return }
@@ -133,7 +153,7 @@ extension SketchSession {
         var next = sketch
         next.constraints.append(c)
         guard next.solve(after: c.id) else {
-            notice = "«\(c.kind.label)» è in conflitto con i vincoli esistenti: non aggiunto."
+            notice = String(localized: "«\(c.kind.label)» è in conflitto con i vincoli esistenti: non aggiunto.")
             return false
         }
         notice = nil
@@ -209,7 +229,7 @@ extension SketchSession {
             addDimension(.diameter(ref!, 2 * (circle(ref!)?.radius ?? 0)))
         case (nil, let r?):
             picked = [r]
-            notice = r.isPoint ? "Clicca un altro punto o una linea." : "Clicca un'altra linea (angolo), oppure in un punto vuoto per la lunghezza."
+            notice = r.isPoint ? String(localized: "Clicca un altro punto o una linea.") : String(localized: "Clicca un'altra linea (angolo), oppure in un punto vuoto per la lunghezza.")
         case (let a?, nil):
             // Line then empty space: its length.
             picked = []
@@ -257,7 +277,7 @@ extension SketchSession {
             let value = try Formula.evaluate(clean, parameterValues)
             return setDimension(id, value: value, expression: Formula.isNumber(clean) ? nil : clean)
         } catch {
-            notice = "Quota: " + error.localizedDescription
+            notice = String(localized: "Quota: \(error.localizedDescription)")
             return false
         }
     }
@@ -266,11 +286,11 @@ extension SketchSession {
     @discardableResult
     func setDimension(_ id: SketchConstraint.ID, value: Double, expression: String? = nil) -> Bool {
         guard let i = sketch.constraints.firstIndex(where: { $0.id == id }), value.isFinite else { return false }
-        if case .angle = sketch.constraints[i].kind {} else { guard value > 0 else { notice = "Il valore deve essere positivo."; return false } }
+        if case .angle = sketch.constraints[i].kind {} else { guard value > 0 else { notice = String(localized: "Il valore deve essere positivo."); return false } }
         var next = sketch
         next.constraints[i].kind = next.constraints[i].kind.with(value: value)
         next.constraints[i].expression = expression
-        guard next.solve(after: next.constraints[i].id) else { notice = "Con \(fmt(value)) i vincoli non si possono rispettare: valore non applicato."; return false }
+        guard next.solve(after: next.constraints[i].id) else { notice = String(localized: "Con \(fmt(value)) i vincoli non si possono rispettare: valore non applicato."); return false }
         notice = nil
         sketch = next
         return true
@@ -287,7 +307,7 @@ extension SketchSession {
             touched = true
         }
         guard touched else { return }
-        if next.solve() { sketch = next } else { notice = "Lo schizzo non riesce a seguire i nuovi parametri." }
+        if next.solve() { sketch = next } else { notice = String(localized: "Lo schizzo non riesce a seguire i nuovi parametri.") }
     }
 
     // MARK: Dragging
@@ -459,22 +479,22 @@ extension SketchSession {
     /// `chamferDistance` from the corner).
     func filletCorner(_ p: Vec2, chamfer: Bool = false) {
         guard case let .point(id, i)? = pickRef(p, kinds: [.point]), let shape = shape(id) else {
-            notice = "Clicca l'angolo tra due linee."; return
+            notice = String(localized: "Clicca l'angolo tra due linee."); return
         }
         switch shape.kind {
         case .polyline: break
         case .rectangle where i < 4: break
-        default: notice = "Si fa sull'angolo tra due linee (polilinea o rettangolo)."; return
+        default: notice = String(localized: "Si fa sull'angolo tra due linee (polilinea o rettangolo)."); return
         }
         var next = sketch
         do {
             let arc = chamfer ? try next.chamfer(id, vertex: i, distance: chamferDistance) : try next.fillet(id, vertex: i, radius: filletRadius)
-            guard next.solve() else { notice = (chamfer ? "Smusso" : "Raccordo") + " in conflitto con i vincoli dello schizzo."; return }
+            guard next.solve() else { notice = (chamfer ? String(localized: "Smusso in conflitto con i vincoli dello schizzo.") : String(localized: "Raccordo in conflitto con i vincoli dello schizzo.")); return }
             notice = nil
             sketch = next
             selection = arc
         } catch {
-            notice = (chamfer ? "Smusso: " : "Raccordo: ") + error.localizedDescription
+            notice = (chamfer ? String(localized: "Smusso: \(error.localizedDescription)") : String(localized: "Raccordo: \(error.localizedDescription)"))
         }
     }
 }

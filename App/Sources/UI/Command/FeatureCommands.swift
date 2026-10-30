@@ -13,29 +13,29 @@ enum FeatureCommands {
         var fields: [CommandField]
         switch original.kind {
         case let .box(w, d, h):
-            fields = [.init(id: "w", label: "Larghezza", kind: .length(length), value: .number(w)),
-                      .init(id: "d", label: "Profondità", kind: .length(length), value: .number(d)),
-                      .init(id: "h", label: "Altezza", kind: .length(length), value: .number(h))]
+            fields = [.init(id: "w", label: String(localized: "Larghezza"), kind: .length(length), value: .number(w)),
+                      .init(id: "d", label: String(localized: "Profondità"), kind: .length(length), value: .number(d)),
+                      .init(id: "h", label: String(localized: "Altezza"), kind: .length(length), value: .number(h))]
         case let .cylinder(r, h):
-            fields = [.init(id: "r", label: "Raggio", kind: .length(0.05...500), value: .number(r)),
-                      .init(id: "h", label: "Altezza", kind: .length(length), value: .number(h))]
+            fields = [.init(id: "r", label: String(localized: "Raggio"), kind: .length(0.05...500), value: .number(r)),
+                      .init(id: "h", label: String(localized: "Altezza"), kind: .length(length), value: .number(h))]
         case let .extrude(_, h):
-            fields = [.init(id: "h", label: "Distanza", kind: .length(length), value: .number(h)),
-                      .init(id: "extent", label: "Estensione", kind: .choice(original.untilFace == nil ? ["Una direzione", "Simmetrica", "Passante"] : ["Una direzione", "Simmetrica", "Passante", "Fino a faccia"]),
+            fields = [.init(id: "h", label: String(localized: "Distanza"), kind: .length(length), value: .number(h)),
+                      .init(id: "extent", label: String(localized: "Estensione"), kind: .choice(original.untilFace == nil ? ["Una direzione", "Simmetrica", "Passante"] : ["Una direzione", "Simmetrica", "Passante", "Fino a faccia"]),
                             value: .index(original.untilFace != nil ? 3 : (original.throughAll ? 2 : (original.symmetric ? 1 : 0)))),
-                      .init(id: "taper", label: "Sformo", kind: .angle(-60...60), value: .number(original.taper),
-                            help: "Positivo stringe le pareti allontanandosi dallo schizzo, negativo le allarga")]
+                      .init(id: "taper", label: String(localized: "Sformo"), kind: .angle(-60...60), value: .number(original.taper),
+                            help: String(localized: "Positivo stringe le pareti allontanandosi dallo schizzo, negativo le allarga"))]
         case let .revolve(spec):
-            fields = [.init(id: "angle", label: "Angolo", kind: .angle(0.1...360), value: .number(spec.angle)),
-                      .init(id: "rev", label: "Verso opposto", kind: .toggle, value: .flag(spec.reversed))]
+            fields = [.init(id: "angle", label: String(localized: "Angolo"), kind: .angle(0.1...360), value: .number(spec.angle)),
+                      .init(id: "rev", label: String(localized: "Verso opposto"), kind: .toggle, value: .flag(spec.reversed))]
         case .hole, .chamfer, .sheetMetal, .pattern, .split, .shell, .move, .joint, .combine, .thread:
             return nil   // own panels (HoleCommand, ChamferCommand, SheetMetalCommand, PatternCommand)
         case let .component(ref):
             return component(id, ref: ref, original: original, model: model)
         case let .importedMesh(m):
-            fields = [.init(id: "note", label: "Da \(m.source) · \(m.mesh.triangleCount) triangoli", kind: .note(warning: false), value: .flag(false)),
-                      .init(id: "x", label: "Posizione X", kind: .length(-100_000...100_000), value: .number(original.position.x)),
-                      .init(id: "y", label: "Posizione Y", kind: .length(-100_000...100_000), value: .number(original.position.y))]
+            fields = [.init(id: "note", label: String(localized: "Da \(m.source) · \(m.mesh.triangleCount) triangoli"), kind: .note(warning: false), value: .flag(false)),
+                      .init(id: "x", label: String(localized: "Posizione X"), kind: .length(-100_000...100_000), value: .number(original.position.x)),
+                      .init(id: "y", label: String(localized: "Posizione Y"), kind: .length(-100_000...100_000), value: .number(original.position.y))]
         }
         // Sizes can be parameter expressions (Fusion: «spessore * 2»).
         let sizeKey = ["w": "width", "d": "depth", "h": "height", "r": "radius"]
@@ -44,8 +44,8 @@ enum FeatureCommands {
             fields[i].acceptsExpression = true
             fields[i].expression = original.expressions[key]
         }
-        fields += [.init(id: "z", label: "Offset Z", kind: .length(-1000...1000), value: .number(original.position.z)),
-                   .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)),
+        fields += [.init(id: "z", label: String(localized: "Offset Z"), kind: .length(-1000...1000), value: .number(original.position.z)),
+                   .init(id: "op", label: String(localized: "Operazione"), kind: .choice(BooleanOperation.allCases.map(\.label)),
                          value: .index(BooleanOperation.allCases.firstIndex(of: original.operation) ?? 0))]
 
         func apply(_ fields: [CommandField]) {
@@ -79,7 +79,7 @@ enum FeatureCommands {
         }
 
         let session = CommandSession(
-            title: "Modifica \(original.name)", symbol: original.kind.symbol, fields: fields,
+            title: String(localized: "Modifica \(original.name)"), symbol: original.kind.symbol, fields: fields,
             onPreview: { fields in
                 if fields.allSatisfy({ $0.validationMessage == nil }) { apply(fields) }
             },
@@ -96,14 +96,14 @@ enum FeatureCommands {
     /// Component placement: position and rotation, previewed live on the design.
     private static func component(_ id: Feature.ID, ref: ComponentRef, original: Feature, model: DesignModel) -> CommandSession {
         let fields: [CommandField] = [
-            .init(id: "note", label: "Pezzo: " + ref.path, kind: .note(warning: false), value: .flag(false)),
-            .init(id: "x", label: "Posizione X", kind: .length(-100_000...100_000), value: .number(original.position.x)),
-            .init(id: "y", label: "Posizione Y", kind: .length(-100_000...100_000), value: .number(original.position.y)),
-            .init(id: "z", label: "Posizione Z", kind: .length(-100_000...100_000), value: .number(original.position.z)),
-            .init(id: "rx", label: "Rotazione X", kind: .angle(-360...360), value: .number(ref.rotation.x)),
-            .init(id: "ry", label: "Rotazione Y", kind: .angle(-360...360), value: .number(ref.rotation.y)),
-            .init(id: "rz", label: "Rotazione Z", kind: .angle(-360...360), value: .number(ref.rotation.z),
-                  help: "Rotazioni in gradi attorno agli assi del mondo, nell'ordine X, Y, Z"),
+            .init(id: "note", label: String(localized: "Pezzo: \(ref.path)"), kind: .note(warning: false), value: .flag(false)),
+            .init(id: "x", label: String(localized: "Posizione X"), kind: .length(-100_000...100_000), value: .number(original.position.x)),
+            .init(id: "y", label: String(localized: "Posizione Y"), kind: .length(-100_000...100_000), value: .number(original.position.y)),
+            .init(id: "z", label: String(localized: "Posizione Z"), kind: .length(-100_000...100_000), value: .number(original.position.z)),
+            .init(id: "rx", label: String(localized: "Rotazione X"), kind: .angle(-360...360), value: .number(ref.rotation.x)),
+            .init(id: "ry", label: String(localized: "Rotazione Y"), kind: .angle(-360...360), value: .number(ref.rotation.y)),
+            .init(id: "rz", label: String(localized: "Rotazione Z"), kind: .angle(-360...360), value: .number(ref.rotation.z),
+                  help: String(localized: "Rotazioni in gradi attorno agli assi del mondo, nell'ordine X, Y, Z")),
         ]
         func apply(_ f: [CommandField]) {
             guard f.allSatisfy({ $0.isHidden || $0.validationMessage == nil }),
@@ -114,7 +114,7 @@ enum FeatureCommands {
             next.kind = .component(ComponentRef(path: ref.path, rotation: Vec3(v("rx"), v("ry"), v("rz"))))
             model.document.features[i] = next
         }
-        return CommandSession(title: "Posiziona \(original.name)", symbol: "puzzlepiece.extension", fields: fields,
+        return CommandSession(title: String(localized: "Posiziona \(original.name)"), symbol: "puzzlepiece.extension", fields: fields,
                               onPreview: apply, onCommit: apply,
                               onCancel: {
                                   if let i = model.document.features.firstIndex(where: { $0.id == id }) { model.document.features[i] = original }

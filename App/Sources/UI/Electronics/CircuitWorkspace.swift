@@ -16,7 +16,13 @@ struct CircuitWorkspace: View {
                 VStack(spacing: 0) {
                     canvasBar
                     Divider()
-                    if circuits.isManufacturing { if circuits.camView == .threeD { AssemblyView3D() } else { CAMBoardView() } }
+                    if circuits.isManufacturing {
+                        if circuits.camView == .threeD {
+                            // RealityKit's SwiftUI integration (RealityView) is macOS 15 and later.
+                            if #available(macOS 15.0, *) { AssemblyView3D() }
+                            else { ContentUnavailableView("Vista 3D non disponibile", systemImage: "cube", description: Text("Richiede macOS 15 o successivo.")) }
+                        } else { CAMBoardView() }
+                    }
                     else if circuits.canvas == .schematic { CircuitSchematicView() } else { CircuitBoardView() }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -45,7 +51,9 @@ struct CircuitWorkspace: View {
                 CAMLayerToggles()
             } else {
             Picker("", selection: $c.canvas) {
-                ForEach(CircuitModel.Canvas.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(CircuitModel.Canvas.allCases) { canvas in
+                    Text(canvas == .schematic ? String(localized: "Schema") : String(localized: "PCB")).tag(canvas)
+                }
             }
             .pickerStyle(.segmented).labelsHidden().frame(width: 160)
             if circuits.canvas == .schematic {
@@ -59,7 +67,7 @@ struct CircuitWorkspace: View {
                         Button("Elimina questo foglio") { circuits.removeSheet(id) }
                     }
                 } label: {
-                    Label(circuits.sheets.first { $0.id == circuits.currentSheetID }?.name ?? "Nessun foglio", systemImage: "doc")
+                    Label(circuits.sheets.first { $0.id == circuits.currentSheetID }?.name ?? String(localized: "Nessun foglio"), systemImage: "doc")
                 }
                 .menuStyle(.borderlessButton).fixedSize()
                 .help("Fogli dello schema")
@@ -74,9 +82,9 @@ struct CircuitWorkspace: View {
             }
             Spacer()
             // Which file this is (a save without a panel writes here).
-            Label(circuits.title + (circuits.isDirty ? " — modificato" : ""), systemImage: circuits.url == nil ? "doc.badge.ellipsis" : "doc")
+            Label(circuits.isDirty ? String(localized: "\(circuits.title) — modificato") : circuits.title, systemImage: circuits.url == nil ? "doc.badge.ellipsis" : "doc")
                 .font(.caption).foregroundStyle(Theme.Palette.textSecondary).lineLimit(1)
-                .help(circuits.url.map { "\($0.path)\n⌘S salva qui, ⇧⌘S salva con nome" } ?? "Non ancora salvato: ⌘S chiede nome e cartella")
+                .help(circuits.url.map { String(localized: "\($0.path)\n⌘S salva qui, ⇧⌘S salva con nome") } ?? String(localized: "Non ancora salvato: ⌘S chiede nome e cartella"))
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .background(Theme.Palette.panel)
@@ -345,25 +353,34 @@ struct CircuitBoardView: View {
         }
     }
 
-    @ViewBuilder private var toolHint: some View {
-        let text: String? = switch circuits.tool {
-        case let .place(p): "Clicca dove posare \(p.reference) (\(p.name)) · Esc per finire"
-        case .connect: circuits.connectFrom == nil ? "Collega: clicca la prima piazzola · Esc per finire"
-            : "Collega: clicca la seconda piazzola · Esc per ricominciare"
+    private var toolHintText: String? {
+        switch circuits.tool {
+        case let .place(p):
+            return String(localized: "Clicca dove posare \(p.reference) (\(p.name)) · Esc per finire")
+        case .connect:
+            return circuits.connectFrom == nil
+                ? String(localized: "Collega: clicca la prima piazzola · Esc per finire")
+                : String(localized: "Collega: clicca la seconda piazzola · Esc per ricominciare")
         case let .placeExisting(id):
-            "Clicca dove posare \(circuits.design?.components.first { $0.id == id }?.reference ?? "il componente") · Esc per finire"
-        case .route: routeHint
+            let reference = circuits.design?.components.first { $0.id == id }?.reference ?? String(localized: "il componente")
+            return String(localized: "Clicca dove posare \(reference) · Esc per finire")
+        case .route:
+            return routeHint
         case .keepout:
-            circuits.keepoutDraft == nil
-                ? "Area vietata su \(circuits.layerName(circuits.activeLayer)): clicca i punti del contorno · K per uscire"
-                : "Clic per il punto successivo · clic sul primo punto o Invio per chiudere (2 punti: rettangolo) · ⌫ toglie l'ultimo · Esc annulla"
+            return circuits.keepoutDraft == nil
+                ? String(localized: "Area vietata su \(circuits.layerName(circuits.activeLayer)): clicca i punti del contorno · K per uscire")
+                : String(localized: "Clic per il punto successivo · clic sul primo punto o Invio per chiudere (2 punti: rettangolo) · ⌫ toglie l'ultimo · Esc annulla")
         case .zone:
-            circuits.zoneDraft == nil
-                ? "Piano di rame su \(circuits.layerName(circuits.activeLayer)): clicca i punti del contorno (il primo su una piazzola ne prende la rete) · P per uscire"
-                : "Clic per il punto successivo · clic sul primo punto o Invio per chiudere (2 punti: rettangolo) · ⌫ toglie l'ultimo · Esc annulla"
-        case .select: nil
+            return circuits.zoneDraft == nil
+                ? String(localized: "Piano di rame su \(circuits.layerName(circuits.activeLayer)): clicca i punti del contorno (il primo su una piazzola ne prende la rete) · P per uscire")
+                : String(localized: "Clic per il punto successivo · clic sul primo punto o Invio per chiudere (2 punti: rettangolo) · ⌫ toglie l'ultimo · Esc annulla")
+        case .select:
+            return nil
         }
-        if let text {
+    }
+
+    @ViewBuilder private var toolHint: some View {
+        if let text = toolHintText {
             VStack(spacing: 4) {
                 Text(text).font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 10).padding(.vertical, 5)
@@ -391,8 +408,13 @@ struct CircuitBoardView: View {
                 } else if let blocking = check.blocking, let first = blocking.first {
                     Label("Non confermabile: \(first.message)", systemImage: "xmark.octagon.fill").foregroundStyle(.red)
                 } else if let errors = check.newErrors, !errors.isEmpty {
-                    Label("\(errors.count) conflitt\(errors.count == 1 ? "o" : "i") col rame già presente: si può confermare, poi vanno corretti",
-                          systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    if errors.count == 1 {
+                        Label("1 conflitto col rame già presente: si può confermare, poi va corretto",
+                              systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    } else {
+                        Label("\(errors.count) conflitti col rame già presente: si può confermare, poi vanno corretti",
+                              systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    }
                 } else if check.newErrors == nil {
                     Label("Controllo in corso…", systemImage: "hourglass").foregroundStyle(.secondary)
                 }
@@ -406,10 +428,10 @@ struct CircuitBoardView: View {
     private var routeHint: String {
         let layer = circuits.layerName(circuits.activeLayer)
         guard let r = circuits.route else {
-            return "Pista su \(layer): clicca una piazzola, una via o una pista · X per uscire"
+            return String(localized: "Pista su \(layer): clicca una piazzola, una via o una pista · X per uscire")
         }
         let net = circuits.design?.nets.first { $0.id == r.netID }?.name ?? "?"
-        return "Rete \(net) su \(layer): clic per piegare · V via · / piega · Invio o clic sul rame della rete per finire · ⌫ toglie l'ultimo punto · Esc annulla"
+        return String(localized: "Rete \(net) su \(layer): clic per piegare · V via · / piega · Invio o clic sul rame della rete per finire · ⌫ toglie l'ultimo punto · Esc annulla")
     }
 
     /// Pista: the width of the next tracks and how the leg bends. Area vietata: its layers.
@@ -422,7 +444,8 @@ struct CircuitBoardView: View {
                 Menu {
                     ForEach(circuits.design?.nets ?? [], id: \.id) { net in Button(net.name) { circuits.zoneNet = net.id } }
                 } label: {
-                    Text("Rete: " + (circuits.zoneNet.flatMap { id in circuits.design?.nets.first { $0.id == id }?.name } ?? "scegli")).font(.system(size: 11))
+                    let net = circuits.zoneNet.flatMap { id in circuits.design?.nets.first { $0.id == id }?.name } ?? String(localized: "scegli")
+                    Text("Rete: \(net)").font(.system(size: 11))
                 }
                 .menuStyle(.borderlessButton).fixedSize()
                 Toggle("Togli le isole", isOn: Binding(get: { circuits.zoneDraft?.removeIslands ?? circuits.zoneRemoveIslands }, set: { circuits.setDraftRemoveIslands($0) }))
@@ -463,7 +486,7 @@ struct CircuitBoardView: View {
                 if let r = circuits.route {
                     Menu {
                         ForEach(CircuitModel.trackWidths(from: r.rules.rules.minimumTrackWidth), id: \.self) { w in
-                            Button(Self.mm(w) + (abs(w - r.rules.routing.trackWidth) < 1e-9 ? " (della classe)" : "")) {
+                            Button(abs(w - r.rules.routing.trackWidth) < 1e-9 ? String(localized: "\(Self.mm(w)) (della classe)") : Self.mm(w)) {
                                 circuits.route?.width = w; circuits.routeCheck = nil
                             }
                         }
@@ -492,7 +515,7 @@ struct CircuitBoardView: View {
             Button("Chiudi") { Task { _ = await close() } }
                 .disabled(circuits.pcbBusy).controlSize(.small)
                 .help("Chiude il contorno (Invio o doppio clic sull'ultimo punto; 2 punti fanno un rettangolo)")
-            Button(circuits.pcbBusy ? "Ferma" : "Annulla") { if circuits.pcbBusy { circuits.cancelPCB() } else { cancel() } }
+            Button(circuits.pcbBusy ? String(localized: "Ferma") : String(localized: "Annulla")) { if circuits.pcbBusy { circuits.cancelPCB() } else { cancel() } }
                 .controlSize(.small)
                 .help("Esc")
         }
@@ -518,17 +541,20 @@ struct CircuitBoardView: View {
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .overlayChip()
         } else if hoveredPad == nil, hoveredCopper == nil, let id = hoveredKeepout, let area = circuits.keepout(id) {
-            Text("\(area.name) · \(area.layers.count == circuits.layerCount ? "tutti gli strati" : area.layers.map(circuits.layerName).joined(separator: ", "))")
+            let layers = area.layers.count == circuits.layerCount ? String(localized: "tutti gli strati") : area.layers.map(circuits.layerName).joined(separator: ", ")
+            Text("\(area.name) · \(layers)")
                 .font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .overlayChip()
         } else if hoveredPad == nil, let hit = hoveredCopper, let design = circuits.design {
             let net = hit.netID.flatMap { id in design.nets.first { $0.id == id } }?.name ?? "?"
             let text: String = switch hit.item {
-            case .track(let id): circuits.track(id).map { "Pista · rete \(net) · \(circuits.layerName($0.layer)) · \(Self.mm($0.width))" } ?? "Pista"
-            case .via(let id): circuits.via(id).map { "Via · rete \(net) · Ø \(Self.mm($0.diameter)), foro \(Self.mm($0.drill))" } ?? "Via"
-            case .pad: "rete \(net)"
-            case .zone: "Piano · rete \(net)"
+            case .track(let id):
+                circuits.track(id).map { String(localized: "Pista · rete \(net) · \(circuits.layerName($0.layer)) · \(Self.mm($0.width))") } ?? String(localized: "Pista")
+            case .via(let id):
+                circuits.via(id).map { String(localized: "Via · rete \(net) · Ø \(Self.mm($0.diameter)), foro \(Self.mm($0.drill))") } ?? String(localized: "Via")
+            case .pad: String(localized: "rete \(net)")
+            case .zone: String(localized: "Piano · rete \(net)")
             }
             Text(text).font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 8).padding(.vertical, 4)
@@ -536,7 +562,9 @@ struct CircuitBoardView: View {
         } else if let pad = hoveredPad, let design = circuits.design {
             let component = design.components.first { $0.id == pad.componentID }
             let net = pad.netID.flatMap { id in design.nets.first { $0.id == id } }
-            Text("\(component?.reference ?? "?") · \(net.map { "rete \($0.name)" } ?? "non collegata")")
+            let reference = component?.reference ?? "?"
+            let netText = net.map { String(localized: "rete \($0.name)") } ?? String(localized: "non collegata")
+            Text("\(reference) · \(netText)")
                 .font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .overlayChip()
@@ -624,7 +652,7 @@ struct CircuitBoardView: View {
             guard let comp = design.components.first(where: { $0.id == place.componentID }) else { continue }
             var at = place.position
             if let d = dragging, d.component == place.componentID { at = PCBPoint(at.x + d.delta.x, at.y + d.delta.y) }
-            let label = Text(comp.reference + (place.side == .bottom ? " (sotto)" : ""))
+            let label = Text(place.side == .bottom ? String(localized: "\(comp.reference) (sotto)") : comp.reference)
                 .font(.system(size: max(9, min(14, m.scale * 1.2)), weight: .semibold))
                 .foregroundColor(place.componentID == selected ? accent : .white)
             ctx.draw(label, at: CGPoint(x: m.screen(at).x, y: m.screen(at).y - max(10, 2.5 * m.scale)))
@@ -855,12 +883,14 @@ struct CircuitChecksPanel: View {
                 Divider()
                 Text("\(comp.reference) · \(comp.value)").font(.callout.weight(.semibold))
                 if let place = circuits.placement(of: id) {
-                    Text(String(format: "X %.2f  Y %.2f mm · %.0f° · %@", place.position.x, place.position.y, place.rotationDegrees,
-                                place.side == .top ? "sopra" : "sotto"))
+                    let side = place.side == .top ? String(localized: "sopra") : String(localized: "sotto")
+                    Text(String(format: String(localized: "X %.2f  Y %.2f mm · %.0f° · %@"), place.position.x, place.position.y,
+                                place.rotationDegrees, side))
                         .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
                 }
-                Text(circuits.canvas == .schematic ? "R ruota di 90° · M specchia · trascina per spostare · Canc elimina il simbolo"
-                     : "R ruota di 90° · F cambia lato · trascina per spostare · Canc elimina")
+                Text(circuits.canvas == .schematic
+                     ? String(localized: "R ruota di 90° · M specchia · trascina per spostare · Canc elimina il simbolo")
+                     : String(localized: "R ruota di 90° · F cambia lato · trascina per spostare · Canc elimina"))
                     .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
             }
         }
@@ -923,10 +953,10 @@ private struct KeepoutDetail: View {
             .onChange(of: area.id) { name = area.name }
             .onChange(of: area.name) { if !editingName { name = area.name } }
         HStack(spacing: 10) {
-            forbid("Piste", \.tracks)
-            forbid("Via", \.vias)
-            forbid("Piazzole", \.pads)
-            forbid("Piani", \.zones)
+            forbid(String(localized: "Piste"), \.tracks)
+            forbid(String(localized: "Via"), \.vias)
+            forbid(String(localized: "Piazzole"), \.pads)
+            forbid(String(localized: "Piani"), \.zones)
         }
         .font(.caption)
         Menu {
@@ -940,7 +970,8 @@ private struct KeepoutDetail: View {
                     }))
             }
         } label: {
-            Text("Strati: " + (area.layers.count == circuits.layerCount ? "tutti" : area.layers.map(circuits.layerName).joined(separator: ", ")))
+            let layers = area.layers.count == circuits.layerCount ? String(localized: "tutti") : area.layers.map(circuits.layerName).joined(separator: ", ")
+            Text("Strati: \(layers)")
         }
         .fixedSize()
         Text("Trascina per spostare · Canc elimina").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
@@ -1016,7 +1047,10 @@ private struct ZoneDetail: View {
                 ForEach(circuits.design?.nets ?? [], id: \.id) { net in
                     Button(net.name) { var z = plane; z.netID = net.id; Task { await circuits.updateZone(z) } }
                 }
-            } label: { Text("Rete: " + (circuits.design?.nets.first { $0.id == plane.netID }?.name ?? "?")) }
+            } label: {
+                let net = circuits.design?.nets.first { $0.id == plane.netID }?.name ?? "?"
+                Text("Rete: \(net)")
+            }
             .fixedSize()
             Menu {
                 ForEach(0..<circuits.layerCount, id: \.self) { layer in
@@ -1038,7 +1072,8 @@ private struct ZoneDetail: View {
                     if let r = check.refusal ?? check.blocking?.first?.message {
                         Label(r, systemImage: "xmark.octagon.fill").foregroundStyle(.red).lineLimit(3)
                     } else if let e = check.newErrors {
-                        Label(e.isEmpty ? "Nessun nuovo errore" : "\(e.count) nuovi errori sul rame", systemImage: e.isEmpty ? "checkmark.seal" : "exclamationmark.triangle.fill")
+                        Label(e.isEmpty ? String(localized: "Nessun nuovo errore") : String(localized: "\(e.count) nuovi errori sul rame"),
+                              systemImage: e.isEmpty ? "checkmark.seal" : "exclamationmark.triangle.fill")
                             .foregroundStyle(e.isEmpty ? .green : .orange)
                     } else {
                         Label("Controllo…", systemImage: "hourglass").foregroundStyle(.secondary)
@@ -1060,13 +1095,34 @@ private struct ZoneDetail: View {
                 Label("Vuoto: nessun rame collegato a una piazzola di questa rete qui", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
             } else {
-                Text(String(format: "Rame %.1f mm² · %d isol%@", fill.area, fill.islandCount, fill.islandCount == 1 ? "a" : "e")
-                     + (fill.removedIslandCount > 0 ? " · \(fill.removedIslandCount) tolt\(fill.removedIslandCount == 1 ? "a" : "e")" : "")
-                     + (fill.removedNarrowArea > 0 ? String(format: " · %.1f mm² troppo stretti tolti", fill.removedNarrowArea) : ""))
+                let copper: String = {
+                    var s = fill.islandCount == 1
+                        ? String(format: String(localized: "Rame %.1f mm² · 1 isola"), fill.area)
+                        : String(format: String(localized: "Rame %.1f mm² · %d isole"), fill.area, fill.islandCount)
+                    if fill.removedIslandCount > 0 {
+                        s += fill.removedIslandCount == 1
+                            ? String(localized: " · 1 isola tolta")
+                            : String(localized: " · \(fill.removedIslandCount) isole tolte")
+                    }
+                    if fill.removedNarrowArea > 0 {
+                        s += String(format: String(localized: " · %.1f mm² troppo stretti tolti"), fill.removedNarrowArea)
+                    }
+                    return s
+                }()
+                Text(copper)
                     .font(.caption.monospacedDigit()).foregroundStyle(Theme.Palette.textSecondary)
                 if !fill.thermals.isEmpty {
                     let starved = fill.thermals.filter { $0.connectedSpokes < plane.minimumSpokes }.count
-                    Text("\(fill.thermals.count) piazzol\(fill.thermals.count == 1 ? "a" : "e") con termica" + (starved > 0 ? " · \(starved) con meno di \(plane.minimumSpokes) raggi (vedi VERIFICHE)" : ""))
+                    let thermals: String = {
+                        var s = fill.thermals.count == 1
+                            ? String(localized: "1 piazzola con termica")
+                            : String(localized: "\(fill.thermals.count) piazzole con termica")
+                        if starved > 0 {
+                            s += String(localized: " · \(starved) con meno di \(plane.minimumSpokes) raggi (vedi VERIFICHE)")
+                        }
+                        return s
+                    }()
+                    Text(thermals)
                         .font(.caption).foregroundStyle(starved > 0 ? .orange : Theme.Palette.textSecondary)
                 }
             }
@@ -1083,10 +1139,12 @@ struct ZoneRulesForm: View {
     @Binding var rules: CircuitModel.ZoneRules
 
     static let modes: [(PCBZoneConnection, String)] = [
-        (.solid, "Pieno"), (.thermal, "Termiche"), (.thermalThroughHole, "Termiche solo passanti"), (.none, "Piazzole isolate"),
+        (.solid, String(localized: "Pieno")), (.thermal, String(localized: "Termiche")),
+        (.thermalThroughHole, String(localized: "Termiche solo passanti")), (.none, String(localized: "Piazzole isolate")),
     ]
     static func summary(_ r: CircuitModel.ZoneRules) -> String {
-        (modes.first { $0.0 == r.connection }?.1 ?? "Pieno") + (r.minimumWidth > 0 ? " · min \(CircuitBoardView.mm(r.minimumWidth))" : "") + " ▾"
+        let mode = modes.first { $0.0 == r.connection }?.1 ?? String(localized: "Pieno")
+        return mode + (r.minimumWidth > 0 ? String(localized: " · min \(CircuitBoardView.mm(r.minimumWidth))") : "") + " ▾"
     }
 
     var body: some View {
@@ -1096,17 +1154,20 @@ struct ZoneRulesForm: View {
             }
             .help("Termiche: un anello d'aria con quattro ponticelli, per saldare senza che il piano porti via il calore. Le via restano piene.")
             if rules.hasGap {
-                DimensionField(title: rules.hasThermals ? "Spazio attorno" : "Distanza dalle piazzole", value: $rules.thermalGap)
+                DimensionField(title: rules.hasThermals ? String(localized: "Spazio attorno") : String(localized: "Distanza dalle piazzole"), value: $rules.thermalGap)
             }
             if rules.hasThermals {
-                DimensionField(title: "Ponticelli", value: $rules.thermalSpokeWidth)
-                DimensionField(title: "Angolo", value: $rules.thermalAngleDegrees, unit: "°")
-                Stepper("Raggi minimi: \(rules.minimumSpokes == 0 ? "nessun controllo" : "\(rules.minimumSpokes)")", value: $rules.minimumSpokes, in: 0...4)
+                DimensionField(title: String(localized: "Ponticelli"), value: $rules.thermalSpokeWidth)
+                DimensionField(title: String(localized: "Angolo"), value: $rules.thermalAngleDegrees, unit: "°")
+                Stepper(rules.minimumSpokes == 0 ? String(localized: "Raggi minimi: nessun controllo")
+                                                 : String(localized: "Raggi minimi: \(rules.minimumSpokes)"),
+                        value: $rules.minimumSpokes, in: 0...4)
                     .help("Quanti dei quattro ponticelli devono arrivare interi alla piazzola; 0 non controlla")
             }
-            DimensionField(title: "Larghezza minima", value: $rules.minimumWidth)
-            Text(rules.minimumWidth > 0 ? "Il rame più stretto di così viene tolto, i colli rimasti segnalati."
-                 : "0: nessun filtro, il rame segue il contorno com'è.")
+            DimensionField(title: String(localized: "Larghezza minima"), value: $rules.minimumWidth)
+            Text(rules.minimumWidth > 0
+                 ? String(localized: "Il rame più stretto di così viene tolto, i colli rimasti segnalati.")
+                 : String(localized: "0: nessun filtro, il rame segue il contorno com'è."))
                 .font(.caption2).foregroundStyle(Theme.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
         }
         .font(.caption)
@@ -1198,7 +1259,8 @@ struct NetClassesSheet: View {
             List(circuits.netClasses, id: \.id, selection: Binding(get: { chosen }, set: { leave(.choose($0)) })) { c in
                 VStack(alignment: .leading) {
                     Text(c.name)
-                    Text("\(c.netIDs.count) ret\(c.netIDs.count == 1 ? "e" : "i")").font(.caption2).foregroundStyle(.secondary)
+                    Text(c.netIDs.count == 1 ? String(localized: "1 rete") : String(localized: "\(c.netIDs.count) reti"))
+                        .font(.caption2).foregroundStyle(.secondary)
                 }
                 .tag(c.id)
             }
@@ -1221,16 +1283,16 @@ struct NetClassesSheet: View {
             TextField("Nome", text: d.name).textFieldStyle(.roundedBorder).font(.body.weight(.semibold))
             Text("MINIMI (vuoto = come la scheda)").font(.caption.weight(.bold)).foregroundStyle(Theme.Palette.textSecondary)
             Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
-                optional("Distanza fra reti", d.constraints.clearance, board: circuits.copperRules.clearance)
-                optional("Pista minima", d.constraints.minimumTrackWidth, board: circuits.copperRules.minimumTrackWidth)
-                optional("Foro minimo", d.constraints.minimumDrill, board: circuits.copperRules.minimumDrill)
-                optional("Anello minimo", d.constraints.minimumAnnularRing, board: circuits.copperRules.minimumAnnularRing)
+                optional(String(localized: "Distanza fra reti"), d.constraints.clearance, board: circuits.copperRules.clearance)
+                optional(String(localized: "Pista minima"), d.constraints.minimumTrackWidth, board: circuits.copperRules.minimumTrackWidth)
+                optional(String(localized: "Foro minimo"), d.constraints.minimumDrill, board: circuits.copperRules.minimumDrill)
+                optional(String(localized: "Anello minimo"), d.constraints.minimumAnnularRing, board: circuits.copperRules.minimumAnnularRing)
             }
             Text("MISURE PROPOSTE PER PISTA").font(.caption.weight(.bold)).foregroundStyle(Theme.Palette.textSecondary)
             Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
-                value("Larghezza pista", d.routing.trackWidth)
-                value("Via, diametro", d.routing.viaDiameter)
-                value("Via, foro", d.routing.viaDrill)
+                value(String(localized: "Larghezza pista"), d.routing.trackWidth)
+                value(String(localized: "Via, diametro"), d.routing.viaDiameter)
+                value(String(localized: "Via, foro"), d.routing.viaDrill)
             }
             Text("Le misure proposte non scendono mai sotto i minimi: Pista le alza da sola.")
                 .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
@@ -1261,7 +1323,12 @@ struct NetClassesSheet: View {
                     Label(refusal, systemImage: "xmark.octagon.fill").foregroundStyle(.red)
                 } else if let errors = check.newErrors {
                     if errors.isEmpty { Label("Nessun nuovo errore sul rame", systemImage: "checkmark.seal").foregroundStyle(.green) }
-                    else { Label("\(errors.count) nuov\(errors.count == 1 ? "o errore" : "i errori") sul rame già tracciato: dopo vanno corretti", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
+                    else {
+                        Label(errors.count == 1
+                              ? String(localized: "1 nuovo errore sul rame già tracciato: dopo va corretto")
+                              : String(localized: "\(errors.count) nuovi errori sul rame già tracciato: dopo vanno corretti"),
+                              systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    }
                 } else {
                     Label("Controllo in corso…", systemImage: "hourglass").foregroundStyle(.secondary)
                 }
@@ -1385,7 +1452,9 @@ struct AddComponentSheet: View {
             let existing: [CircuitComponent] = circuits.canvas == .schematic ? circuits.componentsWithoutSymbol
                 : (circuits.board?.unplacedComponents ?? []).compactMap { id in circuits.design?.components.first { $0.id == id } }
             if !existing.isEmpty {
-                Text(circuits.canvas == .schematic ? "Nel circuito, senza simbolo" : "Dallo schema, da posare sulla scheda")
+                Text(circuits.canvas == .schematic
+                     ? String(localized: "Nel circuito, senza simbolo")
+                     : String(localized: "Dallo schema, da posare sulla scheda"))
                     .font(.caption.weight(.semibold))
                 ScrollView(.horizontal) {
                     HStack {
@@ -1403,7 +1472,9 @@ struct AddComponentSheet: View {
             HStack {
                 Spacer()
                 Button("Annulla") { circuits.showAddComponent = false }.keyboardShortcut(.cancelAction)
-                Button(circuits.canvas == .schematic ? "Posiziona sullo schema" : "Posiziona sulla scheda") { place() }
+                Button(circuits.canvas == .schematic
+                       ? String(localized: "Posiziona sullo schema")
+                       : String(localized: "Posiziona sulla scheda")) { place() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(choice == nil || reference.trimmingCharacters(in: .whitespaces).isEmpty)
             }
@@ -1448,9 +1519,9 @@ struct BoardSheet: View {
             Text("Rettangolo dall'origine (0,0). Il contorno nuovo si vede tratteggiato sulla scheda.")
                 .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
             Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
-                row("Larghezza", $width, "mm")
-                row("Altezza", $height, "mm")
-                row("Spessore", $thickness, "mm")
+                row(String(localized: "Larghezza"), $width, "mm")
+                row(String(localized: "Altezza"), $height, "mm")
+                row(String(localized: "Spessore"), $thickness, "mm")
                 GridRow {
                     Text("Strati rame")
                     Picker("", selection: $layers) {
@@ -1458,14 +1529,14 @@ struct BoardSheet: View {
                     }
                     .labelsHidden().frame(width: 90)
                     .disabled(hasCopper)
-                    Text(hasCopper ? "togli piste e via per cambiarli" : "").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+                    Text(hasCopper ? String(localized: "togli piste e via per cambiarli") : "").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
                 }
                 Divider().gridCellColumns(3)
-                row("Distanza fra reti", $rules.clearance, "mm")
-                row("Distanza dal bordo", $rules.edgeClearance, "mm")
-                row("Pista minima", $rules.minimumTrackWidth, "mm")
-                row("Foro minimo", $rules.minimumDrill, "mm")
-                row("Anello minimo", $rules.minimumAnnularRing, "mm")
+                row(String(localized: "Distanza fra reti"), $rules.clearance, "mm")
+                row(String(localized: "Distanza dal bordo"), $rules.edgeClearance, "mm")
+                row(String(localized: "Pista minima"), $rules.minimumTrackWidth, "mm")
+                row(String(localized: "Foro minimo"), $rules.minimumDrill, "mm")
+                row(String(localized: "Anello minimo"), $rules.minimumAnnularRing, "mm")
             }
             .textFieldStyle(.roundedBorder)
             Text("Regole di partenza del progetto, non quelle di un fornitore: controllale col produttore.")

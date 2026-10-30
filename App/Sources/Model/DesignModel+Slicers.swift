@@ -42,12 +42,12 @@ extension DesignModel {
             configuration.activates = true
             NSWorkspace.shared.open([url], withApplicationAt: slicer.url, configuration: configuration) { [weak self] _, error in
                 Task { @MainActor in
-                    self?.statusMessage = error.map { "\(slicer.name) non ha aperto il file: \($0.localizedDescription)" }
-                        ?? "Inviato a \(slicer.name): \(url.lastPathComponent) — parti e colori, verifica i filamenti" + Self.openNote(open)
+                    self?.statusMessage = error.map { String(localized: "\(slicer.name) non ha aperto il file: \($0.localizedDescription)") }
+                        ?? String(localized: "Inviato a \(slicer.name): \(url.lastPathComponent) — parti e colori, verifica i filamenti") + Self.openNote(open)
                 }
             }
         } catch {
-            statusMessage = "Invio a \(slicer.name) non riuscito: \(error.localizedDescription)"
+            statusMessage = String(localized: "Invio a \(slicer.name) non riuscito: \(error.localizedDescription)")
         }
     }
 }

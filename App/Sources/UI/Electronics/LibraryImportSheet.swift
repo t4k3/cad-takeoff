@@ -83,7 +83,7 @@ private struct RevisionDiffView: View {
                 if diff.changedFields.isEmpty {
                     Text("Contenuto identico alla revisione precedente.").font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                 } else {
-                    Text("Cambiano: " + diff.changedFields.map(Self.label).joined(separator: ", ")).font(.caption)
+                    Text("Cambiano: \(diff.changedFields.map(Self.label).joined(separator: ", "))").font(.caption)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -91,16 +91,20 @@ private struct RevisionDiffView: View {
                 FootprintBeforeAfter(before: { if case let .footprint(b)? = diff.before { shapes[b.key] } else { nil } }(), after: shape)
                     .frame(height: 170)
             }
-            changes("Pin", diff.pins) { p in "\(p.number ?? p.name) «\(p.name)»" } detail: { b, a in
-                b.name != a.name || b.number != a.number ? "\(b.number ?? b.name) «\(b.name)» → \(a.number ?? a.name) «\(a.name)»" : "tipo o disegno"
+            changes(String(localized: "Pin"), diff.pins) { p in "\(p.number ?? p.name) «\(p.name)»" } detail: { b, a in
+                b.name != a.name || b.number != a.number ? "\(b.number ?? b.name) «\(b.name)» → \(a.number ?? a.name) «\(a.name)»" : String(localized: "tipo o disegno")
             }
-            changes("Piazzole", diff.pads) { p in "\(p.number) (\(mm(p.center.x)); \(mm(p.center.y))) mm" } detail: { b, a in
+            changes(String(localized: "Piazzole"), diff.pads) { p in "\(p.number) (\(mm(p.center.x)); \(mm(p.center.y))) mm" } detail: { b, a in
                 var parts: [String] = []
-                if b.center != a.center { parts.append("centro (\(mm(b.center.x)); \(mm(b.center.y))) → (\(mm(a.center.x)); \(mm(a.center.y))) mm") }
-                if b.size != a.size { parts.append("misura \(mm(b.size.x)) × \(mm(b.size.y)) → \(mm(a.size.x)) × \(mm(a.size.y)) mm") }
-                if b.drillDiameter != a.drillDiameter { parts.append("foro \(b.drillDiameter.map { mm($0) + " mm" } ?? "—") → \(a.drillDiameter.map { mm($0) + " mm" } ?? "—")") }
-                if b.number != a.number { parts.append("numero \(b.number) → \(a.number)") }
-                return parts.isEmpty ? "forma o strati" : parts.joined(separator: " · ")
+                if b.center != a.center { parts.append(String(localized: "centro (\(mm(b.center.x)); \(mm(b.center.y))) → (\(mm(a.center.x)); \(mm(a.center.y))) mm")) }
+                if b.size != a.size { parts.append(String(localized: "misura \(mm(b.size.x)) × \(mm(b.size.y)) → \(mm(a.size.x)) × \(mm(a.size.y)) mm")) }
+                if b.drillDiameter != a.drillDiameter {
+                    let before = b.drillDiameter.map { mm($0) + " mm" } ?? "—"
+                    let after = a.drillDiameter.map { mm($0) + " mm" } ?? "—"
+                    parts.append(String(localized: "foro \(before) → \(after)"))
+                }
+                if b.number != a.number { parts.append(String(localized: "numero \(b.number) → \(a.number)")) }
+                return parts.isEmpty ? String(localized: "forma o strati") : parts.joined(separator: " · ")
             }
             if !diff.graphics.isEmpty {
                 let g = counts(diff.graphics)
@@ -108,10 +112,15 @@ private struct RevisionDiffView: View {
             }
             if diff.before != nil {
                 let refs = diff.affectedComponentIDs.compactMap { id in circuits.design?.components.first { $0.id == id }?.reference }
-                Text(refs.isEmpty ? "Nessun componente usa la revisione \(diff.before!.key.revision)."
-                                  : "Da valutare (restano sulla revisione \(diff.before!.key.revision)): " + refs.joined(separator: ", "))
-                    .font(.caption).foregroundStyle(refs.isEmpty ? Theme.Palette.textSecondary : Color.primary)
-                    .fixedSize(horizontal: false, vertical: true)
+                if refs.isEmpty {
+                    Text("Nessun componente usa la revisione \(diff.before!.key.revision).")
+                        .font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("Da valutare (restano sulla revisione \(diff.before!.key.revision)): \(refs.joined(separator: ", "))")
+                        .font(.caption).foregroundStyle(Color.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(10)
@@ -121,12 +130,16 @@ private struct RevisionDiffView: View {
     private var title: String {
         let kind: String, name: String
         switch diff.after {
-        case let .symbol(s): kind = "Simbolo"; name = s.name
-        case let .footprint(f): kind = "Impronta"; name = f.name
-        case let .device(d): kind = "Tipo"; name = d.manufacturerPartNumber.isEmpty ? "componente" : d.manufacturerPartNumber
+        case let .symbol(s): kind = String(localized: "Simbolo"); name = s.name
+        case let .footprint(f): kind = String(localized: "Impronta"); name = f.name
+        case let .device(d):
+            kind = String(localized: "Tipo")
+            name = d.manufacturerPartNumber.isEmpty ? String(localized: "componente") : d.manufacturerPartNumber
         }
-        guard let before = diff.before else { return "\(kind) \(name): nuova (revisione \(diff.after.key.revision))" }
-        return "\(kind) \(name): revisione \(before.key.revision) → \(diff.after.key.revision)"
+        guard let before = diff.before else {
+            return String(localized: "\(kind) \(name): nuova (revisione \(diff.after.key.revision))")
+        }
+        return String(localized: "\(kind) \(name): revisione \(before.key.revision) → \(diff.after.key.revision)")
     }
 
     @ViewBuilder
@@ -153,7 +166,11 @@ private struct RevisionDiffView: View {
 
     private func counts<T>(_ list: [LibraryEntityChange<T>]) -> String {
         let a = list.filter { $0.kind == .added }.count, r = list.filter { $0.kind == .removed }.count, m = list.filter { $0.kind == .modified }.count
-        return [a > 0 ? "\(a) aggiunte" : nil, r > 0 ? "\(r) tolte" : nil, m > 0 ? "\(m) cambiate" : nil].compactMap { $0 }.joined(separator: ", ")
+        return [
+            a > 0 ? (a == 1 ? String(localized: "1 aggiunta") : String(localized: "\(a) aggiunte")) : nil,
+            r > 0 ? (r == 1 ? String(localized: "1 tolta") : String(localized: "\(r) tolte")) : nil,
+            m > 0 ? (m == 1 ? String(localized: "1 cambiata") : String(localized: "\(m) cambiate")) : nil
+        ].compactMap { $0 }.joined(separator: ", ")
     }
 
     /// Millimetres to 3 decimals, decimal comma, and never «-0».
@@ -163,10 +180,21 @@ private struct RevisionDiffView: View {
 
     static func label(_ f: LibraryChangedField) -> String {
         switch f {
-        case .definition: "definizione"; case .name: "nome"; case .source: "provenienza"; case .properties: "proprietà"
-        case .pins: "pin"; case .pads: "piazzole"; case .graphics: "grafica"; case .assemblyCentroid: "centro di presa"
-        case .model3D: "modello 3D"; case .manufacturer: "produttore"; case .manufacturerPartNumber: "codice produttore"
-        case .symbol: "simbolo"; case .footprint: "impronta"; case .pinMap: "abbinamento pin"; case .supplier: "fornitore"
+        case .definition: String(localized: "definizione")
+        case .name: String(localized: "nome")
+        case .source: String(localized: "provenienza")
+        case .properties: String(localized: "proprietà")
+        case .pins: String(localized: "pin")
+        case .pads: String(localized: "piazzole")
+        case .graphics: String(localized: "grafica")
+        case .assemblyCentroid: String(localized: "centro di presa")
+        case .model3D: String(localized: "modello 3D")
+        case .manufacturer: String(localized: "produttore")
+        case .manufacturerPartNumber: String(localized: "codice produttore")
+        case .symbol: String(localized: "simbolo")
+        case .footprint: String(localized: "impronta")
+        case .pinMap: String(localized: "abbinamento pin")
+        case .supplier: String(localized: "fornitore")
         }
     }
 }
@@ -211,8 +239,13 @@ private struct FootprintBeforeAfter: View {
                 for p in before?.pads ?? [] { ctx.stroke(shape(p), with: .color(.gray), style: StrokeStyle(lineWidth: 1.2, dash: [3, 2])) }
             }
             .background(Color.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6))
-            Text(before == nil ? "Impronta nuova" : "Tratteggio: prima · pieno: dopo")
-                .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+            if before == nil {
+                Text("Impronta nuova")
+                    .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+            } else {
+                Text("Tratteggio: prima · pieno: dopo")
+                    .font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+            }
         }
     }
 }

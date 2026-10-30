@@ -29,7 +29,7 @@ final class ClaudeProvider: AssistantProvider {
 
     var modelName: String { Self.models.first { $0.id == modelID }?.name ?? modelID }
     var isConfigured: Bool { hasKey }
-    var setupHint: String { "Per usare Claude inserisci la tua API key Anthropic in Impostazioni → Assistente." }
+    var setupHint: String { String(localized: "Per usare Claude inserisci la tua API key Anthropic in Impostazioni → Assistente.") }
 
     func setAPIKey(_ key: String?) {
         Keychain.write(Self.keychainService, value: key?.trimmingCharacters(in: .whitespacesAndNewlines))

@@ -11,7 +11,7 @@ enum MoveCommand {
     static func start(workspace: WorkspaceState, model: DesignModel, editing original: Feature? = nil) -> CommandSession? {
         let spec: MoveSpec
         if let original, case let .move(s) = original.kind { spec = s } else {
-            guard let body = model.selection else { model.statusMessage = "Seleziona prima il corpo da spostare."; return nil }
+            guard let body = model.selection else { model.statusMessage = String(localized: "Seleziona prima il corpo da spostare."); return nil }
             // The body a later feature changed is still named by its first feature.
             let source = model.evaluation().bodies.first { $0.id == body || $0.modifiedBy.contains(body) }?.id ?? body
             spec = MoveSpec(bodies: [source])
@@ -23,7 +23,7 @@ enum MoveCommand {
             s.translation = Vec3(v("x"), v("y"), v("z"))
             if case let .index(i)? = f.first(where: { $0.id == "axis" })?.value { s.axis = axisVectors[i] }
             s.angle = v("angle")
-            var feature = original ?? Feature(name: "Sposta \(model.document.features.count + 1)", kind: .move(s))
+            var feature = original ?? Feature(name: String(localized: "Sposta \(model.document.features.count + 1)"), kind: .move(s))
             feature.kind = .move(s)
             return feature
         }
@@ -35,24 +35,24 @@ enum MoveCommand {
         }
         let axisIndex = axisVectors.firstIndex { ($0 - spec.axis.normalized).length < 1e-9 } ?? 0
         return CommandSession(
-            title: original == nil ? "Sposta" : "Modifica \(original!.name)", symbol: "arrow.up.and.down.and.arrow.left.and.right",
+            title: original == nil ? String(localized: "Sposta") : String(localized: "Modifica \(original!.name)"), symbol: "arrow.up.and.down.and.arrow.left.and.right",
             fields: [
-                .init(id: "what", label: "Corpo: " + names, kind: .note(warning: false), value: .flag(false)),
-                .init(id: "x", label: "X", kind: .length(-100_000...100_000), value: .number(spec.translation.x)),
-                .init(id: "y", label: "Y", kind: .length(-100_000...100_000), value: .number(spec.translation.y)),
-                .init(id: "z", label: "Z", kind: .length(-100_000...100_000), value: .number(spec.translation.z)),
-                .init(id: "axis", label: "Ruota attorno a", kind: .choice(axes), value: .index(axisIndex),
-                      help: "Asse del mondo che passa per il centro del corpo"),
-                .init(id: "angle", label: "Angolo", kind: .angle(-360...360), value: .number(spec.angle)),
+                .init(id: "what", label: String(localized: "Corpo: \(names)"), kind: .note(warning: false), value: .flag(false)),
+                .init(id: "x", label: String(localized: "X"), kind: .length(-100_000...100_000), value: .number(spec.translation.x)),
+                .init(id: "y", label: String(localized: "Y"), kind: .length(-100_000...100_000), value: .number(spec.translation.y)),
+                .init(id: "z", label: String(localized: "Z"), kind: .length(-100_000...100_000), value: .number(spec.translation.z)),
+                .init(id: "axis", label: String(localized: "Ruota attorno a"), kind: .choice(axes), value: .index(axisIndex),
+                      help: String(localized: "Asse del mondo che passa per il centro del corpo")),
+                .init(id: "angle", label: String(localized: "Angolo"), kind: .angle(-360...360), value: .number(spec.angle)),
             ],
             onPreview: { workspace.requestPreview(document($0)) },
             onCommit: { f in
                 workspace.requestPreview(nil)
                 let feature = build(f)
                 guard case let .move(s) = feature.kind, s.translation.length > 1e-9 || abs(s.angle) > 1e-9 else {
-                    model.statusMessage = "Nessuno spostamento: scrivi una distanza o un angolo."; return
+                    model.statusMessage = String(localized: "Nessuno spostamento: scrivi una distanza o un angolo."); return
                 }
-                model.edit(original == nil ? "Sposta \(names)" : "Modifica \(feature.name)", selected: .some(spec.bodies.first), changed: [feature.id]) { $0 = document(f) }
+                model.edit(original == nil ? String(localized: "Sposta \(names)") : String(localized: "Modifica \(feature.name)"), selected: .some(spec.bodies.first), changed: [feature.id]) { $0 = document(f) }
             },
             onCancel: { workspace.requestPreview(nil) })
     }

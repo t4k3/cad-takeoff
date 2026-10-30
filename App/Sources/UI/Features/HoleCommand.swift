@@ -236,22 +236,22 @@ enum HoleCommand {
 
         func fields(_ s: HoleSpec) -> [CommandField] {
             [
-                .init(id: "style", label: "Tipo", kind: .choice(styles.map(\.label)), value: .index(styles.firstIndex(of: s.style) ?? 0)),
-                .init(id: "fit", label: "Uso", kind: .choice(fits.map(\.label)), value: .index(fits.firstIndex(of: s.fit) ?? 0),
-                      help: "Passaggio vite: la vite scorre. Filettatura indicata: preforo per maschiare o autofilettante. Filetto modellato: il filetto ISO vero, visibile e stampabile (in FDM affidabile da M6; la compensazione allarga il filetto). Inserto a caldo: foro per inserti filettati (verifica il produttore)."),
+                .init(id: "style", label: String(localized: "Tipo"), kind: .choice(styles.map(\.label)), value: .index(styles.firstIndex(of: s.style) ?? 0)),
+                .init(id: "fit", label: String(localized: "Uso"), kind: .choice(fits.map(\.label)), value: .index(fits.firstIndex(of: s.fit) ?? 0),
+                      help: String(localized: "Passaggio vite: la vite scorre. Filettatura indicata: preforo per maschiare o autofilettante. Filetto modellato: il filetto ISO vero, visibile e stampabile (in FDM affidabile da M6; la compensazione allarga il filetto). Inserto a caldo: foro per inserti filettati (verifica il produttore).")),
                 // A free diameter has no screw size; a screw size has no free diameter.
-                .init(id: "size", label: "Vite", kind: .choice(sizes), value: .index(sizes.firstIndex(of: s.size ?? "M3") ?? 2),
+                .init(id: "size", label: String(localized: "Vite"), kind: .choice(sizes), value: .index(sizes.firstIndex(of: s.size ?? "M3") ?? 2),
                       isHidden: s.fit == .manual),
-                .init(id: "dia", label: "Diametro", kind: .length(0.1...500), value: .number(s.diameter),
+                .init(id: "dia", label: String(localized: "Diametro"), kind: .length(0.1...500), value: .number(s.diameter),
                       isHidden: s.fit != .manual),
-                .init(id: "through", label: "Passante", kind: .toggle, value: .flag(s.depth == nil)),
-                .init(id: "depth", label: "Profondità", kind: .length(0.1...10000), value: .number(s.depth ?? 10),
+                .init(id: "through", label: String(localized: "Passante"), kind: .toggle, value: .flag(s.depth == nil)),
+                .init(id: "depth", label: String(localized: "Profondità"), kind: .length(0.1...10000), value: .number(s.depth ?? 10),
                       isHidden: s.depth == nil),
-                .init(id: "allow", label: "Compensazione stampa", kind: .length(0...2), value: .number(s.printAllowance),
-                      help: "Aggiunta ai diametri: le stampanti FDM tendono a stampare i fori più stretti (tipico 0,1–0,3 mm)"),
+                .init(id: "allow", label: String(localized: "Compensazione stampa"), kind: .length(0...2), value: .number(s.printAllowance),
+                      help: String(localized: "Aggiunta ai diametri: le stampanti FDM tendono a stampare i fori più stretti (tipico 0,1–0,3 mm)")),
             ] + ["x", "y", "z"].enumerated().map { i, axis in
                 let c = placement.centers.last
-                return .init(id: axis, label: "Centro \(axis.uppercased())", kind: .length(-100_000...100_000),
+                return .init(id: axis, label: String(localized: "Centro \(axis.uppercased())"), kind: .length(-100_000...100_000),
                              value: .number(c.map { [$0.x, $0.y, $0.z][i] } ?? 0),
                              help: i == 0 ? "Coordinate dell'ultimo centro: scrivi un valore per spostarlo con precisione (resta sulla faccia)" : nil)
             }
@@ -292,29 +292,29 @@ enum HoleCommand {
         }
 
         let session = CommandSession(
-            title: feature == nil ? "Foro" : "Modifica \(feature!.name)", symbol: "circle.circle",
+            title: feature == nil ? String(localized: "Foro") : String(localized: "Modifica \(feature!.name)"), symbol: "circle.circle",
             fields: fields(spec),
             onPreview: preview,
             onCommit: { f in
                 let s = read(f)
                 defer { workspace.holePlacement = nil }
                 guard !s.centers.isEmpty else {
-                    model.statusMessage = "Foro non creato: clicca su una faccia piana per posizionare almeno un centro."
+                    model.statusMessage = String(localized: "Foro non creato: clicca su una faccia piana per posizionare almeno un centro.")
                     return
                 }
                 do { try s.validate() } catch {
-                    model.statusMessage = "Foro non valido: \(error.localizedDescription)"; return
+                    model.statusMessage = String(localized: "Foro non valido: \(error.localizedDescription)"); return
                 }
                 if let id = placement.editing {
-                    model.edit("Modifica foro", selected: .some(id), changed: [id]) { doc in
+                    model.edit(String(localized: "Modifica foro"), selected: .some(id), changed: [id]) { doc in
                         if let i = doc.features.firstIndex(where: { $0.id == id }) {
                             if doc.features[i].name == "Foro " + spec.summary { doc.features[i].name = "Foro " + s.summary }
                             doc.features[i].kind = .hole(s)
                         }
                     }
                 } else {
-                    let hole = Feature(name: "Foro " + s.summary, kind: .hole(s), operation: .cut)
-                    model.edit("Foro " + s.summary, selected: .some(nil), changed: [hole.id]) { $0.features.append(hole) }
+                    let hole = Feature(name: String(localized: "Foro \(s.summary)"), kind: .hole(s), operation: .cut)
+                    model.edit(String(localized: "Foro \(s.summary)"), selected: .some(nil), changed: [hole.id]) { $0.features.append(hole) }
                 }
                 if let issue = model.evaluation().issues.last(where: { $0.featureID == placement.editing ?? model.document.features.last?.id }) {
                     model.statusMessage = issue.message

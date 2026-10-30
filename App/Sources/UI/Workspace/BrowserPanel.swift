@@ -16,18 +16,18 @@ struct BrowserPanel: View {
             PanelHeader("Browser")
             ScrollView {
                 VStack(alignment: .leading, spacing: 1) {
-                    DisclosureRow(title: "Origine", symbol: "move.3d", isExpanded: $originExpanded)
+                    DisclosureRow(title: String(localized: "Origine"), symbol: "move.3d", isExpanded: $originExpanded)
                     if originExpanded {
                         ForEach(["Piano XY", "Piano XZ", "Piano YZ"], id: \.self) { plane in
                             TreeRow(indent: 1, symbol: "square.dashed", title: plane, isSelected: false, isHovered: false)
                         }
                     }
-                    DisclosureRow(title: "Schizzi", symbol: "pencil.and.outline", count: sketches.sketches.count,
+                    DisclosureRow(title: String(localized: "Schizzi"), symbol: "pencil.and.outline", count: sketches.sketches.count,
                                   isExpanded: $sketchesExpanded)
                     if sketchesExpanded {
                         ForEach(sketches.sketches) { sk in sketchRow(sk) }
                     }
-                    DisclosureRow(title: "Corpi", symbol: "shippingbox", count: model.evaluation().bodies.count,
+                    DisclosureRow(title: String(localized: "Corpi"), symbol: "shippingbox", count: model.evaluation().bodies.count,
                                   isExpanded: $bodiesExpanded)
                     if bodiesExpanded {
                         ForEach(bodyFeatures) { feature in
@@ -43,7 +43,6 @@ struct BrowserPanel: View {
                 .padding(.vertical, 6)
             }
         }
-        .background(Theme.Palette.panel)
     }
 
     /// Features shown under "Corpi": those whose body exists after evaluation, plus body-creating
@@ -62,10 +61,10 @@ struct BrowserPanel: View {
         return TreeRow(indent: 1, symbol: "pencil.and.outline", title: sk.name, isSelected: editing, isHovered: false,
                        isDimmed: !sk.isVisible) {
             Button { sketches.setVisible(sk.id, !sk.isVisible) } label: {
-                Label(sk.isVisible ? "Nascondi" : "Mostra", systemImage: sk.isVisible ? "eye" : "eye.slash")
+                Label(sk.isVisible ? String(localized: "Nascondi") : String(localized: "Mostra"), systemImage: sk.isVisible ? "eye" : "eye.slash")
             }
             .buttonStyle(IconButtonStyle())
-            .help(sk.isVisible ? "Nascondi schizzo" : "Mostra schizzo")
+            .help(sk.isVisible ? String(localized: "Nascondi schizzo") : String(localized: "Mostra schizzo"))
         }
         .onTapGesture(count: 2) { workspace.enterSketch(editing: sk) }
         .help("Doppio clic per modificare lo schizzo")
@@ -79,10 +78,12 @@ struct BrowserPanel: View {
         let linked = sketches.links(of: sk.id).count
         if linked > 0 {
             let alert = NSAlert()
-            alert.messageText = "Eliminare «\(sk.name)»?"
-            alert.informativeText = "\(linked) estrusion\(linked == 1 ? "e resta" : "i restano") nel disegno ma non si aggiornerà più dallo schizzo."
-            alert.addButton(withTitle: "Elimina")
-            alert.addButton(withTitle: "Annulla")
+            alert.messageText = String(localized: "Eliminare lo schizzo «\(sk.name)»?")
+            alert.informativeText = linked == 1
+                ? String(localized: "Lo schizzo è usato da un'estrusione: resta nel disegno ma non si aggiornerà più.")
+                : String(localized: "Lo schizzo è usato da \(linked) estrusioni: restano nel disegno ma non si aggiorneranno più.")
+            alert.addButton(withTitle: String(localized: "Elimina"))
+            alert.addButton(withTitle: String(localized: "Annulla"))
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
         sketches.delete(sk.id)
@@ -114,10 +115,10 @@ struct BrowserPanel: View {
                     model.document.features[i].isVisible.toggle()
                 }
             } label: {
-                Label(feature.isVisible ? "Nascondi" : "Mostra", systemImage: feature.isVisible ? "eye" : "eye.slash")
+                Label(feature.isVisible ? String(localized: "Nascondi") : String(localized: "Mostra"), systemImage: feature.isVisible ? "eye" : "eye.slash")
             }
             .buttonStyle(IconButtonStyle())
-            .help(feature.isVisible ? "Nascondi corpo" : "Mostra corpo")
+            .help(feature.isVisible ? String(localized: "Nascondi corpo") : String(localized: "Mostra corpo"))
         }
         .onTapGesture(count: 2) { workspace.editFeature(feature.id, model: model) }
         .onTapGesture { model.selection = feature.id }
@@ -172,7 +173,7 @@ struct TreeRow<Accessory: View>: View {
             Image(systemName: symbol)
                 .foregroundStyle(isSelected ? Theme.Palette.accent : Theme.Palette.textSecondary)
                 .frame(width: 16)
-            Text(title).font(Theme.Typeface.body).lineLimit(1)
+            Text(LocalizedStringKey(title)).font(Theme.Typeface.body).lineLimit(1)
             Spacer(minLength: 4)
             accessory
         }

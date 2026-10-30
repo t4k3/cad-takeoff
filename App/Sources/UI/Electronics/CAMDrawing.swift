@@ -70,12 +70,16 @@ struct CAMDrawing {
 
     static func name(_ kind: FabricationLayerKind) -> String {
         switch kind {
-        case .topCopper: "Rame sopra"; case .bottomCopper: "Rame sotto"
-        case .topMask: "Maschera sopra"; case .bottomMask: "Maschera sotto"
-        case .topPaste: "Pasta sopra"; case .bottomPaste: "Pasta sotto"
-        case .topSilkscreen: "Serigrafia sopra"; case .bottomSilkscreen: "Serigrafia sotto"
-        case .profile: "Contorno"
-        default: "Rame interno \(kind.innerIndex ?? 0)"
+        case .topCopper: String(localized: "Rame sopra")
+        case .bottomCopper: String(localized: "Rame sotto")
+        case .topMask: String(localized: "Maschera sopra")
+        case .bottomMask: String(localized: "Maschera sotto")
+        case .topPaste: String(localized: "Pasta sopra")
+        case .bottomPaste: String(localized: "Pasta sotto")
+        case .topSilkscreen: String(localized: "Serigrafia sopra")
+        case .bottomSilkscreen: String(localized: "Serigrafia sotto")
+        case .profile: String(localized: "Contorno")
+        default: String(localized: "Rame interno \(kind.innerIndex ?? 0)")
         }
     }
 

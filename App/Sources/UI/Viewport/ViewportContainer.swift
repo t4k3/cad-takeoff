@@ -120,6 +120,9 @@ struct ViewportContainer: View {
     @Environment(WorkspaceState.self) private var workspace
     @Environment(SketchStore.self) private var sketchStore
     @Bindable var viewport: ViewportState
+    /// Space kept free for the floating glass islands, so the viewport's own chips never sit
+    /// under the browser, the inspector, the tool dock or the timeline.
+    var overlayInsets = EdgeInsets()
 
     /// Viewport and its first overlays (split from `body` to keep type-checking fast).
     private var canvas: some View {
@@ -131,10 +134,10 @@ struct ViewportContainer: View {
                 .task(id: "\(model.designRevision)#\(screenFactor)") { model.requestScreenFactor(screenFactor) }
         }
         .background(GeometryReader { g in Color.clear.onAppear { viewport.viewSize = g.size }.onChange(of: g.size) { _, s in viewport.viewSize = s } })
-        .overlay(alignment: .topLeading) { sketchHUD }
-        .overlay(alignment: .bottomLeading) { measureChip.padding(12) }
-        .overlay(alignment: .topLeading) { manipulatorLabel }
-        .overlay(alignment: .topLeading) { constraintLabels }
+        .overlay(alignment: .topLeading) { sketchHUD.padding(.leading, overlayInsets.leading).padding(.top, overlayInsets.top) }
+        .overlay(alignment: .bottomLeading) { measureChip.padding(.leading, 12 + overlayInsets.leading).padding(.bottom, 12 + overlayInsets.bottom) }
+        .overlay(alignment: .topLeading) { manipulatorLabel.padding(.leading, overlayInsets.leading).padding(.top, overlayInsets.top) }
+        .overlay(alignment: .topLeading) { constraintLabels.padding(.leading, overlayInsets.leading).padding(.top, overlayInsets.top) }
         .onChange(of: workspace.previewSnapshot?.revision) { _, revision in
             viewport.setReference(revision == nil ? nil : model.snapshot(), features: model.document.activeFeatures)
         }
@@ -142,7 +145,7 @@ struct ViewportContainer: View {
 
     var body: some View {
         canvas
-        .overlay(alignment: .top) { sketchBanner }
+        .overlay(alignment: .top) { sketchBanner.padding(.top, overlayInsets.top) }
         .background { sketchKeys }
         .onChange(of: workspace.viewRequest) { _, view in
             guard let view else { return }
@@ -156,24 +159,30 @@ struct ViewportContainer: View {
             viewport.applySketchCamera(request, plane: workspace.sketch?.sketch.plane ?? .xy, focus: workspace.sketchFocus)
             workspace.sketchCameraRequest = nil
         }
-        .overlay(alignment: .bottom) { navigationBar.padding(.bottom, 12) }
+        .overlay(alignment: .bottom) {
+            // Navigation hint, centred above the workspace's bottom bar (the nav controls
+            // themselves live in that bar, left of the status text).
+            if workspace.command == nil, workspace.sketch == nil {
+                Text("Trascina: orbita · ⇧ trascina / due dita: sposta · rotella / pizzica: zoom")
+                    .font(.system(size: 10.5)).foregroundStyle(.white.opacity(0.55))
+                    .padding(.bottom, 8 + overlayInsets.bottom)
+            }
+        }
         .overlay(alignment: .topTrailing) {
             ViewCube(camera: viewport.camera) { view in
                 viewport.camera.show(view, bounds: viewport.renderer?.sceneBounds)
                 viewport.renderer.map { _ in viewport.redraw() }
             }
-            .padding(8)
+            .padding(.top, 8 + overlayInsets.top)
+            .padding(.trailing, 8 + overlayInsets.trailing)
         }
         .overlay(alignment: .topLeading) {
             if let session = workspace.command {
                 CommandPanel(session: session) { workspace.command = nil }
-                    .padding(12)
+                    .padding(.leading, 12 + overlayInsets.leading)
+                    .padding(.top, 12 + overlayInsets.top)
                     .transition(.move(edge: .leading).combined(with: .opacity))
                     .id(session.id)
-            } else if workspace.sketch == nil {
-            Text("Trascina: orbita · ⇧ trascina / due dita: sposta · rotella / pizzica: zoom")
-                .font(.system(size: 10.5)).foregroundStyle(.white.opacity(0.55))
-                .padding(12)
             }
         }
         .animation(.easeOut(duration: 0.18), value: workspace.command?.id)
@@ -268,12 +277,12 @@ struct ViewportContainer: View {
         if let sketch = workspace.sketch {
             if let pick = sketch.onFacePick, workspace.command?.activeReference == "toFace" {
                 if let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind { pick(id) }
-                else { model.statusMessage = "Clicca una faccia piana del pezzo." }
+                else { model.statusMessage = String(localized: "Clicca una faccia piana del pezzo.") }
                 return
             }
             if let pick = sketch.onAxisPick, workspace.command?.activeReference == "axis", let p = sketch.intersect(ray) {
                 sketch.vertexSnap = 11 * viewport.mmPerPoint
-                if let ref = sketch.pickRef(sketch.local(p), kinds: [.segment]) { pick(ref) } else { model.statusMessage = "Clicca una linea dello schizzo come asse." }
+                if let ref = sketch.pickRef(sketch.local(p), kinds: [.segment]) { pick(ref) } else { model.statusMessage = String(localized: "Clicca una linea dello schizzo come asse.") }
                 return
             }
             if sketch.pickingRegions, let p = sketch.intersect(ray) {
@@ -308,7 +317,7 @@ struct ViewportContainer: View {
             if let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind,
                let (origin, normal) = model.evaluation().bodies.first(where: { $0.id == ref.feature })?.snapshot.flatPlane(of: id) {
                 pick(origin, normal)
-            } else { model.statusMessage = "Per lo specchio clicca una faccia piana del pezzo." }
+            } else { model.statusMessage = String(localized: "Per lo specchio clicca una faccia piana del pezzo.") }
             return
         }
         if let placement = workspace.holePlacement, let bodies = viewport.renderer?.visibleBodies {
@@ -358,21 +367,21 @@ struct ViewportContainer: View {
             if let (origin, normal) = snapshot?.flatPlane(of: face.id) {
                 workspace.enterSketch(plane: SketchPlane.onFace(point: origin, normal: normal), focus: point)
             } else if let plane = SketchPlane.tangent(to: face.surface, at: point) {
-                model.statusMessage = "Schizzo sul piano tangente alla faccia tonda nel punto cliccato"
+                model.statusMessage = String(localized: "Schizzo sul piano tangente alla faccia tonda nel punto cliccato")
                 workspace.enterSketch(plane: plane, focus: point)
             } else {
-                model.statusMessage = "Lo schizzo va su una faccia piana o tonda: scegli un'altra faccia."
+                model.statusMessage = String(localized: "Lo schizzo va su una faccia piana o tonda: scegli un'altra faccia.")
             }
         case .points:
             guard let p = snappedPoint(ray, bodies: bodies) ?? point else {
-                model.statusMessage = "Clicca un vertice, il centro di un foro, il punto medio di uno spigolo o una faccia."
+                model.statusMessage = String(localized: "Clicca un vertice, il centro di un foro, il punto medio di uno spigolo o una faccia.")
                 return
             }
             workspace.planePickPoints.append(p)
             let q = workspace.planePickPoints
             guard q.count == 3 else { return }
             guard let plane = SketchPlane.through(q[0], q[1], q[2]) else {
-                model.statusMessage = "I tre punti sono allineati: scegline altri."
+                model.statusMessage = String(localized: "I tre punti sono allineati: scegline altri.")
                 workspace.planePickPoints = []
                 return
             }
@@ -380,7 +389,7 @@ struct ViewportContainer: View {
         case .midway:
             guard let face, let point,
                   let (origin, normal) = hit.flatMap({ h in bodies.first { $0.feature.id == h.featureID }?.snapshot })?.flatPlane(of: face.id) else {
-                model.statusMessage = "Clicca due facce piane parallele."
+                model.statusMessage = String(localized: "Clicca due facce piane parallele.")
                 return
             }
             guard let first = workspace.planePickFace, let firstPoint = workspace.planePickPoints.first else {
@@ -388,7 +397,7 @@ struct ViewportContainer: View {
                 return
             }
             guard let plane = SketchPlane.midway(first.origin, first.normal, origin, normal) else {
-                model.statusMessage = "Le due facce non sono parallele: scegline un'altra."
+                model.statusMessage = String(localized: "Le due facce non sono parallele: scegline un'altra.")
                 return
             }
             let c = (firstPoint + point) * 0.5
@@ -735,8 +744,10 @@ struct ViewportContainer: View {
             HStack(spacing: 8) {
                 Label("FORO", systemImage: "circle.circle").font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.Palette.danger)
-                Text(placement.centers.isEmpty ? "Clicca su una faccia piana per posizionare il centro"
-                     : "\(placement.centers.count) centr\(placement.centers.count == 1 ? "o" : "i") · clicca per aggiungerne altri")
+                Text(placement.centers.isEmpty ? String(localized: "Clicca su una faccia piana per posizionare il centro")
+                     : (placement.centers.count == 1
+                        ? String(localized: "1 centro · clicca per aggiungerne altri")
+                        : String(localized: "\(placement.centers.count) centri · clicca per aggiungerne altri")))
                     .font(.system(size: 11)).foregroundStyle(Theme.Palette.textSecondary)
                 if let snap = placement.hover?.snap {
                     Label(snap, systemImage: "scope").font(.system(size: 11, weight: .medium))
@@ -764,7 +775,7 @@ struct ViewportContainer: View {
         }
         if let sketch = workspace.sketch, workspace.command == nil {
             HStack(spacing: 8) {
-                Label("SCHIZZO · " + (sketch.sketch.plane.isXY ? "piano XY" : "su faccia"), systemImage: "pencil.and.outline")
+                Label(sketch.sketch.plane.isXY ? String(localized: "SCHIZZO · piano XY") : String(localized: "SCHIZZO · su faccia"), systemImage: "pencil.and.outline")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.Palette.sketch)
                 // The hint gives way first (the button must stay reachable).
@@ -776,7 +787,7 @@ struct ViewportContainer: View {
                         .lineLimit(1).truncationMode(.tail)
                 }
                 if !sketch.sketch.constraints.isEmpty {
-                    Text(sketch.freedom == 0 ? "Vincolato" : (sketch.freedom == 1 ? "1 grado libero" : "\(sketch.freedom) gradi liberi"))
+                    Text(sketch.freedom == 0 ? String(localized: "Vincolato") : (sketch.freedom == 1 ? String(localized: "1 grado libero") : String(localized: "\(sketch.freedom) gradi liberi")))
                         .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(sketch.freedom == 0 ? Color.white.opacity(0.2) : Theme.Palette.sketch.opacity(0.25)))
@@ -797,7 +808,7 @@ struct ViewportContainer: View {
             Label("SCHIZZO", systemImage: "pencil.and.outline").font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Theme.Palette.sketch)
             Picker("", selection: Binding(get: { workspace.planePickMode }, set: { workspace.planePickMode = $0; workspace.planePickPoints = []; workspace.planePickFace = nil })) {
-                ForEach(WorkspaceState.PlanePickMode.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(WorkspaceState.PlanePickMode.allCases) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
             }
             .labelsHidden().pickerStyle(.segmented).controlSize(.small).frame(width: 170)
             .help("Faccia: piana, o tonda (piano tangente nel punto) · 3 punti: vertici, centri dei fori, punti medi · Medio: tra due facce parallele")
@@ -807,9 +818,9 @@ struct ViewportContainer: View {
 
     private var planePickHint: String {
         switch workspace.planePickMode {
-        case .face: "Clicca una faccia, oppure"
-        case .points: "Clicca 3 punti (\(workspace.planePickPoints.count)/3), poi"
-        case .midway: "Clicca 2 facce parallele (\(workspace.planePickFace == nil ? 0 : 1)/2), poi"
+        case .face: String(localized: "Clicca una faccia, oppure")
+        case .points: String(localized: "Clicca 3 punti (\(workspace.planePickPoints.count)/3), poi")
+        case .midway: String(localized: "Clicca 2 facce parallele (\(workspace.planePickFace == nil ? 0 : 1)/2), poi")
         }
     }
 
@@ -851,14 +862,24 @@ struct ViewportContainer: View {
             .opacity(0).frame(width: 0, height: 0).accessibilityHidden(true)
         }
     }
+}
 
-    private var navigationBar: some View {
+/// Viewport navigation controls (selection filter, home/fit, projection, display style,
+/// section). They live in the workspace's bottom bar, left of the status text, instead of
+/// floating over the 3D view.
+struct ViewportNavigationBar: View {
+    @Bindable var viewport: ViewportState
+    @Environment(WorkspaceState.self) private var workspace
+
+    var body: some View {
         HStack(spacing: 2) {
             ForEach(SelectionFilter.allCases) { filter in
-                Button { workspace.selectionFilter = filter } label: { Label(filter.rawValue, systemImage: filter.symbol) }
-                    .buttonStyle(IconButtonStyle(isActive: workspace.selectionFilter == filter))
-                    .help("Seleziona: \(filter.rawValue.lowercased())")
-                    .disabled(workspace.sketch != nil)
+                Button { workspace.selectionFilter = filter } label: {
+                    Label(LocalizedStringKey(filter.rawValue), systemImage: filter.symbol)
+                }
+                .buttonStyle(IconButtonStyle(isActive: workspace.selectionFilter == filter))
+                .help(filter.help)
+                .disabled(workspace.sketch != nil)
             }
             Divider().frame(height: 16).padding(.horizontal, 3)
             Button { viewport.home() } label: { Label("Home", systemImage: "house") }
@@ -871,11 +892,11 @@ struct ViewportContainer: View {
             } label: {
                 Label("Proiezione", systemImage: viewport.camera.projection == .perspective ? "perspective" : "square.on.square.dashed")
             }
-            .help(viewport.camera.projection == .perspective ? "Prospettiva — passa a ortogonale" : "Ortogonale — passa a prospettiva")
+            .help(viewport.camera.projection == .perspective ? String(localized: "Prospettiva — passa a ortogonale") : String(localized: "Ortogonale — passa a prospettiva"))
             Menu {
                 Picker("Stile", selection: $viewport.style) {
                     ForEach(ViewportRenderer.DisplayStyle.allCases) { s in
-                        Label(s.rawValue, systemImage: s.symbol).tag(s)
+                        Label(LocalizedStringKey(s.rawValue), systemImage: s.symbol).tag(s)
                     }
                 }
                 .pickerStyle(.inline)
@@ -913,7 +934,6 @@ struct ViewportContainer: View {
             }
         }
         .buttonStyle(IconButtonStyle())
-        .overlayChip()
     }
 
     /// Where the section plane can go along an axis: across the visible bodies.
@@ -1043,7 +1063,7 @@ private struct ConstraintLabel: View {
         .onTapGesture {
             if annotation.isDimension { sketch.editingDimension = annotation.id } else { sketch.selectedConstraint = annotation.id; sketch.selection = nil }
         }
-        .help(annotation.isDimension ? "Clicca per cambiare il valore" : "Clicca per selezionare il vincolo (⌫ lo elimina)")
+        .help(annotation.isDimension ? String(localized: "Clicca per cambiare il valore") : String(localized: "Clicca per selezionare il vincolo (⌫ lo elimina)"))
     }
 
     private func commit() {

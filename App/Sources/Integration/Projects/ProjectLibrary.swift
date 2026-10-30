@@ -67,8 +67,8 @@ final class ProjectLibrary {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
-        panel.prompt = "Usa questa cartella"
-        panel.message = "Scegli (o crea) la cartella dove CAD Takeoff terrà i tuoi progetti, ad esempio Documenti › CAD Takeoff."
+        panel.prompt = String(localized: "Usa questa cartella")
+        panel.message = String(localized: "Scegli (o crea) la cartella dove CAD Takeoff terrà i tuoi progetti, ad esempio Documenti › CAD Takeoff.")
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let url = panel.url else { return }
         rootURL?.stopAccessingSecurityScopedResource()
@@ -191,7 +191,7 @@ final class ProjectLibrary {
     func duplicate(_ item: Item) {
         run {
             let dest = uniqueURL(item.url.deletingLastPathComponent().appendingPathComponent(
-                item.name + " copia" + (item.isFolder ? "" : ".\(item.url.pathExtension)")))
+                item.name + String(localized: " copia") + (item.isFolder ? "" : ".\(item.url.pathExtension)")))
             try FileManager.default.copyItem(at: item.url, to: dest)
             if !item.isFolder, FileManager.default.fileExists(atPath: item.thumbnailURL.path) {
                 try? FileManager.default.copyItem(at: item.thumbnailURL, to: Item(url: dest, isFolder: false, modified: .now).thumbnailURL)
@@ -221,7 +221,7 @@ final class ProjectLibrary {
         savedRevision == nil ? !model.document.features.isEmpty : model.designRevision != savedRevision
     }
 
-    var currentName: String { currentURL?.deletingPathExtension().lastPathComponent ?? "Senza titolo" }
+    var currentName: String { currentURL?.deletingPathExtension().lastPathComponent ?? String(localized: "Senza titolo") }
 
     // MARK: Tabs (Fusion style: several designs open, one shown)
 
@@ -231,7 +231,7 @@ final class ProjectLibrary {
         var savedRevision: String?
         /// The design while the tab is in the background (nil for the tab shown).
         var session: DesignModel.Session?
-        var name: String { url?.deletingPathExtension().lastPathComponent ?? "Senza titolo" }
+        var name: String { url?.deletingPathExtension().lastPathComponent ?? String(localized: "Senza titolo") }
         var isDirty: Bool {
             guard let session else { return false }
             return savedRevision == nil ? !session.document.features.isEmpty : session.revision != savedRevision
@@ -291,7 +291,7 @@ final class ProjectLibrary {
         let i = activeIndex
         if tabs.count == 1 {
             model.newDesign()
-            model.statusMessage = "Pronto"
+            model.statusMessage = String(localized: "Pronto")
             currentURL = nil
             savedRevision = model.designRevision
             tabs = [Tab()]; activeTab = tabs[0].id
@@ -321,7 +321,7 @@ final class ProjectLibrary {
     func newDesign(in folder: URL, model: DesignModel) {
         if !activeIsPristine(model) { pushNewTab(model) }
         run {
-            let url = uniqueURL(folder.appendingPathComponent("Nuovo disegno.\(Self.designExtension)"))
+            let url = uniqueURL(folder.appendingPathComponent(String(localized: "Nuovo disegno") + "." + Self.designExtension))
             model.newDesign()
             try model.write(to: url)
             markSaved(url, model: model)
@@ -333,7 +333,7 @@ final class ProjectLibrary {
     func newCircuit(in folder: URL, circuits: CircuitModel) {
         guard circuits.confirmDiscard() else { return }
         run {
-            let url = uniqueURL(folder.appendingPathComponent("Nuovo circuito.\(Self.circuitExtension)"))
+            let url = uniqueURL(folder.appendingPathComponent(String(localized: "Nuovo circuito") + "." + Self.circuitExtension))
             try circuits.newCircuit(name: url.deletingPathExtension().lastPathComponent)
             try circuits.save(to: url)
             noteRecent(url)
@@ -353,7 +353,7 @@ final class ProjectLibrary {
                 show()
             } catch let e as CircuitEditError where e.isSuperseded {
             } catch {
-                self?.lastError = "Circuito non aperto: \(CircuitModel.describe(error))"
+                self?.lastError = String(localized: "Circuito non aperto: \(CircuitModel.describe(error))")
             }
         }
     }
@@ -394,7 +394,7 @@ final class ProjectLibrary {
                     self.activate(previous, model: model)
                     self.tabs.removeAll { $0.id == tab }
                 }
-                model.statusMessage = "Apertura non riuscita: \(error.localizedDescription)"
+                model.statusMessage = String(localized: "Apertura non riuscita: \(error.localizedDescription)")
             }
         }
     }
@@ -443,7 +443,7 @@ final class ProjectLibrary {
     private func write(_ model: DesignModel, to url: URL) throws {
         try model.write(to: url)
         markSaved(url, model: model)
-        model.statusMessage = "Salvato \(url.deletingPathExtension().lastPathComponent)"
+        model.statusMessage = String(localized: "Salvato \(url.deletingPathExtension().lastPathComponent)")
     }
 
     private func markSaved(_ url: URL, model: DesignModel) {
@@ -479,11 +479,11 @@ final class ProjectLibrary {
         model.finishPendingEdits()
         guard isDirty(model) else { return true }
         let alert = NSAlert()
-        alert.messageText = "Salvare le modifiche a «\(currentName)»?"
-        alert.informativeText = "Se non salvi, le modifiche andranno perse."
-        alert.addButton(withTitle: "Salva")
-        alert.addButton(withTitle: "Non salvare")
-        alert.addButton(withTitle: "Annulla")
+        alert.messageText = String(localized: "Salvare le modifiche a «\(currentName)»?")
+        alert.informativeText = String(localized: "Se non salvi, le modifiche andranno perse.")
+        alert.addButton(withTitle: String(localized: "Salva"))
+        alert.addButton(withTitle: String(localized: "Non salvare"))
+        alert.addButton(withTitle: String(localized: "Annulla"))
         switch alert.runModal() {
         case .alertFirstButtonReturn: return save(model: model)
         case .alertSecondButtonReturn: return true
@@ -496,7 +496,7 @@ final class ProjectLibrary {
     enum LibraryError: LocalizedError {
         case exists(String)
         var errorDescription: String? {
-            switch self { case let .exists(n): "Esiste già un elemento chiamato «\(n)»." }
+            switch self { case let .exists(n): String(localized: "Esiste già un elemento chiamato «\(n)».") }
         }
     }
 
@@ -511,7 +511,7 @@ final class ProjectLibrary {
     private func clean(_ name: String) -> String {
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
-        return n.isEmpty ? "Senza nome" : n
+        return n.isEmpty ? String(localized: "Senza nome") : n
     }
 
     private func uniqueURL(_ url: URL) -> URL {

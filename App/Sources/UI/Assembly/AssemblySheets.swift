@@ -52,7 +52,7 @@ struct ComponentPickerSheet: View {
         let colour = part?.activeFeatures.first(where: \.isVisible)?.color ?? .defaultColor
         let copies = model.document.features.filter { if case let .component(r) = $0.kind { r.path == path } else { false } }.count
         let feature = Feature(name: item.name + (copies > 0 ? " (\(copies + 1))" : ""), kind: .component(ComponentRef(path: path)), color: colour)
-        model.edit("Inserisci \(item.name)", selected: .some(feature.id), changed: [feature.id]) { $0.features.append(feature) }
+        model.edit(String(localized: "Inserisci \(item.name)"), selected: .some(feature.id), changed: [feature.id]) { $0.features.append(feature) }
         workspace.showComponentPicker = false
         workspace.editFeature(feature.id, model: model)
     }

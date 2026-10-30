@@ -20,24 +20,24 @@ enum FusionAddInInstaller {
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
         panel.directoryURL = defaultFolder
-        panel.prompt = "Installa qui"
-        panel.message = "Conferma la cartella AddIns di Fusion 360 (Libreria › Application Support › Autodesk › Autodesk Fusion 360 › API › AddIns). L'add-in «Esporta per CAD Takeoff» verrà copiato qui."
-        guard panel.runModal() == .OK, let folder = panel.url else { return "Installazione add-in annullata" }
+        panel.prompt = String(localized: "Installa qui")
+        panel.message = String(localized: "Conferma la cartella AddIns di Fusion 360 (Libreria › Application Support › Autodesk › Autodesk Fusion 360 › API › AddIns). L'add-in «Esporta per CAD Takeoff» verrà copiato qui.")
+        guard panel.runModal() == .OK, let folder = panel.url else { return String(localized: "Installazione add-in annullata") }
         do {
             let target = folder.lastPathComponent == name ? folder : folder.appendingPathComponent(name)
             try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
             // The add-in, its manifest and the history reader it uses.
             for (file, ext) in [(name, "py"), (name, "manifest"), ("fusion_history", "py")] {
                 guard let source = Bundle.main.url(forResource: file, withExtension: ext) else {
-                    return "Add-in non trovato nell'app (\(file).\(ext))"
+                    return String(localized: "Add-in non trovato nell'app (\(file).\(ext))")
                 }
                 let destination = target.appendingPathComponent("\(file).\(ext)")
                 if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
                 try FileManager.default.copyItem(at: source, to: destination)
             }
-            return "Add-in installato. In Fusion: Utilità › Aggiunte › «\(name)» › Esegui (poi parte da solo); comando «Esporta per CAD Takeoff» nel pannello Script e aggiunte."
+            return String(localized: "Add-in installato. In Fusion: Utilità › Aggiunte › «\(name)» › Esegui (poi parte da solo); comando «Esporta per CAD Takeoff» nel pannello Script e aggiunte.")
         } catch {
-            return "Installazione add-in non riuscita: \(error.localizedDescription)"
+            return String(localized: "Installazione add-in non riuscita: \(error.localizedDescription)")
         }
     }
 }

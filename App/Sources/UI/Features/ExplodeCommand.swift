@@ -22,15 +22,15 @@ enum ExplodeCommand {
                 var away = (c - middle) * factor
                 // A part right at the centre rises a little, so it does not hide the others.
                 if (c - middle).length < 1e-6 { away = Vec3(0, 0, 1) * factor * 20 }
-                doc.features.append(Feature(name: "esploso", kind: .move(MoveSpec(bodies: [b.id], translation: away))))
+                doc.features.append(Feature(name: String(localized: "esploso"), kind: .move(MoveSpec(bodies: [b.id], translation: away))))
             }
             workspace.requestPreview(doc)
         }
         return CommandSession(
-            title: "Vista esplosa", symbol: "arrow.up.left.and.arrow.down.right",
-            fields: [.init(id: "k", label: "Distanza", kind: .count(0...300), value: .number(80),
-                           help: "Quanto si allontanano i pezzi dal centro dell'assieme, in % della loro distanza"),
-                     .init(id: "note", label: "Solo una vista: il disegno non cambia. Chiudi per rimettere i pezzi a posto.", kind: .note(warning: false), value: .flag(false))],
+            title: String(localized: "Vista esplosa"), symbol: "arrow.up.left.and.arrow.down.right",
+            fields: [.init(id: "k", label: String(localized: "Distanza"), kind: .count(0...300), value: .number(80),
+                           help: String(localized: "Quanto si allontanano i pezzi dal centro dell'assieme, in % della loro distanza")),
+                     .init(id: "note", label: String(localized: "Solo una vista: il disegno non cambia. Chiudi per rimettere i pezzi a posto."), kind: .note(warning: false), value: .flag(false))],
             onPreview: preview,
             onCommit: { _ in workspace.requestPreview(nil) },
             onCancel: { workspace.requestPreview(nil) })

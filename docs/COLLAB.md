@@ -2027,3 +2027,102 @@ T111 QA finale documentata in VALIDATION.md: build17:09 geometria2D/3D, texture 
 
 ### 2026-09-28 17:22 · codex · DONE `T111`
 **Scheda assemblata: modelli componenti proprietari, allineamento e vista 2D/3D** — Prima scheda assemblata proprietaria consegnata:15modelli generici revisionati, substrato realmente forato, snapshot/pick, allineamenti e spessore transazionali, persistenza9, app2D/3D e chat/MCP con Claude. Test254Swift+lettori e CAD202PASS, ponte App PASS, build e QA nativa salva/riapri/undo/redo/lotto PASS. Ballgun73modelli approssimati su84montati,11senza modello; nessuna certificazione ingombri o E5 completo. Prove e limiti in VALIDATION.md; originali invariati.
+
+### 2026-10-30 21:34 · claude · NUOVO TASK `T112`
+UI: Liquid Glass (HIG macOS) + i18n it/en/zh-Hans (String Catalog) (dipende da T17)
+
+### 2026-10-30 21:34 · claude · CLAIM `T112`
+Inizio **UI: Liquid Glass (HIG macOS) + i18n it/en/zh-Hans (String Catalog)**. File: App/Sources/UI, App/Resources/Localizable.xcstrings, project.yml, App/Sources/UI/Workspace, FusionTakeoff.xcodeproj
+
+### 2026-10-30 22:10 · claude · DECISIONE
+T112 i18n: la lingua sorgente del `Localizable.xcstrings` resta **`it`** con le stringhe italiane come chiavi (estrazione Xcode + `UX_RULES.md` §5 «lingua UI: italiano», nessuna regressione). Le chiavi semantiche del capitolato (`action.extrude.title`…) restano un'opzione futura, non un prerequisito. Le stringhe costruite a runtime dal Model (messaggi di stato, etichette dei campi dei comandi) restano in italiano finché non passano da `String(localized:)`: limite dichiarato, non regressione.
+
+### 2026-10-30 22:12 · claude · NOTA
+T112 ambiente: il target di deployment era stato abbassato a macOS 14 con shim `#available` da una sessione precedente non committata; ripristinato **macOS 27** in `project.yml` e nei due `Package.swift` (AGENTS: decisione di Ross 27/09) e rimossi gli shim, progetto rigenerato con `xcodegen`. Build della macchina: la firma «Apple Development» non è disponibile qui, quindi `scripts/build.sh` gira con `CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY=""` (build.sh non modificato). `screencapture` non funziona in questa sessione: QA visiva demandata a Ross in `docs/DA_PROVARE.md`.
+
+### 2026-10-30 22:05 · claude · DONE `T112`
+**UI: Liquid Glass (HIG macOS) + i18n it/en/zh-Hans (String Catalog)** — UI Liquid Glass (isole di vetro, toolbar unificata, viewport ai bordi) e i18n it/en/zh-Hans su String Catalog: 771 chiavi tutte tradotte, 686 estratte dal codice + 85 aggiunte (etichette enum, campi, Home, avvisi, tooltip); build app PASS (firma disattivata) e 205 test CADCore PASS. Lingua sorgente it (DECISIONE), QA visiva in DA_PROVARE.
+
+### 2026-10-30 23:17 · claude · NUOVO TASK `T113`
+T112 seguito: i18n pulita (it/en/zh-Hans) + Home stile Pixelmator (dipende da T112)
+
+### 2026-10-30 23:17 · claude · CLAIM `T113`
+Inizio **T112 seguito: i18n pulita (it/en/zh-Hans) + Home stile Pixelmator**. File: App/Sources/UI, App/Sources/Integration/Projects, App/Sources/Model, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md, App/Sources/UI/Home
+
+### 2026-10-30 23:17 · claude · NOTA
+T113 (seguito T112, richiesta di Ross «i18n non pulito»): localizzate alla sorgente le stringhe runtime rimaste (titolo finestra, NSAlert di salvataggio, ProjectLibrary, pannello comando senza uppercased(), campi/help/opzioni dei comandi, schizzo, barra di stato, CircuitModel.summary, tavola, pannelli elettronici, prompt NSOpenPanel). Catalog 1463 chiavi, tutte con en+zh-Hans e parita placeholder verificata; Home riscritta in stile Pixelmator (colonna 300 pt + libreria a destra). Build PASS (firma disattivata), 205 test CADCore PASS. Restano in italiano, dichiarati fuori scope: descrizioni strumenti AI/MCP e testi issue di ElectronicsCore.
+
+### 2026-10-30 23:18 · claude · DONE `T113`
+**T112 seguito: i18n pulita (it/en/zh-Hans) + Home stile Pixelmator** — i18n alla sorgente (titolo, alert, pannello comando, campi, stato, circuiti, tavola, prompt pannelli), catalog 1463 chiavi con en+zh-Hans e parita placeholder, Home riscritta stile Pixelmator; build PASS, 205 test CADCore PASS; commit 58 file
+
+### 2026-10-30 23:36 · claude · NUOVO TASK `T114`
+i18n della chiave API nell'assistente + issue Xcode (format spec, chiavi stale, recommended settings) (dipende da T113)
+
+### 2026-10-30 23:36 · claude · CLAIM `T114`
+Inizio **i18n della chiave API nell'assistente + issue Xcode (format spec, chiavi stale, recommended settings)**. File: project.yml, FusionTakeoff.xcodeproj, App/Sources/Integration, App/Sources/UI/Assistant, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md
+
+### 2026-10-30 23:36 · claude · NOTA
+T114: (1) i18n della chiave API nell'assistente — ClaudeProvider/OpenAIProvider/AppleIntelligenceProvider .setupHint e i messaggi «Oppure…»/«Fatto…» ora da String(localized:); catalog 1472 chiavi, tutte en+zh. (2) Corretto l'unico format specifier invertito (zh di «scheda importata, %lld componenti…»). (3) Le 81 chiavi segnalate da Xcode «References to this key could not be found» restano (sono chiavi dinamiche: label di CADCore, plurali costruiti, elettronica) e sono state marcate extractionState=manual: nessuna eliminata. (4) Recommended settings: ON = DEAD_CODE_STRIPPING, ENABLE_HARDENED_RUNTIME (progetto e due target), CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED, ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS, code sign on copy di ftk-mcp; OFF = String Catalog Symbol Generation (chiavi italiane con collisioni di maiuscole e chiavi di soli placeholder: non derivabili in simboli Swift) e Register App Groups (gli entitlement firmati a mano bastano). (5) CODEX: Packages/ElectronicsCore/Sources/ElectronicsCore/Assembly.swift:24 «Immutable property will not be decoded»: in Assembly la proprietà decodificata ha un valore iniziale che Decodable non può sovrascrivere; va resa var o inizializzata nell'init(from:). Build PASS, 205 test CADCore PASS.
+
+### 2026-10-30 23:36 · claude · DONE `T114`
+**i18n della chiave API nell'assistente + issue Xcode (format spec, chiavi stale, recommended settings)** — chiave API dell'assistente tradotta (Claude/OpenAI/Apple) + format specifier zh corretto + chiavi dinamiche marcate manual + recommended settings di Xcode applicati; build PASS, 205 test PASS
+
+### 2026-10-30 23:58 · claude · NUOVO TASK `T115`
+UI: barra del titolo stile Xcode (schede e modalità in alto) e finestra di benvenuto separata stile Pixelmator (dipende da T112)
+
+### 2026-10-30 23:58 · claude · CLAIM `T115`
+Inizio **UI: barra del titolo stile Xcode (schede e modalità in alto) e finestra di benvenuto separata stile Pixelmator**. File: App/Sources/UI/FusionTakeoffApp.swift, App/Sources/UI/Home/HomeView.swift, App/Sources/UI/Workspace/WorkspaceView.swift, App/Sources/UI/Workspace/DesignTabs.swift, App/Sources/UI/Workspace/Ribbon.swift, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md
+
+### 2026-10-31 00:04 · claude · DONE `T115`
+**UI: barra del titolo stile Xcode (schede e modalità in alto) e finestra di benvenuto separata stile Pixelmator** — barra del titolo in stile Xcode (schede in alto a sinistra, modalità al centro, strumenti a destra; il dock parte sotto) e Home come finestra di benvenuto separata 1032×672 stile Pixelmator (icona, versione, pillole, «Altro», spunta all'avvio, griglia recenti con breadcrumb e ricerca); finestra senza titolo/semafori, trascinabile; nuove chiavi en+zh (Welcome, Show this window at launch, tooltip Esc) — catalog 1473 chiavi, 0 mancanti, 0 stale; build PASS, 205 test CADCore PASS
+
+### 2026-10-31 00:38 · claude · NUOVO TASK `T116`
+Home stile Strophe, estensione .ftk in cinese corretta e hint del viewport al centro (dipende da T115)
+
+### 2026-10-31 00:38 · claude · CLAIM `T116`
+Inizio **Home stile Strophe, estensione .ftk in cinese corretta e hint del viewport al centro**. File: App/Sources/Integration/Projects/ProjectLibrary.swift, App/Sources/UI/Home/HomeView.swift, App/Sources/UI/Viewport/ViewportContainer.swift, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md
+
+### 2026-10-31 00:38 · claude · DONE `T116`
+**Home stile Strophe, estensione .ftk in cinese corretta e hint del viewport al centro** — Home riscritta sul modello di Strophe Welcome (brand 104, titolo 46, schede azione con sottotitolo e freccia, «Altro»+spunta, lista recenti a righe con menu ⋯ e stato vuoto allineato in alto); nome file predefinito costruito come String(localized:) + "." + estensione (in cinese non esce più «。ftk»), chiavi «Nuovo disegno.%@»/«Nuovo circuito.%@» rimosse (catalog 1471, 0 mancanti, 0 stale); hint di navigazione del viewport spostato in basso al centro sopra la capsula. Build PASS, 205 test CADCore PASS
+
+### 2026-10-31 01:15 · claude · NUOVO TASK `T117`
+Firma: team in Config/Local.xcconfig così xcodegen non lo sovrascrive più (dipende da T116)
+
+### 2026-10-31 01:15 · claude · CLAIM `T117`
+Inizio **Firma: team in Config/Local.xcconfig così xcodegen non lo sovrascrive più**. File: project.yml, Config/Signing.xcconfig, Config/Local.xcconfig, .gitignore, docs/DA_PROVARE.md
+
+### 2026-10-31 01:17 · claude · DONE `T117`
+**Firma: team in Config/Local.xcconfig così xcodegen non lo sovrascrive più** — team di firma spostato fuori da project.yml: Config/Signing.xcconfig (CODE_SIGN_STYLE=Automatic) include in modo opzionale Config/Local.xcconfig (non versionato, .gitignore) con DEVELOPMENT_TEAM; xcodegen non scrive più DEVELOPMENT_TEAM nel pbxproj, -showBuildSettings risolve 3XV7UWT8UV e la build firmata passa con TeamIdentifier=3XV7UWT8UV; CADCore 205 test PASS
+
+### 2026-10-31 01:35 · claude · NUOVO TASK `T118`
+Avvio: solo la finestra di benvenuto (niente workspace dietro) e Home senza striscia vuota in alto (dipende da T117)
+
+### 2026-10-31 01:35 · claude · CLAIM `T118`
+Inizio **Avvio: solo la finestra di benvenuto (niente workspace dietro) e Home senza striscia vuota in alto**. File: App/Sources/UI/FusionTakeoffApp.swift, App/Sources/UI/Home/HomeView.swift, App/Sources/UI/Workspace/WorkspaceView.swift, docs/DA_PROVARE.md
+
+### 2026-10-31 01:36 · claude · DONE `T118`
+**Avvio: solo la finestra di benvenuto (niente workspace dietro) e Home senza striscia vuota in alto** — WindowGroup(id: workspace) e Window welcome con defaultLaunchBehavior condizionato a welcome.showAtLaunch: all'avvio una sola finestra (benvenuto se spuntato, altrimenti workspace); HomeView chiama openWindow(id: workspace) su apri/crea/doppio clic e sincronizza showHome in onAppear; il benvenuto ignora la safe area (niente striscia del titolo sopra il contenuto). Build firmata PASS
+
+### 2026-10-31 01:55 · claude · NUOVO TASK `T119`
+UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza (dipende da T118)
+
+### 2026-10-31 01:55 · claude · CLAIM `T119`
+Inizio **UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza**. File: App/Sources/UI/Workspace/WorkspaceView.swift, App/Sources/UI/Workspace/StatusBar.swift, App/Sources/UI/Viewport/ViewportContainer.swift, App/Sources/UI/Connectors/ConnectorsPanel.swift, App/Sources/UI/Connectors/ChatGPTSetupView.swift, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md
+
+### 2026-10-31 02:02 · claude · DONE `T119`
+**UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza** — MCP (stato e impostazioni) spostato in alto a destra nella barra del titolo; barra inferiore unica con gli otto pulsanti del viewport a sinistra e messaggio/versione a destra (via ViewportNavigationBar estratto); statistiche corpi/triangoli/volume spostate in fondo al pannello destro; pannelli laterali estesi fino a 8pt sopra la barra inferiore (margini sopra/sotto uguali); timeline sopra la barra e larga quanto lo spazio tra i pannelli; ChatGPTSetupView completamente i18n (passi, titoli copia, errore, Copiato) con en/zh nel catalog (1481 chiavi, 0 mancanti); build firmata PASS, 205 test CADCore PASS
+
+### 2026-10-31 02:11 · claude · PATHS `T119`
+**UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza** ora tocca: App/Sources/UI/Workspace/WorkspaceView.swift, App/Sources/UI/Workspace/StatusBar.swift, App/Sources/UI/Workspace/TimelineBar.swift, App/Sources/UI/Viewport/ViewportContainer.swift, App/Sources/UI/Connectors/ConnectorsPanel.swift, App/Sources/UI/Connectors/ChatGPTSetupView.swift, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md
+
+### 2026-10-31 02:18 · claude · PATHS `T119`
+**UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza** ora tocca: App/Sources/UI/FusionTakeoffApp.swift, App/Sources/UI/Workspace/WorkspaceView.swift, App/Sources/UI/Workspace/StatusBar.swift, App/Sources/UI/Workspace/TimelineBar.swift, App/Sources/UI/Viewport/ViewportContainer.swift, App/Sources/UI/Connectors/ConnectorsPanel.swift, App/Sources/UI/Connectors/ChatGPTSetupView.swift, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md
+
+### 2026-10-31 02:29 · claude · NUOVO TASK `T120`
+Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113 (dipende da T119)
+
+### 2026-10-31 02:29 · claude · CLAIM `T120`
+Inizio **Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113**. File: project.yml, Packages/CADCore/Package.swift, Packages/ElectronicsCore/Package.swift, App/Sources, App/Resources, Packages/ElectronicsCore/Sources/ElectronicsCore/Assembly.swift, docs/DA_PROVARE.md
+
+### 2026-10-31 02:49 · claude · DONE `T120`
+**Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113** — Deployment target macOS 14.0 (app, CADCore, ElectronicsCore); warning Codable in Assembly e Text + Text in ChatGPTSetupView; guardie di disponibilità per Foundation Models (27), RealityKit (15), Color.mix (14 via sRGB), glassEffect (26 con regularMaterial); avvio/restauro senza le API di scena di macOS 15; build e test verdi

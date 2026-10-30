@@ -94,8 +94,8 @@ extension CircuitModel {
         guard canExportFabrication else { return }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
-        panel.prompt = "Esporta qui"
-        panel.message = "Dove creare la cartella di produzione di «\(title)» (Gerber, forature, BOM e CPL)"
+        panel.prompt = String(localized: "Esporta qui")
+        panel.message = String(localized: "Dove creare la cartella di produzione di «\(title)» (Gerber, forature, BOM e CPL)")
         guard panel.runModal() == .OK, let parent = panel.url else { return }
         startFabricationExport(into: parent, name: "\(title) - produzione")
     }

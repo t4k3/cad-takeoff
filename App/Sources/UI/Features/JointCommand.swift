@@ -13,7 +13,7 @@ enum JointCommand {
                             reach: Double, session: @escaping () -> CommandSession?) -> DistanceManipulator {
         let k = axis.normalized
         if kind == .slider {
-            let m = DistanceManipulator(origin: origin, inward: k, factor: 1, value: offset, range: -10_000...10_000, label: "Corsa")
+            let m = DistanceManipulator(origin: origin, inward: k, factor: 1, value: offset, range: -10_000...10_000, label: String(localized: "Corsa"))
             m.pointsAlong = true
             m.onChange = { v in session()?.update("offset") { $0.value = .number(v) } }
             return m
@@ -21,7 +21,7 @@ enum JointCommand {
         let helper = abs(k.z) < 0.9 ? Vec3(0, 0, 1) : Vec3(1, 0, 0)
         let radial = helper.cross(k).normalized, r = max(reach, 5)
         let m = DistanceManipulator(origin: origin + radial * r, inward: k.cross(radial), factor: r * .pi / 180, value: angle,
-                                    range: -360...360, label: "Angolo")
+                                    range: -360...360, label: String(localized: "Angolo"))
         m.pointsAlong = true
         m.onChange = { v in session()?.update("angle") { $0.value = .number((v * 10).rounded() / 10) } }
         return m
@@ -73,7 +73,7 @@ enum JointCommand {
             let spec = JointSpec(kind: kind, moving: g[0].body.id, movingOrigin: m.point(g[0].origin), movingAxis: m.direction(g[0].axis),
                                  fixed: g[1].body.id, fixedOrigin: x.point(g[1].origin), fixedAxis: x.direction(g[1].axis),
                                  angle: f.first { $0.id == "angle" }?.number ?? 0, offset: f.first { $0.id == "offset" }?.number ?? 0, flip: flip)
-            return Feature(name: "Giunto \(model.document.features.count + 1)", kind: .joint(spec))
+            return Feature(name: String(localized: "Giunto \(model.document.features.count + 1)"), kind: .joint(spec))
         }
         func preview(_ f: [CommandField]) {
             let g = grips()
@@ -110,20 +110,20 @@ enum JointCommand {
             workspace.requestPreview(nil)
         }
         let created = CommandSession(
-            title: "Giunto", symbol: "link",
+            title: String(localized: "Giunto"), symbol: "link",
             fields: [
                 .init(id: "what", label: "", kind: .note(warning: false), value: .flag(false)),
-                .init(id: "kind", label: "Tipo", kind: .choice(JointSpec.Kind.allCases.map(\.label)), value: .index(1),
-                      help: "Rigido: fermo. Rotazione: gira attorno all'asse. Scorrimento: scorre lungo l'asse. Cilindrico: tutte e due"),
-                .init(id: "angle", label: "Angolo", kind: .angle(-360...360), value: .number(0)),
-                .init(id: "offset", label: "Corsa", kind: .length(-10_000...10_000), value: .number(0), help: "Per scorrimento e cilindrico"),
-                .init(id: "flip", label: "Inverti verso", kind: .toggle, value: .flag(false), help: "Il pezzo dall'altra parte dell'asse"),
+                .init(id: "kind", label: String(localized: "Tipo"), kind: .choice(JointSpec.Kind.allCases.map(\.label)), value: .index(1),
+                      help: String(localized: "Rigido: fermo. Rotazione: gira attorno all'asse. Scorrimento: scorre lungo l'asse. Cilindrico: tutte e due")),
+                .init(id: "angle", label: String(localized: "Angolo"), kind: .angle(-360...360), value: .number(0)),
+                .init(id: "offset", label: String(localized: "Corsa"), kind: .length(-10_000...10_000), value: .number(0), help: String(localized: "Per scorrimento e cilindrico")),
+                .init(id: "flip", label: String(localized: "Inverti verso"), kind: .toggle, value: .flag(false), help: String(localized: "Il pezzo dall'altra parte dell'asse")),
             ],
             onPreview: preview,
             onCommit: { f in
                 defer { finish() }
-                guard let joint = feature(f) else { model.statusMessage = "Clicca due punti su due pezzi diversi."; return }
-                model.edit("Giunto", selected: .some(joint.id), changed: [joint.id]) { $0.features.append(joint) }
+                guard let joint = feature(f) else { model.statusMessage = String(localized: "Clicca due punti su due pezzi diversi."); return }
+                model.edit(String(localized: "Giunto"), selected: .some(joint.id), changed: [joint.id]) { $0.features.append(joint) }
                 workspace.geoSelection = []
             },
             onCancel: { finish() })
@@ -159,11 +159,11 @@ enum JointCommand {
             handle(s)
         }
         let created = CommandSession(
-            title: "Modifica \(original.name)", symbol: "link",
-            fields: [.init(id: "kind", label: "Tipo", kind: .choice(JointSpec.Kind.allCases.map(\.label)), value: .index(JointSpec.Kind.allCases.firstIndex(of: spec.kind) ?? 1)),
-                     .init(id: "angle", label: "Angolo", kind: .angle(-360...360), value: .number(spec.angle)),
-                     .init(id: "offset", label: "Corsa", kind: .length(-10_000...10_000), value: .number(spec.offset)),
-                     .init(id: "flip", label: "Inverti verso", kind: .toggle, value: .flag(spec.flip))],
+            title: String(localized: "Modifica \(original.name)"), symbol: "link",
+            fields: [.init(id: "kind", label: String(localized: "Tipo"), kind: .choice(JointSpec.Kind.allCases.map(\.label)), value: .index(JointSpec.Kind.allCases.firstIndex(of: spec.kind) ?? 1)),
+                     .init(id: "angle", label: String(localized: "Angolo"), kind: .angle(-360...360), value: .number(spec.angle)),
+                     .init(id: "offset", label: String(localized: "Corsa"), kind: .length(-10_000...10_000), value: .number(spec.offset)),
+                     .init(id: "flip", label: String(localized: "Inverti verso"), kind: .toggle, value: .flag(spec.flip))],
             onPreview: apply, onCommit: { f in apply(f); workspace.manipulator = nil },
             onCancel: {
                 workspace.manipulator = nil

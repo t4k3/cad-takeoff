@@ -10,7 +10,12 @@ enum SheetMetalCommand {
     static let directions = SheetBendDirection.allCases
     static let references = SheetFlangeReference.allCases
     static let cornerStyles = SheetCornerStyle.allCases
-    static let lipKinds = ["Nessuno", "Risvolto verso l'interno (C)", "Risvolto verso l'esterno (Z)", "Orlo (180°)"]
+    static let lipKinds = [
+        String(localized: "Nessuno"),
+        String(localized: "Risvolto verso l'interno (C)"),
+        String(localized: "Risvolto verso l'esterno (Z)"),
+        String(localized: "Orlo (180°)"),
+    ]
 
     /// Display colour of a new part, by material family.
     static func colour(_ material: String) -> PartColor {
@@ -61,45 +66,45 @@ enum SheetMetalCommand {
         let material = SheetMaterial.named(spec.material) ?? materials[0]
 
         var fields: [CommandField] = [
-            .init(id: "material", label: "Materiale", kind: .choice(materials.map(\.name)),
+            .init(id: "material", label: String(localized: "Materiale"), kind: .choice(materials.map(\.name)),
                   value: .index(materials.firstIndex(where: { $0.id == material.id }) ?? 0)),
             .init(id: "materialNote", label: material.note, kind: .note(warning: false), value: .flag(false)),
-            .init(id: "thickness", label: "Spessore", kind: .choice(thicknessOptions(material)),
+            .init(id: "thickness", label: String(localized: "Spessore"), kind: .choice(thicknessOptions(material)),
                   value: .index(material.thicknesses.firstIndex { abs($0 - spec.thickness) < 1e-9 } ?? 0),
-                  help: "Spessori commerciali per questo materiale"),
-            .init(id: "autoRadius", label: "Raggio da tabella (piega in aria)", kind: .toggle, value: .flag(spec.radiusOverride == nil),
-                  help: "Raggio interno tipico con la matrice V standard per questo spessore. Disattiva per usare il raggio del tuo piegatore."),
-            .init(id: "radius", label: "Raggio interno", kind: .length(0.1...200), value: .number(spec.radiusOverride ?? 2),
+                  help: String(localized: "Spessori commerciali per questo materiale")),
+            .init(id: "autoRadius", label: String(localized: "Raggio da tabella (piega in aria)"), kind: .toggle, value: .flag(spec.radiusOverride == nil),
+                  help: String(localized: "Raggio interno tipico con la matrice V standard per questo spessore. Disattiva per usare il raggio del tuo piegatore.")),
+            .init(id: "radius", label: String(localized: "Raggio interno"), kind: .length(0.1...200), value: .number(spec.radiusOverride ?? 2),
                   isHidden: spec.radiusOverride == nil),
             .init(id: "rule", label: "", kind: .note(warning: false), value: .flag(false)),
-            .init(id: "width", label: "Larghezza (esterna, X)", kind: .length(5...5000), value: .number(spec.width), isHidden: free),
-            .init(id: "depth", label: "Profondità (esterna, Y)", kind: .length(5...5000), value: .number(spec.depth), isHidden: free),
-            .init(id: "sides", label: "Lati con flangia", kind: .reference(prompt: "Clicca i lati da piegare", maxCount: 2000),
+            .init(id: "width", label: String(localized: "Larghezza (esterna, X)"), kind: .length(5...5000), value: .number(spec.width), isHidden: free),
+            .init(id: "depth", label: String(localized: "Profondità (esterna, Y)"), kind: .length(5...5000), value: .number(spec.depth), isHidden: free),
+            .init(id: "sides", label: String(localized: "Lati con flangia"), kind: .reference(prompt: String(localized: "Clicca i lati da piegare"), maxCount: 2000),
                   value: .references(sides.sorted().map { "lato \($0 + 1)" }),
-                  help: "Clicca un bordo della base per piegarlo, di nuovo per toglierlo. Negli angoli rientranti va piegato un solo lato.",
+                  help: String(localized: "Clicca un bordo della base per piegarlo, di nuovo per toglierlo. Negli angoli rientranti va piegato un solo lato."),
                   isHidden: !free),
-            .init(id: "front", label: "Flangia davanti", kind: .toggle, value: .flag(spec.front != nil), isHidden: free),
-            .init(id: "right", label: "Flangia a destra", kind: .toggle, value: .flag(spec.right != nil), isHidden: free),
-            .init(id: "back", label: "Flangia dietro", kind: .toggle, value: .flag(spec.back != nil), isHidden: free),
-            .init(id: "left", label: "Flangia a sinistra", kind: .toggle, value: .flag(spec.left != nil), isHidden: free),
-            .init(id: "length", label: "Altezza flangia", kind: .length(0.5...2000), value: .number(firstFlange.length)),
-            .init(id: "perSide", label: "Altezze diverse per lato", kind: .toggle, value: .flag(differentLengths), isHidden: free),
+            .init(id: "front", label: String(localized: "Flangia davanti"), kind: .toggle, value: .flag(spec.front != nil), isHidden: free),
+            .init(id: "right", label: String(localized: "Flangia a destra"), kind: .toggle, value: .flag(spec.right != nil), isHidden: free),
+            .init(id: "back", label: String(localized: "Flangia dietro"), kind: .toggle, value: .flag(spec.back != nil), isHidden: free),
+            .init(id: "left", label: String(localized: "Flangia a sinistra"), kind: .toggle, value: .flag(spec.left != nil), isHidden: free),
+            .init(id: "length", label: String(localized: "Altezza flangia"), kind: .length(0.5...2000), value: .number(firstFlange.length)),
+            .init(id: "perSide", label: String(localized: "Altezze diverse per lato"), kind: .toggle, value: .flag(differentLengths), isHidden: free),
         ] + SheetEdge.allCases.map { e in
-            .init(id: "length-" + e.rawValue, label: "Altezza " + e.label.lowercased(), kind: .length(0.5...2000),
+            .init(id: "length-" + e.rawValue, label: String(localized: "Altezza \(e.label.lowercased())"), kind: .length(0.5...2000),
                   value: .number(spec[e]?.length ?? firstFlange.length), isHidden: free || !differentLengths || spec[e] == nil)
         } + [
 
-            .init(id: "angle", label: "Angolo di piega", kind: .angle(5...135), value: .number(firstFlange.angle),
-                  help: "Rotazione dalla posizione piana: 90° = a squadra"),
-            .init(id: "direction", label: "Verso", kind: .choice(directions.map(\.label)),
+            .init(id: "angle", label: String(localized: "Angolo di piega"), kind: .angle(5...135), value: .number(firstFlange.angle),
+                  help: String(localized: "Rotazione dalla posizione piana: 90° = a squadra")),
+            .init(id: "direction", label: String(localized: "Verso"), kind: .choice(directions.map(\.label)),
                   value: .index(directions.firstIndex(of: firstFlange.direction) ?? 0)),
-            .init(id: "reference", label: "Quota", kind: .choice(references.map(\.label)),
+            .init(id: "reference", label: String(localized: "Quota"), kind: .choice(references.map(\.label)),
                   value: .index(references.firstIndex(of: firstFlange.reference) ?? 0),
-                  help: "Quota esterna: l'altezza misurata fuori tutto, come sul disegno d'officina"),
-            .init(id: "corners", label: "Angoli", kind: .choice(cornerStyles.map(\.label)),
+                  help: String(localized: "Quota esterna: l'altezza misurata fuori tutto, come sul disegno d'officina")),
+            .init(id: "corners", label: String(localized: "Angoli"), kind: .choice(cornerStyles.map(\.label)),
                   value: .index(cornerStyles.firstIndex(of: spec.cornerStyle) ?? 0),
-                  help: "Chiusi: le pareti davanti e dietro coprono l'angolo, quelle laterali ci arrivano contro (scatola); scarico quadrato nello sviluppo"),
-            .init(id: "gap", label: "Gioco negli angoli", kind: .length(0...5), value: .number(spec.gap),
+                  help: String(localized: "Chiusi: le pareti davanti e dietro coprono l'angolo, quelle laterali ci arrivano contro (scatola); scarico quadrato nello sviluppo")),
+            .init(id: "gap", label: String(localized: "Gioco negli angoli"), kind: .length(0...5), value: .number(spec.gap),
                   isHidden: spec.cornerStyle == .open),
             .init(id: "result", label: "", kind: .note(warning: false), value: .flag(false)),
             .init(id: "warnings", label: "", kind: .note(warning: true), value: .flag(false), isHidden: true),
@@ -109,11 +114,11 @@ enum SheetMetalCommand {
         let lip = firstFlange.lip
         let lipKind: Int = lip == nil ? 0 : (lip!.angle >= 180 - 1e-9 ? 3 : (lip!.inward ? 1 : 2))
         let lipFields: [CommandField] = [
-            .init(id: "lip", label: "Sulla punta", kind: .choice(lipKinds), value: .index(lipKind),
-                  help: "Seconda piega in punta a ogni flangia: risvolto (profilo a C o a Z) o orlo ripiegato contro la flangia"),
-            .init(id: "lipLength", label: "Lunghezza risvolto", kind: .length(0.5...2000), value: .number(lip?.length ?? 10),
-                  help: "Quota esterna, dalla faccia della flangia fuori dalla piega", isHidden: lipKind == 0),
-            .init(id: "lipAngle", label: "Angolo risvolto", kind: .angle(5...179), value: .number(min(lip?.angle ?? 90, 179)),
+            .init(id: "lip", label: String(localized: "Sulla punta"), kind: .choice(lipKinds), value: .index(lipKind),
+                  help: String(localized: "Seconda piega in punta a ogni flangia: risvolto (profilo a C o a Z) o orlo ripiegato contro la flangia")),
+            .init(id: "lipLength", label: String(localized: "Lunghezza risvolto"), kind: .length(0.5...2000), value: .number(lip?.length ?? 10),
+                  help: String(localized: "Quota esterna, dalla faccia della flangia fuori dalla piega"), isHidden: lipKind == 0),
+            .init(id: "lipAngle", label: String(localized: "Angolo risvolto"), kind: .angle(5...179), value: .number(min(lip?.angle ?? 90, 179)),
                   isHidden: lipKind == 0 || lipKind == 3)
         ]
         fields.insert(contentsOf: lipFields, at: fields.firstIndex { $0.id == "corners" } ?? fields.count)
@@ -172,7 +177,10 @@ enum SheetMetalCommand {
             for id in ["angle", "direction", "reference", "lip"] { session.update(id) { $0.isHidden = !anyFlange } }
             session.update("perSide") { $0.isHidden = free || !anyFlange }
             let lipKind = { if case let .index(i)? = f.first(where: { $0.id == "lip" })?.value { i } else { 0 } }()
-            session.update("lipLength") { $0.isHidden = !anyFlange || lipKind == 0; $0.label = lipKind == 3 ? "Lunghezza orlo" : "Lunghezza risvolto" }
+            session.update("lipLength") {
+                $0.isHidden = !anyFlange || lipKind == 0
+                $0.label = lipKind == 3 ? String(localized: "Lunghezza orlo") : String(localized: "Lunghezza risvolto")
+            }
             session.update("lipAngle") { $0.isHidden = !anyFlange || lipKind == 0 || lipKind == 3 }
             session.update("length") { $0.isHidden = !anyFlange || perSide }
             // Corners exist where two flanged sides meet (free base: neighbouring sides both bent).
@@ -186,13 +194,15 @@ enum SheetMetalCommand {
             do {
                 let build = try SheetMetalGeometry.build(s, featureID: original?.id ?? UUID())
                 let r = build.rule
+                let kFactor = String(format: "%.3f", r.kFactor)
                 session.update("rule") {
-                    $0.label = "Matrice V\(mm(r.vDie)) · raggio interno \(mm(r.insideRadius)) mm · K \(String(format: "%.3f", r.kFactor)) (DIN 6935) · flangia minima ≈ \(mm(r.minimumFlange)) mm"
+                    $0.label = String(localized: "Matrice V\(mm(r.vDie)) · raggio interno \(mm(r.insideRadius)) mm · K \(kFactor) (DIN 6935) · flangia minima ≈ \(mm(r.minimumFlange)) mm")
                 }
                 let size = build.flat.size
                 let mass = build.flat.area * s.thickness * m.density / 1_000_000   // mm³ · g/cm³ → kg
+                let massText = String(format: "%.3f", mass).replacingOccurrences(of: ".", with: ",")
                 session.update("result") {
-                    $0.label = "Sviluppo \(mm(size.width)) × \(mm(size.height)) mm · massa ≈ \(String(format: "%.3f", mass).replacingOccurrences(of: ".", with: ",")) kg"
+                    $0.label = String(localized: "Sviluppo \(mm(size.width)) × \(mm(size.height)) mm · massa ≈ \(massText) kg")
                 }
                 session.update("warnings") { $0.label = build.warnings.joined(separator: "\n"); $0.isHidden = build.warnings.isEmpty }
                 session.message = nil
@@ -214,7 +224,7 @@ enum SheetMetalCommand {
                 return (doc, doc.features[i])
             }
             let count = doc.features.filter { if case .sheetMetal = $0.kind { true } else { false } }.count
-            let f = Feature(id: partID, name: "Lamiera \(count + 1)", kind: .sheetMetal(s), position: Vec3(0, 0, z), color: colour(s.material))
+            let f = Feature(id: partID, name: String(localized: "Lamiera \(count + 1)"), kind: .sheetMetal(s), position: Vec3(0, 0, z), color: colour(s.material))
             doc.features.append(f)
             return (doc, f)
         }
@@ -227,7 +237,7 @@ enum SheetMetalCommand {
             workspace.geoSelection = []
         }
         session = CommandSession(
-            title: original == nil ? "Lamiera" : "Modifica \(original!.name)", symbol: "square.stack.3d.down.forward",
+            title: original == nil ? String(localized: "Lamiera") : String(localized: "Modifica \(original!.name)"), symbol: "square.stack.3d.down.forward",
             fields: fields,
             onPreview: preview,
             onCommit: { f in
@@ -237,7 +247,7 @@ enum SheetMetalCommand {
                     model.statusMessage = error.localizedDescription; return
                 }
                 let (doc, feature) = document(with: s)
-                model.edit(original == nil ? "Nuova lamiera: \(s.summary)" : "Modifica \(feature.name)",
+                model.edit(original == nil ? String(localized: "Nuova lamiera: \(s.summary)") : String(localized: "Modifica \(feature.name)"),
                            selected: .some(feature.id), changed: [feature.id]) { $0 = doc }
             },
             onCancel: { workspace.requestPreview(nil); finishPicking() })

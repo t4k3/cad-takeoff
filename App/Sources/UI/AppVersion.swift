@@ -13,5 +13,5 @@ enum AppVersion {
     /// "v0.1.0 · 681541b".
     static var short: String { "v\(version) · \(commit)" }
     /// For tooltips and the About panel.
-    static var long: String { "Versione \(version) (build \(build)) · commit \(commit) · compilata il \(buildDate)" }
+    static var long: String { String(localized: "Versione \(version) (build \(build)) · commit \(commit) · compilata il \(buildDate)") }
 }

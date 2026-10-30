@@ -137,7 +137,7 @@ final class CircuitModel {
         guard pcbBusy else { return }
         pcbWork?.cancel()
         pcbWork = nil; pcbOperation = nil; pcbBusy = false
-        report("Modifica del rame annullata.")
+        report(String(localized: "Modifica del rame annullata."))
     }
     /// «Togli le isole» and the thermal/width rules for the next plane (before its first click too).
     var zoneRemoveIslands = true
@@ -208,7 +208,7 @@ final class CircuitModel {
         forgetDrawings()
         document = doc; self.url = url; isDirty = false
         refresh()
-        report("Aperto \(name) — \(summary)")
+        report(String(localized: "Aperto \(name) — \(summary)"))
     }
 
     /// Drawing (a route, an area, a plane, a wire — started or changed) while a file is being
@@ -217,7 +217,7 @@ final class CircuitModel {
     func yieldOpen() {
         guard openRequest != nil else { return }
         openRequest = nil
-        report("Apertura annullata: hai iniziato a disegnare sul circuito aperto.")
+        report(String(localized: "Apertura annullata: hai iniziato a disegnare sul circuito aperto."))
     }
 
 
@@ -228,7 +228,7 @@ final class CircuitModel {
         document = doc
         url = nil; isDirty = true
         refresh()
-        report("Nuovo circuito: scheda 50 × 30 mm")
+        report(String(localized: "Nuovo circuito: scheda 50 × 30 mm"))
     }
 
     /// The X of the circuit's tab / ⌘W in CIRCUITI: closed after asking about unsaved changes.
@@ -238,7 +238,7 @@ final class CircuitModel {
         forgetDrawings()
         document = nil; url = nil; isDirty = false
         refresh()
-        report("Chiuso \(name)")
+        report(String(localized: "Chiuso \(name)"))
     }
 
     func save(to target: URL? = nil) throws {
@@ -246,7 +246,7 @@ final class CircuitModel {
         try document.encoded().write(to: destination, options: .atomic)
         url = destination; isDirty = false
         saved(destination)
-        report("Salvato \(destination.lastPathComponent) in \(destination.deletingLastPathComponent().lastPathComponent)")
+        report(String(localized: "Salvato \(destination.lastPathComponent) in \(destination.deletingLastPathComponent().lastPathComponent)"))
     }
 
     func openWithPanel() {
@@ -258,7 +258,7 @@ final class CircuitModel {
         let filter = CircuitFileFilter()
         panel.delegate = filter
         panel.canChooseFiles = true; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
-        panel.message = "Apri un circuito (.ftkc), oppure lo ZIP di una scheda dal produttore (Gerber, BOM e posizioni) per importarla"
+        panel.message = String(localized: "Apri un circuito (.ftkc), oppure lo ZIP di una scheda dal produttore (Gerber, BOM e posizioni) per importarla")
         // From the current circuit's folder: its listing is read again (after a save the file is a new one).
         if let url { panel.directoryURL = url.deletingLastPathComponent() }
         guard withExtendedLifetime(filter, { panel.runModal() }) == .OK, let url = panel.url else { return }
@@ -269,21 +269,21 @@ final class CircuitModel {
             return
         }
         Task {
-            do { try await open(url) } catch let e as CircuitEditError where e.isSuperseded {} catch { report("Circuito non aperto: \(Self.describe(error))") }
+            do { try await open(url) } catch let e as CircuitEditError where e.isSuperseded {} catch { report(String(localized: "Circuito non aperto: \(Self.describe(error))")) }
         }
     }
 
     func saveWithPanel(asNew: Bool = false) {
         guard document != nil else { return }
-        if !asNew, url != nil { do { try save() } catch { report("Salvataggio non riuscito: \(Self.describe(error))") }; return }
+        if !asNew, url != nil { do { try save() } catch { report(String(localized: "Salvataggio non riuscito: \(Self.describe(error))")) }; return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [Self.fileType]
         panel.nameFieldStringValue = title + ".ftkc"
-        panel.message = "Salva il circuito «\(title)» (.ftkc)"
+        panel.message = String(localized: "Salva il circuito «\(title)» (.ftkc)")
         // Where the circuit already is, else the project folder of the workspace.
         if let folder = url?.deletingLastPathComponent() ?? defaultFolder() { panel.directoryURL = folder }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do { try save(to: url) } catch { report("Salvataggio non riuscito: \(Self.describe(error))") }
+        do { try save(to: url) } catch { report(String(localized: "Salvataggio non riuscito: \(Self.describe(error))")) }
     }
 
     /// The example circuit of the engine's tests (synthetic parts: not for manufacture).
@@ -293,7 +293,7 @@ final class CircuitModel {
             do {
                 try await open(url)
                 self.url = nil   // a copy: «Salva» asks where
-            } catch let e as CircuitEditError where e.isSuperseded {} catch { report("Esempio non aperto: \(Self.describe(error))") }
+            } catch let e as CircuitEditError where e.isSuperseded {} catch { report(String(localized: "Esempio non aperto: \(Self.describe(error))")) }
         }
     }
 
@@ -301,11 +301,11 @@ final class CircuitModel {
     func confirmDiscard() -> Bool {
         guard isDirty, document != nil else { return true }
         let alert = NSAlert()
-        alert.messageText = "Il circuito «\(title)» ha modifiche non salvate."
-        alert.informativeText = "Se continui, le modifiche vanno perse."
-        alert.addButton(withTitle: "Salva")
-        alert.addButton(withTitle: "Non salvare")
-        alert.addButton(withTitle: "Annulla")
+        alert.messageText = String(localized: "Il circuito «\(title)» ha modifiche non salvate.")
+        alert.informativeText = String(localized: "Se continui, le modifiche vanno perse.")
+        alert.addButton(withTitle: String(localized: "Salva"))
+        alert.addButton(withTitle: String(localized: "Non salvare"))
+        alert.addButton(withTitle: String(localized: "Annulla"))
         switch alert.runModal() {
         case .alertFirstButtonReturn: saveWithPanel(); return !isDirty
         case .alertSecondButtonReturn: return true
@@ -327,7 +327,7 @@ final class CircuitModel {
             report(title)
             return true
         } catch {
-            report("\(title) non riuscito: \(Self.describe(error))")
+            report(String(localized: "\(title) non riuscito: \(Self.describe(error))"))
             return false
         }
     }
@@ -360,7 +360,7 @@ final class CircuitModel {
             try apply(command, expectedRevision: expectedRevision)
             return true
         } catch {
-            report("\(command.title) non riuscito: \(Self.describe(error))")
+            report(String(localized: "\(command.title) non riuscito: \(Self.describe(error))"))
             return false
         }
     }
@@ -384,7 +384,7 @@ final class CircuitModel {
     @discardableResult
     func runPCB(_ command: PCBCommand, expectedRevision: UInt64? = nil) async -> Bool {
         guard let doc = document else { return false }
-        guard !pcbBusy else { report("Un'altra modifica del rame è in corso: attendi un attimo."); return false }
+        guard !pcbBusy else { report(String(localized: "Un'altra modifica del rame è in corso: attendi un attimo.")); return false }
         let token = UUID()
         pcbOperation = token
         pcbBusy = true
@@ -399,11 +399,11 @@ final class CircuitModel {
         pcbWork = work
         let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
         guard pcbOperation == token, !Task.isCancelled, !work.isCancelled else {
-            report("\(command.title) annullato.")
+            report(String(localized: "\(command.title) annullato."))
             return false
         }
         guard documentEpoch == epoch, document?.revision == doc.revision else {
-            report("\(command.title) non applicato: il circuito è cambiato nel frattempo.")
+            report(String(localized: "\(command.title) non applicato: il circuito è cambiato nel frattempo."))
             return false
         }
         switch result {
@@ -413,7 +413,7 @@ final class CircuitModel {
             report(command.title)
             return true
         case .failure(let error):
-            report("\(command.title) non riuscito: \(Self.describe(error))")
+            report(String(localized: "\(command.title) non riuscito: \(Self.describe(error))"))
             return false
         }
     }
@@ -595,7 +595,7 @@ final class CircuitModel {
     @discardableResult
     func addComponent(_ p: Placing, at position: PCBPoint) -> UUID? {
         if design?.components.contains(where: { $0.reference.uppercased() == p.reference.uppercased() }) == true {
-            report("La sigla \(p.reference) c'è già: scegline un'altra.")
+            report(String(localized: "La sigla \(p.reference) c'è già: scegline un'altra."))
             return nil
         }
         guard run(placeCommand(p, at: position), expectedRevision: p.baseRevision) else {
@@ -640,7 +640,7 @@ final class CircuitModel {
         if let na, let nb, na != nb {
             let names = [na, nb].map { id in d.nets.first { $0.id == id }?.name ?? "?" }
             let refs = [a, b].map { p in d.components.first { $0.id == p.componentID }?.reference ?? "?" }
-            report("\(refs[0]) è sulla rete \(names[0]) e \(refs[1]) sulla rete \(names[1]): scollega uno dei due prima.")
+            report(String(localized: "\(refs[0]) è sulla rete \(names[0]) e \(refs[1]) sulla rete \(names[1]): scollega uno dei due prima."))
             return
         }
         // The net either pin is already on, or a new one (N1, N2…); the engine makes it in the same step.
@@ -657,7 +657,7 @@ final class CircuitModel {
 
     /// setBoard: a rectangle from the origin, and the thickness.
     func setBoard(width: Double, height: Double, thickness: Double) {
-        guard width > 0, height > 0, thickness > 0 else { report("Larghezza, altezza e spessore devono essere maggiori di zero."); return }
+        guard width > 0, height > 0, thickness > 0 else { report(String(localized: "Larghezza, altezza e spessore devono essere maggiori di zero.")); return }
         let outline = [PCBPoint(0, 0), PCBPoint(width, 0), PCBPoint(width, height), PCBPoint(0, height)]
         run(.setBoard(outline: outline, thickness: thickness, assemblyOrigin: design?.board.assemblyOrigin ?? PCBPoint()))
     }
@@ -727,7 +727,7 @@ final class CircuitModel {
         guard document != nil else { return }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = ["kicad_mod", "kicad_sym", "json"].compactMap { UTType(filenameExtension: $0) }
-        panel.message = "Importa un'impronta KiCad (.kicad_mod), un simbolo KiCad (.kicad_sym) o un'impronta EasyEDA Standard (.json)"
+        panel.message = String(localized: "Importa un'impronta KiCad (.kicad_mod), un simbolo KiCad (.kicad_sym) o un'impronta EasyEDA Standard (.json)")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         chooseImport(url)
     }
@@ -757,9 +757,9 @@ final class CircuitModel {
             guard !Task.isCancelled, self.importKey == key else { return }
             switch names {
             case .success(let list) where list.count == 1: self.prepareImport(url, symbol: list[0])
-            case .success(let list) where list.isEmpty: self.report("Nessun simbolo trovato in \(url.lastPathComponent)")
+            case .success(let list) where list.isEmpty: self.report(String(localized: "Nessun simbolo trovato in \(url.lastPathComponent)"))
             case .success(let list): self.symbolChoice = (url, list, key)
-            case .failure(let e): self.report("\(url.lastPathComponent): \(e.message)")
+            case .failure(let e): self.report(String(localized: "\(url.lastPathComponent): \(e.message)"))
             }
         }
     }
@@ -769,7 +769,7 @@ final class CircuitModel {
         guard let choice = symbolChoice else { return }
         symbolChoice = nil
         guard choice.key == importKey else {
-            report("Il circuito è cambiato dopo l'elenco dei simboli: rifai l'import.")
+            report(String(localized: "Il circuito è cambiato dopo l'elenco dei simboli: rifai l'import."))
             return
         }
         prepareImport(choice.url, symbol: name)
@@ -802,7 +802,7 @@ final class CircuitModel {
             do { data = try await read(url) } catch {
                 guard let self, self.importRequest == token else { return }
                 self.importing = nil
-                if self.importKey == key { self.report("Import di \(url.lastPathComponent) non riuscito: \(Self.describe(error))") }
+                if self.importKey == key { self.report(String(localized: "Import di \(url.lastPathComponent) non riuscito: \(Self.describe(error))")) }
                 return
             }
             let built = await Self.offMain { () -> Result<ImportProposal, CircuitEditError> in
@@ -836,7 +836,7 @@ final class CircuitModel {
             guard !Task.isCancelled, self.importKey == key else { return }
             switch built {
             case .success(let proposal): self.importProposal = proposal
-            case .failure(let e): self.report("Import di \(url.lastPathComponent) non riuscito: \(e.message)")
+            case .failure(let e): self.report(String(localized: "Import di \(url.lastPathComponent) non riuscito: \(e.message)"))
             }
         }
     }
@@ -867,21 +867,21 @@ final class CircuitModel {
         guard let p = importProposal, var doc = document else { return }
         importProposal = nil
         guard importKey == p.key else {
-            report("Import non applicato: il circuito è cambiato o è stato aperto un altro file dopo l'anteprima. Rifai l'import.")
+            report(String(localized: "Import non applicato: il circuito è cambiato o è stato aperto un altro file dopo l'anteprima. Rifai l'import."))
             return
         }
         do {
             try ElectronicsLibraryCommands.apply(p.command, to: &doc, expectedRevision: p.preview.baseRevision)
             guard doc.revision != document?.revision else {
-                report("Già nella libreria: \(p.fileName) è identico alla revisione presente (nessun passo).")
+                report(String(localized: "Già nella libreria: \(p.fileName) è identico alla revisione presente (nessun passo)."))
                 return
             }
             document = doc; isDirty = true
             refresh()
-            let what = (p.symbols.map { "simbolo \($0.name)" } + p.footprints.map { "impronta \($0.name)" }).joined(separator: ", ")
-            report("Importato \(what)" + (p.preview.issues.isEmpty ? "" : " · \(p.preview.issues.count) avvisi da controllare"))
+            let what = (p.symbols.map { String(localized: "simbolo \($0.name)") } + p.footprints.map { String(localized: "impronta \($0.name)") }).joined(separator: ", ")
+            report(String(localized: "Importato \(what)") + (p.preview.issues.isEmpty ? "" : String(localized: " · \(p.preview.issues.count) avvisi da controllare")))
         } catch {
-            report("Import non riuscito: \(Self.describe(error))")
+            report(String(localized: "Import non riuscito: \(Self.describe(error))"))
         }
     }
 
@@ -937,10 +937,10 @@ final class CircuitModel {
             try ElectronicsLibraryCommands.apply(.createDevice(device), to: &doc, expectedRevision: preview.baseRevision)
             document = doc; isDirty = true
             refresh()
-            report("Componente pronto da posare: CREA › Componente")
+            report(String(localized: "Componente pronto da posare: CREA › Componente"))
             return true
         } catch {
-            report("Componente non creato: \(Self.describe(error))")
+            report(String(localized: "Componente non creato: \(Self.describe(error))"))
             return false
         }
     }
@@ -953,20 +953,20 @@ final class CircuitModel {
         guard let document else { return }
         let assembly: AssemblyData
         do { assembly = try ElectronicsAssembly.export(document) } catch {
-            report("Export JLCPCB non riuscito: \(Self.describe(error))")
+            report(String(localized: "Export JLCPCB non riuscito: \(Self.describe(error))"))
             if let failure = error as? ElectronicsFailure { baseIssues = failure.issues }
             return
         }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
-        panel.prompt = "Esporta qui"
-        panel.message = "Cartella per BOM e CPL JLCPCB di «\(title)»"
+        panel.prompt = String(localized: "Esporta qui")
+        panel.message = String(localized: "Cartella per BOM e CPL JLCPCB di «\(title)»")
         guard panel.runModal() == .OK, let folder = panel.url else { return }
         do {
             try assembly.bomCSV.write(to: folder.appendingPathComponent("\(title) - BOM.csv"), atomically: true, encoding: .utf8)
             try assembly.cplCSV.write(to: folder.appendingPathComponent("\(title) - CPL.csv"), atomically: true, encoding: .utf8)
-            report("BOM e CPL JLCPCB salvati in \(folder.lastPathComponent) — da verificare nel visore JLC prima di ordinare")
-        } catch { report("Scrittura non riuscita: \(error.localizedDescription)") }
+            report(String(localized: "BOM e CPL JLCPCB salvati in \(folder.lastPathComponent) — da verificare nel visore JLC prima di ordinare"))
+        } catch { report(String(localized: "Scrittura non riuscita: \(error.localizedDescription)")) }
     }
 
     // MARK: State
@@ -974,13 +974,13 @@ final class CircuitModel {
     var summary: String {
         guard let d = design else { return "" }
         if let m = d.manufacturing {
-            return "scheda importata, \(m.components.count) componenti, \(m.activeLot?.fittedComponentIDs.count ?? 0) montati nel lotto «\(m.activeLot?.name ?? "")», \(m.lots.count) lotti"
+            return String(localized: "scheda importata, \(m.components.count) componenti, \(m.activeLot?.fittedComponentIDs.count ?? 0) montati nel lotto «\(m.activeLot?.name ?? "")», \(m.lots.count) lotti")
         }
         let errors = issues.filter { $0.severity == .error }.count, warnings = issues.count - errors
-        var s = "\(d.components.count) componenti, \(d.nets.count) reti"
-        if let b = board { s += ", \(b.airwires.count) collegamenti da sbrogliare" }
-        if errors > 0 { s += " · \(errors) error\(errors == 1 ? "e" : "i")" }
-        if warnings > 0 { s += " · \(warnings) avvis\(warnings == 1 ? "o" : "i")" }
+        var s = String(localized: "\(d.components.count) componenti, \(d.nets.count) reti")
+        if let b = board { s += String(localized: ", \(b.airwires.count) collegamenti da sbrogliare") }
+        if errors > 0 { s += errors == 1 ? String(localized: " · 1 errore") : String(localized: " · \(errors) errori") }
+        if warnings > 0 { s += warnings == 1 ? String(localized: " · 1 avviso") : String(localized: " · \(warnings) avvisi") }
         return s
     }
 

@@ -2194,6 +2194,222 @@
       "notes": [
         "2026-09-28 17:22 codex: Prima scheda assemblata proprietaria consegnata:15modelli generici revisionati, substrato realmente forato, snapshot/pick, allineamenti e spessore transazionali, persistenza9, app2D/3D e chat/MCP con Claude. Test254Swift+lettori e CAD202PASS, ponte App PASS, build e QA nativa salva/riapri/undo/redo/lotto PASS. Ballgun73modelli approssimati su84montati,11senza modello; nessuna certificazione ingombri o E5 completo. Prove e limiti in VALIDATION.md; originali invariati."
       ]
+    },
+    {
+      "id": "T112",
+      "title": "UI: Liquid Glass (HIG macOS) + i18n it/en/zh-Hans (String Catalog)",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T17"
+      ],
+      "paths": [
+        "App/Sources/UI",
+        "App/Resources/Localizable.xcstrings",
+        "project.yml",
+        "App/Sources/UI/Workspace",
+        "FusionTakeoff.xcodeproj"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-30 21:34",
+      "finished": "2026-10-30 22:05",
+      "notes": [
+        "2026-10-30 22:05 claude: UI Liquid Glass (isole di vetro, toolbar unificata, viewport ai bordi) e i18n it/en/zh-Hans su String Catalog: 771 chiavi tutte tradotte, 686 estratte dal codice + 85 aggiunte (etichette enum, campi, Home, avvisi, tooltip); build app PASS (firma disattivata) e 205 test CADCore PASS. Lingua sorgente it (DECISIONE), QA visiva in DA_PROVARE."
+      ]
+    },
+    {
+      "id": "T113",
+      "title": "T112 seguito: i18n pulita (it/en/zh-Hans) + Home stile Pixelmator",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T112"
+      ],
+      "paths": [
+        "App/Sources/UI",
+        "App/Sources/Integration/Projects",
+        "App/Sources/Model",
+        "App/Resources/Localizable.xcstrings",
+        "docs/DA_PROVARE.md",
+        "App/Sources/UI/Home"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-30 23:17",
+      "finished": "2026-10-30 23:18",
+      "notes": [
+        "2026-10-30 23:18 claude: i18n alla sorgente (titolo, alert, pannello comando, campi, stato, circuiti, tavola, prompt pannelli), catalog 1463 chiavi con en+zh-Hans e parita placeholder, Home riscritta stile Pixelmator; build PASS, 205 test CADCore PASS; commit 58 file"
+      ]
+    },
+    {
+      "id": "T114",
+      "title": "i18n della chiave API nell'assistente + issue Xcode (format spec, chiavi stale, recommended settings)",
+      "phase": "Altro",
+      "status": "done",
+      "deps": [
+        "T113"
+      ],
+      "paths": [
+        "project.yml",
+        "FusionTakeoff.xcodeproj",
+        "App/Sources/Integration",
+        "App/Sources/UI/Assistant",
+        "App/Resources/Localizable.xcstrings",
+        "docs/DA_PROVARE.md"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-30 23:36",
+      "finished": "2026-10-30 23:36",
+      "notes": [
+        "2026-10-30 23:36 claude: chiave API dell'assistente tradotta (Claude/OpenAI/Apple) + format specifier zh corretto + chiavi dinamiche marcate manual + recommended settings di Xcode applicati; build PASS, 205 test PASS"
+      ]
+    },
+    {
+      "id": "T115",
+      "title": "UI: barra del titolo stile Xcode (schede e modalità in alto) e finestra di benvenuto separata stile Pixelmator",
+      "phase": "UI",
+      "status": "done",
+      "deps": [
+        "T112"
+      ],
+      "paths": [
+        "App/Sources/UI/FusionTakeoffApp.swift",
+        "App/Sources/UI/Home/HomeView.swift",
+        "App/Sources/UI/Workspace/WorkspaceView.swift",
+        "App/Sources/UI/Workspace/DesignTabs.swift",
+        "App/Sources/UI/Workspace/Ribbon.swift",
+        "App/Resources/Localizable.xcstrings",
+        "docs/DA_PROVARE.md"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-30 23:58",
+      "finished": "2026-10-31 00:04",
+      "notes": [
+        "2026-10-31 00:04 claude: barra del titolo in stile Xcode (schede in alto a sinistra, modalità al centro, strumenti a destra; il dock parte sotto) e Home come finestra di benvenuto separata 1032×672 stile Pixelmator (icona, versione, pillole, «Altro», spunta all'avvio, griglia recenti con breadcrumb e ricerca); finestra senza titolo/semafori, trascinabile; nuove chiavi en+zh (Welcome, Show this window at launch, tooltip Esc) — catalog 1473 chiavi, 0 mancanti, 0 stale; build PASS, 205 test CADCore PASS"
+      ]
+    },
+    {
+      "id": "T116",
+      "title": "Home stile Strophe, estensione .ftk in cinese corretta e hint del viewport al centro",
+      "phase": "UI",
+      "status": "done",
+      "deps": [
+        "T115"
+      ],
+      "paths": [
+        "App/Sources/Integration/Projects/ProjectLibrary.swift",
+        "App/Sources/UI/Home/HomeView.swift",
+        "App/Sources/UI/Viewport/ViewportContainer.swift",
+        "App/Resources/Localizable.xcstrings",
+        "docs/DA_PROVARE.md"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-31 00:38",
+      "finished": "2026-10-31 00:38",
+      "notes": [
+        "2026-10-31 00:38 claude: Home riscritta sul modello di Strophe Welcome (brand 104, titolo 46, schede azione con sottotitolo e freccia, «Altro»+spunta, lista recenti a righe con menu ⋯ e stato vuoto allineato in alto); nome file predefinito costruito come String(localized:) + \".\" + estensione (in cinese non esce più «。ftk»), chiavi «Nuovo disegno.%@»/«Nuovo circuito.%@» rimosse (catalog 1471, 0 mancanti, 0 stale); hint di navigazione del viewport spostato in basso al centro sopra la capsula. Build PASS, 205 test CADCore PASS"
+      ]
+    },
+    {
+      "id": "T117",
+      "title": "Firma: team in Config/Local.xcconfig così xcodegen non lo sovrascrive più",
+      "phase": "build",
+      "status": "done",
+      "deps": [
+        "T116"
+      ],
+      "paths": [
+        "project.yml",
+        "Config/Signing.xcconfig",
+        "Config/Local.xcconfig",
+        ".gitignore",
+        "docs/DA_PROVARE.md"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-31 01:15",
+      "finished": "2026-10-31 01:17",
+      "notes": [
+        "2026-10-31 01:17 claude: team di firma spostato fuori da project.yml: Config/Signing.xcconfig (CODE_SIGN_STYLE=Automatic) include in modo opzionale Config/Local.xcconfig (non versionato, .gitignore) con DEVELOPMENT_TEAM; xcodegen non scrive più DEVELOPMENT_TEAM nel pbxproj, -showBuildSettings risolve 3XV7UWT8UV e la build firmata passa con TeamIdentifier=3XV7UWT8UV; CADCore 205 test PASS"
+      ]
+    },
+    {
+      "id": "T118",
+      "title": "Avvio: solo la finestra di benvenuto (niente workspace dietro) e Home senza striscia vuota in alto",
+      "phase": "UI",
+      "status": "done",
+      "deps": [
+        "T117"
+      ],
+      "paths": [
+        "App/Sources/UI/FusionTakeoffApp.swift",
+        "App/Sources/UI/Home/HomeView.swift",
+        "App/Sources/UI/Workspace/WorkspaceView.swift",
+        "docs/DA_PROVARE.md"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-31 01:35",
+      "finished": "2026-10-31 01:36",
+      "notes": [
+        "2026-10-31 01:36 claude: WindowGroup(id: workspace) e Window welcome con defaultLaunchBehavior condizionato a welcome.showAtLaunch: all'avvio una sola finestra (benvenuto se spuntato, altrimenti workspace); HomeView chiama openWindow(id: workspace) su apri/crea/doppio clic e sincronizza showHome in onAppear; il benvenuto ignora la safe area (niente striscia del titolo sopra il contenuto). Build firmata PASS"
+      ]
+    },
+    {
+      "id": "T119",
+      "title": "UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza",
+      "phase": "UI",
+      "status": "done",
+      "deps": [
+        "T118"
+      ],
+      "paths": [
+        "App/Sources/UI/FusionTakeoffApp.swift",
+        "App/Sources/UI/Workspace/WorkspaceView.swift",
+        "App/Sources/UI/Workspace/StatusBar.swift",
+        "App/Sources/UI/Workspace/TimelineBar.swift",
+        "App/Sources/UI/Viewport/ViewportContainer.swift",
+        "App/Sources/UI/Connectors/ConnectorsPanel.swift",
+        "App/Sources/UI/Connectors/ChatGPTSetupView.swift",
+        "App/Resources/Localizable.xcstrings",
+        "docs/DA_PROVARE.md"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-31 01:55",
+      "finished": "2026-10-31 02:02",
+      "notes": [
+        "2026-10-31 02:02 claude: MCP (stato e impostazioni) spostato in alto a destra nella barra del titolo; barra inferiore unica con gli otto pulsanti del viewport a sinistra e messaggio/versione a destra (via ViewportNavigationBar estratto); statistiche corpi/triangoli/volume spostate in fondo al pannello destro; pannelli laterali estesi fino a 8pt sopra la barra inferiore (margini sopra/sotto uguali); timeline sopra la barra e larga quanto lo spazio tra i pannelli; ChatGPTSetupView completamente i18n (passi, titoli copia, errore, Copiato) con en/zh nel catalog (1481 chiavi, 0 mancanti); build firmata PASS, 205 test CADCore PASS"
+      ]
+    },
+    {
+      "id": "T120",
+      "title": "Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113",
+      "phase": "Build",
+      "status": "done",
+      "deps": [
+        "T119"
+      ],
+      "paths": [
+        "project.yml",
+        "Packages/CADCore/Package.swift",
+        "Packages/ElectronicsCore/Package.swift",
+        "App/Sources",
+        "App/Resources",
+        "Packages/ElectronicsCore/Sources/ElectronicsCore/Assembly.swift",
+        "docs/DA_PROVARE.md"
+      ],
+      "suggested": "claude",
+      "owner": "claude",
+      "started": "2026-10-31 02:29",
+      "finished": "2026-10-31 02:49",
+      "notes": [
+        "2026-10-31 02:49 claude: Deployment target macOS 14.0 (app, CADCore, ElectronicsCore); warning Codable in Assembly e Text + Text in ChatGPTSetupView; guardie di disponibilità per Foundation Models (27), RealityKit (15), Color.mix (14 via sRGB), glassEffect (26 con regularMaterial); avvio/restauro senza le API di scena di macOS 15; build e test verdi"
+      ]
     }
   ]
 }

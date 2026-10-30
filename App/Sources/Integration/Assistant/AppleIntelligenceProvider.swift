@@ -9,6 +9,7 @@ import Observation
 /// through the session's executor, so it shows in the conversation and is undoable like any
 /// other. Its context is small (8192 tokens on macOS 27): it gets short instructions and, when
 /// the window is that small, the everyday tools with one-line descriptions.
+@available(macOS 27.0, *)
 @MainActor
 @Observable
 final class AppleIntelligenceProvider: AssistantProvider {
@@ -32,10 +33,10 @@ final class AppleIntelligenceProvider: AssistantProvider {
     var setupHint: String {
         switch SystemLanguageModel.default.availability {
         case .available: ""
-        case .unavailable(.deviceNotEligible): "Questo Mac non supporta Apple Intelligence: usa Claude o ChatGPT con la tua chiave."
-        case .unavailable(.appleIntelligenceNotEnabled): "Attiva Apple Intelligence in Impostazioni di Sistema › Apple Intelligence e Siri."
-        case .unavailable(.modelNotReady): "Il modello Apple si sta ancora scaricando: riprova tra qualche minuto."
-        case .unavailable: "Apple Intelligence non è disponibile su questo Mac ora."
+        case .unavailable(.deviceNotEligible): String(localized: "Questo Mac non supporta Apple Intelligence: usa Claude o ChatGPT con la tua chiave.")
+        case .unavailable(.appleIntelligenceNotEnabled): String(localized: "Attiva Apple Intelligence in Impostazioni di Sistema › Apple Intelligence e Siri.")
+        case .unavailable(.modelNotReady): String(localized: "Il modello Apple si sta ancora scaricando: riprova tra qualche minuto.")
+        case .unavailable: String(localized: "Apple Intelligence non è disponibile su questo Mac ora.")
         }
     }
 
@@ -220,6 +221,7 @@ final class AppleIntelligenceProvider: AssistantProvider {
 
 /// A CAD tool as Foundation Models sees it: its JSON schema turned into a generation schema, a
 /// one-line description, arguments handed back as JSON to the same CAD tool code.
+@available(macOS 27.0, *)
 struct CADTool: Tool {
     typealias Arguments = GeneratedContent
     typealias Output = String
@@ -280,6 +282,7 @@ struct CADTool: Tool {
 }
 
 /// JSON Schema (the subset the CAD tools use) → Foundation Models dynamic schema.
+@available(macOS 27.0, *)
 enum CADToolSchema {
     /// Only the required properties and `keeping` (without their long descriptions).
     static func essentials(_ schema: JSONValue, keeping: Set<String>) -> JSONValue {

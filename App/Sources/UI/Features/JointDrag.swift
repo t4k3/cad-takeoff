@@ -74,7 +74,7 @@ final class JointDrag {
     /// Release: one undo step (nothing if it did not move).
     func commit(model: DesignModel) {
         guard value != startValue, let doc = document(model) else { return }
-        model.edit("Muovi \(joint.name)", changed: [joint.id]) { $0 = doc }
+        model.edit(String(localized: "Muovi \(joint.name)"), changed: [joint.id]) { $0 = doc }
     }
 
     /// The design with the joint at the dragged value.

@@ -49,7 +49,7 @@ enum SketchCommands {
         }
         // Dragged through zero, as in Fusion, the extrusion goes the other way (the value stays
         // positive, the direction flips).
-        let arrow = DistanceManipulator(origin: arrowOrigin(), inward: normal, factor: 1, value: 10, range: -10_000...10_000, label: "H")
+        let arrow = DistanceManipulator(origin: arrowOrigin(), inward: normal, factor: 1, value: 10, range: -10_000...10_000, label: String(localized: "H"))
         arrow.pointsAlong = true
         arrow.onChange = { v in
             guard let i = session?.fields.firstIndex(where: { $0.id == "h" }) else { return }
@@ -73,22 +73,22 @@ enum SketchCommands {
             workspace.manipulator = nil
         }
         let created = CommandSession(
-            title: "Estrudi", symbol: "square.stack.3d.up",
-            fields: [.init(id: "areas", label: "Profili", kind: .reference(prompt: "Clicca le aree da estrudere", maxCount: 500), value: areasLabel(),
-                           help: "Clicca un'area per aggiungerla o toglierla: l'anello tra due cerchi lascia il foro, aree vicine si uniscono"),
-                     .init(id: "h", label: "Distanza", kind: .length(0.01...10000), value: .number(10),
-                           help: (onFace ? "Profondità dalla faccia" : "Altezza dell'estrusione verso +Z") + " · anche un'espressione dei Parametri",
+            title: String(localized: "Estrudi"), symbol: "square.stack.3d.up",
+            fields: [.init(id: "areas", label: String(localized: "Profili"), kind: .reference(prompt: String(localized: "Clicca le aree da estrudere"), maxCount: 500), value: areasLabel(),
+                           help: String(localized: "Clicca un'area per aggiungerla o toglierla: l'anello tra due cerchi lascia il foro, aree vicine si uniscono")),
+                     .init(id: "h", label: String(localized: "Distanza"), kind: .length(0.01...10000), value: .number(10),
+                           help: (onFace ? String(localized: "Profondità dalla faccia · anche un'espressione dei Parametri") : String(localized: "Altezza dell'estrusione verso +Z · anche un'espressione dei Parametri")),
                            acceptsExpression: true),
-                     .init(id: "extent", label: "Estensione", kind: .choice(["Una direzione", "Simmetrica", "Passante", "Fino a faccia"]), value: .index(0),
-                           help: "Simmetrica: metà distanza da ogni parte del piano dello schizzo. Passante: attraversa tutti i corpi (anche se poi crescono). Fino a faccia: arriva al piano di una faccia del pezzo"),
-                     .init(id: "toFace", label: "Faccia", kind: .reference(prompt: "Clicca la faccia", maxCount: 1), value: .references([]),
-                           help: "La faccia piana a cui arriva l'estrusione (la segue se il pezzo cambia)", isHidden: true),
-                     .init(id: "taper", label: "Sformo", kind: .angle(-60...60), value: .number(0),
-                           help: "Angolo delle pareti: positivo le stringe allontanandosi dallo schizzo (sformo per stampi), negativo le allarga"),
-                     .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
-                           help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca"),
-                     .init(id: "dir", label: "Direzione", kind: .choice(onFace ? ["Fuori dalla faccia", "Dentro il pezzo"] : ["Lato del piano", "Lato opposto"]), value: .index(0),
-                           help: onFace ? "Su una faccia: un taglio va dentro il pezzo, un'unione verso l'esterno" : "Da che parte del piano dello schizzo (anche trascinando la freccia oltre lo zero)")],
+                     .init(id: "extent", label: String(localized: "Estensione"), kind: .choice([String(localized: "Una direzione"), String(localized: "Simmetrica"), String(localized: "Passante"), String(localized: "Fino a faccia")]), value: .index(0),
+                           help: String(localized: "Simmetrica: metà distanza da ogni parte del piano dello schizzo. Passante: attraversa tutti i corpi (anche se poi crescono). Fino a faccia: arriva al piano di una faccia del pezzo")),
+                     .init(id: "toFace", label: String(localized: "Faccia"), kind: .reference(prompt: String(localized: "Clicca la faccia"), maxCount: 1), value: .references([]),
+                           help: String(localized: "La faccia piana a cui arriva l'estrusione (la segue se il pezzo cambia)"), isHidden: true),
+                     .init(id: "taper", label: String(localized: "Sformo"), kind: .angle(-60...60), value: .number(0),
+                           help: String(localized: "Angolo delle pareti: positivo le stringe allontanandosi dallo schizzo (sformo per stampi), negativo le allarga")),
+                     .init(id: "op", label: String(localized: "Operazione"), kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
+                           help: String(localized: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca")),
+                     .init(id: "dir", label: String(localized: "Direzione"), kind: .choice(onFace ? [String(localized: "Fuori dalla faccia"), String(localized: "Dentro il pezzo")] : [String(localized: "Lato del piano"), String(localized: "Lato opposto")]), value: .index(0),
+                           help: onFace ? String(localized: "Su una faccia: un taglio va dentro il pezzo, un'unione verso l'esterno") : String(localized: "Da che parte del piano dello schizzo (anche trascinando la freccia oltre lo zero)"))],
             onPreview: { f in
                 let op = operation(f)
                 // Switching to «Taglia» on a face flips the direction into the part (once).
@@ -121,7 +121,7 @@ enum SketchCommands {
                 let seeds = sketch.selectedSeeds
                 let areas = sketch.pickedAreas
                 finish()
-                guard !areas.isEmpty else { model.statusMessage = "Clicca almeno un'area da estrudere."; return }
+                guard !areas.isEmpty else { model.statusMessage = String(localized: "Clicca almeno un'area da estrudere."); return }
                 let placement = onFace || reversed(f) ? FeaturePlacement(plane: sketch.sketch.plane, reversed: reversed(f)) : nil
                 // One solid per area (disjoint areas are separate bodies, as in Fusion).
                 var features: [Feature] = []
@@ -138,15 +138,16 @@ enum SketchCommands {
                     do {
                         try CADToolValidation.feature(feature)
                     } catch {
-                        model.statusMessage = "Estrusione non riuscita: \(error.localizedDescription)"
+                        model.statusMessage = String(localized: "Estrusione non riuscita: \(error.localizedDescription)")
                         return
                     }
                     features.append(feature)
                 }
                 // One undo step: saves the sketch, adds the solids and links them to their shapes.
                 let saved = sketch.sketch
-                let what = areas.count == 1 ? "profilo" : "\(areas.count) profili"
-                model.edit((op == .newBody ? "Estrudi " : op.label + ": ") + what, selected: .some(features[0].id), changed: features.map(\.id)) { doc in
+                let what = areas.count == 1 ? String(localized: "profilo") : String(localized: "\(areas.count) profili")
+                model.edit(op == .newBody ? String(localized: "Estrudi \(what)") : String(localized: "\(op.label): \(what)"),
+                           selected: .some(features[0].id), changed: features.map(\.id)) { doc in
                     doc.upsert(saved)
                     for (feature, area) in zip(features, areas) {
                         doc.features.append(feature)
@@ -156,7 +157,7 @@ enum SketchCommands {
                                                           seeds: own.isEmpty ? [area.seed] : own))
                     }
                 }
-                model.statusMessage = "Estrusione creata (\(fmt(height)) mm) — ⌘Z per annullare"
+                model.statusMessage = String(localized: "Estrusione creata (\(fmt(height)) mm) — ⌘Z per annullare")
                 workspace.exitSketch()
             },
             onCancel: { finish() })
@@ -221,24 +222,24 @@ extension SketchCommands {
             sketch.revolvePreview = nil
         }
         let created = CommandSession(
-            title: "Rivoluzione", symbol: "arrow.triangle.2.circlepath",
-            fields: [.init(id: "areas", label: "Profili", kind: .reference(prompt: "Clicca le aree", maxCount: 500),
+            title: String(localized: "Rivoluzione"), symbol: "arrow.triangle.2.circlepath",
+            fields: [.init(id: "areas", label: String(localized: "Profili"), kind: .reference(prompt: String(localized: "Clicca le aree"), maxCount: 500),
                            value: .references(sketch.pickedAreas.map { "\($0.seed)" }),
-                           help: "Clicca un'area per aggiungerla o toglierla"),
-                     .init(id: "axis", label: "Asse", kind: .reference(prompt: "Clicca la linea d'asse", maxCount: 1), value: axisLabel(),
-                           help: "Una linea dello schizzo (meglio di costruzione): il profilo le gira intorno"),
-                     .init(id: "angle", label: "Angolo", kind: .angle(0.1...360), value: .number(360), help: "360° = giro completo"),
-                     .init(id: "rev", label: "Verso opposto", kind: .toggle, value: .flag(false)),
-                     .init(id: "op", label: "Operazione", kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
-                           help: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca")],
+                           help: String(localized: "Clicca un'area per aggiungerla o toglierla")),
+                     .init(id: "axis", label: String(localized: "Asse"), kind: .reference(prompt: String(localized: "Clicca la linea d'asse"), maxCount: 1), value: axisLabel(),
+                           help: String(localized: "Una linea dello schizzo (meglio di costruzione): il profilo le gira intorno")),
+                     .init(id: "angle", label: String(localized: "Angolo"), kind: .angle(0.1...360), value: .number(360), help: String(localized: "360° = giro completo")),
+                     .init(id: "rev", label: String(localized: "Verso opposto"), kind: .toggle, value: .flag(false)),
+                     .init(id: "op", label: String(localized: "Operazione"), kind: .choice(BooleanOperation.allCases.map(\.label)), value: .index(0),
+                           help: String(localized: "Nuovo corpo, oppure unisci/taglia/interseca i corpi che tocca"))],
             onPreview: preview,
             onCommit: { f in
                 let seeds = sketch.selectedSeeds, areas = sketch.pickedAreas
                 let picked = axis
                 finish()
-                guard !areas.isEmpty else { model.statusMessage = "Clicca almeno un'area."; return }
+                guard !areas.isEmpty else { model.statusMessage = String(localized: "Clicca almeno un'area."); return }
                 guard let picked, case let .segment(id, j) = picked, let (a, b) = sketch.shape(id)?.segment(j) else {
-                    model.statusMessage = "Clicca la linea d'asse."; return
+                    model.statusMessage = String(localized: "Clicca la linea d'asse."); return
                 }
                 let op = operation(f)
                 let plane = sketch.sketch.plane
@@ -251,13 +252,13 @@ extension SketchCommands {
                     do {
                         try CADToolValidation.feature(feature)
                     } catch {
-                        model.statusMessage = "Rivoluzione non riuscita: \(error.localizedDescription)"
+                        model.statusMessage = String(localized: "Rivoluzione non riuscita: \(error.localizedDescription)")
                         return
                     }
                     features.append(feature)
                 }
                 let saved = sketch.sketch
-                model.edit("Rivoluzione", selected: .some(features[0].id), changed: features.map(\.id)) { doc in
+                model.edit(String(localized: "Rivoluzione"), selected: .some(features[0].id), changed: features.map(\.id)) { doc in
                     doc.upsert(saved)
                     for (feature, area) in zip(features, areas) {
                         doc.features.append(feature)
@@ -266,7 +267,7 @@ extension SketchCommands {
                                                           seeds: own.isEmpty ? [area.seed] : own))
                     }
                 }
-                model.statusMessage = "Rivoluzione creata — ⌘Z per annullare"
+                model.statusMessage = String(localized: "Rivoluzione creata — ⌘Z per annullare")
                 workspace.exitSketch()
             },
             onCancel: { finish() })

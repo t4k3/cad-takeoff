@@ -41,12 +41,12 @@ struct CommandField: Identifiable, Equatable {
         switch (kind, value) {
         case let (.length(r), .number(v)), let (.angle(r), .number(v)):
             guard v.isFinite, r.contains(v) else {
-                return "Valore tra \(r.lowerBound.formatted()) e \(r.upperBound.formatted())"
+                return String(localized: "Valore tra \(r.lowerBound.formatted()) e \(r.upperBound.formatted())")
             }
         case let (.count(r), .number(v)):
-            guard r.contains(Int(v)) else { return "Valore tra \(r.lowerBound) e \(r.upperBound)" }
+            guard r.contains(Int(v)) else { return String(localized: "Valore tra \(r.lowerBound) e \(r.upperBound)") }
         case let (.reference(_, _), .references(refs)):
-            if refs.isEmpty { return "Selezione richiesta" }
+            if refs.isEmpty { return String(localized: "Selezione richiesta") }
         default: break
         }
         return nil

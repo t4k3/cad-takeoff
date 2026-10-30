@@ -4,7 +4,7 @@ import SwiftUI
 /// with their own OpenAI account; the tunnel launches the bundled ftk-mcp bridge.
 /// Commands come from ChatGPTConnector (Codex, T51); nothing here touches the account.
 struct ChatGPTSetupView<CopyButton: View>: View {
-    var copy: (String, String) -> CopyButton
+    var copy: (LocalizedStringKey, String) -> CopyButton
     @AppStorage("connectors.chatgpt.tunnelID") private var tunnelID = ""
 
     var body: some View {
@@ -21,8 +21,15 @@ struct ChatGPTSetupView<CopyButton: View>: View {
             case let .success(cmd):
                 command(cmd, copyTitle: "Copia configurazione")
             case let .failure(error):
-                Text(tunnelID.isEmpty ? "Inserisci il tunnel_id per generare il comando." : error.localizedDescription)
-                    .font(.caption).foregroundStyle(tunnelID.isEmpty ? Theme.Palette.textSecondary : Theme.Palette.danger)
+                Group {
+                    if tunnelID.isEmpty {
+                        Text("Inserisci il tunnel_id per generare il comando.")
+                            .foregroundStyle(Theme.Palette.textSecondary)
+                    } else {
+                        Text(error.localizedDescription).foregroundStyle(Theme.Palette.danger)
+                    }
+                }
+                .font(.caption)
             }
             step(3, "Avvia il tunnel ogni volta che vuoi usare ChatGPT con l'app (l'app si apre da sola):")
             command(ChatGPTConnector.runCommand, copyTitle: "Copia avvio")
@@ -39,11 +46,15 @@ struct ChatGPTSetupView<CopyButton: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func step(_ n: Int, _ text: String) -> some View {
-        Text("\(n). \(text)").font(.caption).fixedSize(horizontal: false, vertical: true)
+    private func step(_ n: Int, _ text: LocalizedStringKey) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(verbatim: "\(n).")
+            Text(text)
+        }
+        .font(.caption).fixedSize(horizontal: false, vertical: true)
     }
 
-    private func command(_ cmd: String, copyTitle: String) -> some View {
+    private func command(_ cmd: String, copyTitle: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(cmd).font(.system(size: 10.5, design: .monospaced)).textSelection(.enabled)
                 .lineLimit(4).truncationMode(.middle)

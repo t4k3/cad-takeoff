@@ -55,12 +55,12 @@ struct FabricationSheet: View {
     private var profileForm: some View {
         @Bindable var c = circuits
         return Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
-            row("Espansione maschera", $c.fabricationProfile.solderMaskExpansion)
-            row("Riduzione pasta", $c.fabricationProfile.pasteInset)
-            row("Ponte maschera minimo", $c.fabricationProfile.minimumMaskWeb)
-            row("Serigrafia minima", $c.fabricationProfile.minimumSilkscreenWidth)
-            row("Serigrafia–piazzole", $c.fabricationProfile.silkscreenClearance)
-            row("Distanza fra fori", $c.fabricationProfile.minimumHoleSeparation)
+            row(String(localized: "Espansione maschera"), $c.fabricationProfile.solderMaskExpansion)
+            row(String(localized: "Riduzione pasta"), $c.fabricationProfile.pasteInset)
+            row(String(localized: "Ponte maschera minimo"), $c.fabricationProfile.minimumMaskWeb)
+            row(String(localized: "Serigrafia minima"), $c.fabricationProfile.minimumSilkscreenWidth)
+            row(String(localized: "Serigrafia–piazzole"), $c.fabricationProfile.silkscreenClearance)
+            row(String(localized: "Distanza fra fori"), $c.fabricationProfile.minimumHoleSeparation)
             GridRow {
                 Text("Via coperte")
                 Toggle("", isOn: $c.fabricationProfile.tentVias).labelsHidden()
@@ -78,11 +78,21 @@ struct FabricationSheet: View {
             } else if let p = f.preview {
                 let errors = p.issues.filter { $0.severity == .error }
                 if errors.isEmpty {
-                    Label("Pronta: \(p.layers.count) strati, \(p.drills.count) fori" + (p.issues.isEmpty ? "" : " · \(p.issues.count) avvisi"),
+                    let layers = p.layers.count == 1 ? String(localized: "1 strato") : String(localized: "\(p.layers.count) strati")
+                    let drills = p.drills.count == 1 ? String(localized: "1 foro") : String(localized: "\(p.drills.count) fori")
+                    let issues = p.issues.count == 1 ? String(localized: "1 avviso") : String(localized: "\(p.issues.count) avvisi")
+                    Label(p.issues.isEmpty
+                          ? String(localized: "Pronta: \(layers), \(drills)")
+                          : String(localized: "Pronta: \(layers), \(drills) · \(issues)"),
                           systemImage: "checkmark.seal.fill").foregroundStyle(.green).font(.caption)
                 } else {
-                    Label("\(errors.count) error\(errors.count == 1 ? "e" : "i") da correggere prima di esportare",
-                          systemImage: "xmark.octagon.fill").foregroundStyle(.red).font(.caption)
+                    if errors.count == 1 {
+                        Label("1 errore da correggere prima di esportare",
+                              systemImage: "xmark.octagon.fill").foregroundStyle(.red).font(.caption)
+                    } else {
+                        Label("\(errors.count) errori da correggere prima di esportare",
+                              systemImage: "xmark.octagon.fill").foregroundStyle(.red).font(.caption)
+                    }
                 }
                 if !p.issues.isEmpty {
                     ScrollView {
@@ -162,11 +172,15 @@ struct FabricationSheet: View {
 
     static func name(_ kind: FabricationLayerKind) -> String {
         switch kind {
-        case .topCopper: "Rame sopra"; case .bottomCopper: "Rame sotto"
-        case .topMask: "Maschera sopra"; case .bottomMask: "Maschera sotto"
-        case .topPaste: "Pasta sopra"; case .bottomPaste: "Pasta sotto"
-        case .topSilkscreen: "Serigrafia sopra"; case .bottomSilkscreen: "Serigrafia sotto"
-        case .profile: "Contorno"
+        case .topCopper: String(localized: "Rame sopra")
+        case .bottomCopper: String(localized: "Rame sotto")
+        case .topMask: String(localized: "Maschera sopra")
+        case .bottomMask: String(localized: "Maschera sotto")
+        case .topPaste: String(localized: "Pasta sopra")
+        case .bottomPaste: String(localized: "Pasta sotto")
+        case .topSilkscreen: String(localized: "Serigrafia sopra")
+        case .bottomSilkscreen: String(localized: "Serigrafia sotto")
+        case .profile: String(localized: "Contorno")
         default: CAMDrawing.name(kind)
         }
     }

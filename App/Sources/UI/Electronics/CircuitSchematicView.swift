@@ -1,3 +1,4 @@
+import AppKit
 import ElectronicsCore
 import SwiftUI
 
@@ -147,7 +148,7 @@ struct CircuitSchematicView: View {
     }
 
     private func click(_ p: PCBPoint, _ m: Mapping) {
-        guard let drawing = current else { circuits.report("Schema in aggiornamento: un attimo e riprova."); return }
+        guard let drawing = current else { circuits.report(String(localized: "Schema in aggiornamento: un attimo e riprova.")); return }
         let here = drawing.snapTargets(near: p, radius: radius(m), grid: 1.27).first
         let point = here?.point ?? p
         switch circuits.schematicTool {
@@ -169,22 +170,22 @@ struct CircuitSchematicView: View {
             } else if let end {
                 circuits.wireStart = end
             } else {
-                circuits.report("Il filo parte da un pin, da una giunzione o da un filo: clicca lì.")
+                circuits.report(String(localized: "Il filo parte da un pin, da una giunzione o da un filo: clicca lì."))
             }
         case .label:
             if let end = here.flatMap({ circuits.wireEnd(for: $0) }), case let .terminal(t, _) = end {
                 circuits.labelTarget = t
             } else {
-                circuits.report("L'etichetta va su un pin o su una giunzione.")
+                circuits.report(String(localized: "L'etichetta va su un pin o su una giunzione."))
             }
         case .noConnect:
             if here?.kind == .pin, let c = here?.object?.componentID, let pin = here?.object?.pinID {
                 circuits.markNoConnect(PinReference(componentID: c, pinID: pin))
-            } else { circuits.report("NC va su un pin libero.") }
+            } else { circuits.report(String(localized: "NC va su un pin libero.")) }
         case .junction:
             if let s = here, [.onWire, .midpoint, .vertex].contains(s.kind), let w = s.object, w.kind == .wire {
                 circuits.addJunction(onWire: w.id, at: s.point)
-            } else { circuits.report("La giunzione va su un filo.") }
+            } else { circuits.report(String(localized: "La giunzione va su un filo.")) }
         }
     }
 
@@ -198,17 +199,27 @@ struct CircuitSchematicView: View {
         if let s = circuits.schematicSelection { circuits.removeSchematicObject(s) }
     }
 
-    @ViewBuilder private var hint: some View {
-        let text: String? = switch circuits.schematicTool {
-        case let .place(p): "Clicca dove posare \(p.reference) · Esc per finire"
-        case .wire: circuits.wireStart == nil ? "Filo: clicca un pin, una giunzione o un filo · Esc per finire"
-            : "Filo: clicca il pin o il filo d'arrivo; clic nel vuoto = piega · Esc annulla"
-        case .label: "Etichetta: clicca il pin o la giunzione da nominare"
-        case .noConnect: "NC: clicca il pin da lasciare scollegato"
-        case .junction: "Giunzione: clicca il punto del filo da cui ramificare"
-        case .select: nil
+    private var hintText: String? {
+        switch circuits.schematicTool {
+        case let .place(p):
+            return String(localized: "Clicca dove posare \(p.reference) · Esc per finire")
+        case .wire:
+            return circuits.wireStart == nil
+                ? String(localized: "Filo: clicca un pin, una giunzione o un filo · Esc per finire")
+                : String(localized: "Filo: clicca il pin o il filo d'arrivo; clic nel vuoto = piega · Esc annulla")
+        case .label:
+            return String(localized: "Etichetta: clicca il pin o la giunzione da nominare")
+        case .noConnect:
+            return String(localized: "NC: clicca il pin da lasciare scollegato")
+        case .junction:
+            return String(localized: "Giunzione: clicca il punto del filo da cui ramificare")
+        case .select:
+            return nil
         }
-        if let text {
+    }
+
+    @ViewBuilder private var hint: some View {
+        if let text = hintText {
             Text(text).font(.system(size: 11, weight: .medium)).padding(.horizontal, 10).padding(.vertical, 5).overlayChip()
         }
     }
@@ -226,6 +237,16 @@ struct CircuitSchematicView: View {
     // MARK: Drawing
 
     private static let accent = Color(red: 1, green: 0.55, blue: 0.22)
+
+    /// A colour between two, mixed in sRGB (`Color.mix` is macOS 15 only).
+    private static func blended(_ a: Color, _ b: Color, _ t: CGFloat) -> Color {
+        let x = NSColor(a).usingColorSpace(.sRGB) ?? .black
+        let y = NSColor(b).usingColorSpace(.sRGB) ?? .black
+        return Color(red: Double(x.redComponent + (y.redComponent - x.redComponent) * t),
+                     green: Double(x.greenComponent + (y.greenComponent - x.greenComponent) * t),
+                     blue: Double(x.blueComponent + (y.blueComponent - x.blueComponent) * t),
+                     opacity: Double(x.alphaComponent + (y.alphaComponent - x.alphaComponent) * t))
+    }
 
     /// Our colours for the engine's semantic styles.
     private func colour(_ style: SchematicPrimitive.Style) -> Color {
@@ -283,7 +304,7 @@ struct CircuitSchematicView: View {
             let isLit = lit.map { $0.id == owner.id || ($0.componentID != nil && $0.componentID == owner.componentID) } ?? false
             let sameComponent = circuits.selection != nil && owner.componentID == circuits.selection
             var c = colour(p.style)
-            if isSel || sameComponent { c = Self.accent } else if isLit { c = c.opacity(0.75).mix(with: Self.accent, by: 0.5) }
+            if isSel || sameComponent { c = Self.accent } else if isLit { c = Self.blended(c.opacity(0.75), Self.accent, 0.5) }
             if let d = dragging, owner.componentID == d.component {
                 paint(p, colour: c.opacity(0.35))
                 paint(p, colour: Self.accent, offset: d.delta)

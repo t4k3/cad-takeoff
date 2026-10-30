@@ -57,7 +57,7 @@
 		632024767AA11693D6157405 /* fusion_history.py in Resources */ = {isa = PBXBuildFile; fileRef = 3770472710CAC4D5EE4F671D /* fusion_history.py */; };
 		6391BD7137C19D938C85F761 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ACF2F56948E53B401DAEA56 /* HomeView.swift */; };
 		6A10CC336BAEA35811826D10 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069D2799753CD573213F79CB /* AppVersion.swift */; };
-		6A65AED3408C4EB0ECFB82BF /* ftk-mcp in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 8CDAC622763B58001C57E74E /* ftk-mcp */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6A65AED3408C4EB0ECFB82BF /* ftk-mcp in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 8CDAC622763B58001C57E74E /* ftk-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6B565AFFC0F914F50DE7ED6C /* CircuitSchematicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A81CD8EBB1FFBE3F89DC77 /* CircuitSchematicView.swift */; };
 		6F8298EDA67F97F349B5DA81 /* SketchSession+Edit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5018C0134761E9A7DB53FF11 /* SketchSession+Edit.swift */; };
 		738BCE6360B6E88389CC0C25 /* ParametersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5210093687F0306F5DD6656 /* ParametersSheet.swift */; };
@@ -67,6 +67,7 @@
 		7D2D8376A46E203FE6BCCADE /* DesignTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F28DA722F5CEA29D56B8C6 /* DesignTabs.swift */; };
 		7E920FD6EEEFED77A6F9430F /* DesignModel+Slicers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE60968931C46AB699AA8D4 /* DesignModel+Slicers.swift */; };
 		80A196158C024C5AD959E030 /* CircuitModel+Fabrication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6817EF5D8EFE4F1E0BA17D10 /* CircuitModel+Fabrication.swift */; };
+		81D121517AE25A1ADED9057D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 33CFFBA3A0BD0B0B605DAD8B /* Localizable.xcstrings */; };
 		829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */ = {isa = PBXBuildFile; fileRef = 2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */; };
 		865BB53D7E595B32EB7D5F09 /* CommandSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A33442A4596CDA241E197 /* CommandSession.swift */; };
 		871A00C58DD6D28ADF201C37 /* CADTakeoffImportProject.manifest in Resources */ = {isa = PBXBuildFile; fileRef = BA7F9CA32B4FE85A6EF88EC1 /* CADTakeoffImportProject.manifest */; };
@@ -159,12 +160,14 @@
 		1910760B5F8D7EDB7F9D1502 /* CircuitModel+PCB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CircuitModel+PCB.swift"; sourceTree = "<group>"; };
 		1D2872A72642BACF8A561EBB /* MCPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServer.swift; sourceTree = "<group>"; };
 		22C2A70420F010AE7D6A1393 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		24E68B84DF0967368CF2A64F /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		28E853D121D28F163F7809FD /* UndoRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoRouter.swift; sourceTree = "<group>"; };
 		29E1FFCD691A84818C3BCE5A /* SplitCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitCommand.swift; sourceTree = "<group>"; };
 		2AE35C58D55633793752EC0A /* FusionTakeoffExport.manifest */ = {isa = PBXFileReference; path = FusionTakeoffExport.manifest; sourceTree = "<group>"; };
 		2AE60968931C46AB699AA8D4 /* DesignModel+Slicers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DesignModel+Slicers.swift"; sourceTree = "<group>"; };
 		3079339A5B2AB1E6EFB76050 /* CADTakeoffImportProject.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = CADTakeoffImportProject.py; sourceTree = "<group>"; };
 		32F5B171C498A222AE59BB15 /* MetalViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalViewport.swift; sourceTree = "<group>"; };
+		33CFFBA3A0BD0B0B605DAD8B /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		3770472710CAC4D5EE4F671D /* fusion_history.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = fusion_history.py; sourceTree = "<group>"; };
 		388E65A3410FB91CB09F5B4C /* ShellCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellCommand.swift; sourceTree = "<group>"; };
 		38ABEE7B1E91745FFECD06FF /* AssemblySheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblySheets.swift; sourceTree = "<group>"; };
@@ -299,6 +302,7 @@
 			children = (
 				5CAB5E2F59180CD118CF8961 /* .gitkeep */,
 				D65234D73DDB270D86ADBB51 /* Assets.xcassets */,
+				33CFFBA3A0BD0B0B605DAD8B /* Localizable.xcstrings */,
 				63F1CB0CE719F5602AD0E76E /* PrivacyInfo.xcprivacy */,
 				BB3D9C4A6645731EFE0419A5 /* Circuiti */,
 				E4B1A91129EF63A88EF293AD /* FusionAddIn */,
@@ -582,6 +586,14 @@
 			path = MCP;
 			sourceTree = "<group>";
 		};
+		DC4228E785C42C86FA79F2A8 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				24E68B84DF0967368CF2A64F /* Signing.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		E472DF5F5C48EA9E07E6CFC4 /* Model */ = {
 			isa = PBXGroup;
 			children = (
@@ -620,6 +632,7 @@
 			isa = PBXGroup;
 			children = (
 				A7FBBE3A83FD516521BFF35A /* App */,
+				DC4228E785C42C86FA79F2A8 /* Config */,
 				44C6B64A6339651A73120B39 /* Packages */,
 				A50F4E921D0488F27C78EA67 /* Tools */,
 				61600059F9C8CAB7E834B5C3 /* Products */,
@@ -723,22 +736,21 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					21E18A2EAA4445205B33E5D9 = {
-						DevelopmentTeam = 9F8D583GBV;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 					DFCBD29B1FFBA977A3959FA1 = {
-						DevelopmentTeam = 9F8D583GBV;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
 			buildConfigurationList = 5D6DD517F34C131F581C1A78 /* Build configuration list for PBXProject "FusionTakeoff" */;
-			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = en;
+			developmentRegion = it;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
 				en,
+				it,
+				"zh-Hans",
 			);
 			mainGroup = E8E3A8DCB6FD110468238FDE;
 			minimizedProjectReferenceProxies = 1;
@@ -747,6 +759,7 @@
 				B761BA4743B7DE1F3F5B2A6F /* XCLocalSwiftPackageReference "Packages/ElectronicsCore" */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 61600059F9C8CAB7E834B5C3 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -767,6 +780,7 @@
 				FB69304B1841695A656592CD /* Esempio circuito.ftkc in Resources */,
 				829B5A9129E9834A71A9F68C /* FusionTakeoffExport.manifest in Resources */,
 				FE5900210908742F2680504F /* FusionTakeoffExport.py in Resources */,
+				81D121517AE25A1ADED9057D /* Localizable.xcstrings in Resources */,
 				00F4B54DB5EC90153C2FA6BE /* PrivacyInfo.xcprivacy in Resources */,
 				632024767AA11693D6157405 /* fusion_history.py in Resources */,
 			);
@@ -925,8 +939,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_ENTITLEMENTS = App/FusionTakeoff.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -935,13 +951,16 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.takeoff.fusiontakeoff;
 				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Debug;
 		};
 		49664ED892B64996CC8A3056 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 24E68B84DF0967368CF2A64F /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -971,12 +990,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 9F8D583GBV;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -995,7 +1012,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0.114;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1010,8 +1027,10 @@
 		};
 		7651F0C66E8D82170BAA72D5 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 24E68B84DF0967368CF2A64F /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1041,12 +1060,10 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 9F8D583GBV;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1059,7 +1076,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0.114;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -1075,8 +1092,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_ENTITLEMENTS = App/FusionTakeoff.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1085,6 +1104,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.takeoff.fusiontakeoff;
 				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
@@ -1094,6 +1114,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Tools/ftk-mcp.entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1112,6 +1133,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Tools/ftk-mcp.entitlements";
 				COMBINE_HIDPI_IMAGES = YES;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

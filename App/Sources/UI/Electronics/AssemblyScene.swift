@@ -5,6 +5,7 @@ import SwiftUI
 
 /// The entities of the assembled board, rebuilt when the assembly changes; selection, excluded
 /// parts and the component being aligned only restyle or swap what is there.
+@available(macOS 15.0, *)
 @MainActor
 final class AssemblyScene {
     let root = Entity()

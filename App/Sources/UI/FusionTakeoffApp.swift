@@ -9,10 +9,17 @@ struct FusionTakeoffApp: App {
     @State private var sketches = SketchStore()
     @State private var circuits = CircuitModel()
     @State private var tools: ToolRouter?
-    @State private var assistant = AssistantSession(providers: [ClaudeProvider(), OpenAIProvider(), AppleIntelligenceProvider()])
+    @State private var assistant: AssistantSession = {
+        // Apple's on-device model exists from macOS 26: older Macs still get Claude and ChatGPT.
+        var providers: [AssistantProvider] = [ClaudeProvider(), OpenAIProvider()]
+        if #available(macOS 27.0, *) { providers.append(AppleIntelligenceProvider()) }
+        return AssistantSession(providers: providers)
+    }()
+    /// Shared with Home (its own window): opening a design from there switches the workspace mode.
+    @State private var workspace = WorkspaceState()
 
     var body: some Scene {
-        WindowGroup("CAD Takeoff") {
+        WindowGroup("CAD Takeoff", id: "workspace") {
             WorkspaceView()
                 .environment(model)
                 .environment(mcp)
@@ -20,9 +27,10 @@ struct FusionTakeoffApp: App {
                 .environment(library)
                 .environment(sketches)
                 .environment(circuits)
+                .environment(workspace)
                 .navigationTitle(circuits.isFrontmost && circuits.document != nil
-                                 ? circuits.title + (circuits.isDirty ? " — modificato" : "")
-                                 : library.currentName + (library.isDirty(model) ? " — modificato" : ""))
+                                 ? circuits.title + (circuits.isDirty ? String(localized: " — modificato") : "")
+                                 : library.currentName + (library.isDirty(model) ? String(localized: " — modificato") : ""))
                 .navigationSubtitle((circuits.isFrontmost && circuits.document != nil ? circuits.url : library.currentURL).flatMap { library.project(of: $0) } ?? "")
                 .task {
                     // One provider for MCP clients and the in-app chat: the CAD design's tools (T48)
@@ -41,12 +49,26 @@ struct FusionTakeoffApp: App {
                 .onChange(of: library.rootURL) { _, _ in model.componentResolver = library.componentResolver }
                 .frame(minWidth: 1100, minHeight: 700)
         }
+        // Xcode-like chrome: one title-bar row (document tabs, centred modes, trailing tools).
+        .windowToolbarStyle(.unifiedCompact(showsTitle: false))
+        // The Home is its own Pixelmator-style welcome window, not an overlay on the workspace.
+        Window("Benvenuto", id: "welcome") {
+            WelcomeWindow()
+                .environment(model)
+                .environment(library)
+                .environment(sketches)
+                .environment(circuits)
+                .environment(workspace)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("Informazioni su CAD Takeoff") {
                     NSApplication.shared.orderFrontStandardAboutPanel(options: [
                         .applicationVersion: "\(AppVersion.version) (build \(AppVersion.build))",
-                        .credits: NSAttributedString(string: "Commit \(AppVersion.commit) · compilata il \(AppVersion.buildDate)\nhttps://github.com/t4k3/cad-takeoff"),
+                        .credits: NSAttributedString(string: String(localized: "Commit \(AppVersion.commit) · compilata il \(AppVersion.buildDate)\nhttps://github.com/t4k3/cad-takeoff")),
                     ])
                 }
             }

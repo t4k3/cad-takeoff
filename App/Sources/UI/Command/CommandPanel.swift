@@ -10,7 +10,7 @@ struct CommandPanel: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: session.symbol).foregroundStyle(Theme.Palette.accent)
-                Text(session.title.uppercased()).font(.system(size: 11, weight: .bold)).tracking(0.5)
+                Text(LocalizedStringKey(session.title)).font(.system(size: 11, weight: .bold)).textCase(.uppercase).tracking(0.5)
                 Spacer()
                 Button { cancel() } label: { Label("Chiudi", systemImage: "xmark") }
                     .buttonStyle(IconButtonStyle()).help("Annulla (Esc)")
@@ -25,7 +25,7 @@ struct CommandPanel: View {
                         if !field.isHidden { row($field) }
                     }
                     if let message = session.message {
-                        Label(message, systemImage: "exclamationmark.triangle.fill")
+                        Label(LocalizedStringKey(message), systemImage: "exclamationmark.triangle.fill")
                             .font(.caption).foregroundStyle(Theme.Palette.danger)
                     }
                 }
@@ -49,9 +49,8 @@ struct CommandPanel: View {
         }
         .frame(width: 300)
         // Liquid Glass over the viewport (macOS 26), tinted with the panel colour so the fields
-        // stay easy to read over any part.
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .glassEffect(.regular.tint(Theme.Palette.panelRaised.opacity(0.55)), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        // stay easy to read over any part; on older Macs a plain material.
+        .modifier(CommandPanelGlass())
     }
 
     @ViewBuilder
@@ -68,52 +67,53 @@ struct CommandPanel: View {
             case let .count(r):
                 Stepper(value: Binding(get: { Int(f.number) }, set: { field.wrappedValue.value = .number(Double($0)) }), in: r) {
                     HStack {
-                        Text(f.label).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
+                        Text(LocalizedStringKey(f.label)).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
                         Spacer()
                         Text("\(Int(f.number))").font(Theme.Typeface.mono)
                     }
                 }
             case .toggle:
-                Toggle(f.label, isOn: Binding(get: { if case let .flag(b) = f.value { b } else { false } },
+                Toggle(LocalizedStringKey(f.label), isOn: Binding(get: { if case let .flag(b) = f.value { b } else { false } },
                                               set: { field.wrappedValue.value = .flag($0) }))
                     .toggleStyle(.switch).controlSize(.mini).font(Theme.Typeface.body)
             case let .choice(options):
-                Picker(f.label, selection: Binding(get: { if case let .index(i) = f.value { i } else { 0 } },
+                Picker(LocalizedStringKey(f.label), selection: Binding(get: { if case let .index(i) = f.value { i } else { 0 } },
                                                    set: { field.wrappedValue.value = .index($0) })) {
-                    ForEach(options.indices, id: \.self) { Text(options[$0]).tag($0) }
+                    ForEach(options.indices, id: \.self) { Text(LocalizedStringKey(options[$0])).tag($0) }
                 }
                 .font(Theme.Typeface.body)
             case let .reference(prompt, _):
                 referenceRow(f, prompt: prompt)
             case let .note(warning):
                 if warning {
-                    Label(f.label, systemImage: "exclamationmark.triangle.fill")
+                    Label(LocalizedStringKey(f.label), systemImage: "exclamationmark.triangle.fill")
                         .font(.caption).foregroundStyle(Color.orange)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Text(f.label).font(.caption).foregroundStyle(Theme.Palette.textSecondary)
+                    Text(LocalizedStringKey(f.label)).font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             if let msg = f.validationMessage, !isReference(f) {
-                Text(msg).font(.caption2).foregroundStyle(Theme.Palette.danger)
+                Text(LocalizedStringKey(msg)).font(.caption2).foregroundStyle(Theme.Palette.danger)
             }
         }
-        .help(f.help ?? "")
+        .help(LocalizedStringKey(f.help ?? ""))
     }
 
     private func referenceRow(_ f: CommandField, prompt: String) -> some View {
         let refs: [String] = if case let .references(r) = f.value { r } else { [] }
         let active = session.activeReference == f.id
         return HStack {
-            Text(f.label).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
+            Text(LocalizedStringKey(f.label)).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
             Spacer()
             Button {
                 session.activeReference = active ? nil : f.id
             } label: {
                 HStack(spacing: 5) {
                     Image(systemName: refs.isEmpty ? "cursorarrow.rays" : "checkmark.circle.fill")
-                    Text(refs.isEmpty ? prompt : "\(refs.count) selezionat\(refs.count == 1 ? "o" : "i")")
+                    Text(refs.isEmpty ? LocalizedStringKey(prompt)
+                         : refs.count == 1 ? LocalizedStringKey("1 selezionato") : LocalizedStringKey("\(refs.count) selezionati"))
                 }
                 .font(.system(size: 11, weight: .medium))
                 .padding(.horizontal, 8).frame(height: 22)
@@ -159,14 +159,14 @@ struct ExpressionDimensionField: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text(field.label).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
+            Text(LocalizedStringKey(field.label)).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
             Spacer(minLength: 8)
             if field.expression != nil {
                 Text("fx").font(.system(size: 10, weight: .bold, design: .serif)).italic()
                     .foregroundStyle(Theme.Palette.accent)
                     .help(fmt(field.number) + " " + unit)
             }
-            TextField(field.label, text: $text)
+            TextField(LocalizedStringKey(field.label), text: $text)
                 .labelsHidden()
                 .multilineTextAlignment(.trailing)
                 .font(Theme.Typeface.mono)
@@ -197,7 +197,23 @@ struct ExpressionDimensionField: View {
             field.value = .number(v)
             report(nil)
         } catch {
-            report(field.label + ": " + error.localizedDescription)
+            report(field.label + String(localized: ": ") + error.localizedDescription)
+        }
+    }
+}
+
+/// Liquid Glass over the viewport (macOS 26), a plain material on older Macs.
+private struct CommandPanelGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        if #available(macOS 26.0, *) {
+            content
+                .clipShape(shape)
+                .glassEffect(.regular.tint(Theme.Palette.panelRaised.opacity(0.55)), in: shape)
+        } else {
+            content
+                .clipShape(shape)
+                .background(.regularMaterial, in: shape)
         }
     }
 }

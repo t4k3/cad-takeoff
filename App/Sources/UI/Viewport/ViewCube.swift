@@ -9,7 +9,7 @@ struct ViewCube: View {
 
     private struct Face {
         let view: CameraController.StandardView
-        let label: String
+        let label: LocalizedStringKey
         let normal: SIMD3<Float>
         let corners: [SIMD3<Float>]
     }

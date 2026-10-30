@@ -168,7 +168,7 @@ struct AssistantPanel: View {
                     HStack {
                         Button(ClaudeDesktopSetup.configuredBridgePath == nil ? "Collega a Claude Desktop…" : "Ricollega Claude Desktop…") {
                             switch ClaudeDesktopSetup.connect() {
-                            case .configured: desktopMessage = "Fatto. Chiudi e riapri Claude Desktop: nella chat troverai gli strumenti «fusion-takeoff». Tieni aperto CAD Takeoff mentre lavori."
+                            case .configured: desktopMessage = String(localized: "Fatto. Chiudi e riapri Claude Desktop: nella chat troverai gli strumenti «fusion-takeoff». Tieni aperto CAD Takeoff mentre lavori.")
                             case .cancelled: desktopMessage = nil
                             case let .failed(msg): desktopMessage = msg
                             }
@@ -185,7 +185,7 @@ struct AssistantPanel: View {
                 .padding(10)
                 .background(Theme.Palette.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Oppure, per usare l'assistente qui dentro: " + session.provider.setupHint, systemImage: "key.fill")
+                    Label(String(localized: "Oppure, per usare l'assistente qui dentro: \(session.provider.setupHint)"), systemImage: "key.fill")
                         .font(.caption).fixedSize(horizontal: false, vertical: true)
                     SettingsLink { Text("Apri Impostazioni") }.controlSize(.small)
                 }
@@ -195,7 +195,7 @@ struct AssistantPanel: View {
             ForEach(!inCircuits ? Self.suggestions : circuits.isManufacturing ? Self.manufacturingSuggestions : Self.circuitSuggestions, id: \.self) { s in
                 Button { send(s) } label: {
                     HStack {
-                        Text(s).font(Theme.Typeface.body).multilineTextAlignment(.leading)
+                        Text(LocalizedStringKey(s)).font(Theme.Typeface.body).multilineTextAlignment(.leading)
                         Spacer(minLength: 4)
                         Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(Theme.Palette.textSecondary)
                     }

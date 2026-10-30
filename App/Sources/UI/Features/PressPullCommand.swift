@@ -49,7 +49,7 @@ enum PressPullCommand {
                 m.origin = frame.centre; m.inward = frame.normal
             } else {
                 let arrow = DistanceManipulator(origin: frame.centre, inward: frame.normal, factor: 1,
-                                                value: session.map { distance($0.fields) } ?? 0, range: -10_000...10_000, label: "D")
+                                                value: session.map { distance($0.fields) } ?? 0, range: -10_000...10_000, label: String(localized: "D"))
                 arrow.pointsAlong = true
                 arrow.onChange = { v in session?.update("d") { $0.value = .number(v) } }
                 workspace.manipulator = arrow
@@ -82,27 +82,27 @@ enum PressPullCommand {
         }
 
         let created = CommandSession(
-            title: "Premi/Tira", symbol: "arrow.up.and.down.square",
+            title: String(localized: "Premi/Tira"), symbol: "arrow.up.and.down.square",
             fields: [
-                .init(id: "face", label: "Facce", kind: .reference(prompt: "Clicca le facce", maxCount: 100), value: .references([]),
-                      help: "Ogni clic aggiunge o toglie una faccia. Sopra/sotto di un'estrusione cambia la sua altezza; le altre facce si estrudono"),
-                .init(id: "d", label: "Distanza", kind: .length(-10_000...10_000), value: .number(0),
-                      help: "Positiva = tira fuori, negativa = spingi dentro; ogni faccia lungo la sua normale. Puoi anche trascinare la freccia o cliccare l'etichetta"),
-                .init(id: "what", label: "Clicca le facce piane da spostare: ogni clic aggiunge o toglie.", kind: .note(warning: false), value: .flag(false)),
+                .init(id: "face", label: String(localized: "Facce"), kind: .reference(prompt: String(localized: "Clicca le facce"), maxCount: 100), value: .references([]),
+                      help: String(localized: "Ogni clic aggiunge o toglie una faccia. Sopra/sotto di un'estrusione cambia la sua altezza; le altre facce si estrudono")),
+                .init(id: "d", label: String(localized: "Distanza"), kind: .length(-10_000...10_000), value: .number(0),
+                      help: String(localized: "Positiva = tira fuori, negativa = spingi dentro; ogni faccia lungo la sua normale. Puoi anche trascinare la freccia o cliccare l'etichetta")),
+                .init(id: "what", label: String(localized: "Clicca le facce piane da spostare: ogni clic aggiunge o toglie."), kind: .note(warning: false), value: .flag(false)),
             ],
             onPreview: preview,
             onCommit: { f in
                 defer { finish() }
                 let d = distance(f)
-                guard !plans.isEmpty else { model.statusMessage = "Scegli almeno una faccia piana."; return }
-                guard abs(d) > 1e-9 else { model.statusMessage = "Distanza nulla: trascina la freccia o scrivi la distanza."; return }
+                guard !plans.isEmpty else { model.statusMessage = String(localized: "Scegli almeno una faccia piana."); return }
+                guard abs(d) > 1e-9 else { model.statusMessage = String(localized: "Distanza nulla: trascina la freccia o scrivi la distanza."); return }
                 do {
                     let name = (d > 0 ? "Tira \(fmt(d)) mm" : "Spingi \(fmt(-d)) mm") + (plans.count > 1 ? " (\(plans.count) facce)" : "")
                     let (doc, ids) = try moved(d, name: name)
                     model.edit(name, selected: .some(ids.first), changed: ids) { $0 = doc }
                     workspace.geoSelection = []
                 } catch {
-                    model.statusMessage = "Premi/Tira: \(error.localizedDescription)"
+                    model.statusMessage = String(localized: "Premi/Tira: \(error.localizedDescription)")
                 }
             },
             onCancel: { finish() })

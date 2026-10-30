@@ -1,0 +1,12 @@
+// Signing for the app and the ftk-mcp bridge.
+//
+// The team is NOT in project.yml: `xcodegen generate` rewrites the .xcodeproj at every build,
+// so a team picked in Xcode's Signing & Capabilities would be reverted each time. It lives in
+// Config/Local.xcconfig instead (untracked, see .gitignore), included below when present:
+//
+//     DEVELOPMENT_TEAM = XXXXXXXXXX
+//
+// Without it, Xcode uses automatic signing and asks for the team once in the UI.
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = Apple Development
+#include? "Local.xcconfig"

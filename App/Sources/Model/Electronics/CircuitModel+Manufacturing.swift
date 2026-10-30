@@ -45,8 +45,8 @@ extension CircuitModel {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.allowedContentTypes = [.zip, .commaSeparatedText, .plainText]
-        panel.message = "Scegli lo ZIP del pacchetto (Gerber, BOM e posizioni dentro, come lo esporta KiCad per JLCPCB), oppure insieme i tre file: lo ZIP dei Gerber, la BOM (.csv) e le posizioni CPL (.csv)"
-        panel.prompt = "Importa"
+        panel.message = String(localized: "Scegli lo ZIP del pacchetto (Gerber, BOM e posizioni dentro, come lo esporta KiCad per JLCPCB), oppure insieme i tre file: lo ZIP dei Gerber, la BOM (.csv) e le posizioni CPL (.csv)")
+        panel.prompt = String(localized: "Importa")
         guard panel.runModal() == .OK else { return }
         do {
             if document == nil {

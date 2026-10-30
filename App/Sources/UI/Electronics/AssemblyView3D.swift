@@ -8,6 +8,7 @@ import SwiftUI
 
 /// The assembled board in 3D: the same orbit as the CAD viewport (drag, ⇧-drag pans, pinch
 /// zooms), a click picks a component (the same selection as the list and the 2D view).
+@available(macOS 15.0, *)
 struct AssemblyView3D: View {
     @Environment(CircuitModel.self) private var circuits
     @State private var camera = CameraController()

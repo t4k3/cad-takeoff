@@ -19,6 +19,15 @@ enum SelectionFilter: String, CaseIterable, Identifiable {
         case .edge: "line.diagonal"
         }
     }
+
+    /// Tooltip of the navigation-bar button (localized at runtime).
+    var help: String {
+        switch self {
+        case .body: String(localized: "Seleziona: corpi interi")
+        case .face: String(localized: "Seleziona: facce")
+        case .edge: String(localized: "Seleziona: spigoli")
+        }
+    }
 }
 
 @MainActor

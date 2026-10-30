@@ -116,8 +116,14 @@ struct CAMBoardView: View {
                 Text(c.reference).font(.caption.weight(.semibold))
                 Text([c.value, c.footprint, c.lcscPartNumber].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption2)
-                Text(package.isFitted(c.id) ? "Montato nel lotto «\(package.activeLot?.name ?? "")»" : "Escluso dal lotto: resta sulla scheda")
-                    .font(.caption2).foregroundStyle(package.isFitted(c.id) ? Color.secondary : Color.red)
+                Group {
+                    if package.isFitted(c.id) {
+                        Text("Montato nel lotto «\(package.activeLot?.name ?? "")»")
+                    } else {
+                        Text("Escluso dal lotto: resta sulla scheda")
+                    }
+                }
+                .font(.caption2).foregroundStyle(package.isFitted(c.id) ? Color.secondary : Color.red)
             }
             .padding(8)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
@@ -212,7 +218,9 @@ struct CAMLayerToggles: View {
     var body: some View {
         @Bindable var c = circuits
         HStack(spacing: 10) {
-            Picker("", selection: $c.camView) { ForEach(CircuitModel.CAMView.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $c.camView) {
+                ForEach(CircuitModel.CAMView.allCases) { view in Text(Self.name(view)).tag(view) }
+            }
                 .pickerStyle(.segmented).labelsHidden().fixedSize()
                 .help("Gerber: gli strati del produttore · Assemblata: la scheda finita con i componenti, un lato alla volta · 3D")
             if circuits.camView == .gerber { layerToggles }
@@ -233,6 +241,14 @@ struct CAMLayerToggles: View {
                 .buttonStyle(.plain)
                 .help("Mostra, sbiaditi, i componenti esclusi dal lotto")
             }
+        }
+    }
+
+    private static func name(_ view: CircuitModel.CAMView) -> String {
+        switch view {
+        case .gerber: String(localized: "Gerber")
+        case .assembly: String(localized: "Assemblata")
+        case .threeD: String(localized: "3D")
         }
     }
 
@@ -278,7 +294,7 @@ struct ManufacturingImportSheet: View {
                 HStack {
                     Spacer()
                     Button("Annulla") { circuits.cancelImport() }.keyboardShortcut(.cancelAction)
-                    Button(p.inNewCircuit ? "Importa in un circuito nuovo" : "Importa") { circuits.confirmManufacturingImport() }
+                    Button(p.inNewCircuit ? String(localized: "Importa in un circuito nuovo") : String(localized: "Importa")) { circuits.confirmManufacturingImport() }
                         .keyboardShortcut(.defaultAction)
                         .disabled(!p.canApply || lotName != p.package.activeLot?.name)
                 }
@@ -319,11 +335,11 @@ struct ManufacturingImportSheet: View {
                         Text(url.lastPathComponent).font(.caption.monospaced()).foregroundStyle(Theme.Palette.textSecondary)
                     }
                     if !p.ignored.isEmpty {
-                        Text("Non usati: " + p.ignored.joined(separator: ", ")).font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
+                        Text("Non usati: \(p.ignored.joined(separator: ", "))").font(.caption2).foregroundStyle(Theme.Palette.textSecondary)
                     }
                 }
                 Text("Scheda \(CAMDrawing.mm(package.bounds.width)) × \(CAMDrawing.mm(package.bounds.height))").font(.callout)
-                Text("\(package.layers.count) strati: " + CAMDrawing.order.reversed().filter { k in package.layers.contains { $0.kind == k } }.map(CAMDrawing.name).joined(separator: ", "))
+                Text("\(package.layers.count) strati: \(CAMDrawing.order.reversed().filter { k in package.layers.contains { $0.kind == k } }.map(CAMDrawing.name).joined(separator: ", "))")
                     .font(.caption)
                 Text("\(package.drills.count) fori: \(plated) metallizzati, \(package.drills.count - plated) non metallizzati").font(.caption)
                 HStack {
@@ -340,7 +356,7 @@ struct ManufacturingImportSheet: View {
                 .onChange(of: package.activeLotID) { _, _ in lotName = package.activeLot?.name ?? "" }
                 Text("\(fitted.count) di \(package.components.count) componenti da montare").font(.callout)
                 if !excluded.isEmpty {
-                    Text("Esclusi dal lotto (DNP o assenti dalla BOM), restano sulla scheda: " + excluded.joined(separator: ", "))
+                    Text("Esclusi dal lotto (DNP o assenti dalla BOM), restano sulla scheda: \(excluded.joined(separator: ", "))")
                         .font(.caption).foregroundStyle(.orange)
                         .fixedSize(horizontal: false, vertical: true)
                 }

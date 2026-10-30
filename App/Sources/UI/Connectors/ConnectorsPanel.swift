@@ -8,11 +8,14 @@ struct MCPStatusButton: View {
 
     var body: some View {
         Button { showPanel.toggle() } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 Circle().fill(color).frame(width: 7, height: 7)
                 Text("MCP")
                 if !mcp.clients.isEmpty { Text("· \(mcp.clients.count)") }
             }
+            .padding(.horizontal, 8)
+            .frame(minWidth: 64, minHeight: 20)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help("Connettori MCP (Claude, ChatGPT)")
@@ -171,10 +174,10 @@ struct ConnectorsPanel: View {
     }
 
     @ViewBuilder
-    private func copyButton(_ title: String?, _ value: String) -> some View {
+    private func copyButton(_ title: LocalizedStringKey?, _ value: String) -> some View {
         let done = copied == value
         if let title {
-            Button { copy(value) } label: { Label(done ? "Copiato" : title, systemImage: done ? "checkmark" : "doc.on.doc") }
+            Button { copy(value) } label: { Label(done ? LocalizedStringKey("Copiato") : title, systemImage: done ? "checkmark" : "doc.on.doc") }
                 .buttonStyle(.bordered).controlSize(.small)
         } else {
             Button { copy(value) } label: { Label("Copia", systemImage: done ? "checkmark" : "doc.on.doc") }

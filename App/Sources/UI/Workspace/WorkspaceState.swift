@@ -127,11 +127,11 @@ final class WorkspaceState {
         guard let sketch else { return }
         let plane = sketch.sketch.plane
         guard abs(abs(plane.normal.z) - 1) < 1e-9 else {
-            model.statusMessage = "La lamiera nasce da uno schizzo orizzontale (piano XY o una faccia in piano)."
+            model.statusMessage = String(localized: "La lamiera nasce da uno schizzo orizzontale (piano XY o una faccia in piano).")
             return
         }
         guard let shape = sketch.extrudeCandidate?.profile?.points ?? (sketch.faces.count == 1 ? sketch.faces[0].outline : nil) else {
-            model.statusMessage = "Seleziona il profilo chiuso da usare come base della lamiera."
+            model.statusMessage = String(localized: "Seleziona il profilo chiuso da usare come base della lamiera.")
             return
         }
         let world = shape.map { plane.world($0) }
@@ -311,10 +311,10 @@ final class WorkspaceState {
         guard let target = chosen ?? Self.extrudableSketches(model).last else {
             if !model.evaluation().bodies.isEmpty {
                 // No sketch areas: the faces of the part (clicked by the user).
-                model.statusMessage = "Estrudi: clicca una faccia piana del pezzo."
+                model.statusMessage = String(localized: "Estrudi: clicca una faccia piana del pezzo.")
                 startPressPull(model: model)
             } else {
-                model.statusMessage = "Nessun profilo chiuso da estrudere: disegna uno schizzo (scegli il piano), poi Estrudi."
+                model.statusMessage = String(localized: "Nessun profilo chiuso da estrudere: disegna uno schizzo (scegli il piano), poi Estrudi.")
                 startSketch()
             }
             return
@@ -323,7 +323,7 @@ final class WorkspaceState {
         sketchCameraRequest = false          // the view stays where it is, as in Fusion
         tab = .solid                         // and the SOLIDO tools stay in the bar
         guard let session = sketch, let created = SketchCommands.extrude(sketch: session, model: model, workspace: self) else {
-            model.statusMessage = "«\(target.name)» non ha profili chiusi da estrudere."
+            model.statusMessage = String(localized: "«\(target.name)» non ha profili chiusi da estrudere.")
             exitSketch()
             return
         }
@@ -337,7 +337,7 @@ final class WorkspaceState {
             self.command = nil
             self.exitSketch()
         }
-        created.update("areas") { $0.kind = .reference(prompt: "Clicca le aree di uno schizzo o una faccia del pezzo", maxCount: 500) }
+        created.update("areas") { $0.kind = .reference(prompt: String(localized: "Clicca le aree di uno schizzo o una faccia del pezzo"), maxCount: 500) }
         // Nothing chosen beforehand: the user picks (unless a sketch was chosen from the menu).
         if chosen == nil {
             session.selectedSeeds = []
@@ -454,22 +454,27 @@ extension Feature.Kind {
 
     var typeName: String {
         switch self {
-        case .box: "Parallelepipedo"
-        case .cylinder: "Cilindro"
-        case .extrude: "Estrusione"
-        case .hole: "Foro"
-        case let .chamfer(s): s.profile == .round ? "Raccordo" : "Smusso"
-        case .sheetMetal: "Lamiera"
-        case .component: "Componente"
-        case .importedMesh: "Mesh importata"
-        case let .pattern(p): p.kind.label
-        case .split: "Dividi"
-        case .revolve: "Rivoluzione"
-        case .shell: "Guscio"
-        case .move: "Sposta"
-        case .joint: "Giunto"
-        case .combine: "Combina"
-        case .thread: "Filetto"
+        case .box: String(localized: "Parallelepipedo")
+        case .cylinder: String(localized: "Cilindro")
+        case .extrude: String(localized: "Estrusione")
+        case .hole: String(localized: "Foro")
+        case let .chamfer(s): s.profile == .round ? String(localized: "Raccordo") : String(localized: "Smusso")
+        case .sheetMetal: String(localized: "Lamiera")
+        case .component: String(localized: "Componente")
+        case .importedMesh: String(localized: "Mesh importata")
+        case let .pattern(p):
+            switch p.kind {
+            case .rectangular: String(localized: "Serie rettangolare")
+            case .circular: String(localized: "Serie circolare")
+            case .mirror: String(localized: "Specchio")
+            }
+        case .split: String(localized: "Dividi")
+        case .revolve: String(localized: "Rivoluzione")
+        case .shell: String(localized: "Guscio")
+        case .move: String(localized: "Sposta")
+        case .joint: String(localized: "Giunto")
+        case .combine: String(localized: "Combina")
+        case .thread: String(localized: "Filetto")
         }
     }
 }

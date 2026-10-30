@@ -26,15 +26,18 @@ enum ShellCommand {
         func feature(_ f: [CommandField]) -> Feature? {
             let (body, faces) = picked()
             guard let body else { return nil }
-            return Feature(name: "Guscio \(model.document.features.count + 1)",
+            return Feature(name: String(localized: "Guscio \(model.document.features.count + 1)"),
                            kind: .shell(ShellSpec(body: body, thickness: thickness(f), openFaces: faces)))
         }
         func preview(_ f: [CommandField]) {
             let (body, faces) = picked()
             session?.update("faces") { $0.value = .references(faces.map(\.rawValue)) }
             session?.update("what") {
-                $0.label = body == nil ? "Clicca le facce da lasciare aperte, o seleziona prima un corpo per un guscio chiuso."
-                    : faces.isEmpty ? "Nessuna faccia aperta: il corpo diventa cavo e chiuso." : "\(faces.count) facc\(faces.count == 1 ? "ia aperta" : "e aperte")."
+                $0.label = body == nil
+                    ? String(localized: "Clicca le facce da lasciare aperte, o seleziona prima un corpo per un guscio chiuso.")
+                    : faces.isEmpty
+                        ? String(localized: "Nessuna faccia aperta: il corpo diventa cavo e chiuso.")
+                        : (faces.count == 1 ? String(localized: "1 faccia aperta") : String(localized: "\(faces.count) facce aperte"))
             }
             guard let shell = feature(f) else { workspace.requestPreview(nil); return }
             var doc = model.document
@@ -47,24 +50,24 @@ enum ShellCommand {
             workspace.requestPreview(nil)
         }
         let created = CommandSession(
-            title: "Guscio", symbol: "cube.transparent",
+            title: String(localized: "Guscio"), symbol: "cube.transparent",
             fields: [
-                .init(id: "faces", label: "Facce aperte", kind: .reference(prompt: "Clicca le facce", maxCount: 100), value: .references([]),
-                      help: "Le facce da togliere (per esempio il sopra di una scatola). Nessuna: guscio chiuso del corpo selezionato"),
-                .init(id: "t", label: "Spessore", kind: .length(0.05...1000), value: .number(2), help: "Spessore delle pareti, verso l'interno"),
+                .init(id: "faces", label: String(localized: "Facce aperte"), kind: .reference(prompt: String(localized: "Clicca le facce"), maxCount: 100), value: .references([]),
+                      help: String(localized: "Le facce da togliere (per esempio il sopra di una scatola). Nessuna: guscio chiuso del corpo selezionato")),
+                .init(id: "t", label: String(localized: "Spessore"), kind: .length(0.05...1000), value: .number(2), help: String(localized: "Spessore delle pareti, verso l'interno")),
                 .init(id: "what", label: "", kind: .note(warning: false), value: .flag(false)),
             ],
             onPreview: preview,
             onCommit: { f in
                 defer { finish() }
-                guard let shell = feature(f) else { model.statusMessage = "Clicca le facce da aprire o seleziona un corpo."; return }
+                guard let shell = feature(f) else { model.statusMessage = String(localized: "Clicca le facce da aprire o seleziona un corpo."); return }
                 var doc = model.document
                 doc.features.append(shell)
                 if let issue = DesignEvaluator.evaluate(doc, revision: "check").issues.first(where: { $0.featureID == shell.id }) {
-                    model.statusMessage = "Guscio non riuscito: \(issue.message)"
+                    model.statusMessage = String(localized: "Guscio non riuscito: \(issue.message)")
                     return
                 }
-                model.edit("Guscio \(fmt(thickness(f))) mm", selected: .some(shell.id), changed: [shell.id]) { $0.features.append(shell) }
+                model.edit(String(localized: "Guscio \(fmt(thickness(f))) mm"), selected: .some(shell.id), changed: [shell.id]) { $0.features.append(shell) }
                 workspace.geoSelection = []
             },
             onCancel: { finish() })
@@ -84,9 +87,9 @@ enum ShellCommand {
             model.document.features[i].kind = .shell(s)
         }
         return CommandSession(
-            title: "Modifica \(original.name)", symbol: "cube.transparent",
-            fields: [.init(id: "t", label: "Spessore", kind: .length(0.05...1000), value: .number(spec.thickness)),
-                     .init(id: "note", label: "\(spec.openFaces.count) facce aperte", kind: .note(warning: false), value: .flag(false))],
+            title: String(localized: "Modifica \(original.name)"), symbol: "cube.transparent",
+            fields: [.init(id: "t", label: String(localized: "Spessore"), kind: .length(0.05...1000), value: .number(spec.thickness)),
+                     .init(id: "note", label: String(localized: "\(spec.openFaces.count) facce aperte"), kind: .note(warning: false), value: .flag(false))],
             onPreview: apply, onCommit: apply,
             onCancel: {
                 if let i = model.document.features.firstIndex(where: { $0.id == original.id }) { model.document.features[i] = original }

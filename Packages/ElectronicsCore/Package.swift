@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "ElectronicsCore",
-    platforms: [.macOS("27.0")],
+    platforms: [.macOS("14.0")],
     products: [
         .library(name: "ElectronicsCore", targets: ["ElectronicsCore"]),
         .executable(name: "electronics-check", targets: ["ElectronicsCheck"]),

@@ -3,6 +3,8 @@ import SwiftUI
 /// Open designs as tabs (Fusion style): click to switch, X to close (asks to save changes),
 /// + for a new design. Switching is instant: each tab keeps its evaluated design and camera.
 struct DesignTabs: View {
+    /// In the window toolbar the glass comes from the toolbar itself (macOS 26 groups items).
+    var inToolbar = false
     @Environment(DesignModel.self) private var model
     @Environment(ProjectLibrary.self) private var library
     @Environment(CircuitModel.self) private var circuits
@@ -10,6 +12,10 @@ struct DesignTabs: View {
     @State private var circuitHovered = false
 
     var body: some View {
+        if inToolbar { strip } else { strip.glassCapsule() }
+    }
+
+    private var strip: some View {
         HStack(spacing: 0) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 1) {
@@ -30,12 +36,12 @@ struct DesignTabs: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.Palette.textSecondary)
-            .help(circuits.isFrontmost ? "Nuovo circuito" : "Nuovo disegno in una nuova scheda (⌘N)")
+            .help(circuits.isFrontmost ? String(localized: "Nuovo circuito") : String(localized: "Nuovo disegno in una nuova scheda (⌘N)"))
             Spacer(minLength: 0)
         }
-        .frame(height: 28)
+        .frame(height: inToolbar ? 24 : 30)
         .padding(.horizontal, 6)
-        .background(Theme.Palette.canvas)
+        .clipShape(Capsule(style: .continuous))
     }
 
     /// The circuit open in CIRCUITI: its file name, a dot for unsaved changes, X to close it.
@@ -67,7 +73,7 @@ struct DesignTabs: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.Palette.accent).frame(height: 2).padding(.horizontal, 6) }
         .contentShape(Rectangle())
         .onHover { circuitHovered = $0 }
-        .help(circuits.url?.path.replacingOccurrences(of: ProjectLibraryHome.path, with: "~") ?? "\(circuits.title) — non ancora salvato")
+        .help(circuits.url?.path.replacingOccurrences(of: ProjectLibraryHome.path, with: "~") ?? String(localized: "\(circuits.title) — non ancora salvato"))
     }
 
     private func tabView(_ tab: ProjectLibrary.Tab) -> some View {
@@ -76,7 +82,7 @@ struct DesignTabs: View {
         let dirty = active ? library.isDirty(model) : tab.isDirty
         return HStack(spacing: 6) {
             Image(systemName: "cube").font(.system(size: 10)).foregroundStyle(active ? Theme.Palette.accent : Theme.Palette.textSecondary)
-            Text(name).font(.system(size: 11.5, weight: active ? .semibold : .regular)).lineLimit(1)
+            Text(LocalizedStringKey(name)).font(.system(size: 11.5, weight: active ? .semibold : .regular)).lineLimit(1)
             ZStack {
                 // Unsaved changes: a dot, turning into the X under the mouse.
                 if dirty && hovered != tab.id {

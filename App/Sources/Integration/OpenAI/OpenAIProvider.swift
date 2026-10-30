@@ -27,12 +27,12 @@ final class OpenAIProvider: AssistantProvider {
     }
     var modelName: String { Self.models.first { $0.id == modelID }?.name ?? modelID }
     var isConfigured: Bool { hasKey }
-    var setupHint: String { credentialError ?? "Inserisci la chiave API OpenAI in Impostazioni → Assistente. Il login ChatGPT non configura automaticamente questa chiave." }
+    var setupHint: String { credentialError ?? String(localized: "Inserisci la chiave API OpenAI in Impostazioni → Assistente. Il login ChatGPT non configura automaticamente questa chiave.") }
 
     func setAPIKey(_ key: String?) {
         let value = key?.trimmingCharacters(in: .whitespacesAndNewlines)
         let saved = Keychain.write(Self.keychainService, value: value)
-        credentialError = saved ? nil : "Impossibile salvare la chiave OpenAI nel Portachiavi."
+        credentialError = saved ? nil : String(localized: "Impossibile salvare la chiave OpenAI nel Portachiavi.")
         hasKey = !(Keychain.read(Self.keychainService) ?? "").isEmpty
         reset()
     }

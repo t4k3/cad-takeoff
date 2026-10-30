@@ -57,23 +57,23 @@ enum ChamferCommand {
         let editHandle = original == nil ? nil : handleEdge()
 
         let fields: [CommandField] = [
-            .init(id: "edges", label: "Spigoli", kind: .reference(prompt: "Clicca gli spigoli", maxCount: 500), value: edgeValue(),
+            .init(id: "edges", label: String(localized: "Spigoli"), kind: .reference(prompt: String(localized: "Clicca gli spigoli"), maxCount: 500), value: edgeValue(),
                   help: original == nil ? "Clicca uno spigolo per aggiungerlo, cliccalo di nuovo per toglierlo" : "Gli spigoli restano quelli scelti alla creazione"),
-            .init(id: "chain", label: "Catena tangente", kind: .toggle, value: .flag(true),
-                  help: "Un clic prende anche gli spigoli che proseguono in tangenza (il contorno di un'asola, il bordo di un cerchio)",
+            .init(id: "chain", label: String(localized: "Catena tangente"), kind: .toggle, value: .flag(true),
+                  help: String(localized: "Un clic prende anche gli spigoli che proseguono in tangenza (il contorno di un'asola, il bordo di un cerchio)"),
                   isHidden: original != nil),
-            .init(id: "profile", label: "Forma", kind: .choice(profiles.map(\.label)), value: .index(profiles.firstIndex(of: spec.profile) ?? 0),
-                  help: "Piatto: smusso a 45° o con due distanze/angolo. Tondo: raccordo a raggio costante."),
-            .init(id: "mode", label: "Misura", kind: .choice(modes.map(\.label)), value: .index(modes.firstIndex(of: spec.mode) ?? 0),
-                  help: "Solo per la forma piatta"),
+            .init(id: "profile", label: String(localized: "Forma"), kind: .choice(profiles.map(\.label)), value: .index(profiles.firstIndex(of: spec.profile) ?? 0),
+                  help: String(localized: "Piatto: smusso a 45° o con due distanze/angolo. Tondo: raccordo a raggio costante.")),
+            .init(id: "mode", label: String(localized: "Misura"), kind: .choice(modes.map(\.label)), value: .index(modes.firstIndex(of: spec.mode) ?? 0),
+                  help: String(localized: "Solo per la forma piatta")),
             .init(id: "d", label: spec.profile == .round ? "Raggio" : "Distanza", kind: .length(0.01...1000), value: .number(spec.distance),
-                  help: "Puoi anche trascinare la freccia sullo spigolo"),
-            .init(id: "d2", label: "Distanza 2", kind: .length(0.01...1000), value: .number(spec.distance2),
-                  help: "Solo con «Due distanze»: arretramento sulla seconda faccia"),
-            .init(id: "angle", label: "Angolo", kind: .angle(1...89), value: .number(spec.angle),
-                  help: "Solo con «Distanza e angolo»: angolo tra lo smusso e la prima faccia"),
-            .init(id: "flip", label: "Inverti lati", kind: .toggle, value: .flag(spec.flip),
-                  help: "Scambia le due facce (conta con «Due distanze» e «Distanza e angolo»)"),
+                  help: String(localized: "Puoi anche trascinare la freccia sullo spigolo")),
+            .init(id: "d2", label: String(localized: "Distanza 2"), kind: .length(0.01...1000), value: .number(spec.distance2),
+                  help: String(localized: "Solo con «Due distanze»: arretramento sulla seconda faccia")),
+            .init(id: "angle", label: String(localized: "Angolo"), kind: .angle(1...89), value: .number(spec.angle),
+                  help: String(localized: "Solo con «Distanza e angolo»: angolo tra lo smusso e la prima faccia")),
+            .init(id: "flip", label: String(localized: "Inverti lati"), kind: .toggle, value: .flag(spec.flip),
+                  help: String(localized: "Scambia le due facce (conta con «Due distanze» e «Distanza e angolo»)")),
         ]
 
         func read(_ f: [CommandField]) -> ChamferSpec {
@@ -147,7 +147,7 @@ enum ChamferCommand {
         }
 
         session = CommandSession(
-            title: original == nil ? "Raccordo" : "Modifica \(original!.name)",
+            title: original == nil ? String(localized: "Raccordo") : String(localized: "Modifica \(original!.name)"),
             symbol: "circle.bottomhalf.filled",
             fields: fields,
             onPreview: preview,
@@ -160,7 +160,7 @@ enum ChamferCommand {
                     return
                 }
                 let (doc, feature) = document(with: s)
-                model.edit(original == nil ? s.title : "Modifica \(feature.name)", selected: .some(original == nil ? nil : feature.id),
+                model.edit(original == nil ? s.title : String(localized: "Modifica \(feature.name)"), selected: .some(original == nil ? nil : feature.id),
                            changed: [feature.id]) { $0 = doc }
                 if original == nil { workspace.geoSelection = [] }
                 let problems = Set(model.evaluation().issues.filter { $0.featureID == feature.id }.map(\.message))

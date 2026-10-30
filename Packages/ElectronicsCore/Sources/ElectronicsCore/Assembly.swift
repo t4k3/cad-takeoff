@@ -21,7 +21,7 @@ public struct AssemblyData: Codable, Equatable, Sendable {
     public var connectivity: BoardConnectivity
     public var issues: [ElectronicsIssue]
     /// E0 verifies assembly data only; it has no copper/DRC/fabrication release engine yet.
-    public let fabricationReady: Bool = false
+    public var fabricationReady: Bool { false }
 }
 
 public enum ElectronicsAssembly {

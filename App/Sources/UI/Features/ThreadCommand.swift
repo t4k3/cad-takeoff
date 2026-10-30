@@ -42,7 +42,7 @@ enum ThreadCommand {
                 doc.features[i].kind = .thread(s)
                 return (doc, doc.features[i])
             }
-            let f = Feature(name: "Filetto \(s.size ?? "")".trimmingCharacters(in: .whitespaces), kind: .thread(s))
+            let f = Feature(name: String(localized: "Filetto \(s.size ?? "")").trimmingCharacters(in: .whitespaces), kind: .thread(s))
             doc.features.append(f)
             return (doc, f)
         }
@@ -51,11 +51,11 @@ enum ThreadCommand {
             session?.update("face") { $0.value = .references(face.map { [$0.0.rawValue] } ?? []) }
             session?.update("what") {
                 guard let (_, surface) = face, case let .cylinder(_, _, r) = surface else {
-                    $0.label = "Clicca una faccia cilindrica: un perno (filetto esterno) o la parete di un foro (interno)."
+                    $0.label = String(localized: "Clicca una faccia cilindrica: un perno (filetto esterno) o la parete di un foro (interno).")
                     return
                 }
                 let auto = ThreadSpec.size(forDiameter: 2 * r, inside: false)?.name ?? "—"
-                $0.label = String(format: "Ø %.2f mm · misura dal diametro: %@ (su un foro vale il diametro di nocciolo)", 2 * r, auto)
+                $0.label = String(format: String(localized: "Ø %.2f mm · misura dal diametro: %@ (su un foro vale il diametro di nocciolo)"), 2 * r, auto)
             }
             guard let s = spec(f) else { workspace.requestPreview(nil); return }
             workspace.requestPreview(document(s).0)
@@ -66,26 +66,26 @@ enum ThreadCommand {
         }
         let initialSize = fixed?.size.flatMap { sizes.firstIndex(of: $0) } ?? 0
         let created = CommandSession(
-            title: original == nil ? "Filetto" : "Modifica \(original!.name)", symbol: "screwdriver",
+            title: original == nil ? String(localized: "Filetto") : String(localized: "Modifica \(original!.name)"), symbol: "screwdriver",
             fields: [
-                .init(id: "face", label: "Faccia", kind: .reference(prompt: "Clicca un cilindro", maxCount: 1), value: .references([]),
-                      help: "Un perno o una sporgenza tonda (filetto esterno, vite) o la parete di un foro (filetto interno, madrevite)"),
-                .init(id: "size", label: "Misura", kind: .choice(sizes), value: .index(initialSize),
-                      help: "Filetto metrico ISO a passo grosso; «Dal diametro» sceglie quella del cilindro"),
-                .init(id: "allow", label: "Compensazione stampa", kind: .length(0...2), value: .number(fixed?.printAllowance ?? 0.2),
-                      help: "Gioco per la stampa: un filetto esterno si assottiglia, uno interno si allarga (tipico 0,2–0,4 mm in FDM)"),
+                .init(id: "face", label: String(localized: "Faccia"), kind: .reference(prompt: String(localized: "Clicca un cilindro"), maxCount: 1), value: .references([]),
+                      help: String(localized: "Un perno o una sporgenza tonda (filetto esterno, vite) o la parete di un foro (filetto interno, madrevite)")),
+                .init(id: "size", label: String(localized: "Misura"), kind: .choice(sizes), value: .index(initialSize),
+                      help: String(localized: "Filetto metrico ISO a passo grosso; «Dal diametro» sceglie quella del cilindro")),
+                .init(id: "allow", label: String(localized: "Compensazione stampa"), kind: .length(0...2), value: .number(fixed?.printAllowance ?? 0.2),
+                      help: String(localized: "Gioco per la stampa: un filetto esterno si assottiglia, uno interno si allarga (tipico 0,2–0,4 mm in FDM)")),
                 .init(id: "what", label: "", kind: .note(warning: false), value: .flag(false)),
             ],
             onPreview: preview,
             onCommit: { f in
                 defer { finish() }
-                guard let s = spec(f) else { model.statusMessage = "Clicca una faccia cilindrica da filettare."; return }
+                guard let s = spec(f) else { model.statusMessage = String(localized: "Clicca una faccia cilindrica da filettare."); return }
                 let (doc, feature) = document(s)
                 if let issue = DesignEvaluator.evaluate(doc, revision: "check").issues.first(where: { $0.featureID == feature.id }) {
-                    model.statusMessage = "Filetto non riuscito: \(issue.message)"
+                    model.statusMessage = String(localized: "Filetto non riuscito: \(issue.message)")
                     return
                 }
-                model.edit(original == nil ? feature.name : "Modifica \(feature.name)", selected: .some(feature.id), changed: [feature.id]) { $0 = doc }
+                model.edit(original == nil ? feature.name : String(localized: "Modifica \(feature.name)"), selected: .some(feature.id), changed: [feature.id]) { $0 = doc }
                 workspace.geoSelection = []
             },
             onCancel: { finish() })

@@ -13,63 +13,22 @@ struct Ribbon: View {
     @State private var showLayers = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 2) {
-                Button { library.showHome = true } label: { Label("Home", systemImage: "house") }
-                    .buttonStyle(IconButtonStyle())
-                    .help("Home: progetti e disegni (⇧⌘H)")
-                Text(library.currentName + (library.isDirty(model) ? " •" : ""))
-                    .font(.system(size: 11, weight: .semibold)).lineLimit(1)
-                    .foregroundStyle(Theme.Palette.textSecondary)
-                    .padding(.horizontal, 6)
-                    .help(library.currentURL?.path ?? "Disegno non ancora salvato")
-                Button { UndoRouter.undo(model) } label: { Label("Annulla", systemImage: "arrow.uturn.backward") }
-                    .buttonStyle(IconButtonStyle())
-                    .disabled(!UndoRouter.canUndo(model))
-                    .help(UndoRouter.undoTitle(model) + " (⌘Z)")
-                Button { UndoRouter.redo(model) } label: { Label("Ripeti", systemImage: "arrow.uturn.forward") }
-                    .buttonStyle(IconButtonStyle())
-                    .disabled(!UndoRouter.canRedo(model))
-                    .help(UndoRouter.redoTitle(model) + " (⇧⌘Z)")
-                Divider().frame(height: 14)
-                // SCHIZZO only while a sketch is open (as in Fusion): it starts from SOLIDO › Schizzo.
-                ForEach(WorkspaceState.Tab.allCases.filter { $0 != .sketch || workspace.sketch != nil }) { tab in
-                    TabButton(title: tab.rawValue, isSelected: workspace.tab == tab) { workspace.tab = tab }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .center, spacing: 0) {
+                switch workspace.tab {
+                case .solid: solidTools
+                case .sketch: if workspace.sketch != nil { sketchTools } else { solidTools }
+                case .sheetMetal: sheetMetalTools
+                case .print: printTools
+                case .circuits: circuitTools
                 }
-                Spacer()
-                Button { workspace.showAssistant() } label: {
-                    Label("Assistente", systemImage: "sparkles")
-                }.buttonStyle(IconButtonStyle(isActive: workspace.showInspector && workspace.sideTab == .assistant))
-                    .help("Assistente di progettazione (⌘L)")
-                    .keyboardShortcut("l", modifiers: .command)
-                Button { workspace.showBrowser.toggle() } label: {
-                    Label("Browser", systemImage: "sidebar.left")
-                }.buttonStyle(IconButtonStyle(isActive: workspace.showBrowser)).help("Mostra/nascondi Browser")
-                Button { workspace.showInspector.toggle() } label: {
-                    Label("Parametri", systemImage: "sidebar.right")
-                }.buttonStyle(IconButtonStyle(isActive: workspace.showInspector)).help("Mostra/nascondi Parametri")
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 8)
-            .frame(height: Theme.Metrics.tabBarHeight)
-            .background(Theme.Palette.panel)
-
-            // Scrolls sideways when the window is narrower than the tools (no bar shown).
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 0) {
-                    switch workspace.tab {
-                    case .solid: solidTools
-                    case .sketch: if workspace.sketch != nil { sketchTools } else { solidTools }
-                    case .sheetMetal: sheetMetalTools
-                    case .print: printTools
-                    case .circuits: circuitTools
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 8)
-            }
-            .frame(height: Theme.Metrics.ribbonHeight - Theme.Metrics.tabBarHeight)
-            .background(Theme.Palette.ribbon)
         }
+        .frame(height: 58)
+        .clipShape(Capsule(style: .continuous))
+        .glassCapsule()
     }
 
     @ViewBuilder private var solidTools: some View {
@@ -166,10 +125,10 @@ struct Ribbon: View {
         }
         ToolGroup("SVILUPPO") {
             Button { workspace.showFlat.toggle() } label: {
-                Label(workspace.showFlat ? "Piegato" : "Sviluppo", systemImage: workspace.showFlat ? "cube" : "square.dashed")
+                Label(workspace.showFlat ? String(localized: "Piegato") : String(localized: "Sviluppo"), systemImage: workspace.showFlat ? "cube" : "square.dashed")
             }
             .disabled(!model.hasSheetMetal)
-            .help(workspace.showFlat ? "Torna al pezzo piegato" : "Mostra lo sviluppo in piano con le linee di piega")
+            .help(workspace.showFlat ? String(localized: "Torna al pezzo piegato") : String(localized: "Mostra lo sviluppo in piano con le linee di piega"))
             Button { model.exportFlatDXFWithPanel(selectedSheet?.id) } label: { Label("DXF", systemImage: "square.and.arrow.up") }
                 .disabled(!model.hasSheetMetal)
                 .help("Esporta lo sviluppo in DXF (mm): contorno di taglio e linee di piega per il laser e la piegatrice")
@@ -183,14 +142,18 @@ struct Ribbon: View {
         if let sketch = workspace.sketch {
             ToolGroup("DISEGNA") {
                 ForEach(SketchSession.Tool.drawing) { tool in
-                    Button { sketch.constraintTool = nil; sketch.tool = tool } label: { Label(tool.rawValue, systemImage: tool.symbol) }
+                    Button { sketch.constraintTool = nil; sketch.tool = tool } label: {
+                        Label(LocalizedStringKey(tool.rawValue), systemImage: tool.symbol)
+                    }
                         .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool && sketch.constraintTool == nil, tint: Theme.Palette.sketch))
                         .help(tool.hint + (tool.key.map { " (\($0.uppercased()))" } ?? ""))
                 }
             }
             ToolGroup("MODIFICA") {
                 ForEach(SketchSession.Tool.modify) { tool in
-                    Button { sketch.constraintTool = nil; sketch.tool = tool } label: { Label(tool.rawValue, systemImage: tool.symbol) }
+                    Button { sketch.constraintTool = nil; sketch.tool = tool } label: {
+                        Label(LocalizedStringKey(tool.rawValue), systemImage: tool.symbol)
+                    }
                         .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool && sketch.constraintTool == nil, tint: Theme.Palette.sketch))
                         .help(tool.hint + (tool.key.map { " (\($0.uppercased()))" } ?? ""))
                 }
@@ -206,7 +169,7 @@ struct Ribbon: View {
                     Label("Vincoli", systemImage: sketch.constraintTool?.symbol ?? "link")
                 }
                 .buttonStyle(RibbonButtonStyle(isActive: sketch.constraintTool != nil, tint: Theme.Palette.sketch))
-                .help(sketch.constraintTool.map { "\($0.rawValue): \($0.hint)" } ?? "Vincoli geometrici: orizzontale/verticale, coincidente, parallelo, tangente…")
+                .help(sketch.constraintTool.map { "\($0.title): \($0.hint)" } ?? String(localized: "Vincoli geometrici: orizzontale/verticale, coincidente, parallelo, tangente…"))
                 .popover(isPresented: $showConstraints, arrowEdge: .bottom) {
                     VStack(alignment: .leading, spacing: 1) {
                         ForEach(ConstraintTool.allCases) { c in
@@ -214,7 +177,7 @@ struct Ribbon: View {
                                 sketch.constraintTool = sketch.constraintTool == c ? nil : c
                                 showConstraints = false
                             } label: {
-                                Label(c.rawValue, systemImage: c.symbol)
+                                Label(LocalizedStringKey(c.rawValue), systemImage: c.symbol)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 8).padding(.vertical, 4)
                                     .background(RoundedRectangle(cornerRadius: 5)
@@ -236,7 +199,7 @@ struct Ribbon: View {
                     if [.fillet, .chamfer, .offset].contains(sketch.tool) {
                         let tool = sketch.tool
                         HStack(spacing: 4) {
-                            Text(tool == .fillet ? "Raggio" : "Distanza")
+                            Text(tool == .fillet ? String(localized: "Raggio") : String(localized: "Distanza"))
                             TextField("", value: Binding(get: { tool == .fillet ? sketch.filletRadius : tool == .chamfer ? sketch.chamferDistance : sketch.offsetDistance },
                                                          set: { v in
                                                              let v = max(0.01, v)
@@ -266,7 +229,7 @@ struct Ribbon: View {
             ToolGroup("CREA") {
                 Button { workspace.extrudeSketch(model: model) } label: { Label("Estrudi", systemImage: "square.stack.3d.up") }
                     .disabled(sketch.faces.isEmpty || workspace.command != nil)
-                    .help(sketch.faces.isEmpty ? "Disegna un profilo chiuso" : "Estrudi: clicca le aree da estrudere (E)")
+                    .help(sketch.faces.isEmpty ? String(localized: "Disegna un profilo chiuso") : String(localized: "Estrudi: clicca le aree da estrudere (E)"))
                 Button { workspace.revolveSketch(model: model) } label: { Label("Rivoluzione", systemImage: "arrow.triangle.2.circlepath") }
                     .disabled(sketch.faces.isEmpty || workspace.command != nil)
                     .help("Fa girare le aree intorno a una linea dello schizzo (meglio di costruzione): alberi, pulegge, perni")
@@ -303,7 +266,7 @@ struct Ribbon: View {
                 .help("Apri un circuito (.ftkc), o lo ZIP di una scheda dal produttore per importarla")
             Button { circuits.saveWithPanel() } label: { Label("Salva", systemImage: "square.and.arrow.down") }
                 .disabled(circuits.document == nil)
-                .help(circuits.url.map { "Salva in \($0.path) (⌘S)" } ?? "Salva il circuito (.ftkc): scegli nome e cartella (⌘S)")
+                .help(circuits.url.map { String(localized: "Salva in \($0.path) (⌘S)") } ?? String(localized: "Salva il circuito (.ftkc): scegli nome e cartella (⌘S)"))
             Button { circuits.saveWithPanel(asNew: true) } label: { Label("Salva come", systemImage: "square.and.arrow.down.on.square") }
                 .disabled(circuits.document == nil)
                 .help("Salva una copia con un altro nome o in un'altra cartella (⇧⌘S)")
@@ -326,10 +289,10 @@ struct Ribbon: View {
                 Button { circuits.schematicTool = .select; circuits.showAddComponent = true } label: { Label("Componente", systemImage: "cpu") }
                     .disabled(circuits.document == nil)
                     .help("Aggiungi un componente allo schema: scegli, poi clic sul foglio")
-                schematicToolButton(.wire, "Filo", "line.diagonal", "Collega pin, giunzioni e fili: clic sul pin di partenza, clic nel vuoto per le pieghe, clic sull'arrivo (Esc annulla)")
-                schematicToolButton(.label, "Etichetta", "tag", "Dai un nome alla rete di un pin: lo stesso nome altrove è la stessa rete")
-                schematicToolButton(.noConnect, "NC", "xmark", "Segna un pin da lasciare scollegato")
-                schematicToolButton(.junction, "Giunzione", "circle.fill", "Una giunzione su un filo, per ramificare")
+                schematicToolButton(.wire, String(localized: "Filo"), "line.diagonal", String(localized: "Collega pin, giunzioni e fili: clic sul pin di partenza, clic nel vuoto per le pieghe, clic sull'arrivo (Esc annulla)"))
+                schematicToolButton(.label, String(localized: "Etichetta"), "tag", String(localized: "Dai un nome alla rete di un pin: lo stesso nome altrove è la stessa rete"))
+                schematicToolButton(.noConnect, String(localized: "NC"), "xmark", String(localized: "Segna un pin da lasciare scollegato"))
+                schematicToolButton(.junction, String(localized: "Giunzione"), "circle.fill", String(localized: "Una giunzione su un filo, per ramificare"))
             }
             ToolGroup("SIMBOLO") {
                 Button { if let c = circuits.schematicSelection?.componentID { circuits.rotateSymbol(c) } } label: { Label("Ruota", systemImage: "rotate.right") }
@@ -482,28 +445,32 @@ struct Ribbon: View {
     }
 }
 
-private struct TabButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    @State private var hovering = false
+/// The workspace modes (SOLIDO, LAMIERA, ASSIEME, STAMPA, CIRCUITI) as a glass segmented bar.
+struct ModeSwitcher: View {
+    /// In the window toolbar the glass comes from the toolbar itself (macOS 26 groups items).
+    var inToolbar = false
+    @Environment(WorkspaceState.self) private var workspace
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                .tracking(0.6)
-                .foregroundStyle(isSelected ? Theme.Palette.accent : Theme.Palette.textSecondary)
-                .padding(.horizontal, 12)
-                .frame(maxHeight: .infinity)
-                .overlay(alignment: .bottom) {
-                    Rectangle().fill(isSelected ? Theme.Palette.accent : .clear).frame(height: 2)
-                }
-                .background(hovering && !isSelected ? Theme.Palette.hover : .clear)
-                .contentShape(Rectangle())
+        if inToolbar {
+            picker
+        } else {
+            picker.padding(3).glassCapsule()
         }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
+    }
+
+    private var picker: some View {
+        @Bindable var workspace = workspace
+        return Picker("Modalità", selection: $workspace.tab) {
+            // SCHIZZO only while a sketch is open (as in Fusion): it starts from SOLIDO › Schizzo.
+            ForEach(WorkspaceState.Tab.allCases.filter { $0 != .sketch || workspace.sketch != nil }) { tab in
+                Text(LocalizedStringKey(tab.rawValue)).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .controlSize(.small)
+        .fixedSize()
     }
 }
 
@@ -520,12 +487,12 @@ struct ToolGroup<Content: View>: View {
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 1) {
-                HStack(spacing: 2) { content }.buttonStyle(RibbonButtonStyle())
-                Text(title).font(.system(size: 9, weight: .semibold)).tracking(0.5)
+                HStack(spacing: 1) { content }.buttonStyle(RibbonButtonStyle())
+                Text(LocalizedStringKey(title)).font(.system(size: 8.5, weight: .semibold)).tracking(0.4)
                     .foregroundStyle(Theme.Palette.textSecondary)
             }
-            .padding(.horizontal, 6)
-            Rectangle().fill(Theme.Palette.separator).frame(width: 1).padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            Rectangle().fill(Theme.Palette.separator).frame(width: 1).padding(.vertical, 10)
         }
     }
 }

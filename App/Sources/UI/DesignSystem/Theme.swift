@@ -12,11 +12,15 @@ enum Theme {
         static let danger = Color(nsColor: .systemRed)
         static let success = Color(nsColor: .systemGreen)
 
+        /// Behind the viewport and the glass islands: a soft neutral, not an opaque wall.
         static let canvas = dynamic(light: 0xE9ECEF, dark: 0x1E2226)
-        static let panel = dynamic(light: 0xF7F8F9, dark: 0x2A2F34)
-        static let panelRaised = dynamic(light: 0xFFFFFF, dark: 0x343A40)
-        static let ribbon = dynamic(light: 0xFDFDFD, dark: 0x30353A)
-        static let separator = dynamic(light: 0xD5D9DD, dark: 0x41474D)
+        /// Surfaces that sit *inside* a glass island (rows, chips): nearly clear, so the
+        /// material shows through and the panel keeps one look in light and dark.
+        static let panel = dynamic(light: 0xF7F8F9, dark: 0x2A2F34).opacity(0.0)
+        static let panelRaised = dynamic(light: 0xFFFFFF, dark: 0x343A40).opacity(0.55)
+        /// Top command bar: no opaque fill (the glass capsule is its background).
+        static let ribbon = dynamic(light: 0xFDFDFD, dark: 0x30353A).opacity(0.0)
+        static let separator = dynamic(light: 0xD5D9DD, dark: 0x41474D).opacity(0.6)
         static let textPrimary = Color(nsColor: .labelColor)
         static let textSecondary = Color(nsColor: .secondaryLabelColor)
         static let hover = dynamic(light: 0x000000, dark: 0xFFFFFF).opacity(0.06)
@@ -55,6 +59,92 @@ enum Theme {
     }
 }
 
+// MARK: - Liquid Glass (macOS HIG)
+
+/// The floating islands: panels and capsules drawn in Liquid Glass, over the live viewport.
+/// One look in light and dark: the system material does the blurring and the vibrancy, the
+/// gradient stroke gives the edge its thickness, the soft shadow lifts it off the part.
+enum LiquidGlass {
+    enum Radius {
+        static let small: CGFloat = 8
+        static let medium: CGFloat = 12
+        static let large: CGFloat = 16
+        static let dock: CGFloat = 18
+    }
+
+    /// Rounded glass card: browser, inspector/assistant, command panel, dock.
+    struct PanelSurface: ViewModifier {
+        var cornerRadius: CGFloat = Radius.large
+        @Environment(\.colorScheme) private var colorScheme
+
+        func body(content: Content) -> some View {
+            let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            if #available(macOS 26.0, *) {
+                content
+                    .glassEffect(.regular, in: shape)
+                    .overlay(shape.strokeBorder(edge, lineWidth: 0.8))
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.13), radius: 16, x: 0, y: 8)
+            } else {
+                content
+                    .background(.regularMaterial, in: shape)
+                    .overlay(shape.strokeBorder(edge, lineWidth: 0.8))
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.13), radius: 16, x: 0, y: 8)
+            }
+        }
+
+        /// Top-left highlight, bottom-right shade: a pane of glass catching the light.
+        private var edge: LinearGradient {
+            LinearGradient(
+                colors: colorScheme == .dark
+                    ? [.white.opacity(0.20), .white.opacity(0.05), .black.opacity(0.20)]
+                    : [.white.opacity(0.85), .white.opacity(0.35), .black.opacity(0.06)],
+                startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+
+    /// Compact capsules: mode switcher, tool strip, timeline, status.
+    struct CapsuleSurface: ViewModifier {
+        @Environment(\.colorScheme) private var colorScheme
+
+        func body(content: Content) -> some View {
+            let shape = SwiftUI.Capsule(style: .continuous)
+            if #available(macOS 26.0, *) {
+                content
+                    .glassEffect(.regular, in: shape)
+                    .overlay(capsuleEdge)
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.30 : 0.12), radius: 12, x: 0, y: 5)
+            } else {
+                content
+                    .background(.regularMaterial, in: shape)
+                    .overlay(capsuleEdge)
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.30 : 0.12), radius: 12, x: 0, y: 5)
+            }
+        }
+
+        private var capsuleEdge: some View {
+            let shape = SwiftUI.Capsule(style: .continuous)
+            return shape.strokeBorder(
+                LinearGradient(colors: colorScheme == .dark
+                                ? [.white.opacity(0.25), .white.opacity(0.07)]
+                                : [.white.opacity(0.9), .white.opacity(0.35)],
+                               startPoint: .top, endPoint: .bottom),
+                lineWidth: 0.7)
+        }
+    }
+}
+
+extension View {
+    /// A floating glass island (rounded card).
+    func glassPanel(cornerRadius: CGFloat = LiquidGlass.Radius.large) -> some View {
+        modifier(LiquidGlass.PanelSurface(cornerRadius: cornerRadius))
+    }
+
+    /// A floating glass capsule (mode bar, tool strip, timeline, status).
+    func glassCapsule() -> some View {
+        modifier(LiquidGlass.CapsuleSurface())
+    }
+}
+
 // MARK: - Reusable pieces
 
 /// Header shared by every side panel.
@@ -69,18 +159,17 @@ struct PanelHeader<Trailing: View>: View {
 
     var body: some View {
         HStack {
-            Text(title).font(Theme.Typeface.panelTitle).foregroundStyle(Theme.Palette.textSecondary)
+            Text(LocalizedStringKey(title)).font(Theme.Typeface.panelTitle).foregroundStyle(Theme.Palette.textSecondary)
             Spacer()
             trailing
         }
         .padding(.horizontal, Theme.Metrics.pad)
         .frame(height: 28)
-        .background(Theme.Palette.panel)
-        .overlay(alignment: .bottom) { Divider() }
+        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
     }
 }
 
-/// Large icon-over-label button used in the ribbon.
+/// Tool button in the floating command bar: SF Symbol over a one-word label, compact.
 struct RibbonButtonStyle: ButtonStyle {
     var isActive = false
     var tint = Theme.Palette.accent
@@ -90,10 +179,10 @@ struct RibbonButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .labelStyle(RibbonLabelStyle(tint: isActive ? tint : Theme.Palette.textPrimary))
-            .frame(minWidth: 52, minHeight: 50)
+            .frame(minWidth: 46, minHeight: 42)
             .padding(.horizontal, 4)
             .background(
-                RoundedRectangle(cornerRadius: Theme.Metrics.corner)
+                RoundedRectangle(cornerRadius: LiquidGlass.Radius.small, style: .continuous)
                     .fill(isActive ? tint.opacity(0.16)
                           : configuration.isPressed ? Theme.Palette.hover.opacity(2)
                           : hovering ? Theme.Palette.hover : .clear)
@@ -107,10 +196,10 @@ struct RibbonButtonStyle: ButtonStyle {
 private struct RibbonLabelStyle: LabelStyle {
     var tint: Color
     func makeBody(configuration: Configuration) -> some View {
-        VStack(spacing: 3) {
-            configuration.icon.font(.system(size: 20, weight: .regular)).foregroundStyle(tint)
-                .frame(height: 24)
-            configuration.title.font(Theme.Typeface.toolLabel).foregroundStyle(Theme.Palette.textPrimary)
+        VStack(spacing: 2) {
+            configuration.icon.font(.system(size: 16, weight: .regular)).foregroundStyle(tint)
+                .frame(height: 20)
+            configuration.title.font(.system(size: 9.5)).foregroundStyle(Theme.Palette.textPrimary)
                 .lineLimit(1)
         }
     }
@@ -144,9 +233,9 @@ struct DimensionField: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text(title).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
+            Text(LocalizedStringKey(title)).font(Theme.Typeface.body).foregroundStyle(Theme.Palette.textSecondary)
             Spacer(minLength: 8)
-            TextField(title, value: $value, format: .number.precision(.fractionLength(0...3)))
+            TextField(LocalizedStringKey(title), value: $value, format: .number.precision(.fractionLength(0...3)))
                 .labelsHidden()
                 .multilineTextAlignment(.trailing)
                 .font(Theme.Typeface.mono)
@@ -161,8 +250,14 @@ struct DimensionField: View {
 extension View {
     /// Floating translucent chip used for viewport overlays (nav bar, hints, ViewCube frame).
     /// Controls floating over the viewport: Liquid Glass (macOS 26), the part seen through it.
+    @ViewBuilder
     func overlayChip() -> some View {
-        padding(4)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        if #available(macOS 26.0, *) {
+            padding(4)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        } else {
+            padding(4)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
     }
 }

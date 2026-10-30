@@ -1,70 +1,80 @@
 import CADCore
 import SwiftUI
 
-/// Fusion-style workspace: ribbon on top, browser left, viewport centre,
-/// inspector right, timeline and status bar at the bottom.
+/// Workspace in the macOS HIG style: the 3D viewport fills the window, and the panels are
+/// floating Liquid Glass islands over it — document tabs (top-left), modes (top centre),
+/// tools (top centre row), browser (left), parameters/assistant (right), timeline and
+/// status capsules at the bottom.
 struct WorkspaceView: View {
     @Environment(DesignModel.self) private var model
     @Environment(ProjectLibrary.self) private var library
     @Environment(SketchStore.self) private var sketches
     @Environment(CircuitModel.self) private var circuits
     @Environment(AssistantSession.self) private var assistant
-    @State private var workspace = WorkspaceState()
+    @Environment(WorkspaceState.self) private var workspace
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     @State private var viewport = ViewportState()
 
+    /// Geometry of the floating chrome, so the viewport overlays can keep clear of it.
+    private enum Glass {
+        static let inset: CGFloat = 12
+        /// Tool dock, first row under the window title bar: document tabs and modes now live in
+        /// the title bar itself (Xcode style), so nothing else sits above the dock.
+        static let dockY: CGFloat = 8
+        static let dockHeight: CGFloat = 58
+        /// One full-width bottom bar: navigation buttons, timeline, design stats and status.
+        static let barHeight: CGFloat = 44
+        /// Equal to `dockY`, so the side panels have the same margin to the title bar above
+        /// and to the bottom bar below.
+        static let bottomGap: CGFloat = 8
+        static let browserWidth: CGFloat = 248
+        static let inspectorWidth: CGFloat = 300
+
+        static var topRoom: CGFloat { dockY + dockHeight + 8 }
+        static var bottomRoom: CGFloat { barHeight + inset }
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            DesignTabs()
-            Ribbon()
-            Divider()
-            HStack(spacing: 0) {
-                if workspace.tab == .circuits {
-                    // CIRCUITI: the board and its checks instead of the 3D workspace.
-                    CircuitWorkspace()
-                } else {
-                if workspace.showBrowser {
-                    BrowserPanel().frame(width: Theme.Metrics.browserWidth)
-                    Divider()
-                }
-                ViewportContainer(viewport: viewport)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                if workspace.showInspector, workspace.tab != .circuits {
-                    Divider()
-                    SidePanel().frame(width: Theme.Metrics.inspectorWidth + 60)
-                } else if workspace.tab == .circuits, workspace.showInspector, workspace.sideTab == .assistant {
-                    // CIRCUITI has no parameters panel; the assistant (⌘L) works on the circuit too.
-                    Divider()
-                    AssistantPanel().frame(width: Theme.Metrics.inspectorWidth + 60)
-                }
+        @Bindable var workspace = workspace
+        return GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                base(geo.size)
+                islands(geo.size)
             }
-            if workspace.tab != .circuits {
-                Divider()
-                TimelineBar()
-            }
-            Divider()
-            StatusBar()
         }
         .background(Theme.Palette.canvas)
-        .accessibilityHidden(library.showHome)
-        .overlay {
-            // Home covers the workspace but keeps its state (camera, panels) alive underneath.
-            if library.showHome { HomeView().transition(.opacity) }
+        // Home lives in its own window (Window id «welcome», FusionTakeoffApp), shown or
+        // dismissed by `library.showHome`; the workspace keeps its state underneath.
+        .onAppear {
+            // If the welcome window is the one launched, this workspace stays closed until a
+            // design is opened; otherwise make sure `showHome` matches it (no double toggle).
+            let wantsWelcome = UserDefaults.standard.object(forKey: "welcome.showAtLaunch") as? Bool ?? true
+            if wantsWelcome {
+                if library.showHome { openWindow(id: "welcome") }
+            } else if library.showHome {
+                library.showHome = false
+            }
+        }
+        .onChange(of: library.showHome) { _, show in
+            if show { openWindow(id: "welcome") } else { dismissWindow(id: "welcome") }
         }
         .overlay {
             // Opening a design in the background: progress over everything, input blocked.
             if let loading = model.loading { LoadingCard(loading: loading).transition(.opacity) }
         }
         .animation(.easeOut(duration: 0.15), value: model.loading == nil)
-        // A design just opened: frame all of it from the home view.
+        // A design just opened: frame all of it.
         .onChange(of: model.loading == nil) { _, done in if done { workspace.viewRequest = .home } }
-        .animation(.easeOut(duration: 0.15), value: library.showHome)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: workspace.showBrowser)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: workspace.showInspector)
         .sheet(isPresented: $workspace.showComponentPicker) { ComponentPickerSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showBOM) { BOMSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showParameters) { ParametersSheet().environment(workspace) }
         .sheet(isPresented: $workspace.showInterference) { InterferenceSheet().environment(workspace) }
         .sheet(isPresented: Binding(get: { model.showDrawing }, set: { model.showDrawing = $0 })) { DrawingWindow() }
         .environment(workspace)
+        .toolbar { toolbar }
         // ⌘Z in CIRCUITI undoes the circuit's steps; elsewhere the design's (or the sketch's).
         .onChange(of: workspace.tab) { old, new in
             assistant.focus = new == .circuits ? .circuits : .cad
@@ -113,9 +123,134 @@ struct WorkspaceView: View {
             if id != nil, workspace.sideTab == .parameters { workspace.showInspector = true }
         }
     }
+
+    // MARK: - Base layer
+
+    /// The whole window: the live viewport (edge to edge) or the circuit board.
+    @ViewBuilder private func base(_ size: CGSize) -> some View {
+        if workspace.tab == .circuits {
+            CircuitWorkspace()
+                .padding(.top, Glass.topRoom)
+                .padding(.bottom, Glass.bottomRoom)
+                .frame(width: size.width, height: size.height)
+        } else {
+            ViewportContainer(viewport: viewport, overlayInsets: viewportInsets)
+                .frame(width: size.width, height: size.height)
+        }
+    }
+
+    /// What the viewport's own overlays (ViewCube, hints, nav bar) must leave free.
+    private var viewportInsets: EdgeInsets {
+        EdgeInsets(top: Glass.topRoom + 8,
+                   leading: workspace.showBrowser ? Glass.browserWidth + Glass.inset : 0,
+                   bottom: Glass.bottomRoom,
+                   trailing: workspace.showInspector ? Glass.inspectorWidth + Glass.inset : 0)
+    }
+
+    // MARK: - Floating islands
+
+    @ViewBuilder private func islands(_ size: CGSize) -> some View {
+        // Tool dock, centred between the side islands.
+        let availableWidth = size.width
+            - (workspace.showBrowser ? Glass.browserWidth + Glass.inset : 0)
+            - (workspace.showInspector ? Glass.inspectorWidth + Glass.inset : 0)
+            - Glass.inset * 2
+        let dockWidth = min(max(availableWidth, 320), 820)
+        Ribbon()
+            .frame(width: dockWidth)
+            .offset(x: (size.width - dockWidth) / 2, y: Glass.dockY)
+
+        if workspace.tab != .circuits, workspace.showBrowser {
+            BrowserPanel()
+                .frame(width: Glass.browserWidth, height: islandHeight(size))
+                .glassPanel()
+                .offset(x: Glass.inset, y: Glass.dockY)
+                .transition(.move(edge: .leading).combined(with: .opacity))
+        }
+
+        if workspace.tab == .circuits {
+            if workspace.showInspector, workspace.sideTab == .assistant {
+                AssistantPanel()
+                    .frame(width: Glass.inspectorWidth, height: islandHeight(size))
+                    .glassPanel()
+                    .offset(x: size.width - Glass.inspectorWidth - Glass.inset, y: Glass.dockY)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        } else if workspace.showInspector {
+            SidePanel()
+                .frame(width: Glass.inspectorWidth, height: islandHeight(size))
+                .glassPanel()
+                .offset(x: size.width - Glass.inspectorWidth - Glass.inset, y: Glass.dockY)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
+
+        // Bottom: one full-width bar with everything — navigation buttons, timeline, design
+        // stats and the status text.
+        let barWidth = size.width - Glass.inset * 2
+        let barY = size.height - Glass.inset - Glass.barHeight
+        HStack(spacing: 0) {
+            if workspace.tab != .circuits {
+                ViewportNavigationBar(viewport: viewport)
+                barSeparator
+                TimelineBar()
+                barSeparator
+                DesignStatsBar()
+                barSeparator
+            }
+            StatusBar()
+                .layoutPriority(1)
+        }
+        .padding(.horizontal, 12)
+        .frame(width: barWidth, height: Glass.barHeight)
+        .glassCapsule()
+        .offset(x: (size.width - barWidth) / 2, y: barY)
+    }
+
+    private var barSeparator: some View {
+        Divider().frame(height: 18).padding(.horizontal, 8)
+    }
+
+    /// Tall enough to be useful, short enough to leave the part visible; the margins above
+    /// (`dockY`) and below (`bottomGap`) are equal.
+    private func islandHeight(_ size: CGSize) -> CGFloat {
+        max(220, size.height - Glass.dockY - Glass.bottomGap - Glass.barHeight - Glass.inset)
+    }
+
+    // MARK: - Window toolbar
+
+    @ToolbarContentBuilder private var toolbar: some ToolbarContent {
+        // Document tabs, middle-left (Xcode puts its breadcrumb there).
+        ToolbarItem(placement: .navigation) {
+            DesignTabs(inToolbar: true)
+                .frame(width: 280)
+        }
+        // Workspace modes, centred like Xcode's run/scheme controls.
+        ToolbarItem(placement: .principal) {
+            ModeSwitcher(inToolbar: true)
+        }
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button { library.showHome.toggle() } label: { Label("Home", systemImage: "house") }
+                .help("Home: progetti e disegni (⇧⌘H)")
+            Button { UndoRouter.undo(model) } label: { Label("Annulla", systemImage: "arrow.uturn.backward") }
+                .disabled(!UndoRouter.canUndo(model))
+                .help(UndoRouter.undoTitle(model) + " (⌘Z)")
+            Button { UndoRouter.redo(model) } label: { Label("Ripeti", systemImage: "arrow.uturn.forward") }
+                .disabled(!UndoRouter.canRedo(model))
+                .help(UndoRouter.redoTitle(model) + " (⇧⌘Z)")
+            Button { workspace.showAssistant() } label: { Label("Assistente", systemImage: "sparkles") }
+                .help("Assistente di progettazione (⌘L)")
+                .keyboardShortcut("l", modifiers: .command)
+            Button { workspace.showBrowser.toggle() } label: { Label("Browser", systemImage: "sidebar.left") }
+                .help("Mostra/nascondi Browser")
+            Button { workspace.showInspector.toggle() } label: { Label("Parametri", systemImage: "sidebar.right") }
+                .help("Mostra/nascondi Parametri")
+            // MCP server status and settings: top-right corner, like a network indicator.
+            MCPStatusButton()
+        }
+    }
 }
 
-/// Right column: parameters of the selection or the design assistant.
+/// Right island: parameters of the selection or the design assistant.
 private struct SidePanel: View {
     @Environment(WorkspaceState.self) private var workspace
 
@@ -124,19 +259,39 @@ private struct SidePanel: View {
         VStack(spacing: 0) {
             Picker("Pannello", selection: $workspace.sideTab) {
                 ForEach(WorkspaceState.SideTab.allCases) { tab in
-                    Label(tab.rawValue, systemImage: tab == .assistant ? "sparkles" : "slider.horizontal.3").tag(tab)
+                    Label(LocalizedStringKey(tab.rawValue), systemImage: tab == .assistant ? "sparkles" : "slider.horizontal.3").tag(tab)
                 }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .padding(.horizontal, 8).padding(.vertical, 5)
-            .background(Theme.Palette.panel)
-            Divider()
+            .padding(.horizontal, 10).padding(.vertical, 7)
+            Divider().opacity(0.5)
             switch workspace.sideTab {
             case .parameters: InspectorPanel()
             case .assistant: AssistantPanel()
             }
         }
+    }
+}
+
+/// What the design contains — bodies, triangles, volume — in the middle of the bottom bar.
+private struct DesignStatsBar: View {
+    @Environment(DesignModel.self) private var model
+
+    var body: some View {
+        let stats = model.stats()
+        HStack(spacing: 10) {
+            Label(stats.bodies == 1 ? String(localized: "1 corpo") : String(localized: "\(stats.bodies) corpi"),
+                  systemImage: "shippingbox")
+            Label(stats.triangles == 1 ? String(localized: "1 triangolo") : String(localized: "\(stats.triangles) triangoli"),
+                  systemImage: "triangle")
+            Label(String(format: "%.2f cm³", stats.volume / 1000), systemImage: "cube.transparent")
+            Text("mm · Z↑")
+        }
+        .labelStyle(.titleAndIcon)
+        .font(.system(size: 10.5).monospacedDigit())
+        .foregroundStyle(Theme.Palette.textSecondary)
+        .fixedSize()
     }
 }
 
@@ -162,8 +317,8 @@ private struct LoadingCard: View {
             }
             .padding(18)
             .frame(width: 320)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.Palette.panel))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.08)))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.18)))
             .shadow(color: .black.opacity(0.4), radius: 18, y: 6)
         }
         .contentShape(Rectangle())

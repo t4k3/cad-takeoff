@@ -19,7 +19,9 @@ enum PatternCommand {
                 return f.operation != .newBody
             }
             guard let id = model.selection, model.evaluation().bodies.contains(where: { $0.id == id }) || isTool(id) else {
-                model.statusMessage = "Seleziona prima il corpo, il foro o il taglio da \(kind == .mirror ? "specchiare" : "ripetere")."
+                model.statusMessage = kind == .mirror
+                    ? String(localized: "Seleziona prima il corpo, il foro o il taglio da specchiare.")
+                    : String(localized: "Seleziona prima il corpo, il foro o il taglio da ripetere.")
                 return nil
             }
             spec = PatternSpec(body: id, kind: kind)
@@ -30,36 +32,36 @@ enum PatternCommand {
         let original = feature
         // Specchio on a clicked face that is not parallel to YZ/XZ/XY: its normal.
         var faceNormal = spec.mirrorNormal
-        let planeChoices = planes.map(\.label) + ["Faccia cliccata"]
+        let planeChoices = planes.map { String(localized: String.LocalizationValue($0.label)) } + [String(localized: "Faccia cliccata")]
         let sourceName = model.document.features.first { $0.id == spec.body }?.name ?? "corpo"
         let fields: [CommandField]
         switch spec.kind {
         case .rectangular, .circular:
             fields = [
-                .init(id: "note", label: "Copia di «\(sourceName)»", kind: .note(warning: false), value: .flag(false)),
-                .init(id: "kind", label: "Tipo", kind: .choice(["Rettangolare", "Circolare"]), value: .index(spec.kind == .circular ? 1 : 0)),
-                .init(id: "nx", label: "Numero in X", kind: .count(1...100), value: .number(Double(spec.countX))),
-                .init(id: "dx", label: "Passo X", kind: .length(-10_000...10_000), value: .number(spec.spacingX)),
-                .init(id: "ny", label: "Numero in Y", kind: .count(1...100), value: .number(Double(spec.countY))),
-                .init(id: "dy", label: "Passo Y", kind: .length(-10_000...10_000), value: .number(spec.spacingY)),
-                .init(id: "n", label: "Numero", kind: .count(2...360), value: .number(Double(spec.count))),
-                .init(id: "angle", label: "Angolo totale", kind: .angle(-360...360), value: .number(spec.angle),
-                      help: "360° = copie distribuite su tutto il giro"),
-                .init(id: "cx", label: "Asse in X", kind: .length(-100_000...100_000), value: .number(spec.center.x),
-                      help: "Asse verticale (Z) della serie circolare"),
-                .init(id: "cy", label: "Asse in Y", kind: .length(-100_000...100_000), value: .number(spec.center.y)),
-                .init(id: "join", label: "Unisci al corpo originale", kind: .toggle, value: .flag(spec.join)),
+                .init(id: "note", label: String(localized: "Copia di «\(sourceName)»"), kind: .note(warning: false), value: .flag(false)),
+                .init(id: "kind", label: String(localized: "Tipo"), kind: .choice([String(localized: "Rettangolare"), String(localized: "Circolare")]), value: .index(spec.kind == .circular ? 1 : 0)),
+                .init(id: "nx", label: String(localized: "Numero in X"), kind: .count(1...100), value: .number(Double(spec.countX))),
+                .init(id: "dx", label: String(localized: "Passo X"), kind: .length(-10_000...10_000), value: .number(spec.spacingX)),
+                .init(id: "ny", label: String(localized: "Numero in Y"), kind: .count(1...100), value: .number(Double(spec.countY))),
+                .init(id: "dy", label: String(localized: "Passo Y"), kind: .length(-10_000...10_000), value: .number(spec.spacingY)),
+                .init(id: "n", label: String(localized: "Numero"), kind: .count(2...360), value: .number(Double(spec.count))),
+                .init(id: "angle", label: String(localized: "Angolo totale"), kind: .angle(-360...360), value: .number(spec.angle),
+                      help: String(localized: "360° = copie distribuite su tutto il giro")),
+                .init(id: "cx", label: String(localized: "Asse in X"), kind: .length(-100_000...100_000), value: .number(spec.center.x),
+                      help: String(localized: "Asse verticale (Z) della serie circolare")),
+                .init(id: "cy", label: String(localized: "Asse in Y"), kind: .length(-100_000...100_000), value: .number(spec.center.y)),
+                .init(id: "join", label: String(localized: "Unisci al corpo originale"), kind: .toggle, value: .flag(spec.join)),
             ]
         case .mirror:
             fields = [
-                .init(id: "note", label: "Specchio di «\(sourceName)»", kind: .note(warning: false), value: .flag(false)),
-                .init(id: "face", label: "Clicca una faccia piana del pezzo per specchiare su di lei", kind: .note(warning: false), value: .flag(false)),
-                .init(id: "plane", label: "Piano", kind: .choice(planeChoices),
+                .init(id: "note", label: String(localized: "Specchio di «\(sourceName)»"), kind: .note(warning: false), value: .flag(false)),
+                .init(id: "face", label: String(localized: "Clicca una faccia piana del pezzo per specchiare su di lei"), kind: .note(warning: false), value: .flag(false)),
+                .init(id: "plane", label: String(localized: "Piano"), kind: .choice(planeChoices),
                       value: .index(spec.mirrorNormal != nil ? planes.count : planes.firstIndex(of: spec.plane) ?? 0)),
-                .init(id: "offset", label: "Posizione del piano", kind: .length(-100_000...100_000), value: .number(spec.offset),
-                      help: "Coordinata del piano lungo l'asse che specchia (es. X = … per il piano YZ); per una faccia inclinata, la distanza del piano dall'origine lungo la sua normale"),
-                .init(id: "join", label: "Unisci al corpo originale", kind: .toggle, value: .flag(spec.join),
-                      help: "Utile per pezzi simmetrici: disegni metà e specchi sulla faccia di mezzeria"),
+                .init(id: "offset", label: String(localized: "Posizione del piano"), kind: .length(-100_000...100_000), value: .number(spec.offset),
+                      help: String(localized: "Coordinata del piano lungo l'asse che specchia (es. X = … per il piano YZ); per una faccia inclinata, la distanza del piano dall'origine lungo la sua normale")),
+                .init(id: "join", label: String(localized: "Unisci al corpo originale"), kind: .toggle, value: .flag(spec.join),
+                      help: String(localized: "Utile per pezzi simmetrici: disegni metà e specchi sulla faccia di mezzeria")),
             ]
         }
 
@@ -106,7 +108,7 @@ enum PatternCommand {
             workspace.requestPreview(document(with: s).0)
         }
         let created = CommandSession(
-            title: original == nil ? spec.kind.label : "Modifica \(original!.name)",
+            title: original == nil ? String(localized: String.LocalizationValue(spec.kind.label)) : String(localized: "Modifica \(original!.name)"),
             symbol: spec.kind == .mirror ? "arrow.left.and.right.righttriangle.left.righttriangle.right" : "square.grid.3x3",
             fields: fields,
             onPreview: preview,
@@ -115,7 +117,7 @@ enum PatternCommand {
                 let s = read(f)
                 do { try s.validate() } catch { model.statusMessage = error.localizedDescription; return }
                 let (doc, feature) = document(with: s)
-                model.edit(original == nil ? feature.name : "Modifica \(feature.name)", selected: .some(feature.id), changed: [feature.id]) { $0 = doc }
+                model.edit(original == nil ? feature.name : String(localized: "Modifica \(feature.name)"), selected: .some(feature.id), changed: [feature.id]) { $0 = doc }
             },
             onCancel: { workspace.requestPreview(nil); workspace.mirrorFacePick = nil })
         session = created
@@ -134,7 +136,7 @@ enum PatternCommand {
                     created.update("plane") { $0.value = .index(planes.count) }
                     created.update("offset") { $0.value = .number(point.dot(n)) }
                 }
-                model.statusMessage = "Piano dello specchio sulla faccia cliccata"
+                model.statusMessage = String(localized: "Piano dello specchio sulla faccia cliccata")
             }
         }
         preview(created.fields)

@@ -4,8 +4,12 @@ name: FusionTakeoff
 options:
   bundleIdPrefix: com.takeoff
   deploymentTarget:
-    # macOS 27 and later (Ross, 27/09): the newest Foundation Models, Liquid Glass, Metal 4.
-    macOS: "27.0"
+    # macOS 14 and later: the newest APIs (Liquid Glass, Foundation Models) are used only
+    # behind availability checks, so the app still runs on older Macs.
+    macOS: "14.0"
+  # Italian is the UI language written in the code: it is the source of the String Catalog,
+  # and the fallback when a translation is missing (docs/UI_LIQUID_GLASS_AND_I18N_SPEC.md).
+  developmentLanguage: it
   createIntermediateGroups: true
 settings:
   base:
@@ -17,13 +21,19 @@ settings:
     MARKETING_VERSION: "1.0.114"
     FTK_SERIES_START: "164"
     CURRENT_PROJECT_VERSION: "1"
-    # Signed with Ross's Apple Development identity (team 9F8D583GBV): needed for the
-    # App Group shared by the app and the ftk-mcp bridge. For TestFlight, archive in Xcode
-    # with automatic signing (Distribution).
-    DEVELOPMENT_TEAM: 9F8D583GBV
-    CODE_SIGN_STYLE: Manual
-    CODE_SIGN_IDENTITY: "Apple Development"
+    # Signed with the team in Config/Local.xcconfig (not versioned): `xcodegen generate` rewrites
+    # the .xcodeproj at every build, so a team chosen in Xcode's UI would be reverted each time.
+    # Put your team there — DEVELOPMENT_TEAM = XXXXXXXXXX — and it survives regeneration.
     ENABLE_HARDENED_RUNTIME: YES
+    # Xcode's recommended settings (30/10): drop unused code from the release binaries, and let
+    # the static analyzer flag user-visible strings that skip Localizable.xcstrings.
+    DEAD_CODE_STRIPPING: YES
+    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: YES
+# Signing settings live in Config/Signing.xcconfig (which optionally includes the untracked
+# Config/Local.xcconfig with the team), so they are not part of the generated project.
+configFiles:
+  Debug: Config/Signing.xcconfig
+  Release: Config/Signing.xcconfig
 packages:
   CADCore:
     path: Packages/CADCore
@@ -44,7 +54,7 @@ targets:
       # MCP bridge shipped inside the app: Contents/MacOS/ftk-mcp (Claude Desktop, ChatGPT tunnel).
       - target: ftk-mcp
         embed: true
-        codeSign: false
+        codeSign: true
         copy:
           destination: executables
     info:
@@ -75,8 +85,18 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff
         CODE_SIGN_ENTITLEMENTS: App/FusionTakeoff.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Recommended settings (30/10), set on the target too so Xcode's check stays quiet.
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+        # NOT enabled: String Catalog Symbol Generation. Our keys are Italian phrases, often
+        # differing only by case («Corpi»/«corpi») or containing only placeholders («%@ %lld»):
+        # Xcode cannot derive unique Swift symbols, and we look strings up with String(localized:).
         # The version stamp below reads .git: outside the script sandbox.
         ENABLE_USER_SCRIPT_SANDBOXING: NO
+        # Xcode keeps Localizable.xcstrings in step with the SwiftUI strings in the code:
+        # every Text/Label/Button literal is extracted, and missing translations show up in
+        # the catalog as «new» (docs/UI_LIQUID_GLASS_AND_I18N_SPEC.md).
+        SWIFT_EMIT_LOC_STRINGS: YES
     # Git commit and build time into the built Info.plist, shown in the status bar and Home, so
     # anyone can check they run the latest version (a "+" marks uncommitted changes).
     postBuildScripts:
@@ -108,6 +128,7 @@ targets:
         PRODUCT_NAME: ftk-mcp
         PRODUCT_BUNDLE_IDENTIFIER: com.takeoff.fusiontakeoff.ftk-mcp
         CODE_SIGN_ENTITLEMENTS: Tools/ftk-mcp.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
         GENERATE_INFOPLIST_FILE: YES
         CREATE_INFOPLIST_SECTION_IN_BINARY: YES
         SKIP_INSTALL: YES
