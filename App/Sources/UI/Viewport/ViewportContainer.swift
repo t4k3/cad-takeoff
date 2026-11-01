@@ -33,6 +33,26 @@ final class ViewportState {
         return 2 * Double(camera.pose.distance) * tan(Double(camera.fovY) / 2) / h
     }
 
+    /// Display refinement for the current zoom: 2 or 4 when the part is big on screen. It changes
+    /// with hysteresis (enter past ~900/2500 points across, leave below ~800/2200), so a zoom
+    /// resting on a threshold does not rebuild the finer snapshot over and over.
+    private(set) var screenFactor = 1
+
+    func updateScreenFactor() {
+        guard let b = renderer?.sceneBounds else { return }
+        let across = (b.max - b.min).length / max(mmPerPoint, 1e-9)
+        let current = screenFactor
+        let next: Int
+        if current >= 4 {
+            next = across < 2200 ? (across < 800 ? 1 : 2) : 4
+        } else if current >= 2 {
+            next = across > 2500 ? 4 : (across < 800 ? 1 : 2)
+        } else {
+            next = across > 2500 ? 4 : (across > 900 ? 2 : 1)
+        }
+        if next != current { screenFactor = next }
+    }
+
     /// Set by the Metal view: restarts the render loop so camera animations play.
     @ObservationIgnored var redraw: () -> Void = {}
 
@@ -79,14 +99,18 @@ final class ViewportState {
 
     func pickGeo(_ ray: Ray, filter: SelectionFilter) -> GeoRef? {
         let bodies = pickableBodies
-        guard !bodies.isEmpty else { return nil }
+        guard let renderer, !bodies.isEmpty else { return nil }
         switch filter {
         case .body: return nil
-        case .face: return GeoPicking.face(ray, bodies: bodies)
+        case .face:
+            guard let hit = renderer.pick(ray, in: bodies) else { return nil }
+            return GeoPicking.face(hit, bodies: bodies)
         case .edge:
+            // The first surface along the ray hides the edges behind it.
+            let front = renderer.pick(ray, in: bodies)?.distance ?? .infinity
             // ~7 screen points at the hit distance.
             let h = Float(max(viewSize.height, 1)), tanHalf = tan(camera.fovY / 2)
-            return GeoPicking.edge(ray, bodies: bodies) { [camera] d in
+            return GeoPicking.edge(ray, bodies: bodies, front: front) { [camera] d in
                 let depth = camera.projection == .perspective ? max(d, 1) : camera.pose.distance
                 return 7 * 2 * depth * tanHalf / h
             }
@@ -102,9 +126,12 @@ final class ViewportState {
 
     func body(_ id: Feature.ID) -> ViewportRenderer.Body? { reference?.bodies[id] ?? renderer?.bodies[id] }
 
+    func pickHit(_ ray: Ray, in bodies: [ViewportRenderer.Body]) -> ViewportRenderer.PickHit? {
+        renderer?.pick(ray, in: bodies)
+    }
+
     func pick(_ ray: Ray) -> Feature.ID? {
-        guard let renderer else { return nil }
-        return Picking.pick(ray, in: renderer.visibleBodies)?.featureID
+        pickHit(ray, in: pickableBodies)?.featureID
     }
 
     func fitOnce() {
@@ -131,13 +158,25 @@ struct ViewportContainer: View {
                 .overlay(Theme.Palette.canvas.opacity(0.0))
             metal
                 // Curves drawn finer when the part is big on screen (built in the background).
-                .task(id: "\(model.designRevision)#\(screenFactor)") { model.requestScreenFactor(screenFactor) }
+                .task(id: "\(model.designRevision)#\(viewport.screenFactor)") { model.requestScreenFactor(viewport.screenFactor) }
+                // A zoom fires many steps in a row: choose the level once it settles (with
+                // hysteresis), then the finer snapshot is refined from the current one.
+                .task(id: "\(model.designRevision)#\(viewport.mmPerPoint)#\(viewport.viewSize.width)x\(viewport.viewSize.height)") {
+                    try? await Task.sleep(for: .milliseconds(120))
+                    guard !Task.isCancelled else { return }
+                    viewport.updateScreenFactor()
+                }
         }
         .background(GeometryReader { g in Color.clear.onAppear { viewport.viewSize = g.size }.onChange(of: g.size) { _, s in viewport.viewSize = s } })
         .overlay(alignment: .topLeading) { sketchHUD.padding(.leading, overlayInsets.leading).padding(.top, overlayInsets.top) }
         .overlay(alignment: .bottomLeading) { measureChip.padding(.leading, 12 + overlayInsets.leading).padding(.bottom, 12 + overlayInsets.bottom) }
         .overlay(alignment: .topLeading) { manipulatorLabel.padding(.leading, overlayInsets.leading).padding(.top, overlayInsets.top) }
-        .overlay(alignment: .topLeading) { constraintLabels.padding(.leading, overlayInsets.leading).padding(.top, overlayInsets.top) }
+        // Anchored to the sketch's own world positions: never padded by the floating islands,
+        // or every label would slide away from the line it belongs to.
+        .overlay(alignment: .topLeading) { constraintLabels }
+        // Labels are drawn by the renderer: their look (selection, diagnostics, the dimension
+        // being typed) changes without touching the geometry, so ask for a redraw here.
+        .onChange(of: labelToken) { _, _ in viewport.redraw() }
         .onChange(of: workspace.previewSnapshot?.revision) { _, revision in
             viewport.setReference(revision == nil ? nil : model.snapshot(), features: model.document.activeFeatures)
         }
@@ -205,14 +244,14 @@ struct ViewportContainer: View {
                   onHover: handleHover,
                   onDragBegin: dragBegin,
                   onDragMove: { ray in
-                      if let sketch = workspace.sketch, sketch.dragRef != nil {
+                      if let sketch = workspace.sketch, sketch.isDragging {
                           if let p = sketch.intersect(ray) { sketch.drag(p) }
                       } else if let j = workspace.jointDrag {
                           if let doc = j.move(ray, model: model) { workspace.requestPreview(doc); model.statusMessage = j.label }
                       } else { workspace.manipulator?.drag(ray) }
                   },
                   onDragEnd: {
-                      if let sketch = workspace.sketch, sketch.dragRef != nil { sketch.endDrag() }
+                      if let sketch = workspace.sketch, sketch.isDragging { sketch.endDrag() }
                       else if let j = workspace.jointDrag {
                           workspace.jointDrag = nil
                           workspace.requestPreview(nil)
@@ -224,6 +263,10 @@ struct ViewportContainer: View {
                   onReady: { renderer in
                       viewport.renderer = renderer
                       viewport.redraw = { [weak renderer] in renderer?.requestRedraw() }
+                      renderer.labelProvider = { [weak viewport = self.viewport, weak workspace = self.workspace] in
+                          guard let viewport, let workspace, let sketch = workspace.sketch else { return [] }
+                          return ViewportContainer.sketchLabels(sketch, viewport)
+                      }
                       DispatchQueue.main.async { viewport.fitOnce() }
                   })
     }
@@ -236,6 +279,8 @@ struct ViewportContainer: View {
         if workspace.holePlacement != nil { return .crosshair }
         if let sketch = workspace.sketch {
             guard sketch.constraintTool == nil, !sketch.pickingRegions, workspace.command == nil else { return nil }
+            if sketch.isDragging { return .closedHand }
+            if sketch.tool == .select, sketch.hotGrip != nil { return .openHand }
             return sketch.placesPoints ? .crosshair : nil
         }
         return nil
@@ -246,15 +291,7 @@ struct ViewportContainer: View {
     private var displayedSnapshot: DesignSnapshot {
         if let preview = workspace.previewSnapshot { return preview }
         if workspace.showFlat, model.hasSheetMetal { return model.flatView().snapshot }
-        return model.displaySnapshot(factor: screenFactor)
-    }
-
-    /// How finely curves are drawn for the zoom: the part's size on screen decides (its facets'
-    /// sagitta grows with it) — ×2 past ~900 points across, ×4 past ~2500.
-    private var screenFactor: Int {
-        guard let b = viewport.renderer?.sceneBounds else { return 1 }
-        let across = (b.max - b.min).length / max(viewport.mmPerPoint, 1e-9)
-        return across > 2500 ? 4 : across > 900 ? 2 : 1
+        return model.displaySnapshot(factor: viewport.screenFactor)
     }
 
     /// Bend lines on the flat patterns: red = up, blue = down; tangents faint.
@@ -275,6 +312,8 @@ struct ViewportContainer: View {
             return
         }
         if let sketch = workspace.sketch {
+            // Off-plane entities are picked and snapped where they appear on screen (T137).
+            sketch.projectToScreen = { [weak viewport] w in viewport?.screenPoint(w) }
             if let pick = sketch.onFacePick, workspace.command?.activeReference == "toFace" {
                 if let ref = viewport.pickGeo(ray, filter: .face), case let .face(id) = ref.kind { pick(id) }
                 else { model.statusMessage = String(localized: "Clicca una faccia piana del pezzo.") }
@@ -282,7 +321,7 @@ struct ViewportContainer: View {
             }
             if let pick = sketch.onAxisPick, workspace.command?.activeReference == "axis", let p = sketch.intersect(ray) {
                 sketch.vertexSnap = 11 * viewport.mmPerPoint
-                if let ref = sketch.pickRef(sketch.local(p), kinds: [.segment]) { pick(ref) } else { model.statusMessage = String(localized: "Clicca una linea dello schizzo come asse.") }
+                if let ref = sketch.pickRef(sketch.local(p), kinds: [.segment], screen: point) { pick(ref) } else { model.statusMessage = String(localized: "Clicca una linea dello schizzo come asse.") }
                 return
             }
             if sketch.pickingRegions, let p = sketch.intersect(ray) {
@@ -310,7 +349,7 @@ struct ViewportContainer: View {
             }
             guard workspace.command == nil, let p = sketch.intersect(ray) else { return }
             sketch.vertexSnap = 11 * viewport.mmPerPoint
-            sketch.click(p)
+            sketch.click(p, screen: point)
             return
         }
         if let pick = workspace.mirrorFacePick, workspace.command != nil {
@@ -321,7 +360,8 @@ struct ViewportContainer: View {
             return
         }
         if let placement = workspace.holePlacement, let bodies = viewport.renderer?.visibleBodies {
-            if let msg = placement.click(ray, bodies: bodies, tolerance: viewport.screenTolerance(12)), !msg.isEmpty { model.statusMessage = msg }
+            if let msg = placement.click(ray, bodies: bodies, tolerance: viewport.screenTolerance(12),
+                                         pick: { viewport.pickHit($0, in: bodies) }), !msg.isEmpty { model.statusMessage = msg }
             return
         }
         if workspace.selectionFilter != .body {
@@ -352,7 +392,7 @@ struct ViewportContainer: View {
     /// between two parallel faces.
     private func pickSketchPlane(_ ray: Ray) {
         let bodies = viewport.renderer?.visibleBodies ?? []
-        let hit = Picking.pick(ray, in: bodies)
+        let hit = viewport.pickHit(ray, in: bodies)
         let face = hit.flatMap { h in bodies.first { $0.feature.id == h.featureID }?.face(ofTriangle: h.triangle) }
         let point = hit.map { Vec3(Double($0.point.x), Double($0.point.y), Double($0.point.z)) }
         let view = Vec3(Double(ray.direction.x), Double(ray.direction.y), Double(ray.direction.z))
@@ -463,15 +503,59 @@ struct ViewportContainer: View {
         return true
     }
 
-    /// Constraint symbols and dimension values on the sketch; a dimension opens for typing on
-    /// click (and right after it is created), a symbol selects its constraint (⌫ deletes it).
+    /// Constraint symbols and dimension values drawn by the renderer: the overlay only keeps the
+    /// click target (and the text field of the dimension being typed).
     @ViewBuilder private var constraintLabels: some View {
         if let sketch = workspace.sketch {
             ForEach(sketch.annotations()) { a in
-                if let p = viewport.screenPoint(Vec3(Double(a.anchor.x), Double(a.anchor.y), Double(a.anchor.z))) {
-                    ConstraintLabel(annotation: a, sketch: sketch).position(x: p.x, y: p.y)
+                if let p = viewport.screenPoint(Vec3(Double(a.anchor.x), Double(a.anchor.y), Double(a.anchor.z))),
+                   sketch.editingDimension != a.id {
+                    ConstraintHitArea(annotation: a, sketch: sketch).position(x: p.x, y: p.y)
                 }
             }
+            if let a = sketch.annotations().first(where: { $0.id == sketch.editingDimension }),
+               let p = viewport.screenPoint(Vec3(Double(a.anchor.x), Double(a.anchor.y), Double(a.anchor.z))) {
+                ConstraintLabel(annotation: a, sketch: sketch).position(x: p.x, y: p.y)
+            }
+        }
+    }
+
+    /// Everything that changes how the renderer's labels look: a change asks for a redraw.
+    private var labelToken: Int {
+        guard let sketch = workspace.sketch else { return 0 }
+        var hasher = Hasher()
+        hasher.combine(sketch.selectedConstraint)
+        hasher.combine(sketch.editingDimension)
+        for set in [sketch.conflictingConstraints, sketch.redundantConstraints, sketch.blockingConstraints] {
+            hasher.combine(set)
+        }
+        for a in sketch.annotations() {
+            hasher.combine(a.id)
+            hasher.combine(a.text)
+            hasher.combine(a.anchor)
+            hasher.combine(a.isReference)
+        }
+        return hasher.finalize()
+    }
+
+    /// Labels for the renderer's text atlas (a dimension being typed is left to its text field).
+    @MainActor static func sketchLabels(_ sketch: SketchSession, _ viewport: ViewportState) -> [ViewportRenderer.Label] {
+        let secondary = renderColor(Theme.Palette.textSecondary)
+        let sketchFill: SIMD4<Float> = {
+            let c = renderColor(Theme.Palette.sketch)
+            return SIMD4(c.x, c.y, c.z, c.w * 0.85)
+        }()
+        return sketch.annotations().compactMap { a in
+            guard a.id != sketch.editingDimension,
+                  let p = viewport.screenPoint(Vec3(Double(a.anchor.x), Double(a.anchor.y), Double(a.anchor.z))) else { return nil }
+            let style: LabelText.Style = a.isDimension ? .dimension : .constraint
+            let highlight = LabelLook.highlight(a.id, sketch: sketch)
+            let quiet = a.isReference && highlight == nil
+            return ViewportRenderer.Label(text: a.text, center: p, style: style,
+                                          textColor: quiet ? secondary : LabelLook.white,
+                                          fill: highlight ?? (a.isDimension ? LabelLook.dimensionFill : sketchFill),
+                                          border: LabelLook.border(quiet),
+                                          dashed: quiet)
         }
     }
 
@@ -487,12 +571,15 @@ struct ViewportContainer: View {
             return
         }
         if let sketch = workspace.sketch {
+            sketch.projectToScreen = { [weak viewport] w in viewport?.screenPoint(w) }
             sketch.vertexSnap = 11 * viewport.mmPerPoint
             sketch.hover(ray.flatMap { sketch.intersect($0) }, screen: point)
             return
         }
         if let placement = workspace.holePlacement {
-            placement.hover(ray, bodies: viewport.renderer?.visibleBodies ?? [], tolerance: viewport.screenTolerance(12))
+            let bodies = viewport.renderer?.visibleBodies ?? []
+            placement.hover(ray, bodies: bodies, tolerance: viewport.screenTolerance(12),
+                            pick: { viewport.pickHit($0, in: bodies) })
             return
         }
         if workspace.selectionFilter != .body {
@@ -696,6 +783,33 @@ struct ViewportContainer: View {
                                   selectedColor: SIMD4(1, 0.55, 0.22, 1),
                                   previewColor: SIMD4(1, 0.55, 0.22, 0.8)) ?? [])
             + (workspace.sketch?.dimensionLines(color: SIMD4(0.85, 0.88, 0.92, 0.7)) ?? [])
+            + sketchAxes
+    }
+
+    /// Origin and X/Y axes of the sketch being edited: always there, like in Fusion, so
+    /// points can be constrained to them. They brighten while a constraint tool is active,
+    /// and the one under the cursor lights up before the click.
+    private var sketchAxes: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)] {
+        guard let sketch = workspace.sketch else { return [] }
+        let plane = sketch.sketch.plane
+        let len = 50.0, tick = 2.0
+        func w(_ v: Vec2) -> SIMD3<Float> {
+            let p = plane.world(v)
+            return SIMD3(Float(p.x), Float(p.y), Float(p.z) + 0.01)
+        }
+        let hover = sketch.axisHover
+        let active = sketch.constraintTool != nil
+        let base: Float = active ? 0.75 : 0.45
+        let hot = SIMD4<Float>(1, 0.82, 0.25, 1)
+        let xColor = hover == .axisX ? hot : SIMD4<Float>(0.92, 0.4, 0.38, base)
+        let yColor = hover == .axisY ? hot : SIMD4<Float>(0.42, 0.85, 0.48, base)
+        let origin = hover == .origin ? hot : SIMD4<Float>(0.85, 0.88, 0.92, active ? 0.95 : 0.7)
+        return [
+            (w(Vec2(-len, 0)), w(Vec2(len, 0)), xColor),
+            (w(Vec2(0, -len)), w(Vec2(0, len)), yColor),
+            (w(Vec2(-tick, 0)), w(Vec2(tick, 0)), origin),
+            (w(Vec2(0, -tick)), w(Vec2(0, tick)), origin),
+        ]
     }
 
     /// Visible saved sketches, faint, on their plane.
@@ -787,11 +901,16 @@ struct ViewportContainer: View {
                         .lineLimit(1).truncationMode(.tail)
                 }
                 if !sketch.sketch.constraints.isEmpty {
-                    Text(sketch.freedom == 0 ? String(localized: "Vincolato") : (sketch.freedom == 1 ? String(localized: "1 grado libero") : String(localized: "\(sketch.freedom) gradi liberi")))
+                    // With a shape selected the badge counts only its own freedom, as Fusion does.
+                    let perShape = sketch.selection.flatMap { sketch.freedomPerShape[$0] }
+                    let dof = perShape ?? sketch.freedom
+                    Text(freedomLabel(dof, perShape: perShape != nil))
                         .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Capsule().fill(sketch.freedom == 0 ? Color.white.opacity(0.2) : Theme.Palette.sketch.opacity(0.25)))
-                        .help("Gradi di libertà rimasti: 0 = lo schizzo è completamente definito da vincoli e quote")
+                        .background(Capsule().fill(dof == 0 ? Color.white.opacity(0.2) : Theme.Palette.sketch.opacity(0.25)))
+                        .help(perShape == nil
+                              ? String(localized: "Gradi di libertà rimasti: 0 = lo schizzo è completamente definito da vincoli e quote")
+                              : String(localized: "Gradi di libertà della forma selezionata: 0 = la forma è vincolata (seleziona fuori per il totale)"))
                 }
                 Button("Termina") { workspace.exitSketch() }.controlSize(.small)
                     .fixedSize().layoutPriority(1)
@@ -801,6 +920,11 @@ struct ViewportContainer: View {
             .padding(.top, 10)
             .padding(.horizontal, 120)   // clear of the ViewCube
         }
+    }
+
+    private func freedomLabel(_ dof: Int, perShape: Bool) -> String {
+        if perShape { return dof == 0 ? String(localized: "Forma vincolata") : (dof == 1 ? String(localized: "Forma: 1 grado libero") : String(localized: "Forma: \(dof) gradi liberi")) }
+        return dof == 0 ? String(localized: "Vincolato") : (dof == 1 ? String(localized: "1 grado libero") : String(localized: "\(dof) gradi liberi"))
     }
 
     @ViewBuilder private var planePickerTitle: some View {
@@ -858,6 +982,11 @@ struct ViewportContainer: View {
                 Button("") { if !sketch.cancel() { workspace.exitSketch() } }.keyboardShortcut(.cancelAction)
                 Button("") { sketch.finish() }.keyboardShortcut(.defaultAction)
                 Button("") { sketch.deleteSelection() }.keyboardShortcut(.delete, modifiers: [])
+                // ⌘C / ⌘V give the text fields their own copy and paste while a dimension is typed.
+                if sketch.editingDimension == nil {
+                    Button("") { _ = sketch.copySelection() }.keyboardShortcut("c", modifiers: .command)
+                    Button("") { sketch.paste() }.keyboardShortcut("v", modifiers: .command)
+                }
             }
             .opacity(0).frame(width: 0, height: 0).accessibilityHidden(true)
         }
@@ -1026,7 +1155,7 @@ private struct ConstraintLabel: View {
     @FocusState private var focused: Bool
 
     private var editing: Bool { sketch.editingDimension == annotation.id }
-    private var selected: Bool { sketch.selectedConstraint == annotation.id }
+    private var highlight: Color? { LabelLook.highlight(annotation.id, sketch: sketch).map(LabelLook.color) }
 
     var body: some View {
         Group {
@@ -1052,22 +1181,90 @@ private struct ConstraintLabel: View {
                 Text(annotation.text).font(.system(size: 10.5, weight: .bold))
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(annotation.isReference && highlight == nil ? Theme.Palette.textSecondary : Color.white)
         .padding(.horizontal, annotation.isDimension ? 6 : 4).padding(.vertical, 2)
         .background(RoundedRectangle(cornerRadius: 4).fill(
-            selected || editing ? Color(red: 1, green: 0.55, blue: 0.22) :
-                (annotation.isDimension ? Color(white: 0.18).opacity(0.92) : Theme.Palette.sketch.opacity(0.85))))
-        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(.white.opacity(0.25)))
+            highlight ?? (annotation.isDimension ? Color(white: 0.18).opacity(0.92) : Theme.Palette.sketch.opacity(0.85))))
+        .overlay(RoundedRectangle(cornerRadius: 4)
+            .strokeBorder(.white.opacity(annotation.isReference && highlight == nil ? 0.55 : 0.25),
+                          style: StrokeStyle(lineWidth: 1, dash: annotation.isReference && highlight == nil ? [2.5, 2] : [])))
         .fixedSize()
         .contentShape(Rectangle())
         .onTapGesture {
             if annotation.isDimension { sketch.editingDimension = annotation.id } else { sketch.selectedConstraint = annotation.id; sketch.selection = nil }
         }
-        .help(annotation.isDimension ? String(localized: "Clicca per cambiare il valore") : String(localized: "Clicca per selezionare il vincolo (⌫ lo elimina)"))
+        .help(LabelLook.help(annotation, sketch))
     }
 
     private func commit() {
         sketch.editingDimension = nil
         sketch.setDimension(annotation.id, text: text)
     }
+}
+
+/// Invisible target over a label the renderer draws: keeps the click (edit a dimension, select a
+/// constraint) and the tooltip; the box and the text come from the text atlas.
+private struct ConstraintHitArea: View {
+    let annotation: SketchSession.Annotation
+    let sketch: SketchSession
+
+    var body: some View {
+        let style: LabelText.Style = annotation.isDimension ? .dimension : .constraint
+        let size = LabelText.boxSize(annotation.text, style)
+        Rectangle()
+            .fill(Color.clear)
+            .frame(width: size.width, height: size.height)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if annotation.isDimension { sketch.editingDimension = annotation.id } else { sketch.selectedConstraint = annotation.id; sketch.selection = nil }
+            }
+            .help(LabelLook.help(annotation, sketch))
+    }
+}
+
+/// Colours and texts shared by the labels the renderer draws and the SwiftUI pieces that stay
+/// interactive (the dimension's text field, the click targets' tooltips), so both look alike.
+@MainActor
+private enum LabelLook {
+    static let selected = SIMD4<Float>(1, 0.55, 0.22, 1)
+    static let conflicting = SIMD4<Float>(0.85, 0.2, 0.18, 1)
+    static let redundant = SIMD4<Float>(1, 0.62, 0.15, 1)
+    static let blocking = SIMD4<Float>(1, 0.78, 0.2, 1)
+    static let white = SIMD4<Float>(1, 1, 1, 1)
+    static let dimensionFill = SIMD4<Float>(0.18, 0.18, 0.18, 0.92)
+
+    /// Selected / editing constraint, then the solver diagnostics, if any.
+    static func highlight(_ id: SketchConstraint.ID, sketch: SketchSession) -> SIMD4<Float>? {
+        if sketch.selectedConstraint == id || sketch.editingDimension == id { return selected }
+        if sketch.conflictingConstraints.contains(id) { return conflicting }
+        if sketch.redundantConstraints.contains(id) { return redundant }
+        if sketch.blockingConstraints.contains(id) { return blocking }
+        return nil
+    }
+
+    static func border(_ quiet: Bool) -> SIMD4<Float> { SIMD4(1, 1, 1, quiet ? 0.55 : 0.25) }
+
+    static func color(_ c: SIMD4<Float>) -> Color {
+        Color(.sRGB, red: Double(c.x), green: Double(c.y), blue: Double(c.z), opacity: Double(c.w))
+    }
+
+    static func help(_ a: SketchSession.Annotation, _ sketch: SketchSession) -> String {
+        if sketch.conflictingConstraints.contains(a.id) { return String(localized: "Vincolo in conflitto: lo schizzo non può rispettarlo") }
+        if sketch.redundantConstraints.contains(a.id) { return String(localized: "Vincolo ridondante: ripete qualcosa che lo schizzo già rispetta") }
+        if sketch.blockingConstraints.contains(a.id) { return String(localized: "Vincolo bloccante: impedisce al punto di seguire il trascinamento") }
+        if a.isReference { return String(localized: "Quota di riferimento: misura e basta, non muove lo schizzo") }
+        return a.isDimension ? String(localized: "Clicca per cambiare il valore") : String(localized: "Clicca per selezionare il vincolo (⌫ lo elimina)")
+    }
+}
+
+/// Resolves a SwiftUI colour to sRGB components against the app's current appearance: the
+/// renderer draws outside SwiftUI's drawing pass, where dynamic colours have no appearance.
+@MainActor private func renderColor(_ color: Color) -> SIMD4<Float> {
+    var out = SIMD4<Float>(1, 1, 1, 1)
+    guard let appearance = NSApp?.effectiveAppearance ?? NSAppearance(named: .aqua) else { return out }
+    appearance.performAsCurrentDrawingAppearance {
+        let c = NSColor(color).usingColorSpace(.sRGB) ?? .white
+        out = SIMD4(Float(c.redComponent), Float(c.greenComponent), Float(c.blueComponent), Float(c.alphaComponent))
+    }
+    return out
 }

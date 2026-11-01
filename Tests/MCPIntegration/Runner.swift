@@ -30,7 +30,7 @@ import CADCore
         expect(initReply.0 == 200, "real loopback listener initialized")
         let list = try await send("tools/list")
         let names = list.1?["result"]?["tools"]?.array?.compactMap { $0["name"]?.string } ?? []
-        expect(names.count == 37 && names.filter { $0.hasPrefix("circuit_") }.count == 10, "27 CAD + 10 circuit tools via HTTP (\(names.count))")
+        expect(names.count == 41 && names.filter { $0.hasPrefix("circuit_") }.count == 10, "31 CAD + 10 circuit tools via HTTP (\(names.count))")
         let scene = try await send("tools/call", ["name": "scene_info", "arguments": [:]])
         let structured = scene.1!["result"]!["structuredContent"]!
         let text = scene.1!["result"]!["content"]!.array![0]["text"]!.string!
@@ -84,6 +84,49 @@ import CADCore
         let undoCircuit = try await call("circuit_undo", ["expected_revision": .string(circuits.designRevision)])
         expect(undoCircuit["isError"]?.bool == false && circuits.design == before?.design, "circuit_undo over HTTP")
         expect(model.document.features.count == 1, "CAD design untouched by circuit tools")
+        // Sketches over the real loopback transport: create, read, append, extrude, undo.
+        let s0 = try await call("list_sketches", [:])
+        expect(s0["isError"]?.bool == false && s0["structuredContent"]?["count"]?.number == 0, "no sketches initially")
+        let rev0 = model.designRevision
+        let made = try await call("add_sketch", ["plane": "xy",
+            "shapes": [["kind": "rectangle", "corner": ["x": 0, "y": 0], "width": 40, "height": 30]],
+            "expected_revision": .string(rev0)])
+        expect(made["structuredContent"]?["shape_count"]?.number == 1, "sketch created")
+        let sketchID = made["structuredContent"]?["sketch_id"]?.string ?? ""
+        let read = try await call("get_sketch", ["sketch_id": .string(sketchID)])
+        expect(read["structuredContent"]?["sketch"]?["shapes"]?.array?.first?["width"]?.number == 40, "rectangle read back")
+        expect(abs((read["structuredContent"]?["sketch"]?["area"]?.number ?? 0) - 1200) < 1e-9, "rectangle area")
+        // Append a circle to the same sketch.
+        let added2 = try await call("add_sketch", ["sketch_id": .string(sketchID),
+            "shapes": [["kind": "circle", "center": ["x": 20, "y": 15], "radius": 5]],
+            "expected_revision": .string(model.designRevision)])
+        expect(added2["structuredContent"]?["shape_count"]?.number == 2, "circle appended")
+        // Two closed profiles without a shape_id: refused, listing the candidates.
+        let ambiguous = try await call("extrude_sketch", ["sketch_id": .string(sketchID), "height": 5,
+            "expected_revision": .string(model.designRevision)])
+        expect(ambiguous["isError"]?.bool == true, "ambiguous profile refused")
+        // The rectangle, explicitly: 40×30×5 with the inner circle kept as a hole.
+        let rectID = read["structuredContent"]?["sketch"]?["shapes"]?.array?
+            .first { $0["kind"]?.string == "rectangle" }?["id"]?.string ?? ""
+        let extruded = try await call("extrude_sketch", ["sketch_id": .string(sketchID),
+            "shape_id": .string(rectID), "height": 5, "expected_revision": .string(model.designRevision)])
+        expect(extruded["isError"]?.bool == false && extruded["structuredContent"]?["hole_count"]?.number == 1,
+               "extrude from sketch keeps the nested circle as a hole")
+        let holeArea = Profile2D.circle(radius: 5, segments: 64).area
+        let expectedSketchVolume = 6000 + (1200 - holeArea) * 5
+        print("sketch extrusion: volume \(model.document.buildMesh().volume), expected \(expectedSketchVolume)")
+        expect(abs(model.document.buildMesh().volume - expectedSketchVolume) < 1e-6, "sketch extrusion volume")
+        // One undo step for the extrusion.
+        let undoSketch = try await call("undo", ["expected_revision": .string(model.designRevision)])
+        expect(undoSketch["isError"]?.bool == false && model.document.features.count == 1, "undo extrusion")
+        _ = try await call("redo", ["expected_revision": .string(model.designRevision)])
+        // Unknown shape kind and a stale revision: both refused, the document unchanged.
+        let badKind = try await call("add_sketch", ["shapes": [["kind": "hexahedron"]],
+            "expected_revision": .string(model.designRevision)])
+        expect(badKind["isError"]?.bool == true, "unknown shape kind refused")
+        let staleSketch = try await call("add_sketch", ["shapes": [["kind": "circle", "center": ["x": 0, "y": 0], "radius": 2]],
+            "expected_revision": .string(rev0)])
+        expect(staleSketch["isError"]?.bool == true && model.document.sketches.count == 1, "stale sketch write refused")
         print("PASS: \(checks) MCP HTTP integration checks (isolated scene; no user document changed)")
     }
 }

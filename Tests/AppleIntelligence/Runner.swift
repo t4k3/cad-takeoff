@@ -92,6 +92,30 @@ struct AppleIntelligenceTests {
         // A reply that claims a change no tool made is flagged (Ross, 28/09: «ho creato il coperchio»).
         check(AssistantSession.claimsAChange("ho creato il coperchio, ma non appare") && !AssistantSession.claimsAChange("il volume è 12 cm³"),
               "frasi che dicono di aver cambiato il disegno riconosciute")
+        check(AssistantSession.claimsAChange("i created the lid") && AssistantSession.claimsAChange("已创建支架")
+              && !AssistantSession.claimsAChange("the volume is 12 cm³"),
+              "frasi inglesi e cinesi che dicono di aver cambiato il disegno riconosciute")
+
+        // The prompt follows the app language, so a Chinese UI gets Chinese answers.
+        check(AssistantLanguage.forCode("zh-Hans") == .chinese && AssistantLanguage.forCode("zh-Hant") == .chinese
+              && AssistantLanguage.forCode("it-IT") == .italian && AssistantLanguage.forCode("en-US") == .english
+              && AssistantLanguage.forCode(nil) == .english, "lingua dell'assistente dalla lingua dell'app")
+        for language in [AssistantLanguage.italian, .english, .chinese] {
+            let prompt = AssistantSession.systemPrompt(for: language)
+            check(prompt.contains("add_sketch") && prompt.contains("circuit_apply") && prompt.contains("extrude_sketch"),
+                  "prompt \(language) con gli strumenti della versione corrente")
+        }
+        check(AssistantSession.systemPrompt(for: .chinese).contains("用简体中文回答")
+              && AssistantSession.systemPrompt(for: .english).contains("Answer in English")
+              && AssistantSession.systemPrompt(for: .italian).contains("Rispondi in italiano"),
+              "il prompt chiede la lingua della UI")
+        check(AssistantSession.circuitFocusNote(for: .chinese).contains("CIRCUITI")
+              && AssistantSession.circuitFocusNote(for: .english).contains("CIRCUITI"),
+              "nota CIRCUITI nella lingua della UI")
+        check(AppleIntelligenceProvider.instructions(for: .chinese).contains("用简体中文回答")
+              && AppleIntelligenceProvider.circuitInstructions(for: .english).contains("Answer in English")
+              && AppleIntelligenceProvider.smallCircuitInstructions(for: .italian).contains("Rispondi in italiano"),
+              "istruzioni sul Mac nella lingua della UI")
 
         if ProcessInfo.processInfo.environment["FTK_LIVE_FM"] == "1" {
             // An imported tray (no dimensions of its own): «a lid for this box» must build a body over it.

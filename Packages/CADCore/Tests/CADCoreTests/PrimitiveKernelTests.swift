@@ -74,6 +74,39 @@ import Testing
         #expect(Set(coarse.faces[2].topologyFaceIDs).isDisjoint(with: Set(fine.faces[2].topologyFaceIDs)))
     }
 
+    @Test func displayRefinementKeepsTheSameFacesAndClosesEverySeam() throws {
+        let feature = Feature(name: "Pin", kind: .cylinder(radius: 10, height: 20))
+        let coarse = try PrimitiveKernel.build(feature).snapshot(revision: "coarse")
+        let fine = coarse.refined()
+        // Same faces and edges, one level finer; nothing about the model changed.
+        #expect(fine.faces.map(\.id) == coarse.faces.map(\.id))
+        #expect(fine.edges.map(\.id) == coarse.edges.map(\.id))
+        #expect(fine.triangleFace.count == coarse.triangleFace.count * 4)
+        #expect(fine.edges.allSatisfy { $0.polyline.count == 129 && $0.polyline.first == $0.polyline.last })
+        // Every point back on the cylinder (radius 10, z 0...20) and every normal unit length.
+        #expect(fine.positions.allSatisfy { p in
+            (p.x * p.x + p.y * p.y).squareRoot() <= 10 + 1e-9 && p.z >= -1e-9 && p.z <= 20 + 1e-9
+        })
+        #expect(fine.normals.allSatisfy { abs($0.length - 1) < 1e-9 })
+        // The wall is shaded with the surface's radial normals, not each facet's.
+        let wall = try #require(fine.faces.firstIndex { if case .cylinder = $0.surface { true } else { false } })
+        for t in 0..<fine.triangleFace.count where Int(fine.triangleFace[t]) == wall {
+            for k in 0..<3 {
+                let p = fine.positions[Int(fine.triangles[t * 3 + k])]
+                let n = fine.normals[Int(fine.triangles[t * 3 + k])]
+                #expect(abs(n.x * p.x + n.y * p.y) / 10 > 0.99)
+            }
+        }
+        // No cracks: the caps and the wall meet on the same refined points (welded by value).
+        let mesh = Mesh(vertices: fine.positions, indices: fine.triangles)
+        #expect(MeshValidator.validate(mesh).isWatertight)
+        let coarseVolume = Mesh(vertices: coarse.positions, indices: coarse.triangles).volume
+        #expect(mesh.volume > coarseVolume && mesh.volume < Double.pi * 100 * 20)
+        // A flat body with no round edge is left exactly as it is (no needless triangles).
+        let box = try PrimitiveKernel.build(Feature(name: "Box", kind: .box(width: 40, depth: 30, height: 5))).snapshot(revision: "box")
+        #expect(box.refined() == box)
+    }
+
     @Test func concaveProfileHasFullCapsAndConservativeIdentity() throws {
         let p = Profile2D(points: [Vec2(0, 0), Vec2(20, 0), Vec2(20, 10), Vec2(10, 10), Vec2(10, 20), Vec2(0, 20)])
         var feature = Feature(name: "L", kind: .extrude(profile: p, height: 5))

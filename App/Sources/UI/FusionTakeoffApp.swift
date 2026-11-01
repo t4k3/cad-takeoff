@@ -11,7 +11,13 @@ struct FusionTakeoffApp: App {
     @State private var tools: ToolRouter?
     @State private var assistant: AssistantSession = {
         // Apple's on-device model exists from macOS 26: older Macs still get Claude and ChatGPT.
-        var providers: [AssistantProvider] = [ClaudeProvider(), OpenAIProvider()]
+        var providers: [AssistantProvider] = [
+            ClaudeProvider(config: .claude),
+            OpenAIChatProvider(config: .chatGPT),
+            OpenAIChatProvider(config: .deepSeek),
+            ClaudeProvider(config: .compatible),
+            OpenAIChatProvider(config: .compatible),
+        ]
         if #available(macOS 27.0, *) { providers.append(AppleIntelligenceProvider()) }
         return AssistantSession(providers: providers)
     }()

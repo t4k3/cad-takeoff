@@ -65,6 +65,10 @@ struct SketchInspector: View {
         case .slot: "capsule"
         case .arc: "circle.bottomhalf.filled"
         case .spline: "scribble.variable"
+        case .bezier: "waveform.path"
+        case .point3D: "point.3.connected.trianglepath.dotted"
+        case .line3D: "line.diagonal"
+        case .workplane: "square.stack.3d.up"
         }
     }
 
@@ -77,6 +81,10 @@ struct SketchInspector: View {
         case let .slot(a, b, w): "\(fmt(hypot(b.x - a.x, b.y - a.y)))×\(fmt(w))"
         case let .arc(_, r, _, _): "R\(fmt(r))"
         case let .spline(p, _): String(localized: "\(p.count) punti")
+        case .bezier: "\(fmt(s.length)) mm"
+        case let .point3D(p): "\(fmt(p.x)), \(fmt(p.y)), \(fmt(p.z)) mm"
+        case .line3D: "\(fmt(s.length)) mm"
+        case .workplane: s.workplanePlane == nil ? "degenere" : ""
         }
     }
 
@@ -140,15 +148,66 @@ private struct ShapeParameters: View {
                     field(String(localized: "Punto \(i + 1) Y"), p[i].y) { var q = p; q[i].y = $0; set(.spline(points: q, closed: closed)) }
                 }
                 info(String(localized: "Lunghezza"), "\(fmt(shape.length)) mm")
+            case let .bezier(p0, c1, c2, p3):
+                field(String(localized: "Inizio X"), p0.x) { set(.bezier(start: Vec2($0, p0.y), control1: c1, control2: c2, end: p3)) }
+                field(String(localized: "Inizio Y"), p0.y) { set(.bezier(start: Vec2(p0.x, $0), control1: c1, control2: c2, end: p3)) }
+                field(String(localized: "Controllo 1 X"), c1.x) { set(.bezier(start: p0, control1: Vec2($0, c1.y), control2: c2, end: p3)) }
+                field(String(localized: "Controllo 1 Y"), c1.y) { set(.bezier(start: p0, control1: Vec2(c1.x, $0), control2: c2, end: p3)) }
+                field(String(localized: "Controllo 2 X"), c2.x) { set(.bezier(start: p0, control1: c1, control2: Vec2($0, c2.y), end: p3)) }
+                field(String(localized: "Controllo 2 Y"), c2.y) { set(.bezier(start: p0, control1: c1, control2: Vec2(c2.x, $0), end: p3)) }
+                field(String(localized: "Fine X"), p3.x) { set(.bezier(start: p0, control1: c1, control2: c2, end: Vec2($0, p3.y))) }
+                field(String(localized: "Fine Y"), p3.y) { set(.bezier(start: p0, control1: c1, control2: c2, end: Vec2(p3.x, $0))) }
+                info(String(localized: "Lunghezza"), "\(fmt(shape.length)) mm")
             case let .arc(c, r, a0, a1):
                 field(String(localized: "Centro X"), c.x) { set(.arc(center: Vec2($0, c.y), radius: r, start: a0, end: a1)) }
                 field(String(localized: "Centro Y"), c.y) { set(.arc(center: Vec2(c.x, $0), radius: r, start: a0, end: a1)) }
                 field(String(localized: "Raggio"), r, positive: true) { set(.arc(center: c, radius: $0, start: a0, end: a1)) }
                 field(String(localized: "Angolo iniziale"), a0 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: $0 * .pi / 180, end: a1)) }
                 field(String(localized: "Angolo finale"), a1 * 180 / .pi, unit: "°") { set(.arc(center: c, radius: r, start: a0, end: $0 * .pi / 180)) }
+            case let .point3D(p):
+                field("X", p.x) { set(.point3D(position: Vec3($0, p.y, p.z))) }
+                field("Y", p.y) { set(.point3D(position: Vec3(p.x, $0, p.z))) }
+                field("Z", p.z) { set(.point3D(position: Vec3(p.x, p.y, $0))) }
+            case let .line3D(a, b):
+                field(String(localized: "Inizio X"), a.x) { set(.line3D(start: Vec3($0, a.y, a.z), end: b)) }
+                field(String(localized: "Inizio Y"), a.y) { set(.line3D(start: Vec3(a.x, $0, a.z), end: b)) }
+                field(String(localized: "Inizio Z"), a.z) { set(.line3D(start: Vec3(a.x, a.y, $0), end: b)) }
+                field(String(localized: "Fine X"), b.x) { set(.line3D(start: a, end: Vec3($0, b.y, b.z))) }
+                field(String(localized: "Fine Y"), b.y) { set(.line3D(start: a, end: Vec3(b.x, $0, b.z))) }
+                field(String(localized: "Fine Z"), b.z) { set(.line3D(start: a, end: Vec3(b.x, b.y, $0))) }
+            case let .workplane(o, x, p):
+                // The three points in the sketch's frame: origin, a point along X, one in the plane.
+                field(String(localized: "Origine X"), o.x) { set(.workplane(origin: Vec3($0, o.y, o.z), xAxisPoint: x, planePoint: p)) }
+                field(String(localized: "Origine Y"), o.y) { set(.workplane(origin: Vec3(o.x, $0, o.z), xAxisPoint: x, planePoint: p)) }
+                field(String(localized: "Origine Z"), o.z) { set(.workplane(origin: Vec3(o.x, o.y, $0), xAxisPoint: x, planePoint: p)) }
+                field(String(localized: "Asse X (x)"), x.x) { set(.workplane(origin: o, xAxisPoint: Vec3($0, x.y, x.z), planePoint: p)) }
+                field(String(localized: "Asse X (y)"), x.y) { set(.workplane(origin: o, xAxisPoint: Vec3(x.x, $0, x.z), planePoint: p)) }
+                field(String(localized: "Asse X (z)"), x.z) { set(.workplane(origin: o, xAxisPoint: Vec3(x.x, x.y, $0), planePoint: p)) }
+                field(String(localized: "Nel piano (x)"), p.x) { set(.workplane(origin: o, xAxisPoint: x, planePoint: Vec3($0, p.y, p.z))) }
+                field(String(localized: "Nel piano (y)"), p.y) { set(.workplane(origin: o, xAxisPoint: x, planePoint: Vec3(p.x, $0, p.z))) }
+                field(String(localized: "Nel piano (z)"), p.z) { set(.workplane(origin: o, xAxisPoint: x, planePoint: Vec3(p.x, p.y, $0))) }
+                if let plane = shape.workplanePlane {
+                    info(String(localized: "Normale"),
+                         "\(fmt(plane.normal.x)), \(fmt(plane.normal.y)), \(fmt(plane.normal.z))")
+                } else {
+                    Text("I tre punti sono in linea: sposta il punto dell'asse X o quello nel piano.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+                Button { sketch.setWorkplane(id) } label: {
+                    Label("Imposta piano di lavoro", systemImage: "square.stack.3d.up")
+                }
+                .controlSize(.small)
+                .disabled(shape.workplanePlane == nil)
+                .help("Lo schizzo passa su questo piano: il 3D resta dov'è, il 2D si appoggia al nuovo piano")
             }
-            if shape.isClosed { info(String(localized: "Area"), "\(fmt(shape.area)) mm²") }
-            info(shape.isClosed ? String(localized: "Perimetro") : String(localized: "Lunghezza"), "\(fmt(shape.length)) mm")
+            if case .workplane = shape.kind {
+                // A frame has no length: its normal is shown above.
+            } else if shape.is3D {
+                info(String(localized: "Lunghezza 3D"), "\(fmt(shape.length)) mm")
+            } else {
+                if shape.isClosed { info(String(localized: "Area"), "\(fmt(shape.area)) mm²") }
+                info(shape.isClosed ? String(localized: "Perimetro") : String(localized: "Lunghezza"), "\(fmt(shape.length)) mm")
+            }
             Toggle("Geometria di costruzione", isOn: Binding(get: { shape.isConstruction },
                                                              set: { v in sketch.update(id) { $0.isConstruction = v } }))
                 .toggleStyle(.switch).controlSize(.small).font(Theme.Typeface.body)
@@ -217,6 +276,10 @@ extension SketchShape {
         case .slot: String(localized: "Asola")
         case .arc: String(localized: "Arco")
         case .spline: String(localized: "Spline")
+        case .bezier: String(localized: "Curva di Bezier")
+        case .point3D: String(localized: "Punto 3D")
+        case .line3D: String(localized: "Linea 3D")
+        case .workplane: String(localized: "Piano di lavoro")
         }
     }
 }

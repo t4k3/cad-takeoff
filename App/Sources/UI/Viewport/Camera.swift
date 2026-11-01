@@ -100,6 +100,22 @@ final class CameraController {
         }
     }
 
+    /// Normalised device coordinates (x right, y up) of the point a ray was cast through: the
+    /// inverse of `ray(at:in:)`, so the GPU identity pass can project that ray onto one pixel.
+    func ndc(of ray: Ray, aspect: Float) -> SIMD2<Float> {
+        let (right, up) = basis
+        let halfHeight = tan(fovY / 2)
+        switch projection {
+        case .perspective:
+            let w = max(simd_dot(ray.direction, forward), 1e-6)
+            return SIMD2(simd_dot(ray.direction, right) / (w * halfHeight * aspect),
+                         simd_dot(ray.direction, up) / (w * halfHeight))
+        case .orthographic:
+            let offset = ray.origin - eye, h = pose.distance * halfHeight
+            return SIMD2(simd_dot(offset, right) / (h * aspect), simd_dot(offset, up) / h)
+        }
+    }
+
     // MARK: Interaction
 
     /// Screen delta in points (x right, y down), as the mouse moved.

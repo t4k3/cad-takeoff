@@ -96,6 +96,19 @@ extension SketchSession {
                     }
                 }
             }
+        case .move:
+            if let from = moveFrom, let raw = rawCursor, let s = selectedShape, !s.is3D {
+                let ghost = s.transformed(rotating: 0, around: Vec2(0, 0), moving: raw - from)
+                polyline(ghost.outline, closed: ghost.isClosed, preview)
+                polyline([from, raw], selectedColor)
+            }
+        case .rotate:
+            if let center = rotateCenter, let raw = rawCursor, let s = selectedShape, !s.is3D, dist(center, raw) > 1e-6 {
+                let angle = atan2(raw.y - center.y, raw.x - center.x)
+                let ghost = s.transformed(rotating: angle, around: center, moving: Vec2(0, 0))
+                polyline(ghost.outline, closed: ghost.isClosed, preview)
+                polyline([center, raw], selectedColor)
+            }
         default:
             break
         }

@@ -3,6 +3,29 @@ import Foundation
 // Provider-agnostic contract for the in-app assistant (T52). Claude implements it in
 // ClaudeProvider.swift; Codex implements OpenAI in OpenAIProvider.swift (T53).
 
+/// A model offered by a provider's picker, with the name shown in the UI.
+struct ModelChoice: Identifiable, Sendable, Equatable {
+    let id: String
+    let name: String
+}
+
+/// The language the assistant speaks: the app's own language (System Settings can set it per
+/// app), so the prompt we send and the answer we get match the UI.
+enum AssistantLanguage: Sendable, Equatable {
+    case italian
+    case english
+    case chinese
+
+    static func forCode(_ code: String?) -> AssistantLanguage {
+        guard let code = code?.lowercased() else { return .english }
+        if code.hasPrefix("zh") { return .chinese }
+        if code.hasPrefix("it") { return .italian }
+        return .english
+    }
+
+    static var current: AssistantLanguage { forCode(Bundle.main.preferredLocalizations.first) }
+}
+
 /// A tool call requested by the model in the current turn.
 struct ToolCallRequest: Identifiable, Sendable, Equatable {
     let id: String

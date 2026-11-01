@@ -11,6 +11,7 @@ xcrun swiftc -swift-version 6 -emit-library -emit-module -module-name CADCore "$
 xcrun swiftc -swift-version 6 -parse-as-library -I "$test_dir" -L "$test_dir" -lCADCore \
     -Xlinker -rpath -Xlinker "$test_dir" \
     App/Sources/UI/Sketch/SketchSession.swift App/Sources/UI/Sketch/SketchSession+Constraints.swift \
-    App/Sources/UI/Sketch/SketchSession+Edit.swift App/Sources/UI/Viewport/MatrixMath.swift \
+    App/Sources/UI/Sketch/SketchSession+Edit.swift App/Sources/UI/Sketch/SketchSession+Transform.swift \
+    App/Sources/UI/Viewport/MatrixMath.swift \
     Tests/Sketch/Stubs.swift Tests/Sketch/Runner.swift -o "$test_dir/sketch-tests"
 "$test_dir/sketch-tests"

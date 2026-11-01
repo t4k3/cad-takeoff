@@ -10,12 +10,17 @@ import simd
 final class SketchSession {
     enum Tool: String, CaseIterable, Identifiable {
         case select = "Seleziona", line = "Linea", rectangle = "Rettangolo", circle = "Cerchio",
-             polygon = "Poligono", slot = "Asola", arc = "Arco", spline = "Spline", fillet = "Raccordo", chamfer = "Smusso", trim = "Taglia", extend = "Estendi",
-             offset = "Offset", mirror = "Specchio", dimension = "Quota", point = "Punto"
+             polygon = "Poligono", slot = "Asola", arc = "Arco", spline = "Spline", bezier = "Bezier",
+             fillet = "Raccordo", chamfer = "Smusso", trim = "Taglia", extend = "Estendi",
+             offset = "Offset", mirror = "Specchio", move = "Sposta", rotate = "Ruota",
+             dimension = "Quota", point = "Punto",
+             point3D = "Punto 3D", line3D = "Linea 3D", workplane = "Piano di lavoro"
         var id: String { rawValue }
         /// The drawing tools (Quota lives with the constraints, the editing tools under MODIFICA).
-        static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc, .spline, .point] }
-        static var modify: [Tool] { [.fillet, .chamfer, .trim, .extend, .offset, .mirror] }
+        static var drawing: [Tool] { [.select, .line, .rectangle, .circle, .polygon, .slot, .arc, .spline, .bezier, .point, .point3D, .line3D, .workplane] }
+        /// Tools that place geometry off the sketch plane.
+        static var spatial: [Tool] { [.point3D, .line3D, .workplane] }
+        static var modify: [Tool] { [.fillet, .chamfer, .trim, .extend, .offset, .mirror, .move, .rotate] }
         var symbol: String {
             switch self {
             case .select: "cursorarrow"
@@ -26,14 +31,20 @@ final class SketchSession {
             case .slot: "capsule"
             case .arc: "circle.bottomhalf.filled"
             case .spline: "scribble.variable"
+            case .bezier: "waveform.path"
             case .fillet: "arrow.turn.up.right"
             case .chamfer: "triangle.bottomhalf.filled"
             case .trim: "scissors"
             case .extend: "arrow.right.to.line"
             case .offset: "square.on.square.dashed"
             case .mirror: "arrow.left.and.right.righttriangle.left.righttriangle.right"
+            case .move: "arrow.up.and.down.and.arrow.left.and.right"
+            case .rotate: "rotate.right"
             case .dimension: "ruler"
             case .point: "smallcircle.filled.circle"
+            case .point3D: "point.3.connected.trianglepath.dotted"
+            case .line3D: "line.diagonal"
+            case .workplane: "square.stack.3d.up"
             }
         }
         /// Tooltip shown in the tool dock and in the canvas hint (localized at runtime).
@@ -47,21 +58,27 @@ final class SketchSession {
             case .slot: String(localized: "Clicca il primo centro, il secondo centro, poi la larghezza.")
             case .arc: String(localized: "Clicca l'inizio, la fine, poi un punto dell'arco.")
             case .spline: String(localized: "Clicca i punti della curva. Clicca il primo punto per chiuderla · doppio clic, Invio o Esc per finire.")
-            case .fillet: String(localized: "Clicca l'angolo tra due linee (anche di un rettangolo): diventa un arco tangente del raggio impostato.")
-            case .chamfer: String(localized: "Clicca l'angolo tra due linee: lo taglia una linea alla distanza impostata su entrambi i lati.")
+            case .bezier: String(localized: "Clicca l'inizio, la prima maniglia, la seconda maniglia e infine la fine della curva.")
+            case .fillet: String(localized: "Clicca un rettangolo o un poligono: tutti gli angoli diventano archi del raggio impostato. Clicca vicino all'angolo tra due linee per un solo raccordo.")
+            case .chamfer: String(localized: "Clicca un rettangolo o un poligono: tutti gli angoli vengono tagliati alla distanza impostata. Clicca vicino all'angolo tra due linee per un solo smusso.")
             case .trim: String(localized: "Clicca il pezzo da togliere: si taglia fino alle linee che lo incrociano (in rosso sotto il cursore).")
             case .extend: String(localized: "Clicca vicino all'estremo libero di una linea o di un arco: si allunga fino alla prima curva che incontra.")
             case .offset: String(localized: "Clicca una forma (con le linee e gli archi uniti a lei), poi il lato dove creare la copia alla distanza impostata.")
             case .mirror: String(localized: "Clicca la linea d'asse, poi le forme da specchiare: le copie restano simmetriche all'originale.")
+            case .move: String(localized: "Con un'entità selezionata, clicca il punto di partenza e poi dove portarla: i vincoli la seguono, o ti dicono che non possono.")
+            case .rotate: String(localized: "Con un'entità selezionata, clicca il centro di rotazione e poi un punto: l'angolo è quello da lì, in senso antiorario.")
             case .dimension: String(localized: "Clicca una linea (lunghezza), un cerchio (diametro), due punti (distanza) o due linee (angolo), poi scrivi il valore.")
             case .point: String(localized: "Clicca per mettere un punto: riferimento per vincoli e quote, e centro per i fori.")
+            case .point3D: String(localized: "Clicca per un punto 3D: X e Y sulla griglia del piano, la profondità Z dal campo Altezza Z.")
+            case .line3D: String(localized: "Clicca i due estremi: la linea sta alla profondità del campo Altezza Z (poi la modifichi nei Parametri).")
+            case .workplane: String(localized: "Clicca tre punti 3D: l'origine, un punto sull'asse X e un punto nel piano. Poi «Imposta piano di lavoro» nei Parametri.")
             }
         }
         var key: String? {
             switch self {
             case .line: "l"; case .rectangle: "r"; case .circle: "c"; case .polygon: "p"; case .slot: "s"; case .dimension: "d"; case .arc: "a"
-            case .trim: "t"; case .offset: "o"; case .spline: "b"
-            case .select, .fillet, .chamfer, .extend, .mirror, .point: nil
+            case .trim: "t"; case .offset: "o"; case .spline: "b"; case .bezier: "g"
+            case .select, .fillet, .chamfer, .extend, .mirror, .move, .rotate, .point, .point3D, .line3D, .workplane: nil
             }
         }
     }
@@ -69,7 +86,9 @@ final class SketchSession {
     var sketch: Sketch {
         didSet {
             if !applyingUndo, !dragging, sketch != oldValue { record(oldValue) }
-            if sketch.shapes != oldValue.shapes || sketch.constraints != oldValue.constraints { analyze() }
+            // During a drag the solver already has the shapes: the full analysis (DOF, conflicts)
+            // runs once on release, in endDrag.
+            if !dragging, sketch.shapes != oldValue.shapes || sketch.constraints != oldValue.constraints { analyze() }
         }
     }
 
@@ -79,6 +98,8 @@ final class SketchSession {
         didSet {
             picked = []
             notice = nil
+            axisHover = nil
+            hoverRef = nil
             if constraintTool != nil { tool = .select; selection = nil }
         }
     }
@@ -91,17 +112,72 @@ final class SketchSession {
     /// Shapes that cannot move any more (drawn white), and the sketch's free degrees of freedom.
     private(set) var constrainedShapes: Set<UUID> = []
     private(set) var freedom = 0
+    /// How many directions each shape can still move in (per-point, not one global number).
+    private(set) var freedomPerShape: [UUID: Int] = [:]
+    /// Constraints that cannot hold and those that only repeat others (shown in red/orange).
+    private(set) var conflictingConstraints: Set<SketchConstraint.ID> = []
+    private(set) var redundantConstraints: Set<SketchConstraint.ID> = []
+    /// While dragging: the constraints on the dragged point that keep it from the mouse.
+    private(set) var blockingConstraints: Set<SketchConstraint.ID> = []
+    /// The next dimension created measures without driving (Fusion's "reference" dimension).
+    var referenceNextDimension = false
     /// A point being dragged in Seleziona mode.
     @ObservationIgnored var dragRef: SketchRef?
     @ObservationIgnored var dragFixes: [SketchConstraint] = []
-    @ObservationIgnored var dragging = false
+    /// Dragging a whole shape by its centre grip: the shape, where the drag started, and the
+    /// point that follows the mouse (the rectangle's corner 0, the circle's/polygon's centre).
+    @ObservationIgnored var shapeDrag: (id: SketchShape.ID, startCursor: Vec2, anchor: Vec2)?
+    /// Observable, so the hand cursor appears as soon as the drag starts.
+    var dragging = false {
+        didSet {
+            // A drag moves the shapes continuously: an analysis of the pre-drag sketch is stale.
+            if dragging { analysisTask?.cancel(); analysisGeneration += 1 }
+        }
+    }
+
+    /// A point or a whole shape is following the mouse.
+    var isDragging: Bool { dragging }
+
+    /// The full analysis (DOF, conflicts) runs off the main actor, so a big sketch never stalls
+    /// the window (T145). A new analysis cancels the previous one, and results computed for an
+    /// older sketch are dropped: the panels never show a state that no longer exists.
+    @ObservationIgnored private var analysisGeneration = 0
+    @ObservationIgnored private var analysisTask: Task<Void, Never>?
 
     func analyze() {
-        guard !sketch.constraints.isEmpty else { constrainedShapes = []; freedom = 0; return }
-        let r = SketchSolver.solve(sketch.shapes, sketch.constraints)
+        analysisTask?.cancel()
+        analysisGeneration += 1
+        let generation = analysisGeneration
+        guard !sketch.constraints.isEmpty else {
+            constrainedShapes = []; freedom = 0; freedomPerShape = [:]
+            conflictingConstraints = []; redundantConstraints = []
+            if !dragging { blockingConstraints = [] }
+            return
+        }
+        let shapes = sketch.shapes
+        let constraints = sketch.constraints
+        let clearBlocking = !dragging
+        analysisTask = Task.detached(priority: .utility) { [weak self] () -> Void in
+            // The solve checks `Task.isCancelled` between Newton iterations and clusters.
+            let r = SketchSolver.solve(shapes, constraints, isCancelled: { Task.isCancelled })
+            guard !Task.isCancelled else { return }
+            await self?.applyAnalysis(r, generation: generation, clearBlocking: clearBlocking)
+        }
+    }
+
+    /// Applies a background result only if it belongs to the sketch now on screen.
+    private func applyAnalysis(_ r: SketchSolver.Result, generation: Int, clearBlocking: Bool) {
+        guard generation == analysisGeneration else { return }
         constrainedShapes = r.fullyConstrained
         freedom = r.freedom
+        freedomPerShape = r.freedomPerShape
+        conflictingConstraints = Set(r.conflicting)
+        redundantConstraints = Set(r.redundant)
+        if clearBlocking { blockingConstraints = [] }
     }
+
+    /// Blocking constraints are found while dragging (see SketchSession+Constraints).
+    func setBlocking(_ ids: [SketchConstraint.ID]) { blockingConstraints = Set(ids) }
 
     /// Records the current state as one undo step (a whole drag is one step).
     func recordStep() { record(sketch) }
@@ -115,7 +191,8 @@ final class SketchSession {
                 // A line or curve being drawn is kept (as Fusion does), not thrown away.
                 if pending.count >= 2, oldValue == .line { commit(.polyline(pending, closed: false)) }
                 if pending.count >= 2, oldValue == .spline { commit(.spline(points: pending, closed: false)) }
-                pending = []; picked = []; offsetSource = nil; mirrorAxis = nil
+                pending = []; pending3D = []; picked = []; offsetSource = nil; mirrorAxis = nil
+                moveFrom = nil; rotateCenter = nil
             }
             if tool != .select, constraintTool != nil { constraintTool = nil }
         }
@@ -124,8 +201,19 @@ final class SketchSession {
     /// A click places a point (drawing tools), rather than picking something already there.
     var placesPoints: Bool { constraintTool == nil && Tool.drawing.contains(tool) && tool != .select }
     private(set) var pending: [Vec2] = []
+    /// First endpoint of a 3D line being drawn (the second click commits it).
+    private(set) var pending3D: [Vec3] = []
     private(set) var cursor: Vec2?
     private(set) var cursorScreen: CGPoint?
+    /// The axis or the origin under the cursor while a constraint tool is active (drawn bright).
+    var axisHover: SketchRef?
+    /// The entity a click would take right now (SolidWorks' preselection): it lights up before
+    /// the click, so it is clear whether the point or the line under the cursor will be used.
+    var hoverRef: SketchRef?
+    /// The shape under the cursor in Seleziona (grips and preselection).
+    var hoverShape: SketchShape.ID?
+    /// The shape whose centre grip is under the cursor (it draws lit and the cursor shows a hand).
+    var hotGrip: SketchShape.ID?
     var snapToGrid = true
     var gridStep = 1.0
     var polygonSides = 6
@@ -133,12 +221,23 @@ final class SketchSession {
     var filletRadius = 3.0
     var offsetDistance = 2.0
     var chamferDistance = 2.0
+    /// Depth of the next 3D point or line above the sketch plane (the panel's «Altezza Z»).
+    var drawingHeight = 0.0
+    /// Screen projection of world points, supplied by the viewport: 3D entities are picked and
+    /// snapped where they appear on screen, not on the plane.
+    @ObservationIgnored var projectToScreen: (@MainActor (Vec3) -> CGPoint?)?
     /// Values of the design's user parameters, for dimension expressions.
     var parameterValues: [String: Double] = [:]
     /// Offset: the shape picked first (then the side is clicked).
     var offsetSource: SketchShape.ID?
     /// Specchio: the axis line picked first (then the shapes to mirror).
     var mirrorAxis: SketchRef?
+    /// Sposta: the point clicked first (the second click says where it goes).
+    var moveFrom: Vec2?
+    /// Ruota: the centre clicked first (the second click gives the angle).
+    var rotateCenter: Vec2?
+    /// Entities copied with ⌘C, waiting for ⌘V (fresh IDs, without the originals' constraints).
+    var copiedShapes: [SketchShape] = []
     /// Rivoluzione: the axis pick while the command's «Asse» field is active, and the preview.
     @ObservationIgnored var onAxisPick: ((SketchRef) -> Void)?
     /// Estrudi «Fino a faccia»: a face of the part picked while the «Faccia» field is active.
@@ -146,6 +245,9 @@ final class SketchSession {
     struct RevolvePreview: Equatable { var axisStart: Vec2, axisEnd: Vec2, angle: Double, reversed: Bool, isCut: Bool }
     var revolvePreview: RevolvePreview?
     var polygonCircumscribed = false
+    /// The next entities are construction geometry: reference lines for constraints and axes that
+    /// never become a profile (the toolbar's «Costruzione» switch, as in dune3d).
+    var constructionNext = false
     /// Height shown as wireframe while the Extrude panel is open.
     var previewHeight: Double?
     /// Preview drawn red when the extrusion cuts.
@@ -263,6 +365,25 @@ final class SketchSession {
 
     func shape(_ id: SketchShape.ID) -> SketchShape? { shapes.first { $0.id == id } }
 
+    /// The centre grip of a shape: rectangle point 4, circle and polygon point 0. Slots have no
+    /// single centre parameter, so they get no grip.
+    func gripCenter(_ s: SketchShape) -> Vec2? {
+        switch s.kind {
+        case .rectangle: s.point(4)
+        case .circle, .polygon: s.point(0)
+        default: nil
+        }
+    }
+
+    /// The shape whose centre grip is within a snap radius of `p` (topmost first).
+    func gripHit(_ p: Vec2) -> SketchShape.ID? {
+        for s in shapes.reversed() {
+            guard let c = gripCenter(s), dist(c, p) <= max(vertexSnap * 1.5, 1e-6) else { continue }
+            return s.id
+        }
+        return nil
+    }
+
     func replace(_ id: SketchShape.ID, with kind: SketchShape.Kind) {
         update(id) { $0.kind = kind }
     }
@@ -289,6 +410,19 @@ final class SketchSession {
         selection = nil
     }
 
+    /// Turns the selected entity into construction geometry (or back): it stays in the sketch for
+    /// references and constraints, but no longer bounds a profile.
+    func toggleConstructionSelection() {
+        guard let id = selection, let s = shape(id), !s.is3D else {
+            notice = String(localized: "Seleziona un'entità 2D da rendere di costruzione (le entità 3D non fanno profili).")
+            return
+        }
+        update(id) { $0.isConstruction.toggle() }
+        let next = shape(id)?.isConstruction == true
+        notice = next ? String(localized: "Entità di costruzione: non fa più parte dei profili.")
+                    : String(localized: "Entità normale: torna a fare parte dei profili.")
+    }
+
     // MARK: Input
 
     /// Where a viewport ray meets the sketch plane.
@@ -304,14 +438,33 @@ final class SketchSession {
     }
 
     func hover(_ world: SIMD3<Float>?, screen: CGPoint?) {
-        cursor = world.map { snap(local($0)) }
+        let raw = world.map(local)
+        cursor = raw.map(snap)
         cursorScreen = screen
+        // Preselection: show exactly what the click would take (point before line, as in SolidWorks).
+        if let tool = constraintTool, let raw {
+            let ref = pickRef(raw, kinds: wantedKinds(for: tool, picked: picked.count), screen: cursorScreen)
+            hoverRef = ref
+            axisHover = ref?.isFixedGeometry == true ? ref : nil
+        } else {
+            hoverRef = nil
+            axisHover = nil
+        }
+        // The shape under the cursor and its centre grip (Seleziona only).
+        if tool == .select, constraintTool == nil, let raw {
+            hoverShape = pick(raw)
+            hotGrip = gripHit(raw)
+        } else {
+            hoverShape = nil
+            hotGrip = nil
+        }
     }
 
-    func click(_ world: SIMD3<Float>) {
+    func click(_ world: SIMD3<Float>, screen: CGPoint? = nil) {
+        if let screen { cursorScreen = screen }
         let raw = local(world)
-        if constraintTool != nil { pickForConstraint(raw); return }
-        if tool == .dimension { pickForDimension(raw); return }
+        if constraintTool != nil { pickForConstraint(raw, screen: cursorScreen); return }
+        if tool == .dimension { pickForDimension(raw, screen: cursorScreen); return }
         let p = snap(raw)
         switch tool {
         case .dimension: break
@@ -321,6 +474,8 @@ final class SketchSession {
         case .extend: extend(raw)
         case .offset: offsetClick(raw)
         case .mirror: mirrorClick(raw)
+        case .move: moveClick(p)
+        case .rotate: rotateClick(p)
         case .arc:
             switch pending.count {
             case 0: pending = [p]
@@ -333,6 +488,32 @@ final class SketchSession {
         case .point:
             // A lone point: a reference for constraints, dimensions and hole centres (never a profile).
             commit(.polyline([p], closed: false))
+        case .point3D:
+            // A point in the plane's 3D frame: X/Y snapped on the plane, Z from «Altezza Z» (or
+            // exactly on a 3D entity under the cursor).
+            let q = snap3D(screen: cursorScreen) ?? Vec3(p.x, p.y, drawingHeight)
+            commit(.point3D(position: q))
+        case .line3D:
+            let q = snap3D(screen: cursorScreen) ?? Vec3(p.x, p.y, drawingHeight)
+            if let a = pending3D.first {
+                if (q - a).length > 1e-6 { commit(.line3D(start: a, end: q)) }
+            } else {
+                pending3D = [q]
+            }
+        case .workplane:
+            // Three points: the origin, a point along the X axis and one in the plane.
+            let q = snap3D(screen: cursorScreen) ?? Vec3(p.x, p.y, drawingHeight)
+            if let last = pending3D.last, (last - q).length < 1e-6 { return }
+            pending3D.append(q)
+            guard pending3D.count == 3 else { return }
+            if SketchPlane.workplane(pending3D[0], pending3D[1], pending3D[2]) != nil {
+                let pts = pending3D
+                pending3D = []
+                commit(.workplane(origin: pts[0], xAxisPoint: pts[1], planePoint: pts[2]))
+            } else {
+                pending3D = [pending3D[0], pending3D[1]]
+                notice = String(localized: "I tre punti sono in linea: clicca un punto fuori dalla retta dell'asse X.")
+            }
         case .spline:
             if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
                 commit(.spline(points: pending, closed: true))
@@ -341,6 +522,13 @@ final class SketchSession {
             } else {
                 pending.append(p)
             }
+        case .bezier:
+            // Four clicks: the start, the two handles and the end of the cubic curve.
+            if let last = pending.last, dist(last, p) < max(vertexSnap * 0.5, 1e-6) { return }
+            pending.append(p)
+            guard pending.count == 4 else { return }
+            let pts = pending
+            commit(.bezier(start: pts[0], control1: pts[1], control2: pts[2], end: pts[3]))
         case .line:
             if pending.count >= 3, dist(p, pending[0]) < max(vertexSnap, 1e-6) {
                 commit(.polyline(pending, closed: true))
@@ -351,7 +539,11 @@ final class SketchSession {
             }
         case .rectangle:
             if let a = pending.first {
-                if abs(p.x - a.x) > 1e-6, abs(p.y - a.y) > 1e-6 { commit(.rectangle(corner: a, width: p.x - a.x, height: p.y - a.y)) }
+                if abs(p.x - a.x) > 1e-6, abs(p.y - a.y) > 1e-6 {
+                    // The corner dragged backwards: the rectangle stays the right way round (CCW).
+                    let corner = Vec2(min(a.x, p.x), min(a.y, p.y))
+                    commit(.rectangle(corner: corner, width: abs(p.x - a.x), height: abs(p.y - a.y)))
+                }
             } else { pending = [p] }
         case .circle:
             if let c = pending.first {
@@ -383,18 +575,22 @@ final class SketchSession {
         if !picked.isEmpty { picked = []; return true }
         if offsetSource != nil { offsetSource = nil; return true }
         if mirrorAxis != nil { mirrorAxis = nil; return true }
+        if moveFrom != nil || rotateCenter != nil { moveFrom = nil; rotateCenter = nil; return true }
         if constraintTool != nil { constraintTool = nil; return true }
         if selectedConstraint != nil { selectedConstraint = nil; return true }
         // Esc ends a line or curve keeping what is drawn (the rubber band goes).
         if pending.count >= 2, tool == .line || tool == .spline { finish(); return true }
         if !pending.isEmpty { pending = []; return true }
+        if !pending3D.isEmpty { pending3D = []; return true }
         if tool != .select { tool = .select; return true }
         if selection != nil { selection = nil; return true }
         return false
     }
 
     private func commit(_ kind: SketchShape.Kind) {
-        let s = SketchShape(kind: kind)
+        var s = SketchShape(kind: kind, isConstruction: constructionNext)
+        // Off-plane entities never bound a profile: the switch only applies to the flat ones.
+        if s.is3D { s.isConstruction = false }
         // The shape and the constraints it implies (as drawn) in one undo step.
         var next = sketch
         next.shapes.append(s)
@@ -415,6 +611,22 @@ final class SketchSession {
         selection = s.id
     }
 
+    /// Makes a workplane the sketch's plane (dune3d's «set workplane»): 3D geometry keeps its place
+    /// in the world, 2D geometry follows the new plane, and new entities are drawn on it.
+    func setWorkplane(_ id: SketchShape.ID) {
+        guard let shape = shape(id), let newPlane = shape.workplanePlane else {
+            notice = String(localized: "Piano di lavoro degenere: i tre punti sono in linea.")
+            return
+        }
+        guard newPlane != sketch.plane else { return }
+        var next = sketch
+        next.setPlane(newPlane)
+        _ = next.solve()
+        sketch = next
+        selection = nil
+        notice = String(localized: "Piano di lavoro impostato: le quote sul piano valgono dal nuovo piano.")
+    }
+
     private func polygonKind(center c: Vec2, through p: Vec2) -> SketchShape.Kind {
         .polygon(center: c, radius: dist(c, p), sides: polygonSides,
                  rotation: atan2(p.y - c.y, p.x - c.x) - (polygonCircumscribed ? .pi / Double(polygonSides) : 0),
@@ -423,6 +635,8 @@ final class SketchSession {
 
     /// Topmost closed shape containing the point, else the nearest outline within the snap radius.
     func pick(_ p: Vec2) -> SketchShape.ID? {
+        // Off-plane geometry is picked where it appears on screen, before the planar shapes.
+        if let id = pick3D(screen: cursorScreen) { return id }
         var best: (SketchShape.ID, Double)?
         for s in shapes.reversed() {
             let o = s.outline
@@ -439,6 +653,125 @@ final class SketchSession {
         }
         if let best, best.1 <= vertexSnap * 1.2 { return best.0 }
         return shapes.last { $0.isClosed && contains($0.outline, p) }?.id
+    }
+
+    // MARK: Off-plane picking and snapping (T137)
+
+    /// Screen radius within which a 3D point (or line) takes the click: points are bigger, as in
+    /// SolidWorks and dune3d, so an endpoint stays easy to take when the lines are dense.
+    static let pointPickRadius: CGFloat = 9
+    static let segmentPickRadius: CGFloat = 7
+
+    /// Projection of a point of the sketch's 3D frame onto the screen, through the viewport.
+    func screenPoint(_ p: Vec3) -> CGPoint? {
+        projectToScreen?(sketch.plane.world(Vec2(p.x, p.y), height: p.z))
+    }
+
+    private func screenDistance(_ p: CGPoint, _ q: CGPoint) -> CGFloat { hypot(p.x - q.x, p.y - q.y) }
+
+    /// Nearest point on the screen segment a–b, with its distance and parameter.
+    private func screenHit(_ p: CGPoint, _ a: CGPoint, _ b: CGPoint) -> (point: CGPoint, distance: CGFloat, t: CGFloat) {
+        let dx = b.x - a.x, dy = b.y - a.y
+        let l2 = dx * dx + dy * dy
+        guard l2 > 1e-9 else { return (a, screenDistance(p, a), 0) }
+        let t = max(0, min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2))
+        let q = CGPoint(x: a.x + dx * t, y: a.y + dy * t)
+        return (q, screenDistance(p, q), t)
+    }
+
+    /// The position of the 3D entity under the cursor (an endpoint or a point along a 3D line):
+    /// a 3D line joins existing geometry exactly instead of landing at the current height.
+    func snap3D(screen: CGPoint?) -> Vec3? {
+        guard let screen else { return nil }
+        var best: (Vec3, CGFloat)?
+        for s in shapes where s.is3D {
+            for i in 0..<s.pointCount {
+                guard let q = s.point3D(i), let sp = screenPoint(q) else { continue }
+                let d = screenDistance(screen, sp)
+                if d <= Self.pointPickRadius, d < (best?.1 ?? .infinity) { best = (q, d) }
+            }
+        }
+        if let best { return best.0 }
+        for s in shapes where s.is3D {
+            for i in 0..<s.segmentCount {
+                guard let (a, b) = s.segment3D(i), let sa = screenPoint(a), let sb = screenPoint(b) else { continue }
+                let hit = screenHit(screen, sa, sb)
+                guard hit.distance <= Self.segmentPickRadius, hit.distance < (best?.1 ?? .infinity) else { continue }
+                best = (a + (b - a) * Double(hit.t), hit.distance)
+            }
+        }
+        return best?.0
+    }
+
+    /// The 3D entity under `screen` (points first, then lines).
+    func pick3D(screen: CGPoint?) -> SketchShape.ID? {
+        guard let screen else { return nil }
+        var best: (SketchShape.ID, CGFloat)?
+        for s in shapes where s.is3D {
+            for i in 0..<s.pointCount {
+                guard let q = s.point3D(i), let sp = screenPoint(q) else { continue }
+                let d = screenDistance(screen, sp)
+                if d <= Self.pointPickRadius, d < (best?.1 ?? .infinity) { best = (s.id, d) }
+            }
+        }
+        if let best { return best.0 }
+        for s in shapes where s.is3D {
+            for i in 0..<s.segmentCount {
+                guard let (a, b) = s.segment3D(i), let sa = screenPoint(a), let sb = screenPoint(b) else { continue }
+                let d = screenHit(screen, sa, sb).distance
+                if d <= Self.segmentPickRadius, d < (best?.1 ?? .infinity) { best = (s.id, d) }
+            }
+        }
+        if let best { return best.0 }
+        // The frame of a workplane is a face: a click inside it takes the workplane.
+        for s in shapes where s.is3D {
+            if case .workplane = s.kind, let quad = workplaneQuad(s), pointInPolygon(screen, quad) { return s.id }
+        }
+        return nil
+    }
+
+    /// Ray casting: whether `p` is inside the screen polygon `poly`.
+    private func pointInPolygon(_ p: CGPoint, _ poly: [CGPoint]) -> Bool {
+        guard poly.count >= 3 else { return false }
+        var inside = false
+        var j = poly.count - 1
+        for i in 0..<poly.count {
+            let a = poly[i], b = poly[j]
+            if (a.y > p.y) != (b.y > p.y) {
+                let t = (p.y - a.y) / (b.y - a.y)
+                if p.x < a.x + t * (b.x - a.x) { inside.toggle() }
+            }
+            j = i
+        }
+        return inside
+    }
+
+    /// The 3D reference (point or line) under `screen`, for constraint picking and preselection.
+    func pickRef3D(screen: CGPoint?, kinds: Set<RefKind>) -> SketchRef? {
+        guard let screen else { return nil }
+        if kinds.contains(.point) {
+            var best: (SketchRef, CGFloat)?
+            for s in shapes where s.is3D {
+                for i in 0..<s.pointCount {
+                    guard let q = s.point3D(i), let sp = screenPoint(q) else { continue }
+                    let d = screenDistance(screen, sp)
+                    if d <= Self.pointPickRadius, d < (best?.1 ?? .infinity) { best = (.point(s.id, i), d) }
+                }
+            }
+            if let best { return best.0 }
+        }
+        if kinds.contains(.segment) {
+            var best: (SketchRef, CGFloat)?
+            for s in shapes where s.is3D {
+                for i in 0..<s.segmentCount {
+                    guard let (a, b) = s.segment3D(i), let sa = screenPoint(a), let sb = screenPoint(b) else { continue }
+                    let d = screenHit(screen, sa, sb).distance
+                    if d <= Self.segmentPickRadius, d < (best?.1 ?? .infinity) { best = (.segment(s.id, i), d) }
+                }
+            }
+            if let best { return best.0 }
+        }
+        return nil
     }
 
     // MARK: Snapping (vertices, midpoints, centres — as in Fusion)
@@ -539,6 +872,13 @@ final class SketchSession {
                 if !o.isEmpty { out.append(.init(point: o[o.count / 2], kind: .midpoint)) }
             case let .spline(p, _):
                 out += p.map { .init(point: $0, kind: .vertex) }
+            case .bezier:
+                out += [.init(point: s.point(0)!, kind: .vertex), .init(point: s.point(3)!, kind: .vertex)]
+                let o = s.outline
+                if !o.isEmpty { out.append(.init(point: o[o.count / 2], kind: .midpoint)) }
+            case .point3D, .line3D, .workplane:
+                // Off-plane geometry has no planar snap in the 2D drawing frame.
+                break
             }
         }
         out += segments.map { .init(point: mid($0.0, $0.1), kind: .midpoint) }
@@ -671,6 +1011,15 @@ final class SketchSession {
         case .spline:
             guard !pending.isEmpty else { return xy }
             return String(localized: "\(pending.count + 1) punti · \(fmt(SketchShape(kind: .spline(points: pending + [c], closed: false)).length)) mm")
+        case .bezier:
+            switch pending.count {
+            case 0: return xy
+            case 1: return String(localized: "Maniglia 1 \(xy)")
+            case 2: return String(localized: "Maniglia 2 \(xy)")
+            default:
+                let kind = SketchShape.Kind.bezier(start: pending[0], control1: pending[1], control2: pending[2], end: c)
+                return "\(fmt(SketchShape(kind: kind).length)) mm"
+            }
         case .rectangle:
             guard let a = pending.first else { return xy }
             return "\(fmt(abs(c.x - a.x))) × \(fmt(abs(c.y - a.y))) mm"
@@ -698,7 +1047,21 @@ final class SketchSession {
         case .fillet: return "R \(fmt(filletRadius)) mm"
         case .chamfer: return String(localized: "Smusso \(fmt(chamferDistance)) mm")
         case .offset: return offsetSource == nil ? nil : String(localized: "Offset \(fmt(offsetDistance)) mm")
+        case .move:
+            guard let from = moveFrom, let c = cursor else { return nil }
+            return String(localized: "Spostamento \(fmt(c.x - from.x)) · \(fmt(c.y - from.y)) mm")
+        case .rotate:
+            guard let center = rotateCenter, let c = cursor else { return nil }
+            return String(localized: "Rotazione \(fmt(atan2(c.y - center.y, c.x - center.x) * 180 / .pi))°")
         case .point: return xy
+        case .point3D: return "\(xy)  Z \(fmt(drawingHeight))"
+        case .line3D:
+            guard let a = pending3D.first else { return "Z \(fmt(drawingHeight))" }
+            let q = Vec3(c.x, c.y, drawingHeight)
+            return "\((q - a).length) mm"
+        case .workplane:
+            let i = pending3D.count
+            return i == 0 ? "Origine · Z \(fmt(drawingHeight))" : "Punto \(i + 1) di 3 · Z \(fmt(drawingHeight))"
         case .select, .dimension, .trim, .extend, .mirror: return nil
         }
     }
@@ -762,8 +1125,42 @@ final class SketchSession {
             case .arc: out += cross(s.point(0)!, size: vertexSnap * 0.35, color: color * SIMD4(1, 1, 1, 0.6))
                 for i in [1, 2] { out += cross(s.point(i)!, size: vertexSnap * 0.3, color: color) }
             case let .spline(p, _): for q in p { out += cross(q, size: vertexSnap * 0.3, color: color) }
+            case let .bezier(p0, c1, c2, p3):
+                // Ends as vertices, the two handles fainter: they are the curve's control points.
+                out += cross(p0, size: vertexSnap * 0.3, color: color) + cross(p3, size: vertexSnap * 0.3, color: color)
+                for q in [c1, c2] { out += cross(q, size: vertexSnap * 0.25, color: color * SIMD4(1, 1, 1, 0.55)) }
+            case let .point3D(q):
+                // Where the point really is, with a dotted drop to its position on the plane.
+                out += point3DOverlay(q, color: color)
+            case let .line3D(a, b):
+                out += line3DOverlay(a, b, color: color, selected: selected)
+            case let .workplane(o, x, p):
+                out += workplaneOverlay(o, x, p, color: color, selected: selected)
             }
         }
+        // Centre grips: a ring with four ticks on the selected shape and on the one under the
+        // cursor, so it is clear that the middle drags the whole shape (SolidWorks' grip).
+        var grips = Set<SketchShape.ID>()
+        if let selection { grips.insert(selection) }
+        if let hoverShape { grips.insert(hoverShape) }
+        for id in grips {
+            guard let s = shapes.first(where: { $0.id == id }), let c = gripCenter(s) else { continue }
+            let color = (hotGrip == id || selection == id) ? selectedColor : sketchColor * SIMD4(1, 1, 1, 0.75)
+            let r = vertexSnap * 0.6, t = vertexSnap * 0.95
+            let loop = (0..<12).map { i -> Vec2 in
+                let a = Double(i) / 12 * 2 * .pi
+                return Vec2(c.x + r * cos(a), c.y + r * sin(a))
+            }
+            ring(loop, closed: true, color)
+            out += [(w(Vec2(c.x - t, c.y)), w(Vec2(c.x - r, c.y)), color),
+                    (w(Vec2(c.x + r, c.y)), w(Vec2(c.x + t, c.y)), color),
+                    (w(Vec2(c.x, c.y - t)), w(Vec2(c.x, c.y - r)), color),
+                    (w(Vec2(c.x, c.y + r)), w(Vec2(c.x, c.y + t)), color)]
+        }
+        // Preselection and pending picks: the entity a click would take, and those already chosen
+        // for the constraint (SolidWorks lights them up before and after the click).
+        for r in picked { out += marker(r, color: SIMD4<Float>(1, 0.55, 0.22, 1)) }
+        if let h = hoverRef, !picked.contains(h) { out += marker(h, color: SIMD4<Float>(1, 0.82, 0.25, 1)) }
         // Extrusion preview of the picked areas: outlines and holes at the top, side lines at corners.
         if pickingRegions, let h0 = previewHeight, h0 > 0 {
             let h = previewReversed ? -h0 : h0
@@ -809,10 +1206,39 @@ final class SketchSession {
             }
             if tool == .line || (tool == .arc && pending.count == 1) { ring(pending + [c], closed: false, rubber) }
             if tool == .spline { ring(SketchShape.spline(pending + [c], closed: false), closed: false, rubber) }
+            if tool == .bezier {
+                // The control polygon (faint) and, once start and both handles are placed, the curve.
+                let pts = pending + [c]
+                for (a, b) in zip(pts, pts.dropFirst()) { out.append((world(a, 0.02), world(b, 0.02), rubber * SIMD4(1, 1, 1, 0.45))) }
+                if pts.count == 4 {
+                    let kind = SketchShape.Kind.bezier(start: pts[0], control1: pts[1], control2: pts[2], end: pts[3])
+                    ring(SketchShape(kind: kind).outline, closed: false, rubber)
+                }
+            }
             if tool == .arc, pending.count == 2, let kind = arcKind(pending[0], pending[1], through: c) {
                 ring(SketchShape(kind: kind).outline, closed: false, rubber)
             }
             if let preview { let s = SketchShape(kind: preview); ring(s.outline, closed: true, rubber) }
+        }
+        // 3D tools: the cursor and the rubber band sit off the plane, where the entity will be.
+        if Tool.spatial.contains(tool), let c = cursor {
+            let q = snap3D(screen: cursorScreen) ?? Vec3(c.x, c.y, drawingHeight)
+            let ghost = sketchColor * SIMD4(1, 1, 1, 0.4)
+            if tool == .line3D, let a = pending3D.first {
+                out.append((world(a), world(q), sketchColor * SIMD4(1, 1, 1, 0.75)))
+            }
+            if tool == .workplane {
+                // The two legs already fixed, the one under the cursor, and the frame preview.
+                for i in pending3D.indices.dropFirst() {
+                    out.append((world(pending3D[i - 1]), world(pending3D[i]), sketchColor * SIMD4(1, 1, 1, 0.75)))
+                }
+                if let last = pending3D.last { out.append((world(last), world(q), sketchColor * SIMD4(1, 1, 1, 0.75))) }
+                if pending3D.count == 2, SketchPlane.workplane(pending3D[0], pending3D[1], q) != nil {
+                    out += workplaneOverlay(pending3D[0], pending3D[1], q, color: ghost, selected: false)
+                }
+            }
+            out += cross3(q, size: vertexSnap * 0.9, color: sketchColor)
+            if abs(q.z) > 1e-9 { out += dashed(from: world(Vec2(q.x, q.y), 0.02), to: world(q), color: ghost) }
         }
         out += editOverlay(sketchColor: sketchColor, selectedColor: selectedColor)
         // Midpoints of the segments near the cursor light up (then snap when closer).
@@ -843,6 +1269,71 @@ final class SketchSession {
         return out
     }
 
+    /// Highlight of the entity picked (or about to be picked) for a constraint: a square and a
+    /// cross on a point, the whole line with end ticks, the full rim of a circle.
+    private func marker(_ r: SketchRef, color: SIMD4<Float>) -> [Line] {
+        var out: [Line] = []
+        let z = 0.05
+        func w(_ p: Vec2) -> SIMD3<Float> { world(p, z) }
+        let r0 = vertexSnap * 0.55
+        switch r {
+        case let .point(id, i):
+            if let s = shape(id), s.is3D, let q = s.point3D(i) {
+                out += box3(around: q, size: r0, color: color) + cross3(q, size: r0 * 1.5, color: color)
+                break
+            }
+            guard let q = shape(id)?.point(i) else { break }
+            out += box(around: q, size: r0, color: color)
+            out.append((w(Vec2(q.x - r0 * 1.5, q.y)), w(Vec2(q.x + r0 * 1.5, q.y)), color))
+            out.append((w(Vec2(q.x, q.y - r0 * 1.5)), w(Vec2(q.x, q.y + r0 * 1.5)), color))
+        case .origin:
+            out += box(around: Vec2(0, 0), size: r0, color: color)
+            out.append((w(Vec2(-r0 * 1.5, 0)), w(Vec2(r0 * 1.5, 0)), color))
+            out.append((w(Vec2(0, -r0 * 1.5)), w(Vec2(0, r0 * 1.5)), color))
+        case let .segment(id, i):
+            if let s = shape(id), s.is3D, let (a, b) = s.segment3D(i) {
+                out += [(world(a), world(b), color)] + endTicks3(from: a, to: b, color: color)
+                break
+            }
+            guard let (a, b) = shape(id)?.segment(i) else { break }
+            out += [(w(a), w(b), color)] + endTicks(from: a, to: b, color: color)
+        case .axisX, .axisY:
+            let l = 50.0
+            let (a, b): (Vec2, Vec2) = r == .axisX ? (Vec2(-l, 0), Vec2(l, 0)) : (Vec2(0, -l), Vec2(0, l))
+            out += [(w(a), w(b), color)] + endTicks(from: a, to: b, color: color)
+        case let .circle(id, i):
+            if let s = shape(id), case .bezier = s.kind {
+                // A Bezier is referenced as `.circle(id, 0)`: light up the whole curve.
+                let o = s.outline
+                for k in 0..<max(0, o.count - 1) { out.append((w(o[k]), w(o[k + 1]), color)) }
+                break
+            }
+            guard let c = shape(id)?.circle(i) else { break }
+            let n = 64
+            for k in 0..<n {
+                let t0 = Double(k) / Double(n) * 2 * .pi
+                let t1 = Double(k + 1) / Double(n) * 2 * .pi
+                let p0 = Vec2(c.center.x + c.radius * cos(t0), c.center.y + c.radius * sin(t0))
+                let p1 = Vec2(c.center.x + c.radius * cos(t1), c.center.y + c.radius * sin(t1))
+                out.append((w(p0), w(p1), color))
+            }
+        }
+        return out
+    }
+
+    private func box(around q: Vec2, size: Double, color: SIMD4<Float>) -> [Line] {
+        let pts = [Vec2(q.x - size, q.y - size), Vec2(q.x + size, q.y - size),
+                   Vec2(q.x + size, q.y + size), Vec2(q.x - size, q.y + size)]
+        return (0..<4).map { i in (world(pts[i], 0.05), world(pts[(i + 1) % 4], 0.05), color) }
+    }
+
+    private func endTicks(from a: Vec2, to b: Vec2, color: SIMD4<Float>) -> [Line] {
+        let d = b - a, l = max(dist(a, b), 1e-9)
+        let n = Vec2(-d.y / l, d.x / l) * (vertexSnap * 0.18)
+        return [(world(a - n, 0.06), world(a + n, 0.06), color),
+                (world(b - n, 0.06), world(b + n, 0.06), color)]
+    }
+
     private func cross(_ p: Vec2, size: Double, color: SIMD4<Float>) -> [Line] {
         [(world(Vec2(p.x - size, p.y), 0.03), world(Vec2(p.x + size, p.y), 0.03), color),
          (world(Vec2(p.x, p.y - size), 0.03), world(Vec2(p.x, p.y + size), 0.03), color)]
@@ -863,10 +1354,107 @@ final class SketchSession {
         return corners.indices.map { i in (world(corners[i], 0.04), world(corners[(i + 1) % corners.count], 0.04), color) }
     }
 
+    // MARK: 3D overlay (T137)
+
+    /// A 3D point: a cross in its own depth and a small square where it projects on the plane,
+    /// tied by a dotted drop — the same reading as dune3d's workplane sketch.
+    private func point3DOverlay(_ q: Vec3, color: SIMD4<Float>) -> [Line] {
+        var out = cross3(q, size: vertexSnap * 0.5, color: color)
+        guard abs(q.z) > 1e-9 else { return out }
+        let ghost = color * SIMD4(1, 1, 1, 0.4)
+        out += dashed(from: world(Vec2(q.x, q.y), 0.02), to: world(q), color: ghost)
+        let r = vertexSnap * 0.28
+        out += [(world(Vec2(q.x - r, q.y - r), 0.02), world(Vec2(q.x + r, q.y - r), 0.02), ghost),
+                (world(Vec2(q.x + r, q.y - r), 0.02), world(Vec2(q.x + r, q.y + r), 0.02), ghost),
+                (world(Vec2(q.x + r, q.y + r), 0.02), world(Vec2(q.x - r, q.y + r), 0.02), ghost),
+                (world(Vec2(q.x - r, q.y + r), 0.02), world(Vec2(q.x - r, q.y - r), 0.02), ghost)]
+        return out
+    }
+
+    /// A 3D line: the real segment, its projection on the plane (dotted) and the drops at the ends.
+    private func line3DOverlay(_ a: Vec3, _ b: Vec3, color: SIMD4<Float>, selected: Bool) -> [Line] {
+        var out: [Line] = [(world(a), world(b), color)]
+        if abs(a.z) > 1e-9 || abs(b.z) > 1e-9 {
+            let ghost = color * SIMD4(1, 1, 1, 0.4)
+            out += dashed(from: world(Vec2(a.x, a.y), 0.02), to: world(Vec2(b.x, b.y), 0.02), color: ghost)
+            out += dashed(from: world(Vec2(a.x, a.y), 0.02), to: world(a), color: ghost)
+            out += dashed(from: world(Vec2(b.x, b.y), 0.02), to: world(b), color: ghost)
+        }
+        let r = vertexSnap * (selected ? 0.55 : 0.36)
+        out += cross3(a, size: r, color: color) + cross3(b, size: r, color: color)
+        return out
+    }
+
+    /// A cross on a point off the plane, drawn along the plane's two directions at its depth.
+    private func cross3(_ q: Vec3, size: Double, color: SIMD4<Float>) -> [Line] {
+        let z = q.z + 0.03
+        return [(world(Vec2(q.x - size, q.y), z), world(Vec2(q.x + size, q.y), z), color),
+                (world(Vec2(q.x, q.y - size), z), world(Vec2(q.x, q.y + size), z), color)]
+    }
+
+    private func box3(around q: Vec3, size: Double, color: SIMD4<Float>) -> [Line] {
+        let z = q.z + 0.05
+        let pts = [Vec2(q.x - size, q.y - size), Vec2(q.x + size, q.y - size),
+                   Vec2(q.x + size, q.y + size), Vec2(q.x - size, q.y + size)]
+        return (0..<4).map { i in (world(pts[i], z), world(pts[(i + 1) % 4], z), color) }
+    }
+
+    /// A workplane: the two legs that define it (origin → X point, origin → in-plane point), the
+    /// frame they span (dotted) and the normal (dotted, longer). Its three points get a cross.
+    private func workplaneOverlay(_ o: Vec3, _ x: Vec3, _ p: Vec3, color: SIMD4<Float>, selected: Bool) -> [Line] {
+        let leg = color * SIMD4(1, 1, 1, 0.8)
+        var out: [Line] = [(world(o), world(x), leg), (world(o), world(p), leg)]
+        let r = vertexSnap * (selected ? 0.5 : 0.36)
+        out += cross3(o, size: r * 1.4, color: color) + cross3(x, size: r, color: color) + cross3(p, size: r, color: color)
+        guard let plane = SketchPlane.workplane(o, x, p) else { return out }
+        let ghost = color * SIMD4(1, 1, 1, selected ? 0.55 : 0.38)
+        let su = max((x - o).length, vertexSnap * 2), sv = max((p - o).length, vertexSnap * 2)
+        let corners = [o, o + plane.xAxis * su, o + plane.xAxis * su + plane.yAxis * sv, o + plane.yAxis * sv]
+        for i in 0..<4 { out.append((world(corners[i]), world(corners[(i + 1) % 4]), ghost)) }
+        out += dashed(from: world(o), to: world(o + plane.normal * max(su, sv)), color: ghost)
+        return out
+    }
+
+    /// The frame of a workplane projected on screen (nil when its points are in line or off screen).
+    private func workplaneQuad(_ s: SketchShape) -> [CGPoint]? {
+        guard case let .workplane(o, x, p) = s.kind, let plane = SketchPlane.workplane(o, x, p) else { return nil }
+        let su = max((x - o).length, vertexSnap * 2), sv = max((p - o).length, vertexSnap * 2)
+        let corners = [o, o + plane.xAxis * su, o + plane.xAxis * su + plane.yAxis * sv, o + plane.yAxis * sv]
+        let points = corners.compactMap(screenPoint)
+        return points.count == 4 ? points : nil
+    }
+
+    /// Dotted line in space: the ties between an off-plane entity and its plane projection.
+    private func dashed(from a: SIMD3<Float>, to b: SIMD3<Float>, color: SIMD4<Float>) -> [Line] {
+        let d = b - a
+        guard simd_length(d) > 1e-9 else { return [] }
+        let l = Double(simd_length(d))
+        let dash = max(vertexSnap * 1.2, 0.3), steps = max(1, Int(l / dash))
+        var out: [Line] = []
+        for i in stride(from: 0, to: steps, by: 2) {
+            let t0 = Float(Double(i) / Double(steps)), t1 = Float(min(1, Double(i + 1) / Double(steps)))
+            out.append((a + d * t0, a + d * t1, color))
+        }
+        return out
+    }
+
+    private func endTicks3(from a: Vec3, to b: Vec3, color: SIMD4<Float>) -> [Line] {
+        let dx = b.x - a.x, dy = b.y - a.y
+        let l = max((dx * dx + dy * dy).squareRoot(), 1e-9)
+        let n = Vec2(-dy / l, dx / l) * (vertexSnap * 0.18)
+        return [(world(Vec2(a.x - n.x, a.y - n.y), a.z + 0.05), world(Vec2(a.x + n.x, a.y + n.y), a.z + 0.05), color),
+                (world(Vec2(b.x - n.x, b.y - n.y), b.z + 0.05), world(Vec2(b.x + n.x, b.y + n.y), b.z + 0.05), color)]
+    }
+
     /// World position of sketch coordinates, `height` off the plane (overlays sit just above it).
     func world(_ p: Vec2, _ height: Double) -> SIMD3<Float> {
         let v = sketch.plane.world(p, height: height)
         return SIMD3(Float(v.x), Float(v.y), Float(v.z))
+    }
+
+    /// World position of a point of the plane's 3D frame.
+    func world(_ q: Vec3) -> SIMD3<Float> {
+        world(Vec2(q.x, q.y), q.z)
     }
 }
 

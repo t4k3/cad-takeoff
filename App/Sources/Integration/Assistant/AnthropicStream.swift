@@ -12,6 +12,8 @@ struct AnthropicStreamAssembler {
         case opaque(JSONValue)
     }
 
+    /// Unknown `stop_reason`s are only an error on endpoints that promise the full Anthropic set.
+    private let strictStopReasons: Bool
     private var blocks: [Int: Block] = [:]
     /// Protocol state: a message is complete only with its start, every block closed and its stop.
     private var started = false
@@ -24,6 +26,10 @@ struct AnthropicStreamAssembler {
     private(set) var inputTokens = 0
     private(set) var outputTokens = 0
     private(set) var streamError: String?
+
+    init(strictStopReasons: Bool = true) {
+        self.strictStopReasons = strictStopReasons
+    }
 
     /// Feeds one `data:` JSON payload; returns the UI events it produces.
     mutating func consume(_ payload: JSONValue) -> [AssistantEvent] {
@@ -127,7 +133,7 @@ struct AnthropicStreamAssembler {
         case "tool_use": return ids.isEmpty ? "fine per strumento senza chiamate" : nil
         case "end_turn", "stop_sequence": return ids.isEmpty ? nil : "chiamate a strumento con fine «\(stopReason)»"
         case "refusal", "max_tokens": return nil
-        default: return "fine «\(stopReason)» non gestita"
+        default: return strictStopReasons ? "fine «\(stopReason)» non gestita" : nil
         }
     }
 

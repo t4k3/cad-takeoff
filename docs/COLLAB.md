@@ -2126,3 +2126,351 @@ Inizio **Build: deployment target macOS 14, warning fixes, compatibilità API e 
 
 ### 2026-10-31 02:49 · claude · DONE `T120`
 **Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113** — Deployment target macOS 14.0 (app, CADCore, ElectronicsCore); warning Codable in Assembly e Text + Text in ChatGPTSetupView; guardie di disponibilità per Foundation Models (27), RealityKit (15), Color.mix (14 via sRGB), glassEffect (26 con regularMaterial); avvio/restauro senza le API di scena di macOS 15; build e test verdi
+
+### 2026-10-31 16:52 · claude · NUOVO TASK `T121`
+Sketch: solver P0-P3 (analitico+QR, diagnosi, assi, drag, copertura) (dipende da T120)
+
+### 2026-10-31 16:52 · claude · CLAIM `T121`
+Inizio **Sketch: solver P0-P3 (analitico+QR, diagnosi, assi, drag, copertura)**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift, App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Resources/Localizable.xcstrings, docs/DA_PROVARE.md
+
+### 2026-10-31 17:25 · claude · DONE `T121`
+**Sketch: solver P0-P3 (analitico+QR, diagnosi, assi, drag, copertura)** — Solver riscritto in SketchSolver (Jacobian analitico Dual, QR con pivot, min-norm, branch locking, distanze segnate); grafo a cluster, DOF per forma, diagnosi conflitti/ridondanti, check over-constraint; origin/assi e quote di riferimento; UI: highlight conflitti/ridondanti/bloccanti, badge DOF per forma, assi disegnati, Rif. in ribbon, Colineare e Punto su arco. 213 test CADCore e build app verdi. i18n it/en/zh-Hans aggiornata.
+
+### 2026-10-31 17:34 · claude · NUOVO TASK `T122`
+Sketch: vincoli con assi/origine selezionabili + ispettore vincoli stile SolidWorks (dipende da T121)
+
+### 2026-10-31 17:34 · claude · CLAIM `T122`
+Inizio **Sketch: vincoli con assi/origine selezionabili + ispettore vincoli stile SolidWorks**. File: App/Sources/UI/Sketch, App/Sources/UI/Workspace/Ribbon.swift, App/Resources/Localizable.xcstrings, Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift, docs/DA_PROVARE.md
+
+### 2026-10-31 17:42 · claude · DONE `T122`
+**Sketch: vincoli con assi/origine selezionabili + ispettore vincoli stile SolidWorks** — Coincidente ora accetta punto/linea/asse/arco in qualunque ordine (assi e origine selezionabili, con evidenziazione hover e messaggi chiari); nuovo SketchConstraintChecker (VINCOLI > Controlla): gruppi per entità, DOF per entità, stato conflitto/ridondante/riferimento/bloccante, selezione e cancellazione riga, filtro Solo problemi; 3 test CADCore su vincoli con assi/origine (216 test verdi) e build app verde; i18n it/en/zh-Hans aggiornata.
+
+### 2026-10-31 17:54 · claude · NUOVO TASK `T123`
+Rettangolo: lati come linee e raccordo con click vicino all'angolo (dipende da T122)
+
+### 2026-10-31 17:54 · claude · CLAIM `T123`
+Inizio **Rettangolo: lati come linee e raccordo con click vicino all'angolo**. File: App/Sources/UI/Sketch, App/Resources/Localizable.xcstrings, Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift, docs/DA_PROVARE.md
+
+### 2026-10-31 17:54 · claude · DONE `T123`
+**Rettangolo: lati come linee e raccordo con click vicino all'angolo** — Il rettangolo è una forma ma con 4 lati/5 punti selezionabili (verificato nel test engine: lunghezza su un lato, fillet al vertice); fillet/smusso scelgono il corner più vicino con tolleranza 3,5× (si può cliccare sul lato vicino all'angolo) con nuovi messaggi/hint; ispettore mostra '4 lati selezionabili' per i rettangoli, 'N lati' per i poligoni, '2 lati + 2 archi' per le asole; 217 test CADCore e build verdi.
+
+### 2026-10-31 18:09 · claude · NUOVO TASK `T124`
+Schizzo: scelta stile SolidWorks/Fusion (punto prima della linea, origine e assi sempre, preselezione e vincoli in sospeso visibili) (dipende da T123)
+
+### 2026-10-31 18:09 · claude · CLAIM `T124`
+Inizio **Schizzo: scelta stile SolidWorks/Fusion (punto prima della linea, origine e assi sempre, preselezione e vincoli in sospeso visibili)**. File: App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Resources/Localizable.xcstrings, Packages/CADCore/Tests/CADCoreTests/docs
+
+### 2026-10-31 18:09 · claude · PATHS `T124`
+**Schizzo: scelta stile SolidWorks/Fusion (punto prima della linea, origine e assi sempre, preselezione e vincoli in sospeso visibili)** ora tocca: App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Resources/Localizable.xcstrings, Packages/CADCore/Tests/CADCoreTests, docs/DA_PROVARE.md
+
+### 2026-10-31 18:13 · claude · DONE `T124`
+**Schizzo: scelta stile SolidWorks/Fusion (punto prima della linea, origine e assi sempre, preselezione e vincoli in sospeso visibili)** — Scelta stile SolidWorks/Fusion/dune3d: pickRef prende prima i punti (angoli compresi) poi le linee/assi poi i cerchi; l'origine ha il suo raggio; preselezione (hoverRef) e pick in sospeso evidenziati in overlay; test rettangolo-angolo↔origine. 218 test CADCore e build OK.
+
+### 2026-10-31 18:25 · claude · NUOVO TASK `T125`
+Schizzo: vincoli impliciti delle forme visibili e rifiuto dei vincoli già garantiti spiegato (rettangolo/poligono/asola/cerchio/arco) (dipende da T124)
+
+### 2026-10-31 18:25 · claude · CLAIM `T125`
+Inizio **Schizzo: vincoli impliciti delle forme visibili e rifiuto dei vincoli già garantiti spiegato (rettangolo/poligono/asola/cerchio/arco)**. File: App/Sources/UI/Sketch, App/Resources/Localizable.xcstrings, Packages/CADCore/Tests/CADCoreTests, docs/DA_PROVARE.md
+
+### 2026-10-31 18:25 · claude · DONE `T125`
+**Schizzo: vincoli impliciti delle forme visibili e rifiuto dei vincoli già garantiti spiegato (rettangolo/poligono/asola/cerchio/arco)** — Ispettore: riga 'Impliciti' con lucchetto per rettangolo/poligono/asola/cerchio/arco/polilinea chiusa; 'Nessun vincolo esplicito'; avviso di rifiuto ora spiega perché la forma garantisce già Parallelo/Perpendicolare/Uguale/Oriz./Vert.; test che blocca la ridondanza interna e i 2 DOF (larghezza+altezza) del rettangolo. 220 test CADCore e build OK.
+
+### 2026-10-31 18:33 · claude · NUOVO TASK `T126`
+Schizzo: rettangolo come 4 linee con vincoli H/V espliciti e raccordo/smusso tra due linee (stile dune3d) (dipende da T125)
+
+### 2026-10-31 18:33 · claude · CLAIM `T126`
+Inizio **Schizzo: rettangolo come 4 linee con vincoli H/V espliciti e raccordo/smusso tra due linee (stile dune3d)**. File: Packages/CADCore/Sources/CADCore/Sketch, App/Sources/UI/Sketch, App/Resources/Localizable.xcstrings, Packages/CADCore/Tests/CADCoreTests,  docs/DA_PROVARE.md
+
+### 2026-10-31 18:41 · claude · DONE `T126`
+**Schizzo: rettangolo come 4 linee con vincoli H/V espliciti e raccordo/smusso tra due linee (stile dune3d)** — Rettangolo disegnato come 4 linee unite nei vertici (addRectangle nel core: 4 H/V + 4 Coincidente, 4 gradi liberi; angolo sull'origine → 2) con UI che sceglie automaticamente il commit a 4 linee e i rapporti solo verso la geometria esistente; Raccordo/Smusso tra due linee aperte (fillet/chamfer aID,vertex,bID,vertex) con taglio di entrambe, arco tangente+raggio o linea di smusso, e jointUnder nell'app per cliccare vicino all'angolo; 2 nuovi test engine (4 linee/DOF e fillet cross-line) → 222 test CADCore e build app verdi; docs/DA_PROVARE.md aggiornato. Rettangoli già salvati come forma singola restano validi.
+
+### 2026-10-31 18:50 · claude · NUOVO TASK `T127`
+Schizzo: tangenza dei raccordi scritta al punto dell'arco (niente gradi liberi fantasma dopo fillet/smusso) (dipende da T126)
+
+### 2026-10-31 18:50 · claude · CLAIM `T127`
+Inizio **Schizzo: tangenza dei raccordi scritta al punto dell'arco (niente gradi liberi fantasma dopo fillet/smusso)**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Resources/Localizable.xcstrings,  docs/DA_PROVARE.md
+
+### 2026-10-31 18:54 · claude · DONE `T127`
+**Schizzo: tangenza dei raccordi scritta al punto dell'arco (niente gradi liberi fantasma dopo fillet/smusso)** — Tangenza dei raccordi scritta al punto dell'arco: residuo radiale–linea (perpendicolare) invece di distanza centro–linea, che ai punti di tangenza aveva gradiente nullo e faceva perdere un grado di rango per ogni raccordo (freedom 6→8, tangenti segnate ridondanti). Aggiornati fillet/chamfer (cutCorner, cutCornerBetween), tangentAutoConstraints e slot exploded; SketchModel riscrive le tangenze .circle dei documenti vecchi sulla forma .point al caricamento. Test: 223 passati, build OK; in DA_PROVARE.md il seguito T127.
+
+### 2026-10-31 19:02 · claude · NUOVO TASK `T128`
+Schizzo: etichette di vincoli e quote agganciate alla geometria (niente scostamento con i pannelli laterali) (dipende da T127)
+
+### 2026-10-31 19:02 · claude · CLAIM `T128`
+Inizio **Schizzo: etichette di vincoli e quote agganciate alla geometria (niente scostamento con i pannelli laterali)**. File: App/Sources/UI/Viewport, App/Sources/UI/Sketch, docs/DA_PROVARE.md
+
+### 2026-10-31 19:03 · claude · DONE `T128`
+**Schizzo: etichette di vincoli e quote agganciate alla geometria (niente scostamento con i pannelli laterali)** — Le etichette di vincoli e quote erano collocate con .position nelle coordinate del viewport ma l'overlay applicava overlayInsets (248 pt barra browser + 12, più topRoom): ogni etichetta risultava spostata di ~260 pt a destra e ~40 pt in basso rispetto alla geometria (quote al centro dello schermo, simboli staccati dai lati). Ora constraintLabels è un overlay senza padding: le ancore (screenPoint della posizione nel piano) coincidono con le linee disegnate. Build OK, 223 test CADCore verdi; in DA_PROVARE.md il seguito T128.
+
+### 2026-10-31 19:19 · claude · NUOVO TASK `T129`
+Schizzo: niente analisi completa durante il trascinamento (diagnosi solo al rilascio) (dipende da T128)
+
+### 2026-10-31 19:19 · claude · NUOVO TASK `T130`
+Renderer Metal: buffer riusati per tratti spessi, evidenziazioni e gizmo (niente allocazioni per frame) (dipende da T129)
+
+### 2026-10-31 19:19 · claude · NUOVO TASK `T131`
+Solver schizzo: Jacobian sparso per vincolo e dizionario forme (prestazioni su schizzi grandi) (dipende da T129)
+
+### 2026-10-31 19:19 · claude · NUOVO TASK `T132`
+Visualizzazione: refinement indipendente dalle booleane + isteresi screenFactor (niente ricalcoli allo zoom) (dipende da T130)
+
+### 2026-10-31 19:19 · claude · NUOVO TASK `T133`
+Picking: BVH CPU per i corpi e hover limitato nel tempo (dipende da T130)
+
+### 2026-10-31 19:19 · codex · NUOVO TASK `T134`
+DRC: contorni scheda precalcolati, maschera strati e bbox in testa al ciclo (dipende da T133)
+
+### 2026-10-31 19:19 · claude · CLAIM `T129`
+Inizio **Schizzo: niente analisi completa durante il trascinamento (diagnosi solo al rilascio)**. File: App/Sources/UI/Sketch, App/Resources/Localizable.xcstrings, Packages/CADCore/Tests/CADCoreTests, scripts/test-sketch.sh
+
+### 2026-10-31 19:22 · claude · DONE `T129`
+**Schizzo: niente analisi completa durante il trascinamento (diagnosi solo al rilascio)** — Trascinamento: il didSet non chiama più analyze() mentre dragging (una sola soluzione per evento, SketchSolver.solve(..., diagnosis: false) salta null basis/rank per forma); endDrag fa una sola analisi completa al rilascio; nuovo test fastSolveSkipsTheDiagnosisButSolvesTheSame (224 test CADCore verdi, build app OK); DA_PROVARE aggiornato.
+
+### 2026-10-31 19:22 · claude · CLAIM `T130`
+Inizio **Renderer Metal: buffer riusati per tratti spessi, evidenziazioni e gizmo (niente allocazioni per frame)**. File: App/Sources/UI/Viewport
+
+### 2026-10-31 19:24 · claude · DONE `T130`
+**Renderer Metal: buffer riusati per tratti spessi, evidenziazioni e gizmo (niente allocazioni per frame)** — Renderer: nuovo BufferRing (3 slot rotating, storageModeShared) per i dati che cambiano ogni frame; drawThick, triangoli di evidenziazione e gizmo (un solo buffer con draw a intervalli per maniglia) non creano più MTLBuffer a ogni frame; build app OK.
+
+### 2026-10-31 19:24 · claude · CLAIM `T131`
+Inizio **Solver schizzo: Jacobian sparso per vincolo e dizionario forme (prestazioni su schizzi grandi)**. File: Packages/CADCore/Sources/CADCore/Sketch, App/Sources/UI/Sketch, scripts/test-sketch.sh
+
+### 2026-10-31 19:31 · claude · PATHS `T131`
+**Solver schizzo: Jacobian sparso per vincolo e dizionario forme (prestazioni su schizzi grandi)** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, App/Sources/UI/Sketch, scripts/test-sketch.sh, Tests/Sketch
+
+### 2026-10-31 19:36 · claude · DONE `T131`
+**Solver schizzo: Jacobian sparso per vincolo e dizionario forme (prestazioni su schizzi grandi)** — SketchSolver: Jacobian costruito solo sulle variabili toccate da ogni vincolo (Dual seminato sulle forme raggiunte e scatter nella riga; prima ogni operazione AD allocava un gradiente lungo tutte le variabili dello schizzo) + dizionario byID al posto di shapes.first(where:) in shapesAt/jacobian/diagnostica; API solve(..., diagnosis:) compatibile; 224 test CADCore verdi, build app e scripts/test-sketch.sh verdi (harness aggiornato: rettangolo ora 4 linee, stub localizedTypeName, FALLITO su stderr).
+
+### 2026-10-31 19:36 · claude · CLAIM `T132`
+Inizio **Visualizzazione: refinement indipendente dalle booleane + isteresi screenFactor (niente ricalcoli allo zoom)**. File: Packages/CADCore/Sources/CADCore/Kernel, App/Sources/UI/Viewport, App/Sources/Model/DesignModel.swift
+
+### 2026-10-31 19:45 · claude · PATHS `T132`
+**Visualizzazione: refinement indipendente dalle booleane + isteresi screenFactor (niente ricalcoli allo zoom)** ora tocca: Packages/CADCore/Sources/CADCore/Kernel, App/Sources/UI/Viewport, App/Sources/Model/DesignModel.swift, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-10-31 19:51 · claude · DONE `T132`
+**Visualizzazione: refinement indipendente dalle booleane + isteresi screenFactor (niente ricalcoli allo zoom)** — Visualizzazione: BodySnapshot.refined() aggiunge una suddivisione per triangolo con i punti riportati sulla superficie esatta (cilindro/cono/sfera/toro) e sulle curve circolari degli spigoli, normali analitiche orientate come le faccette, stesso nome per facce/spigoli; DesignModel.requestScreenFactor non riesegue più la storia: raffina lo snapshot corrente (1 livello a ×2, 2 a ×4) in background; ViewportState.screenFactor con isteresi (entra 900/2500, esce 800/2200) e zoom stabilizzato 120 ms prima di scegliere il livello. 225 test CADCore verdi (nuovo test displayRefinementKeepsTheSameFacesAndClosesEverySeam: watertight), build app e test-assistant-tools verdi (88 asserzioni). DA_PROVARE aggiornato.
+
+### 2026-10-31 19:51 · claude · CLAIM `T133`
+Inizio **Picking: BVH CPU per i corpi e hover limitato nel tempo**. File: App/Sources/UI/Viewport, Packages/CADCore/Sources/CADCore/Kernel, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-10-31 20:02 · claude · DONE `T133`
+**Picking: BVH CPU per i corpi e hover limitato nel tempo** — Picking: BodySnapshot.RayIndex (BVH AABB con foglie da 8 triangoli, Möller–Trumbore in Double e maxDistance) costruito insieme allo snapshot (renderer + reference dei comandi); Picking.pick usa l'indice e ricade sulla scansione solo per i corpi senza indice; hover accorpato a ~16 ms in CADMetalView (generation + cancel su mouseDown/exit, niente highlight a metà gesto); nuovo test rayIndexFindsTheNearestSurfaceHit; 226 test CADCore, build app e test-assistant-tools (88 asserzioni) verdi; DA_PROVARE ha il seguito T133.
+
+### 2026-10-31 20:02 · claude · RICHIESTA-API
+T134 (codex) — DRC: in ElectronicsCore/Sources/ElectronicsCore/PCB/PCBSnapshot.swift (ciclo righe 129–182) chiedo: (1) calcolare una volta fuori dal ciclo gli spigoli dell'outline (PCBGeometry.edges(design.board.outline)) e il bbox della scheda, saltando il test bordo/edgeClearance quando il bbox del primitivo è lontano; (2) maschera strati UInt64 per primitivo invece di Set(a.layers) nelle prove di sovrapposizione (righe 148 e 161); (3) calcolare PCBBox(a.core, margin: a.radius+…) una volta per primitivo e riusarlo per keepout e index.query; (4) dizionario (componentID,padID) → pad invece di base.pads.first(where:) (riga 141). Nessun cambio di API pubblica né di comportamento; la UI non cambia.
+
+### 2026-10-31 20:36 · claude · NUOVO TASK `T135`
+Schizzo 3D: modello dati e solver per punti e linee 3D sul piano di lavoro (dipende da T133)
+
+### 2026-10-31 20:36 · claude · NUOVO TASK `T136`
+Schizzo 3D: vincoli 3D (piano, distanza punto-piano, normale al piano, blocco rotazione) e quote (dipende da T135)
+
+### 2026-10-31 20:36 · claude · NUOVO TASK `T137`
+Schizzo 3D: strumenti UI punto/linea 3D, rendering e selezione nel viewport (dipende da T135,T136)
+
+### 2026-10-31 20:36 · claude · CLAIM `T135`
+Inizio **Schizzo 3D: modello dati e solver per punti e linee 3D sul piano di lavoro**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-10-31 20:44 · claude · PATHS `T135`
+**Schizzo 3D: modello dati e solver per punti e linee 3D sul piano di lavoro** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch/SketchInspector.swift, App/Sources/UI/Sketch/SketchSession.swift, App/Sources/UI/Sketch/SketchConstraintChecker.swift, App/Sources/UI/Features/HoleCommand.swift, App/Resources/Localizable.xcstrings
+
+### 2026-10-31 20:52 · claude · PATHS `T135`
+**Schizzo 3D: modello dati e solver per punti e linee 3D sul piano di lavoro** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch/SketchInspector.swift, App/Sources/UI/Sketch/SketchSession.swift, App/Sources/UI/Sketch/SketchSession+Constraints.swift, App/Sources/UI/Sketch/SketchConstraintChecker.swift, App/Sources/UI/Features/HoleCommand.swift, App/Resources/Localizable.xcstrings
+
+### 2026-10-31 20:53 · claude · DONE `T135`
+**Schizzo 3D: modello dati e solver per punti e linee 3D sul piano di lavoro** — Schema 3D: casi point3D/line3D nelle coordinate del piano, solver a 3 incognite per punto, coincident/distance/length estesi al 3D, codifica retrocompatibile, entità 3D fuori da profili/regioni; test Sketch3DTests verdi (232); UI solo esaustività.
+
+### 2026-10-31 22:41 · claude · NUOVO TASK `T138`
+Schizzo: rettangolo come entità singola, raccordo/smusso di tutti gli angoli e presa centrale di trascinamento (dipende da T123,T126)
+
+### 2026-10-31 22:41 · claude · CLAIM `T138`
+Inizio **Schizzo: rettangolo come entità singola, raccordo/smusso di tutti gli angoli e presa centrale di trascinamento**. File: App/Sources/UI/Sketch/SketchSession.swift, App/Sources/UI/Sketch/SketchSession+Constraints.swift, App/Sources/UI/Viewport/ViewportContainer.swift, App/Resources/Localizable.xcstrings, Packages/CADCore/Sources/CADCore/Sketch, Sources/CADCore/Tests/CADCoreTests
+
+### 2026-10-31 22:57 · claude · PATHS `T138`
+**Schizzo: rettangolo come entità singola, raccordo/smusso di tutti gli angoli e presa centrale di trascinamento** ora tocca: App/Resources/Localizable.xcstrings, App/Sources/UI/Sketch/SketchSession.swift, App/Sources/UI/Sketch/SketchSession+Constraints.swift, App/Sources/UI/Viewport/ViewportContainer.swift, Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-10-31 23:05 · claude · DONE `T138`
+**Schizzo: rettangolo come entità singola, raccordo/smusso di tutti gli angoli e presa centrale di trascinamento** — Rettangolo di nuovo una sola entita parametrica; nuovo filletAllCorners/chamferAllCorners in CADCore (tutti gli angoli di rettangolo/poligono, transazionale, con test); Raccordo/Smusso su forma intera dalla UI; grip centrale visibile con cursore open/closedHand e trascinamento dell'intera forma via solver; hint e catalogo aggiornati; 237 test CADCore e build app verdi.
+
+### 2026-10-31 23:23 · trae · FIX `T135/T138`
+`Tests/Sketch/Stubs.swift` — il `switch` di `localizedTypeName` nel harness non era esaustivo dopo i casi 3D di T135, quindi `scripts/test-sketch.sh` non compilava (`switch must be exhaustive`). Aggiunti `.point3D` → «Punto 3D» e `.line3D` → «Linea 3D», allineati a `SketchInspector.swift`. Harness di nuovo verde (`OK: schizzo — agganci e fine linea`) e `scripts/build.sh` BUILD SUCCEEDED.
+
+### 2026-10-31 23:38 · claude · CLAIM `T136`
+Inizio **Schizzo 3D: vincoli 3D (piano, distanza punto-piano, normale al piano, blocco rotazione) e quote**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-10-31 23:38 · claude · PATHS `T136`
+**Schizzo 3D: vincoli 3D (piano, distanza punto-piano, normale al piano, blocco rotazione) e quote** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Resources/Localizable.xcstrings
+
+### 2026-10-31 23:48 · claude · DONE `T136`
+**Schizzo 3D: vincoli 3D (piano, distanza punto-piano, normale al piano, blocco rotazione) e quote** — Vincoli 3D nel core: pointOnPlane, planeDistance (segno incluso), normalToPlane, fix3D e quote 3D (lunghezza/coincidenza/distanza punto-punto e punto-linea, orizzontale/verticale nel frame del piano); righe in mm senza normalizzazioni fragili; 7 test Sketch3DTests (244 verdi), build app e harness schizzo verdi. lock rotation rinviato all'entita piano di lavoro (dipende da un workplane modificabile).
+
+### 2026-10-31 23:48 · claude · CLAIM `T137`
+Inizio **Schizzo 3D: strumenti UI punto/linea 3D, rendering e selezione nel viewport**. File: App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Sources/UI/Selection, App/Sources/Model
+
+### 2026-10-31 23:53 · claude · PATHS `T137`
+**Schizzo 3D: strumenti UI punto/linea 3D, rendering e selezione nel viewport** ora tocca: App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Sources/UI/Selection, App/Sources/Model, App/Sources/UI/Workspace/Ribbon.swift, App/Resources/Localizable.xcstrings
+
+### 2026-11-01 00:09 · claude · DONE `T137`
+**Schizzo 3D: strumenti UI punto/linea 3D, rendering e selezione nel viewport** — Strumenti Punto 3D/Linea 3D nella toolbar e nel dock; altezza Z nel pannello Opzioni; rendering con profondita reale, proiezione tratteggiata e linea di caduta; picking/snap in spazio schermo (9 pt punti, 7 pt linee) per hover, selezione e vincoli; vincoli Sul piano / Normale al piano / Distanza dal piano e Fisso 3D; quote 3D (lunghezza, distanza punto-punto e punto-linea); auto-coincidenza degli estremi 3D; inspector con X/Y/Z e inizio/fine modificabili e lunghezza 3D; catalogo it/en/zh aggiornato; 244 test CADCore, build app e harness schizzo verdi.
+
+### 2026-11-01 00:13 · claude · NUOVO TASK `T139`
+Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato (dipende da T137)
+
+### 2026-11-01 00:13 · claude · CLAIM `T139`
+Inizio **Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-11-01 00:16 · claude · PATHS `T139`
+**Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Sources/UI/Workspace/Ribbon.swift, App/Resources/Localizable.xcstrings
+
+### 2026-11-01 00:29 · claude · PATHS `T139`
+**Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Sources/UI/Workspace/Ribbon.swift, App/Sources/UI/Features/HoleCommand.swift, App/Resources/Localizable.xcstrings
+
+### 2026-11-01 00:29 · claude · NOTA
+T139: aggiunto App/Sources/UI/Features/HoleCommand.swift ai paths (switch esaustivo dei key point dopo il nuovo caso .workplane).
+
+### 2026-11-01 00:30 · claude · PATHS `T139`
+**Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Sources/UI/Viewport, App/Sources/UI/Workspace/Ribbon.swift, App/Sources/UI/Features/HoleCommand.swift, App/Resources/Localizable.xcstrings, Tests/Sketch
+
+### 2026-11-01 00:30 · claude · NOTA
+T139: aggiunto Tests/Sketch ai paths (stub localizedTypeName del harness schizzo per il nuovo caso .workplane).
+
+### 2026-11-01 00:31 · claude · DONE `T139`
+**Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato** — Piano di lavoro come entità 3D (origine + punto asse X + punto nel piano, 9 parametri), vincolo Blocco rotazione orientato (6 residue, origine libera), Sketch.setPlane che ricolloca 3D e appoggia il 2D al nuovo piano, aggiorna fix3D/planeDistance/lockRotation assoluti; UI: strumento Piano di lavoro a 3 clic con snap 3D, overlay/picking del rettangolo di piano, pannello con i 9 campi e pulsante Imposta piano di lavoro; localizzazioni en/zh; 5 test nuovi (249 verdi), build app e harness schizzo OK.
+
+### 2026-11-01 00:33 · claude · NUOVO TASK `T140`
+Schizzo: curve di Bezier nel core (entita cubica, vincoli punto-su-curva e tangente con parametro t) (dipende da T139)
+
+### 2026-11-01 00:33 · claude · CLAIM `T140`
+Inizio **Schizzo: curve di Bezier nel core (entita cubica, vincoli punto-su-curva e tangente con parametro t)**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-11-01 00:37 · claude · PATHS `T140`
+**Schizzo: curve di Bezier nel core (entita cubica, vincoli punto-su-curva e tangente con parametro t)** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Sources/UI/Features/HoleCommand.swift, App/Resources/Localizable.xcstrings, Tests/Sketch
+
+### 2026-11-01 00:37 · claude · NOTA
+T140: aggiunti App/Sources/UI/Sketch, App/Sources/UI/Features/HoleCommand.swift, App/Resources/Localizable.xcstrings e Tests/Sketch ai paths per tenere verdi build app e harness dopo il nuovo caso .bezier (switch esaustivi e nome localizzato).
+
+### 2026-11-01 00:50 · claude · DONE `T140`
+**Schizzo: curve di Bezier nel core (entita cubica, vincoli punto-su-curva e tangente con parametro t)** — Bezier nel core: Kind bezier a 4 punti, outline 32 segmenti, bezier/bezierTangent/bezierParameter; vincoli pointOnBezier, bezierLineTangent, bezierLinePerpendicular con parametro t come variabile ausiliaria (Jacobian sparso corretto); Sketch.solve riscrive i t (anche nel ramo pinned); prims/catena/specchio; inspector e simboli minimi nell'app, chiavi it/en/zh; 255 test CADCore verdi, build app e harness schizzo verdi
+
+### 2026-11-01 00:52 · claude · NUOVO TASK `T141`
+Schizzo: strumento Bezier nella UI (4 clic, anteprima, picking e vincoli punto-su-curva/tangente) (dipende da T140)
+
+### 2026-11-01 00:52 · claude · CLAIM `T141`
+Inizio **Schizzo: strumento Bezier nella UI (4 clic, anteprima, picking e vincoli punto-su-curva/tangente)**. File: App/Sources/UI/Sketch, App/Sources/UI/Workspace/Ribbon.swift, App/Resources/Localizable.xcstrings, Tests/Sketch
+
+### 2026-11-01 01:01 · claude · DONE `T141`
+**Schizzo: strumento Bezier nella UI (4 clic, anteprima, picking e vincoli punto-su-curva/tangente)** — Strumento Bezier nella UI: Tool.bezier (tasto G, icona, hint) con quattro clic start/maniglia1/maniglia2/fine, anteprima del poligono di controllo e della curva, lascia la curva a metà se si cambia strumento; selezione/picking della curva e tre vincoli Punto su Bezier, Tangente alla Bezier, Perpendicolare alla Bezier che scelgono l'estremo più vicino e calcolano il parametro t; marker dell'intera curva quando è riferimento; chiavi it/en/zh; harness schizzo con disegno della curva e vincolo punto-su-curva verdi; 255 test CADCore e build app verdi.
+
+### 2026-11-01 01:16 · claude · NUOVO TASK `T142`
+Schizzo: geometria di costruzione dalla barra (interruttore per le nuove entità e conversione della selezione) (dipende da T141)
+
+### 2026-11-01 01:16 · claude · NUOVO TASK `T143`
+Schizzo: sposta, ruota e copia-incolla delle entità (strumenti con anteprima, scorciatoie e vincoli) (dipende da T141)
+
+### 2026-11-01 01:16 · claude · CLAIM `T142`
+Inizio **Schizzo: geometria di costruzione dalla barra (interruttore per le nuove entità e conversione della selezione)**. File: App/Sources/UI/Sketch, App/Sources/UI/Workspace/Ribbon.swift, App/Resources/Localizable.xcstrings, Tests/Sketch
+
+### 2026-11-01 01:21 · claude · DONE `T142`
+**Schizzo: geometria di costruzione dalla barra (interruttore per le nuove entità e conversione della selezione)** — Costruzione nella barra dello schizzo: interruttore OPZIONI «Costruzione» per le nuove entità (commit marca isConstruction, mai per le 3D) e pulsante MODIFICA che converte l'entità selezionata (e torna normale), con avviso e chiavi it/en/zh; l'entità di costruzione smette di fare profili. Harness schizzo esteso (linea/rettangolo/3D), 255 test CADCore e build app verdi.
+
+### 2026-11-01 01:21 · claude · CLAIM `T143`
+Inizio **Schizzo: sposta, ruota e copia-incolla delle entità (strumenti con anteprima, scorciatoie e vincoli)**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Sources/UI/Workspace/Ribbon.swift, App/Sources/UI/Viewport/ViewportContainer.swift, App/Resources/Localizable.xcstrings, Tests/Sketch
+
+### 2026-11-01 01:31 · claude · PATHS `T143`
+**Schizzo: sposta, ruota e copia-incolla delle entità (strumenti con anteprima, scorciatoie e vincoli)** ora tocca: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests, App/Sources/UI/Sketch, App/Sources/UI/Workspace/Ribbon.swift, App/Sources/UI/Viewport/ViewportContainer.swift, App/Resources/Localizable.xcstrings, Tests/Sketch, scripts/test-sketch.sh
+
+### 2026-11-01 01:31 · claude · NOTA
+T143 estende anche scripts/test-sketch.sh: il nuovo SketchSession+Transform.swift deve entrare nel harness dello schizzo. Nessun altro task attivo possiede lo script.
+
+### 2026-11-01 01:34 · claude · DONE `T143`
+**Schizzo: sposta, ruota e copia-incolla delle entità (strumenti con anteprima, scorciatoie e vincoli)** — Sposta e Ruota nella barra MODIFICA (due clic, anteprima e HUD), con Sketch.transform nel core che ri-solve e rifiuta se i vincoli bloccano; Copia/Incolla con scorciatoie ⌘C/⌘V e pulsanti, ID nuovi e senza vincoli dell'originale. 8 test CADCore (263 totali), harness schizzo e build app verdi.
+
+### 2026-11-01 01:37 · claude · NUOVO TASK `T144`
+Renderer: shader .metal compilati nel bundle (niente makeLibrary a runtime) (dipende da T143)
+
+### 2026-11-01 01:37 · claude · CLAIM `T144`
+Inizio **Renderer: shader .metal compilati nel bundle (niente makeLibrary a runtime)**. File: App/Sources/UI/Viewport/ShaderSource.swift, App/Sources/UI/Viewport/Shaders.metal, App/Sources/UI/Viewport/ViewportRenderer.swift, Tests/Shaders/Runner.swift, scripts/test-shaders.sh
+
+### 2026-11-01 01:39 · claude · DONE `T144`
+**Renderer: shader .metal compilati nel bundle (niente makeLibrary a runtime)** — Shader spostati in App/Sources/UI/Viewport/Shaders.metal: Xcode li compila in default.metallib nel bundle e ViewportRenderer carica makeDefaultLibrary() (niente makeLibrary(source:) a runtime); harness Tests/Shaders compila con xcrun metal+metallib e carica il .metallib; script test-shaders aggiornato. Verificato: shader harness OK, build app SUCCEEDED con default.metallib nel bundle, 263 test CADCore verdi.
+
+### 2026-11-01 01:44 · claude · NUOVO TASK `T145`
+Schizzo: diagnosi (DOF/conflitti) asincrona e annullabile fuori dal main thread (dipende da T143)
+
+### 2026-11-01 01:44 · claude · CLAIM `T145`
+Inizio **Schizzo: diagnosi (DOF/conflitti) asincrona e annullabile fuori dal main thread**. File: App/Sources/UI/Sketch/SketchSession.swift, Packages/CADCore/Sources/CADCore/Sketch/SketchSolver.swift, Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift
+
+### 2026-11-01 01:44 · claude · DONE `T145`
+**Schizzo: diagnosi (DOF/conflitti) asincrona e annullabile fuori dal main thread** — Diagnosi dello schizzo in background: SketchSession.analyze() lancia Task.detached(.utility) con generazione; un nuovo giro annulla il precedente e i risultati vecchi vengono scartati, il trascinamento annulla l'analisi in volo. SketchSolver.solve accetta isCancelled (@Sendable) e si ferma tra cluster e iterazioni Newton restituendo le forme intatte (nuovo test: 264 verdi). Harness schizzo e build app verdi.
+
+### 2026-11-01 01:46 · claude · NUOVO TASK `T146`
+Solver schizzo: cluster indipendenti risolti in parallelo (risultati deterministici e annullabili) (dipende da T145)
+
+### 2026-11-01 01:46 · claude · CLAIM `T146`
+Inizio **Solver schizzo: cluster indipendenti risolti in parallelo (risultati deterministici e annullabili)**. File: Packages/CADCore/Sources/CADCore/Sketch, Packages/CADCore/Tests/CADCoreTests
+
+### 2026-11-01 01:50 · claude · DONE `T146`
+**Solver schizzo: cluster indipendenti risolti in parallelo (risultati deterministici e annullabili)** — Cluster indipendenti risolti in parallelo: solve() calcola prima i parametri totali, con >1 cluster e >=32 variabili usa DispatchQueue.concurrentPerform (slot per cluster con lock, risultati nell'ordine di makeClusters), altrimenti resta sequenziale; annullamento controllato prima di ogni cluster e dentro Newton/diagnosi, con risultato complessivo scartato se la generazione cambia. Aggregazione invariata (somme/max/append in ordine) quindi diagnosi deterministiche. Nuovi test: 10 cluster indipendenti uguali al solve singolo e ripetibile, cancellazione parallela intatta; 266 test CADCore, harness schizzo e build app verdi.
+
+### 2026-11-01 02:08 · claude · NUOVO TASK `T147`
+Viewport: etichette dello schizzo disegnate dal renderer con un atlante di testo (niente Text SwiftUI per ogni etichetta) (dipende da T146)
+
+### 2026-11-01 02:08 · claude · CLAIM `T147`
+Inizio **Viewport: etichette dello schizzo disegnate dal renderer con un atlante di testo (niente Text SwiftUI per ogni etichetta)**. File: App/Sources/UI/Viewport, App/Sources/UI/Sketch, Tests/Shaders
+
+### 2026-11-01 02:31 · claude · DONE `T147`
+**Viewport: etichette dello schizzo disegnate dal renderer con un atlante di testo (niente Text SwiftUI per ogni etichetta)** — Etichette dello schizzo disegnate dal renderer con un atlante di testo: TextAtlas rasterizza ogni run una volta (CoreText su bitmap 8-bit, imballaggio a ripiani, texture r8Unorm condivisa) e ViewportRenderer le disegna come riquadri SDF (angoli arrotondati, bordo sottile o tratteggiato per le quote di riferimento) più quad texturizzati, in punti schermo e senza depth. Il provider delle etichette è installato in onReady su ViewportContainer e legge lo schizzo a ogni draw, quindi le etichette seguono la camera senza Text SwiftUI; l'overlay SwiftUI resta solo come area cliccabile trasparente (stessa misura LabelText.boxSize) e per il TextField della quota in modifica. Colori condivisi (selezione, conflitto, ridondante, bloccante, riferimento) tra renderer e controlli; labelToken forza il ridraw quando cambia l'aspetto senza geometria. Nuovo controllo nel harness shader: le due metà del quad del riquadro sono coperte; verifica offscreen dei quattro tipi di etichetta. Shader, build app, 266 test CADCore e harness schizzo verdi.
+
+### 2026-11-01 02:40 · claude · NUOVO TASK `T148`
+Viewport: picking GPU al posto dell'albero CPU (ID pass 1x1, hover e clic) (dipende da T147)
+
+### 2026-11-01 02:40 · claude · CLAIM `T148`
+Inizio **Viewport: picking GPU al posto dell'albero CPU (ID pass 1x1, hover e clic)**. File: App/Sources/UI/Viewport, App/Sources/UI/Selection, App/Sources/UI/Features, Tests/Shaders, Packages/CADCore/Sources/CADCore/Kernel/RayIndex.swift, Packages/CADCore/Tests/CADCoreTests/PrimitiveKernelTests.swift
+
+### 2026-11-01 02:49 · claude · DONE `T148`
+**Viewport: picking GPU al posto dell'albero CPU (ID pass 1x1, hover e clic)** — Picking GPU al posto dell'albero CPU (hover e clic). Shaders.metal: pickVertex/pickFragment con uscite rgba32Uint (indice corpo, indice triangolo, flag) + r32Float (parametro del raggio) e depth 32F, rasterSampleCount 1. ViewportRenderer.pick(ray:in:) disegna i corpi su un target 1x1 con traslazione in clip space T(-ndc) (CameraController.ndc(of:aspect:), inversa di ray(at:in:), verificata con sonda: scarto max 5.3e-07 su 3 pose perspective/ortho) e legge indietro corpo/triangolo/distanza; le mesh di pick dei corpi di riferimento sono costruite pigramente e in cache per Feature.ID+revision. ViewportState.pickHit/pick, GeoPicking.face(hit:)/edge(front:), HolePlacement e pickSketchPlane usano il picker GPU. Eliminati App/Sources/UI/Viewport/Picking.swift, CADCore/Kernel/RayIndex.swift (BVH), Body.index e il test rayIndex. Verifiche: test-shaders.sh OK (nuovo test del pass di picking, hit e miss), build.sh BUILD SUCCEEDED, CADCore 265 test verdi, test-sketch.sh OK.
+
+### 2026-11-01 03:08 · claude · DONE `T52`
+**Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude** — Chat assistente in-app completo: pannello con streaming, schede degli strumenti con esito e Annulla (undo mirato), provider Claude (Anthropic Messages, thinking adattivo e tool eager), OpenAI Responses, Apple Intelligence on-device (macOS 27) e motore strumenti CAD condiviso; Impostazioni → Assistente per chiavi nel Portachiavi e scelta modello.
+
+### 2026-11-01 03:08 · claude · NUOVO TASK `T149`
+Strumenti assistente/MCP per lo schizzo: elenco, lettura, creazione entita e profilo da estrudere (dipende da T48)
+
+### 2026-11-01 03:08 · claude · NUOVO TASK `T150`
+Assistenti: interfacce compatibili OpenAI e Anthropic con Claude, ChatGPT e DeepSeek di primo livello (dipende da T47,T53)
+
+### 2026-11-01 03:08 · claude · CLAIM `T149`
+Inizio **Strumenti assistente/MCP per lo schizzo: elenco, lettura, creazione entita e profilo da estrudere**. File: App/Sources/Model/DesignModel.swift, App/Sources/Model/Tools, Tests/MCPIntegration, scripts/test-mcp-integration.sh
+
+### 2026-11-01 03:08 · claude · CLAIM `T150`
+Inizio **Assistenti: interfacce compatibili OpenAI e Anthropic con Claude, ChatGPT e DeepSeek di primo livello**. File: App/Sources/Integration/Assistant, App/Sources/Integration/OpenAI, App/Sources/UI/Assistant, App/Resources/Localizable.xcstrings, Tests/AssistantProviders, scripts/test-assistant-deepseek.sh
+
+### 2026-11-01 03:40 · claude · PATHS `T150`
+**Assistenti: interfacce compatibili OpenAI e Anthropic con Claude, ChatGPT e DeepSeek di primo livello** ora tocca: App/Sources/Integration/Assistant, App/Sources/Integration/OpenAI, App/Sources/UI/Assistant, App/Sources/UI/FusionTakeoffApp.swift, App/Resources/Localizable.xcstrings, Tests/AssistantProviders, scripts/test-assistant-deepseek.sh
+
+### 2026-11-01 03:40 · claude · PATHS `T149`
+**Strumenti assistente/MCP per lo schizzo: elenco, lettura, creazione entita e profilo da estrudere** ora tocca: App/Sources/Model/DesignModel.swift, App/Sources/Model/Tools, Tests/MCPIntegration, Tests/AssistantTools, scripts/test-mcp-integration.sh
+
+### 2026-11-01 03:41 · claude · NOTA
+`T150` aggiunge `App/Sources/UI/FusionTakeoffApp.swift` ai percorsi: lì si registrano i provider (stesso proprietario claude, T73 non più attivo). `T149` aggiunge `Tests/AssistantTools`: il conteggio degli strumenti passa da 27 a 31 e il test lo asserisce.
+
+### 2026-11-01 04:07 · claude · CLAIM `T55`
+Inizio **Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app**. File: docs/connectors/E2E.md
+
+### 2026-11-01 04:11 · claude · DONE `T150`
+**Assistenti: interfacce compatibili OpenAI e Anthropic con Claude, ChatGPT e DeepSeek di primo livello** — Provider compatibili in app: ClaudeProvider parametrizzato (.claude/.compatible), nuovi OpenAIChatConversation/OpenAIChatStream/OpenAIChatProvider per Chat Completions (.chatGPT/.deepSeek/.compatible), registrazione Claude → ChatGPT → DeepSeek → Anthropic compatibile → OpenAI compatibile → Apple Intelligence, Impostazioni → Assistente con cinque sezioni (chiavi nel Portachiavi, Base URL e modello editabili per i compatibili), chiavi di localizzazione it/en/zh-Hans e sistema di prompt aggiornato. Verifiche: offline 67/67, live DeepSeek 3/3, OpenAI legacy 23, elettronica 23/23, Apple Intelligence 31 strumenti, build OK.
+
+### 2026-11-01 04:11 · claude · DONE `T149`
+**Strumenti assistente/MCP per lo schizzo: elenco, lettura, creazione entita e profilo da estrudere** — Quattro strumenti assistente/MCP per lo schizzo: list_sketches, get_sketch, add_sketch (entità 2D su XY/XZ/YZ o faccia, replace/upsert, un passo di undo) ed extrude_sketch (profilo chiuso unico o shape_id, regioni con isole, FeaturePlacement, SketchLink). Catalogo CAD 27 → 31; MCP HTTP 34 verifiche con round-trip dello schizzo; assistente 88 asserzioni.
+
+### 2026-11-01 04:11 · claude · DONE `T55`
+**Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app** — Prova end-to-end con credenziali reali DeepSeek: 3 richieste (Chat Completions testuale, tool calling, Messages compatibile Anthropic) tutte OK, PASS 63/63, chiave solo in DEEPSEEK_API_KEY. Nuovo docs/connectors/E2E.md con comandi, risultati, parti non eseguite (Claude/ChatGPT senza chiave), passi manuali di Ross e ordine di troubleshooting. Regressione: CADCore 265 test, sketch, shaders, MCP, assistente, OpenAI, elettronica, Apple Intelligence verdi; build BUILD SUCCEEDED.
+
+### 2026-11-01 10:33 · claude · NUOVO TASK `T151`
+Assistente: prompt inviati al modello nella lingua dell'app (it/en/zh) (dipende da T52,T150)
+
+### 2026-11-01 10:33 · claude · CLAIM `T151`
+Inizio **Assistente: prompt inviati al modello nella lingua dell'app (it/en/zh)**. File: App/Sources/Integration/Assistant, Tests/AppleIntelligence
+
+### 2026-11-01 10:38 · claude · DONE `T151`
+**Assistente: prompt inviati al modello nella lingua dell'app (it/en/zh)** — Prompt dell'assistente nella lingua dell'app: nuovo AssistantLanguage (it/en/zh dalla localizzazione scelta da macOS), AssistantSession.systemPrompt(for:) e nota CIRCUITI localizzate, istruzioni di Apple Intelligence (generali, circuiti e circuito piccolo) in tre lingue; claimsAChange riconosce anche verbi inglesi e cinesi. Test: nuove verifiche in Tests/AppleIntelligence/Runner.swift, test-apple-intelligence.sh OK (31 strumenti), assistant-deepseek 67/67, build BUILD SUCCEEDED.

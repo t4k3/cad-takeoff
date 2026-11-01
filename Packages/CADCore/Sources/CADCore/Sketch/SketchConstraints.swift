@@ -12,19 +12,46 @@ import Foundation
 // where it was. Degrees of freedom come from the null space of the Jacobian: a shape is fully
 // constrained when none of its parameters can move.
 
-/// A point, segment or circle of a sketch shape.
+/// A point, segment or circle of a sketch shape, or one of the sketch's fixed reference entities
+/// (origin and axes), which exist in every sketch and cannot be moved by the solver.
 public enum SketchRef: Codable, Sendable, Hashable {
     /// Polyline vertex i; rectangle corner 0…3 (4 = centre); circle centre (0); polygon centre (0)
-    /// and vertices (1…n); slot arc centres 0 (start) and 1 (end).
+    /// and vertices (1…n); slot arc centres 0 (start) and 1 (end); 3D point 0; 3D line end 0 or 1.
     case point(UUID, Int)
-    /// Polyline side i (vertex i → i+1); rectangle side 0…3; polygon side i; slot straight side 0 or 1.
+    /// Polyline side i (vertex i → i+1); rectangle side 0…3; polygon side i; slot straight side 0 or 1;
+    /// 3D line 0.
     case segment(UUID, Int)
     /// Circle (0); slot arcs 0 (start) and 1 (end).
     case circle(UUID, Int)
+    /// The sketch origin (0, 0): a point, fixed geometry.
+    case origin
+    /// The sketch X axis: a segment from the origin along +X, fixed geometry.
+    case axisX
+    /// The sketch Y axis: a segment from the origin along +Y, fixed geometry.
+    case axisY
 
+    /// The shape this reference points at. Fixed geometry uses sentinel IDs that no shape has, so
+    /// filters over the sketch's shapes skip them.
     public var shapeID: UUID {
-        switch self { case let .point(id, _), let .segment(id, _), let .circle(id, _): id }
+        switch self {
+        case let .point(id, _), let .segment(id, _), let .circle(id, _): id
+        case .origin: Self.originID
+        case .axisX: Self.axisXID
+        case .axisY: Self.axisYID
+        }
     }
+
+    /// Origin and axes are always there and have no parameters: the solver never moves them.
+    public var isFixedGeometry: Bool {
+        switch self {
+        case .origin, .axisX, .axisY: true
+        case .point, .segment, .circle: false
+        }
+    }
+
+    static let originID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+    static let axisXID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+    static let axisYID = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
 }
 
 public enum SketchConstraintKind: Codable, Sendable, Equatable {
@@ -41,29 +68,64 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
     case concentric(SketchRef, SketchRef)
     case pointOnLine(SketchRef, SketchRef)
     case pointOnCircle(SketchRef, SketchRef)
+    /// A point on an arc (on its supporting circle).
+    case pointOnArc(SketchRef, SketchRef)
+    /// A point on a Bezier curve (referenced as `.circle(id, 0)`), at curve parameter `t`, which
+    /// the solver moves together with the curve.
+    case pointOnBezier(SketchRef, SketchRef, t: Double)
+    /// A segment end (the first reference is its point, the second the segment) on a Bezier curve,
+    /// with the segment tangent to the curve there (third reference: the curve).
+    case bezierLineTangent(SketchRef, SketchRef, SketchRef, t: Double)
+    /// A segment end on a Bezier curve, with the segment perpendicular to the curve there.
+    case bezierLinePerpendicular(SketchRef, SketchRef, SketchRef, t: Double)
+    /// Two lines lying on the same straight line.
+    case colinear(SketchRef, SketchRef)
+    /// G1 at a join: the two directions are equal (for two lines, the same as parallel).
+    case smooth(SketchRef, SketchRef)
     case midpoint(SketchRef, SketchRef)
     /// Two points mirrored about a line (the third reference).
     case symmetric(SketchRef, SketchRef, SketchRef)
     /// Point pinned where it is.
     case fix(SketchRef, Vec2)
+    // 3D constraints, for entities off the sketch plane (coordinates in the plane's frame).
+    /// A 3D point lying on the sketch plane (z = 0).
+    case pointOnPlane(SketchRef)
+    /// A 3D line parallel to the sketch plane's normal (its two in-plane components are 0).
+    case normalToPlane(SketchRef)
+    /// A 3D point pinned at a position of the plane's frame.
+    case fix3D(SketchRef, Vec3)
+    /// A workplane's orientation frozen where it was (the two vectors from its origin to the
+    /// X-axis point and to the in-plane point); its origin stays free, like dune3d's lock rotation.
+    case lockRotation(SketchRef, xDirection: Vec3, planeDirection: Vec3)
     // Dimensions (driving values, mm or degrees).
     case distance(SketchRef, SketchRef, Double)
     case horizontalDistance(SketchRef, SketchRef, Double)
     case verticalDistance(SketchRef, SketchRef, Double)
+    /// Signed distance from a 3D point to the sketch plane, along its normal (mm).
+    case planeDistance(SketchRef, Double)
     case length(SketchRef, Double)
     case radius(SketchRef, Double)
     case diameter(SketchRef, Double)
     /// Angle from the first line to the second, degrees.
     case angle(SketchRef, SketchRef, Double)
+    /// Signed distance from a point (or the first line) to a line: the other side keeps its sign.
+    case offset(SketchRef, SketchRef, Double)
 
     public var refs: [SketchRef] {
         switch self {
         case let .coincident(a, b), let .parallel(a, b), let .perpendicular(a, b), let .equal(a, b), let .tangent(a, b),
-             let .concentric(a, b), let .pointOnLine(a, b), let .pointOnCircle(a, b), let .midpoint(a, b),
-             let .distance(a, b, _), let .horizontalDistance(a, b, _), let .verticalDistance(a, b, _), let .angle(a, b, _):
+             let .concentric(a, b), let .pointOnLine(a, b), let .pointOnCircle(a, b), let .pointOnArc(a, b),
+             let .pointOnBezier(a, b, _),
+             let .colinear(a, b), let .smooth(a, b), let .midpoint(a, b),
+             let .distance(a, b, _), let .horizontalDistance(a, b, _), let .verticalDistance(a, b, _),
+             let .angle(a, b, _), let .offset(a, b, _):
             [a, b]
-        case let .horizontal(a), let .vertical(a), let .fix(a, _), let .length(a, _), let .radius(a, _), let .diameter(a, _):
+        case let .horizontal(a), let .vertical(a), let .fix(a, _), let .length(a, _), let .radius(a, _), let .diameter(a, _),
+             let .pointOnPlane(a), let .normalToPlane(a), let .fix3D(a, _), let .planeDistance(a, _),
+             let .lockRotation(a, _, _):
             [a]
+        case let .bezierLineTangent(p, s, c, _), let .bezierLinePerpendicular(p, s, c, _):
+            [p, s, c]
         case let .symmetric(a, b, l):
             [a, b, l]
         }
@@ -80,15 +142,31 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
         case let .concentric(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .concentric(a, b)
         case let .pointOnLine(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnLine(a, b)
         case let .pointOnCircle(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnCircle(a, b)
+        case let .pointOnArc(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnArc(a, b)
+        case let .pointOnBezier(a, b, t): guard let a = f(a), let b = f(b) else { return nil }; return .pointOnBezier(a, b, t: t)
+        case let .bezierLineTangent(p, s, c, t):
+            guard let p = f(p), let s = f(s), let c = f(c) else { return nil }
+            return .bezierLineTangent(p, s, c, t: t)
+        case let .bezierLinePerpendicular(p, s, c, t):
+            guard let p = f(p), let s = f(s), let c = f(c) else { return nil }
+            return .bezierLinePerpendicular(p, s, c, t: t)
+        case let .colinear(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .colinear(a, b)
+        case let .smooth(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .smooth(a, b)
         case let .midpoint(a, b): guard let a = f(a), let b = f(b) else { return nil }; return .midpoint(a, b)
         case let .symmetric(a, b, l): guard let a = f(a), let b = f(b), let l = f(l) else { return nil }; return .symmetric(a, b, l)
         case let .distance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .distance(a, b, v)
         case let .horizontalDistance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .horizontalDistance(a, b, v)
         case let .verticalDistance(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .verticalDistance(a, b, v)
         case let .angle(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .angle(a, b, v)
+        case let .offset(a, b, v): guard let a = f(a), let b = f(b) else { return nil }; return .offset(a, b, v)
         case let .horizontal(a): return f(a).map { .horizontal($0) }
         case let .vertical(a): return f(a).map { .vertical($0) }
         case let .fix(a, v): return f(a).map { .fix($0, v) }
+        case let .pointOnPlane(a): return f(a).map { .pointOnPlane($0) }
+        case let .normalToPlane(a): return f(a).map { .normalToPlane($0) }
+        case let .fix3D(a, v): return f(a).map { .fix3D($0, v) }
+        case let .planeDistance(a, v): return f(a).map { .planeDistance($0, v) }
+        case let .lockRotation(a, x, w): return f(a).map { .lockRotation($0, xDirection: x, planeDirection: w) }
         case let .length(a, v): return f(a).map { .length($0, v) }
         case let .radius(a, v): return f(a).map { .radius($0, v) }
         case let .diameter(a, v): return f(a).map { .diameter($0, v) }
@@ -98,8 +176,8 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
     /// The driving value of a dimension (nil for a geometric constraint).
     public var value: Double? {
         switch self {
-        case let .distance(_, _, v), let .horizontalDistance(_, _, v), let .verticalDistance(_, _, v), let .length(_, v),
-             let .radius(_, v), let .diameter(_, v), let .angle(_, _, v): v
+        case let .distance(_, _, v), let .horizontalDistance(_, _, v), let .verticalDistance(_, _, v), let .planeDistance(_, v),
+             let .length(_, v), let .radius(_, v), let .diameter(_, v), let .angle(_, _, v), let .offset(_, _, v): v
         default: nil
         }
     }
@@ -110,10 +188,12 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
         case let .distance(a, b, _): .distance(a, b, v)
         case let .horizontalDistance(a, b, _): .horizontalDistance(a, b, v)
         case let .verticalDistance(a, b, _): .verticalDistance(a, b, v)
+        case let .planeDistance(a, _): .planeDistance(a, v)
         case let .length(a, _): .length(a, v)
         case let .radius(a, _): .radius(a, v)
         case let .diameter(a, _): .diameter(a, v)
         case let .angle(a, b, _): .angle(a, b, v)
+        case let .offset(a, b, _): .offset(a, b, v)
         default: self
         }
     }
@@ -130,16 +210,28 @@ public enum SketchConstraintKind: Codable, Sendable, Equatable {
         case .concentric: "Concentrico"
         case .pointOnLine: "Punto su linea"
         case .pointOnCircle: "Punto su cerchio"
+        case .pointOnArc: "Punto su arco"
+        case .pointOnBezier: "Punto su Bezier"
+        case .bezierLineTangent: "Tangente alla Bezier"
+        case .bezierLinePerpendicular: "Perpendicolare alla Bezier"
+        case .colinear: "Allineato"
+        case .smooth: "Continuo"
         case .midpoint: "Punto medio"
         case .symmetric: "Simmetrico"
         case .fix: "Fisso"
+        case .pointOnPlane: "Punto sul piano"
+        case .normalToPlane: "Normale al piano"
+        case .fix3D: "Fisso 3D"
+        case .lockRotation: "Blocco rotazione"
         case .distance: "Distanza"
         case .horizontalDistance: "Distanza orizzontale"
         case .verticalDistance: "Distanza verticale"
+        case .planeDistance: "Distanza dal piano"
         case .length: "Lunghezza"
         case .radius: "Raggio"
         case .diameter: "Diametro"
         case .angle: "Angolo"
+        case .offset: "Scostamento"
         }
     }
 }
@@ -149,9 +241,23 @@ public struct SketchConstraint: Identifiable, Codable, Sendable, Equatable {
     public var kind: SketchConstraintKind
     /// A user parameter name or an expression driving a dimension (e.g. "larghezza / 2").
     public var expression: String?
+    /// A reference (driven) dimension: it measures the sketch and never moves it.
+    public var isReference: Bool
 
-    public init(id: UUID = UUID(), _ kind: SketchConstraintKind, expression: String? = nil) {
-        self.id = id; self.kind = kind; self.expression = expression
+    public init(id: UUID = UUID(), _ kind: SketchConstraintKind, expression: String? = nil,
+                isReference: Bool = false) {
+        self.id = id; self.kind = kind; self.expression = expression; self.isReference = isReference
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, kind, expression, isReference }
+
+    /// Hand-written so old files without `isReference` still open.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        kind = try c.decode(SketchConstraintKind.self, forKey: .kind)
+        expression = try c.decodeIfPresent(String.self, forKey: .expression)
+        isReference = try c.decodeIfPresent(Bool.self, forKey: .isReference) ?? false
     }
 }
 
@@ -168,6 +274,10 @@ extension SketchShape {
         case let .slot(a, b, w): [a.x, a.y, b.x, b.y, w]
         case let .arc(c, r, a0, a1): [c.x, c.y, r, a0, a1]
         case let .spline(p, _): p.flatMap { [$0.x, $0.y] }
+        case let .bezier(p0, c1, c2, p3): [p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y]
+        case let .point3D(p): [p.x, p.y, p.z]
+        case let .line3D(a, b): [a.x, a.y, a.z, b.x, b.y, b.z]
+        case let .workplane(o, x, p): [o.x, o.y, o.z, x.x, x.y, x.z, p.x, p.y, p.z]
         }
     }
 
@@ -184,6 +294,14 @@ extension SketchShape {
         case .arc: s.kind = .arc(center: Vec2(v[0], v[1]), radius: v[2], start: v[3], end: v[4])
         case let .spline(_, closed):
             s.kind = .spline(points: stride(from: 0, to: v.count - 1, by: 2).map { Vec2(v[$0], v[$0 + 1]) }, closed: closed)
+        case .bezier:
+            s.kind = .bezier(start: Vec2(v[0], v[1]), control1: Vec2(v[2], v[3]),
+                             control2: Vec2(v[4], v[5]), end: Vec2(v[6], v[7]))
+        case .point3D: s.kind = .point3D(position: Vec3(v[0], v[1], v[2]))
+        case .line3D: s.kind = .line3D(start: Vec3(v[0], v[1], v[2]), end: Vec3(v[3], v[4], v[5]))
+        case .workplane:
+            s.kind = .workplane(origin: Vec3(v[0], v[1], v[2]), xAxisPoint: Vec3(v[3], v[4], v[5]),
+                                planePoint: Vec3(v[6], v[7], v[8]))
         }
         return s
     }
@@ -203,6 +321,7 @@ extension SketchShape {
             return Vec2(c.x + vr * cos(t), c.y + vr * sin(t))
         case let .slot(a, b, _): return i == 0 ? a : (i == 1 ? b : nil)
         case let .spline(p, _): return p.indices.contains(i) ? p[i] : nil
+        case let .bezier(p0, c1, c2, p3): return [p0, c1, c2, p3][safe: i]
         case let .arc(c, r, a0, a1):
             switch i {
             case 0: return c
@@ -210,6 +329,32 @@ extension SketchShape {
             case 2: return Vec2(c.x + r * cos(a1), c.y + r * sin(a1))
             default: return nil
             }
+        case .point3D, .line3D, .workplane:
+            return nil
+        }
+    }
+
+    /// A point of a 3D entity, in the sketch's plane frame.
+    public func point3D(_ i: Int) -> Vec3? {
+        switch kind {
+        case let .point3D(p): return i == 0 ? p : nil
+        case let .line3D(a, b): return i == 0 ? a : (i == 1 ? b : nil)
+        case let .workplane(o, x, p): return [o, x, p][safe: i]
+        default: return nil
+        }
+    }
+
+    /// The segment of a 3D line, in the sketch's plane frame.
+    public func segment3D(_ i: Int) -> (Vec3, Vec3)? {
+        guard case let .line3D(a, b) = kind, i == 0 else { return nil }
+        return (a, b)
+    }
+
+    /// Free geometry off the sketch plane: its points carry a third coordinate the solver moves.
+    public var is3D: Bool {
+        switch kind {
+        case .point3D, .line3D, .workplane: return true
+        default: return false
         }
     }
 
@@ -222,6 +367,10 @@ extension SketchShape {
         case .slot: 2
         case .arc: 3
         case let .spline(p, _): p.count
+        case .bezier: 4
+        case .point3D: 1
+        case .line3D: 2
+        case .workplane: 3
         }
     }
 
@@ -243,7 +392,7 @@ extension SketchShape {
             let d = Vec2(b.x - a.x, b.y - a.y), l = max((d.x * d.x + d.y * d.y).squareRoot(), 1e-12)
             let n = Vec2(-d.y / l * w / 2, d.x / l * w / 2)
             return i == 0 ? (Vec2(a.x - n.x, a.y - n.y), Vec2(b.x - n.x, b.y - n.y)) : (Vec2(b.x + n.x, b.y + n.y), Vec2(a.x + n.x, a.y + n.y))
-        case .circle, .arc, .spline: return nil
+        case .circle, .arc, .spline, .bezier, .point3D, .line3D, .workplane: return nil
         }
     }
 
@@ -253,7 +402,8 @@ extension SketchShape {
         case .rectangle: 4
         case let .polygon(_, _, n, _, _): max(3, n)
         case .slot: 2
-        case .circle, .arc, .spline: 0
+        case .circle, .arc, .spline, .bezier, .point3D, .workplane: 0
+        case .line3D: 1
         }
     }
 
@@ -267,295 +417,6 @@ extension SketchShape {
     }
 }
 
-
-// MARK: - Solver
-
-public enum SketchSolver {
-    public struct Result: Sendable {
-        /// Shapes with the solved parameters (unchanged when the solve failed).
-        public let shapes: [SketchShape]
-        public let converged: Bool
-        /// Remaining degrees of freedom of the whole sketch.
-        public let freedom: Int
-        /// Shapes none of whose parameters can still move.
-        public let fullyConstrained: Set<UUID>
-        /// Largest remaining residual (mm or mm-equivalent).
-        public let error: Double
-    }
-
-    /// Solves `constraints` on `shapes`. `drag`: a point pulled towards a position (weak: it gives
-    /// way to the constraints). Shapes not touched by any constraint are returned as they are.
-    public static func solve(_ shapes: [SketchShape], _ constraints: [SketchConstraint],
-                             drag: (SketchRef, Vec2)? = nil) -> Result {
-        // Variables: the parameters of constrained (or dragged) shapes.
-        var involved = Set(constraints.flatMap(\.kind.refs).map(\.shapeID))
-        if let drag { involved.insert(drag.0.shapeID) }
-        var offsets: [UUID: Int] = [:], x: [Double] = []
-        for s in shapes where involved.contains(s.id) { offsets[s.id] = x.count; x += s.parameters }
-        let index = Dictionary(uniqueKeysWithValues: shapes.enumerated().map { ($1.id, $0) })
-        func shapesAt(_ x: [Double]) -> [UUID: SketchShape] {
-            var out: [UUID: SketchShape] = [:]
-            for (id, o) in offsets {
-                let s = shapes[index[id]!]
-                out[id] = s.with(parameters: Array(x[o..<(o + s.parameters.count)]))
-            }
-            return out
-        }
-        let live = constraints.filter { c in c.kind.refs.allSatisfy { index[$0.shapeID] != nil } }
-        func residuals(_ x: [Double], dragWeight: Double) -> [Double] {
-            let s = shapesAt(x)
-            var r: [Double] = []
-            for c in live { r += residual(c.kind, s) }
-            if let (ref, target) = drag, dragWeight > 0, let p = pointOf(ref, s) {
-                r += [(p.x - target.x) * dragWeight, (p.y - target.y) * dragWeight]
-            }
-            return r
-        }
-        guard !x.isEmpty else {
-            return Result(shapes: shapes, converged: true, freedom: 0, fullyConstrained: [], error: 0)
-        }
-        // With a drag: the point goes exactly under the mouse when the constraints allow it,
-        // otherwise as near as they let it; then the constraints are satisfied exactly.
-        var current = x
-        if drag != nil {
-            let exact = newton(current, { residuals($0, dragWeight: 1) }, leastSquares: false)
-            current = (residuals(exact, dragWeight: 1).map(abs).max() ?? 0) < 1e-7
-                ? exact : newton(current, { residuals($0, dragWeight: 0.05) }, leastSquares: true)
-        }
-        current = newton(current, { residuals($0, dragWeight: 0) }, leastSquares: false)
-        let r = residuals(current, dragWeight: 0)
-        let error = r.map(abs).max() ?? 0
-        let converged = error < 1e-7
-        // Degrees of freedom from the null space of the constraint Jacobian.
-        let J = jacobian(current) { residuals($0, dragWeight: 0) }
-        let null = nullSpace(J, columns: current.count)
-        var full = Set<UUID>()
-        for (id, o) in offsets {
-            let n = shapes[index[id]!].parameters.count
-            if null.allSatisfy({ v in (o..<(o + n)).allSatisfy { abs(v[$0]) < 1e-6 } }) { full.insert(id) }
-        }
-        guard converged else {
-            return Result(shapes: shapes, converged: false, freedom: null.count, fullyConstrained: full, error: error)
-        }
-        let solved = shapesAt(current)
-        return Result(shapes: shapes.map { solved[$0.id] ?? $0 }, converged: true, freedom: null.count,
-                      fullyConstrained: full, error: error)
-    }
-
-    // MARK: Residuals
-
-    static func pointOf(_ ref: SketchRef, _ s: [UUID: SketchShape]) -> Vec2? {
-        guard case let .point(id, i) = ref else { return nil }
-        return s[id]?.point(i)
-    }
-    static func segmentOf(_ ref: SketchRef, _ s: [UUID: SketchShape]) -> (Vec2, Vec2)? {
-        guard case let .segment(id, i) = ref else { return nil }
-        return s[id]?.segment(i)
-    }
-    static func circleOf(_ ref: SketchRef, _ s: [UUID: SketchShape]) -> (center: Vec2, radius: Double)? {
-        guard case let .circle(id, i) = ref else { return nil }
-        return s[id]?.circle(i)
-    }
-
-    private static func len(_ v: Vec2) -> Double { (v.x * v.x + v.y * v.y).squareRoot() }
-
-    /// Residuals of one constraint (zero when satisfied), in millimetres.
-    static func residual(_ k: SketchConstraintKind, _ s: [UUID: SketchShape]) -> [Double] {
-        switch k {
-        case let .coincident(a, b):
-            guard let p = pointOf(a, s), let q = pointOf(b, s) else { return [] }
-            return [p.x - q.x, p.y - q.y]
-        case let .horizontal(a):
-            if let (p, q) = segmentOf(a, s) { return [q.y - p.y] }
-            return []
-        case let .vertical(a):
-            if let (p, q) = segmentOf(a, s) { return [q.x - p.x] }
-            return []
-        case let .parallel(a, b), let .perpendicular(a, b):
-            guard let (p1, q1) = segmentOf(a, s), let (p2, q2) = segmentOf(b, s) else { return [] }
-            let d1 = q1 - p1, d2 = q2 - p2
-            let l1 = max(len(d1), 1e-9), l2 = max(len(d2), 1e-9), scale = (l1 + l2) / 2
-            if case .parallel = k { return [d1.cross(d2) / (l1 * l2) * scale] }
-            return [(d1.x * d2.x + d1.y * d2.y) / (l1 * l2) * scale]
-        case let .equal(a, b):
-            if let (p1, q1) = segmentOf(a, s), let (p2, q2) = segmentOf(b, s) { return [len(q1 - p1) - len(q2 - p2)] }
-            if let c1 = circleOf(a, s), let c2 = circleOf(b, s) { return [c1.radius - c2.radius] }
-            return []
-        case let .tangent(a, b):
-            if let (p, q) = segmentOf(a, s), let c = circleOf(b, s) { return [lineDistance(c.center, p, q) - c.radius] }
-            if let (p, q) = segmentOf(b, s), let c = circleOf(a, s) { return [lineDistance(c.center, p, q) - c.radius] }
-            if let c1 = circleOf(a, s), let c2 = circleOf(b, s) {
-                let d = len(c1.center - c2.center)
-                // Outside each other or one inside the other, whichever is nearer.
-                let outside = d - (c1.radius + c2.radius), inside = d - abs(c1.radius - c2.radius)
-                return [abs(outside) < abs(inside) ? outside : inside]
-            }
-            return []
-        case let .concentric(a, b):
-            guard let c1 = circleOf(a, s) ?? pointOf(a, s).map({ ($0, 0) }), let c2 = circleOf(b, s) ?? pointOf(b, s).map({ ($0, 0) }) else { return [] }
-            return [c1.center.x - c2.center.x, c1.center.y - c2.center.y]
-        case let .pointOnLine(a, b):
-            guard let p = pointOf(a, s), let (u, v) = segmentOf(b, s) else { return [] }
-            let d = v - u
-            return [d.cross(p - u) / max(len(d), 1e-9)]
-        case let .pointOnCircle(a, b):
-            guard let p = pointOf(a, s), let c = circleOf(b, s) else { return [] }
-            return [len(p - c.center) - c.radius]
-        case let .midpoint(a, b):
-            guard let p = pointOf(a, s), let (u, v) = segmentOf(b, s) else { return [] }
-            return [p.x - (u.x + v.x) / 2, p.y - (u.y + v.y) / 2]
-        case let .symmetric(a, b, l):
-            guard let p = pointOf(a, s), let q = pointOf(b, s), let (u, v) = segmentOf(l, s) else { return [] }
-            let d = v - u, n = max(len(d), 1e-9), m = Vec2((p.x + q.x) / 2, (p.y + q.y) / 2)
-            return [d.cross(m - u) / n, ((q.x - p.x) * d.x + (q.y - p.y) * d.y) / n]
-        case let .fix(a, at):
-            guard let p = pointOf(a, s) else { return [] }
-            return [p.x - at.x, p.y - at.y]
-        case let .distance(a, b, d):
-            if let p = pointOf(a, s), let q = pointOf(b, s) { return [len(q - p) - d] }
-            if let p = pointOf(a, s), let (u, v) = segmentOf(b, s) { return [abs((v - u).cross(p - u)) / max(len(v - u), 1e-9) - d] }
-            if let (u1, v1) = segmentOf(a, s), let (u2, _) = segmentOf(b, s) {   // parallel lines
-                return [abs((v1 - u1).cross(u2 - u1)) / max(len(v1 - u1), 1e-9) - d]
-            }
-            return []
-        case let .horizontalDistance(a, b, d):
-            guard let p = pointOf(a, s), let q = pointOf(b, s) else { return [] }
-            return [abs(q.x - p.x) - d]
-        case let .verticalDistance(a, b, d):
-            guard let p = pointOf(a, s), let q = pointOf(b, s) else { return [] }
-            return [abs(q.y - p.y) - d]
-        case let .length(a, d):
-            guard let (p, q) = segmentOf(a, s) else { return [] }
-            return [len(q - p) - d]
-        case let .radius(a, d):
-            guard let c = circleOf(a, s) else { return [] }
-            return [c.radius - d]
-        case let .diameter(a, d):
-            guard let c = circleOf(a, s) else { return [] }
-            return [2 * c.radius - d]
-        case let .angle(a, b, deg):
-            guard let (p1, q1) = segmentOf(a, s), let (p2, q2) = segmentOf(b, s) else { return [] }
-            let d1 = q1 - p1, d2 = q2 - p2
-            var e = atan2(d1.cross(d2), d1.x * d2.x + d1.y * d2.y) - deg * .pi / 180
-            while e > .pi { e -= 2 * .pi }
-            while e < -.pi { e += 2 * .pi }
-            return [e * max((len(d1) + len(d2)) / 2, 1)]
-        }
-    }
-
-    private static func lineDistance(_ c: Vec2, _ p: Vec2, _ q: Vec2) -> Double {
-        abs((q - p).cross(c - p)) / max(len(q - p), 1e-9)
-    }
-
-    // MARK: Numerics
-
-    static func jacobian(_ x: [Double], _ f: ([Double]) -> [Double]) -> [[Double]] {
-        let f0 = f(x)
-        var J = [[Double]](repeating: [Double](repeating: 0, count: x.count), count: f0.count)
-        var xp = x
-        for j in x.indices {
-            let h = 1e-6 * max(1, abs(x[j]))
-            xp[j] = x[j] + h
-            let fp = f(xp)
-            xp[j] = x[j] - h
-            let fm = f(xp)
-            xp[j] = x[j]
-            for i in f0.indices { J[i][j] = (fp[i] - fm[i]) / (2 * h) }
-        }
-        return J
-    }
-
-    /// Newton iterations with minimum-norm steps (least squares when the equations cannot all hold,
-    /// e.g. the weak drag target), with step halving when the residual grows.
-    static func newton(_ x0: [Double], _ f: ([Double]) -> [Double], leastSquares: Bool) -> [Double] {
-        var x = x0
-        var r = f(x)
-        func norm(_ v: [Double]) -> Double { v.reduce(0) { $0 + $1 * $1 } }
-        for _ in 0..<60 {
-            if r.isEmpty || norm(r) < 1e-20 { break }
-            let J = jacobian(x, f)
-            guard let step = minimumNormStep(J, r) else { break }
-            var t = 1.0, improved = false
-            while t > 1e-4 {
-                let trial = zip(x, step).map { $0 + t * $1 }
-                let rt = f(trial)
-                if norm(rt) < norm(r) { x = trial; r = rt; improved = true; break }
-                t /= 2
-            }
-            if !improved { break }
-            if !leastSquares, r.map(abs).max() ?? 0 < 1e-10 { break }
-        }
-        return x
-    }
-
-    /// Δ = −Jᵀ (J Jᵀ + λI)⁻¹ r.
-    static func minimumNormStep(_ J: [[Double]], _ r: [Double]) -> [Double]? {
-        let m = J.count, n = J.first?.count ?? 0
-        guard m > 0, n > 0 else { return nil }
-        var A = [[Double]](repeating: [Double](repeating: 0, count: m), count: m)
-        for i in 0..<m {
-            for k in i..<m {
-                var s = 0.0
-                for j in 0..<n { s += J[i][j] * J[k][j] }
-                A[i][k] = s; A[k][i] = s
-            }
-        }
-        let trace = (0..<m).reduce(0.0) { $0 + A[$1][$1] }
-        let lambda = max(1e-12, 1e-10 * trace / Double(m))
-        for i in 0..<m { A[i][i] += lambda }
-        guard let y = solveLinear(A, r.map { -$0 }) else { return nil }
-        return (0..<n).map { j in (0..<m).reduce(0.0) { $0 + J[$1][j] * y[$1] } }
-    }
-
-    static func solveLinear(_ A0: [[Double]], _ b0: [Double]) -> [Double]? {
-        var A = A0, b = b0
-        let n = b.count
-        for c in 0..<n {
-            guard let p = (c..<n).max(by: { abs(A[$0][c]) < abs(A[$1][c]) }), abs(A[p][c]) > 1e-300 else { return nil }
-            A.swapAt(c, p); b.swapAt(c, p)
-            for r in (c + 1)..<n where A[r][c] != 0 {
-                let f = A[r][c] / A[c][c]
-                for k in c..<n { A[r][k] -= f * A[c][k] }
-                b[r] -= f * b[c]
-            }
-        }
-        var x = [Double](repeating: 0, count: n)
-        for r in stride(from: n - 1, through: 0, by: -1) {
-            var s = b[r]
-            for k in (r + 1)..<n { s -= A[r][k] * x[k] }
-            x[r] = s / A[r][r]
-        }
-        return x
-    }
-
-    /// Basis of the null space of J (vectors of `columns` entries): the directions the sketch can
-    /// still move in. Reduced row echelon form with a relative tolerance.
-    static func nullSpace(_ J: [[Double]], columns n: Int) -> [[Double]] {
-        var A = J
-        let scale = max(1, A.flatMap { $0 }.map(abs).max() ?? 1)
-        let tol = 1e-8 * scale
-        var pivots: [Int] = []
-        var row = 0
-        for c in 0..<n where row < A.count {
-            guard let p = (row..<A.count).max(by: { abs(A[$0][c]) < abs(A[$1][c]) }), abs(A[p][c]) > tol else { continue }
-            A.swapAt(row, p)
-            let v = A[row][c]
-            for k in 0..<n { A[row][k] /= v }
-            for r in A.indices where r != row && A[r][c] != 0 {
-                let f = A[r][c]
-                for k in 0..<n { A[r][k] -= f * A[row][k] }
-            }
-            pivots.append(c); row += 1
-        }
-        let free = (0..<n).filter { !pivots.contains($0) }
-        return free.map { f in
-            var v = [Double](repeating: 0, count: n)
-            v[f] = 1
-            for (r, c) in pivots.enumerated() { v[c] = -A[r][f] }
-            return v
-        }
-    }
-}
 
 // MARK: - 2D fillet
 
@@ -632,6 +493,7 @@ extension Sketch {
                 if closed { return .segment(shapeID, j == i ? 0 : 1 + (j - next + n) % n) }
                 return j < i ? ref : .segment(secondID, j - i)
             case .circle: return nil
+            case .origin, .axisX, .axisY: return ref   // fixed geometry, not this shape's
             }
         }
         let trimmed: Set<Int> = [prev, i]
@@ -654,17 +516,192 @@ extension Sketch {
             shapes[k] = shape
             let m = n + 1
             added += [.init(.coincident(.point(shapeID, m - 1), .point(arc.id, t1Point))), .init(.coincident(.point(shapeID, 0), .point(arc.id, t2Point)))]
-            if !chamfer { added += [.init(.tangent(.segment(shapeID, m - 2), .circle(arc.id, 0))), .init(.tangent(.segment(shapeID, 0), .circle(arc.id, 0)))] }
+            if !chamfer { added += [.init(.tangent(.segment(shapeID, m - 2), .point(arc.id, t1Point))), .init(.tangent(.segment(shapeID, 0), .point(arc.id, t2Point)))] }
         } else {
             shape.kind = .polyline(Array(p[0..<i]) + [t1], closed: false)
             shapes[k] = shape
             let second = SketchShape(id: secondID, kind: .polyline([t2] + Array(p[(i + 1)...]), closed: false), isConstruction: shape.isConstruction)
             shapes.insert(second, at: k + 1)
             added += [.init(.coincident(.point(shapeID, i), .point(arc.id, t1Point))), .init(.coincident(.point(second.id, 0), .point(arc.id, t2Point)))]
-            if !chamfer { added += [.init(.tangent(.segment(shapeID, i - 1), .circle(arc.id, 0))), .init(.tangent(.segment(second.id, 0), .circle(arc.id, 0)))] }
+            if !chamfer { added += [.init(.tangent(.segment(shapeID, i - 1), .point(arc.id, t1Point))), .init(.tangent(.segment(second.id, 0), .point(arc.id, t2Point)))] }
         }
         shapes.insert(arc, at: k + 1)
         constraints += added + (chamfer ? [] : [.init(.radius(.circle(arc.id, 0), r))])
         return arc.id
+    }
+
+    // MARK: Rectangles as four constrained lines (dune3d's rectangle tool)
+
+    /// Adds a rectangle as four independent lines joined at the corners by coincident constraints,
+    /// each side with its horizontal or vertical relation — the way dune3d builds it. The four
+    /// lines still leave four freedoms (position plus the two sizes), exactly like a `.rectangle`
+    /// shape, but every relation is now visible in the constraint list. Returns the line IDs.
+    @discardableResult
+    public mutating func addRectangle(corner: Vec2, width w: Double, height h: Double) -> [UUID] {
+        // Dragging the opposite corner backwards is fine: the sides are turned the other way round.
+        let start = Vec2(w < 0 ? corner.x + w : corner.x, h < 0 ? corner.y + h : corner.y)
+        let width = abs(w), height = abs(h)
+        let corners = [start, Vec2(start.x + width, start.y),
+                       Vec2(start.x + width, start.y + height), Vec2(start.x, start.y + height)]
+        var ids: [UUID] = []
+        for i in 0..<4 {
+            let line = SketchShape(kind: .polyline([corners[i], corners[(i + 1) % 4]], closed: false))
+            shapes.append(line)
+            ids.append(line.id)
+        }
+        constraints += [
+            .init(.horizontal(.segment(ids[0], 0))), .init(.vertical(.segment(ids[1], 0))),
+            .init(.horizontal(.segment(ids[2], 0))), .init(.vertical(.segment(ids[3], 0))),
+        ]
+        for i in 0..<4 {
+            constraints.append(.init(.coincident(.point(ids[i], 1), .point(ids[(i + 1) % 4], 0))))
+        }
+        return ids
+    }
+
+    /// Sketch fillet between two lines that meet at a shared corner (the rectangle above is four
+    /// such lines): both are trimmed to their tangent points, the corner becomes an arc, and
+    /// coincident/tangent relations plus the radius dimension keep the three pieces joined.
+    @discardableResult
+    public mutating func fillet(_ a: UUID, vertex ia: Int, _ b: UUID, vertex ib: Int, radius r: Double) throws -> UUID {
+        try cutCornerBetween(a, ia, b, ib, size: r, chamfer: false)
+    }
+
+    /// Sketch chamfer between two lines meeting at a shared corner: the corner is cut by a line
+    /// `distance` from it along both, joined to the trimmed ends by coincident relations.
+    @discardableResult
+    public mutating func chamfer(_ a: UUID, vertex ia: Int, _ b: UUID, vertex ib: Int, distance d: Double) throws -> UUID {
+        try cutCornerBetween(a, ia, b, ib, size: d, chamfer: true)
+    }
+
+    private mutating func cutCornerBetween(_ aID: UUID, _ ia: Int, _ bID: UUID, _ ib: Int,
+                                           size r: Double, chamfer: Bool) throws -> UUID {
+        guard let ka = shapes.firstIndex(where: { $0.id == aID }),
+              let kb = shapes.firstIndex(where: { $0.id == bID }) else {
+            throw SketchEditError.invalid("raccordo: forma non trovata")
+        }
+        guard r.isFinite, r > 0 else { throw SketchEditError.invalid(chamfer ? "distanza non valida" : "raggio non valido") }
+        guard case let .polyline(pa, closedA) = shapes[ka].kind, !closedA,
+              case let .polyline(pb, closedB) = shapes[kb].kind, !closedB else {
+            throw SketchEditError.invalid("raccordo: servono due linee aperte")
+        }
+        guard pa.count >= 2, pb.count >= 2, (ia == 0 || ia == pa.count - 1), (ib == 0 || ib == pb.count - 1),
+              pa.indices.contains(ia), pb.indices.contains(ib) else {
+            throw SketchEditError.invalid("raccordo: l'angolo deve essere un estremo delle due linee")
+        }
+        func len(_ v: Vec2) -> Double { (v.x * v.x + v.y * v.y).squareRoot() }
+        let p = pa[ia], q = pb[ib]
+        guard len(p - q) < 1e-5 else { throw SketchEditError.invalid("raccordo: le due linee non si incontrano in questo punto") }
+        func away(_ pts: [Vec2], _ i: Int) -> Vec2 {
+            let d = pts[i == 0 ? 1 : i - 1] - pts[i]
+            let l = len(d)
+            guard l > 1e-12 else { return Vec2(1, 0) }
+            return d * (1 / l)
+        }
+        let u1 = away(pa, ia), u2 = away(pb, ib)
+        let cosT = max(-1, min(1, u1.x * u2.x + u1.y * u2.y))
+        let theta = acos(cosT)
+        guard theta > 1e-3, theta < .pi - 1e-3 else { throw SketchEditError.invalid("raccordo: le due linee sono allineate") }
+        let d = chamfer ? r : r / tan(theta / 2)
+        let la = len(pa[ia == 0 ? 1 : ia - 1] - p), lb = len(pb[ib == 0 ? 1 : ib - 1] - q)
+        guard d < la - 1e-6, d < lb - 1e-6 else {
+            if chamfer { throw SketchEditError.invalid(String(format: "smusso troppo grande per queste linee (massimo %.2f mm)", min(la, lb))) }
+            throw SketchEditError.invalid(String(format: "raggio troppo grande per questo angolo (massimo %.2f mm)", min(la, lb) * tan(theta / 2)))
+        }
+        let t1 = p + u1 * d, t2 = q + u2 * d
+        let bis = u1 + u2
+        let c = p + bis * (1 / len(bis)) * (r / sin(theta / 2))
+        let a1 = atan2(t1.y - c.y, t1.x - c.x), a2 = atan2(t2.y - c.y, t2.x - c.x)
+        let (start, end, t1IsStart) = SketchShape.sweep(a1, a2) <= .pi ? (a1, a2, true) : (a2, a1, false)
+        let arc = chamfer ? SketchShape(kind: .polyline([t1, t2], closed: false))
+                          : SketchShape(kind: .arc(center: c, radius: r, start: start, end: end))
+        // The two lines now end at the tangent points; the relation that joined the corner goes.
+        var ptsA = pa; ptsA[ia] = t1
+        var ptsB = pb; ptsB[ib] = t2
+        var shapeA = shapes[ka]; shapeA.kind = .polyline(ptsA, closed: false)
+        var shapeB = shapes[kb]; shapeB.kind = .polyline(ptsB, closed: false)
+        shapes[ka] = shapeA
+        shapes[kb] = shapeB
+        let ra = SketchRef.point(aID, ia), rb = SketchRef.point(bID, ib)
+        constraints.removeAll { c in
+            let refs = c.kind.refs
+            return refs.contains(ra) && refs.contains(rb)
+        }
+        shapes.insert(arc, at: max(ka, kb) + 1)
+        let t1Point = chamfer ? 0 : (t1IsStart ? 1 : 2), t2Point = chamfer ? 1 : (t1IsStart ? 2 : 1)
+        var added: [SketchConstraint] = [
+            .init(.coincident(.point(aID, ia), .point(arc.id, t1Point))),
+            .init(.coincident(.point(bID, ib), .point(arc.id, t2Point))),
+        ]
+        if !chamfer {
+            added += [.init(.tangent(.segment(aID, ia == 0 ? 0 : pa.count - 2), .point(arc.id, t1Point))),
+                      .init(.tangent(.segment(bID, ib == 0 ? 0 : pb.count - 2), .point(arc.id, t2Point))),
+                      .init(.radius(.circle(arc.id, 0), r))]
+        }
+        constraints += added
+        return arc.id
+    }
+
+    // MARK: All the corners of a rectangle or a polygon
+
+    /// Rounds every corner of a rectangle or a regular polygon with arcs of radius `r`, the way the
+    /// UI's Raccordo tool works when a whole shape is clicked: the shape becomes lines and arcs in
+    /// one step. Returns the arcs' IDs, in corner order (rectangle: corners 0…3, polygon: vertices
+    /// 1…n). Throws, leaving the sketch untouched, when the radius does not fit a side.
+    @discardableResult
+    public mutating func filletAllCorners(_ shapeID: UUID, radius r: Double) throws -> [UUID] {
+        try cutAllCorners(shapeID, size: r, chamfer: false)
+    }
+
+    /// Cuts every corner of a rectangle or a polygon with a line `distance` from the corner along
+    /// both sides. Returns the chamfer lines' IDs, in corner order.
+    @discardableResult
+    public mutating func chamferAllCorners(_ shapeID: UUID, distance d: Double) throws -> [UUID] {
+        try cutAllCorners(shapeID, size: d, chamfer: true)
+    }
+
+    private mutating func cutAllCorners(_ shapeID: UUID, size r: Double, chamfer: Bool) throws -> [UUID] {
+        guard let k = shapes.firstIndex(where: { $0.id == shapeID }) else { throw SketchEditError.invalid("forma non trovata") }
+        guard r.isFinite, r > 0 else { throw SketchEditError.invalid(chamfer ? "distanza non valida" : "raggio non valido") }
+        let shape = shapes[k]
+        let corners: [Vec2]
+        switch shape.kind {
+        case .rectangle:
+            corners = (0..<4).compactMap { shape.point($0) }
+        case let .polygon(_, _, n, _, _):
+            corners = (1...max(3, n)).compactMap { shape.point($0) }
+        default:
+            throw SketchEditError.invalid("raccordo: scegli un rettangolo o un poligono")
+        }
+        let n = corners.count
+        guard n >= 3 else { throw SketchEditError.invalid("raccordo: servono almeno tre angoli") }
+
+        // One open line per side, the first keeping the shape's ID so its dimensions and constraints
+        // (remapped by position) stay on it. The corners are joined by coincident relations and, for
+        // a rectangle, the sides keep their H/V, exactly as a corner fillet does.
+        let ids = (0..<n).map { $0 == 0 ? shapeID : UUID() }
+        var lines: [SketchShape] = []
+        for i in 0..<n {
+            lines.append(SketchShape(id: ids[i], kind: .polyline([corners[i], corners[(i + 1) % n]], closed: false),
+                                     isConstruction: shape.isConstruction))
+        }
+        var implied: [SketchConstraint] = []
+        if case .rectangle = shape.kind {
+            implied += [.init(.horizontal(.segment(ids[0], 0))), .init(.vertical(.segment(ids[1], 0))),
+                        .init(.horizontal(.segment(ids[2], 0))), .init(.vertical(.segment(ids[3], 0)))]
+        }
+        for i in 0..<n {
+            implied.append(.init(.coincident(.point(ids[i], 1), .point(ids[(i + 1) % n], 0))))
+        }
+
+        // Work on a copy: a corner whose sides are too short for the radius leaves the sketch as it was.
+        var next = self
+        next.replaceShape(shapeID, with: lines, implied: implied)
+        var made: [UUID] = []
+        for i in 0..<n {
+            made.append(try next.cutCornerBetween(ids[i], 1, ids[(i + 1) % n], 0, size: r, chamfer: chamfer))
+        }
+        self = next
+        return made
     }
 }

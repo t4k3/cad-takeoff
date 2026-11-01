@@ -30,7 +30,10 @@ extension Sketch {
     /// the axis, square to it, is the part's diameter there (Ø, twice the value, across the axis).
     public func drawingDimensions(revolvedAbout axes: [(Vec2, Vec2)]) -> [ModelDimension] {
         func shape(_ r: SketchRef) -> SketchShape? {
-            switch r { case let .point(id, _), let .segment(id, _), let .circle(id, _): shapes.first { $0.id == id } }
+            switch r {
+            case let .point(id, _), let .segment(id, _), let .circle(id, _): shapes.first { $0.id == id }
+            case .origin, .axisX, .axisY: nil
+            }
         }
         func point(_ r: SketchRef) -> Vec2? { if case let .point(_, i) = r { shape(r)?.point(i) } else { nil } }
         func segment(_ r: SketchRef) -> (Vec2, Vec2)? { if case let .segment(_, i) = r { shape(r)?.segment(i) } else { nil } }

@@ -139,3 +139,84 @@ sono le prove a mano, sull'interfaccia.
 - [ ] **CIRCUITI › 3D**: su macOS 14 la vista 3D della scheda assemblata mostra «Vista 3D non disponibile — Richiede macOS 15 o successivo.» invece di fallire; su macOS 15+ funziona come prima.
 - [ ] **Assistente**: Apple Intelligence compare solo da macOS 27; su macOS 14 restano Claude e ChatGPT.
 - [ ] **Build pulita**: `scripts/build.sh` senza warning (niente default Codable nei `let`, niente `Text + Text`).
+
+## Seguito T121 — schizzo: solver nuovo, diagnosi, assi, trascinamento
+- [ ] **Quote che non si ribaltano**: sposta un punto oltre la linea di quota (`Distanza` fra punto e linea): la quota resta positiva e il punto resta dal lato in cui era; un angolo impostato a 179° non diventa −179°; una tangente cerchio-cerchio resta interna o esterna come quando è stata creata.
+- [ ] **Conflitti in rosso**: aggiungi a una linea già orizzontale un vincolo `Verticale` (o due quote incompatibili) → la scritta del vincolo esistente diventa **rossa** con tooltip «Vincolo in conflitto»; la nuova quota/vincolo viene **rifiutata** con avviso arancione invece di deformare lo schizzo.
+- [ ] **Ridondanti in arancione**: aggiungi un vincolo che ripete qualcosa già presente (es. `Oriz./Vert.` dove è già presente `Vincolo orizzontale`, oppure una quota già determinata) → avviso «ripete un vincolo già presente: non aggiunto»; quelli già presenti che risultano dipendenti si colorano di arancione.
+- [ ] **Quota di riferimento (Rif.)**: attiva il pulsante **Rif.** nella scheda VINCOLI, poi crea una quota → la scritta è tratteggiata, grigia e con prefisso «Rif.»; cambia la geometria o modifica un'altra quota e il valore si **aggiorna da solo** senza muovere niente; il pulsante si disattiva dopo un uso.
+- [ ] **Origine e assi**: in SCHIZZO compaiono l'origine (croce chiara) e gli assi X (rosso) e Y (verde); vincola un punto all'origine con `Coincidente` e una linea all'asse con `Coincidente` → lo schizzo si aggancia all'asse; `Oriz./Vert.` sull'asse avvisa che è già orizzontale/verticale.
+- [ ] **Gradi liberi per forma**: seleziona una forma dello schizzo → la capsula di stato mostra «Forma: N gradi liberi» (o «Forma vincolata») per **quella** forma; deseleziona → torna il totale dello schizzo.
+- [ ] **Vincolo bloccante in giallo**: con un punto bloccato da `Fisso`, `Coincidente` o quota, trascinalo finché non riesce a seguire il mouse → i vincoli che lo trattengono si illuminano in **giallo ambra** (tooltip «Vincolo bloccante»).
+- [ ] **Nuovi strumenti**: `Colineare` (due linee sulla stessa retta) compare nella scheda VINCOLI; `Coincidente` punto + arco crea ora **Punto su arco** (non più punto sul cerchio di supporto).
+
+## Seguito T122 — vincoli con assi e ispettore vincoli
+- [ ] **Assi selezionabili**: in SCHIZZO passa il mouse vicino all'asse X o Y (o all'origine): la linea si illumina in giallo ambra. Con `Parallelo`, `Perpendicolare`, `Colineare` o `Tangente` clicca prima l'asse e poi una linea: il vincolo si applica e la linea si raddrizza rispetto all'asse.
+- [ ] **Coincidente in entrambi gli ordini**: con `Coincidente` puoi cliccare prima la linea/asse e poi un punto, o prima il punto e poi la linea/asse/arco: il punto va a finire sulla linea, sull'asse o sull'arco (non più «Punto su cerchio» per gli archi).
+- [ ] **Messaggi chiari**: `Oriz./Vert.` su un asse dice «L'asse è già orizzontale o verticale.» (sull'origine parla dell'origine); `Coincidente` fra due linee suggerisce «Colineare» invece di fallire in silenzio.
+- [ ] **Ispettore stile SolidWorks**: VINCOLI › **Controlla** apre un pannello con, in alto, lo stato dello schizzo (verde «completamente definito», blu «N gradi liberi», arancione ridondanti, rosso conflitti) e il numero di entità non definite.
+- [ ] **Per entità**: ogni forma ha la sua sezione con il badge dei gradi liberi («vincolata» / «N gradi liberi»), le relazioni che la toccano (simbolo, nome, valore, soggetti «Punto 2 · Linea 1 ↔ Asse X»); una sezione separata per «Origine e assi».
+- [ ] **Stato dei vincoli**: i vincoli in conflitto hanno bordo rosso e badge «In conflitto», i ridondanti bordo arancione e «Ridondante», i riferimento «Riferimento» grigio, i bloccanti «Bloccante» durante il trascinamento.
+- [ ] **Azioni**: clic su una riga → il vincolo (e la sua prima entità) si seleziona nel viewport; il pulsante cestino elimina il vincolo e lo schizzo si aggiorna; «Elimina» in basso agisce sul vincolo selezionato; «Solo problemi» mostra solo entità libere o con conflitti/ridondanze; Esc/«Chiudi» chiude.
+- [ ] Lingue: in English/简体中文 pannello, stati, badge, nomi («X axis», «Center · Arc 1», «Side 2 · Line 1») e messaggi sono tradotti.
+- [ ] **Rettangolo = quattro lati**: il rettangolo resta una forma sola (larghezza/altezza regolabili dall'ispettore) ma i suoi quattro lati sono selezionabili come linee: `Coincidente`, `Parallelo`, `Perpendicolare`, `Colineare`, `Tangente`, le quote e i vincoli vedono «Lato 1…4 · Rettangolo 1». Nell'ispettore ogni rettangolo mostra «4 lati selezionabili»; poligoni «N lati selezionabili», asole «2 lati + 2 archi».
+- [ ] **Raccordo più facile**: con `Raccordo`/`Smusso` non serve più centrare il vertice: clicca **vicino** all'angolo (entro ~3,5 volte il raggio di snap) anche sul lato vicino al corner; se clicchi troppo lontano l'avviso dice di avvicinarsi all'angolo. Il rettangolo diventa il suo contorno + arco tangente, con i vincoli di tangenza e raggio.
+
+## Seguito T124 — scelta stile SolidWorks/Fusion (punto prima della linea, preselezione)
+- [ ] **Angolo del rettangolo + origine**: con `Coincidente`, clicca **vicino a un angolo del rettangolo** (anche se il mouse è ancora sul suo lato) e poi **vicino all'origine**: il vincolo è `Coincidente` punto-punto e l'angolo va sull'origine. Non compare più «due linee, usa Colineare»; nel caso limite (clic davvero su due lati lontani dai vertici) il messaggio resta, invariato.
+- [ ] **Punto prima della linea**: passa il mouse vicino a un vertice qualsiasi (angolo di rettangolo/polilinea, estremo di linea/arco, centro di cerchio/asola) entro ~il raggio di snap: si illumina **il punto** (quadratino + croce ambra), non il lato. A metà di un lato lungo, invece, si illumina il lato (linea gialla con tacche agli estremi).
+- [ ] **Origine sempre afferrabile**: avvicinandoti all'origine si illumina la croce dell'origine (non un asse), e funziona sia con `Coincidente` sia con `Punto medio`/`Fisso`/`Simmetrico`.
+- [ ] **Vincoli in sospeso visibili**: dopo il primo clic, l'entità scelta resta illuminata in **arancione** (punto: quadratino + croce; linea: linea intera con tacche; cerchio: anello completo) finché non clicchi la seconda; Esc o cambio strumento cancellano l'evidenziazione.
+- [ ] **Cerchi/archi**: l'illuminazione segue il bordo del cerchio o dell'arco (non il centro); il centro resta punto quando il mouse ci passa sopra.
+- [ ] **Nessuna regressione**: `Oriz./Vert.`, `Parallelo`, `Perpendicolare`, `Colineare`, `Tangente` continuano a prendere solo la linea/cerchio; `Quote` e trascinamento usano la stessa priorità (vicino all'estremo → punto).
+
+## Seguito T125 — vincoli impliciti delle forme (come li crea dune3d) e spiegazione dei 2 gradi liberi
+- [ ] **2 gradi liberi sono le misure**: rettangolo 9×7 con un angolo `Coincidente` all'origine → il pannello `Controlla` mostra per il rettangolo «2 gradi liberi»; aggiungendo due quote (`Lunghezza` sui lati 1 e 2 = 9 e 7) diventa «vincolata». Stesso conto di Fusion/dune3d: un angolo + larghezza + altezza.
+- [ ] **Vincoli impliciti visibili**: nell'ispettore, sotto il rettangolo compare la riga con lucchetto «Impliciti: lati orizzontali e verticali · opposti paralleli e uguali · adiacenti perpendicolari» e, se non ci sono vincoli espliciti, «Nessun vincolo esplicito». Poligono → «lati e angoli uguali … vertici sulla stessa circonferenza»; asola → «2 lati paralleli e uguali · 2 archi dello stesso raggio, tangenti ai lati»; cerchio → «raggio costante, curva chiusa»; arco → «raggio costante»; polilinea chiusa → «contorno chiuso».
+- [ ] **Rifiuto spiegato**: sul rettangolo prova `Parallelo` fra due lati opposti: l'avviso dice ««Parallelo» è già garantito dal rettangolo (lati orizzontali e verticali, opposti paralleli e uguali, adiacenti perpendicolari): non aggiunto.» e non tocca lo schizzo (prima diceva solo «ripete un vincolo già presente»). Idem `Perpendicolare` fra lati adiacenti, `Uguale` fra opposti, `Oriz./Vert.` su un lato del rettangolo, `Uguale` fra lati di un poligono regolare, `Parallelo` fra i lati dell'asola.
+- [ ] **Nessuna regressione**: i vincoli davvero indipendenti (quote, `Coincidente` con un punto esterno, `Tangente` a un cerchio, `Colineare` fra due linee) si aggiungono come prima; per le linee libere (polilinea aperta, spline) non compare nessuna riga «Impliciti».
+
+## Seguito T126 — rettangolo = 4 linee con H/V esplicite (stile dune3d) e raccordo tra due linee
+- [ ] **Rettangolo di quattro linee**: disegna un rettangolo (R): nascono **4 linee** unite nei vertici. In `Controlla` ogni lato ha il suo `Oriz./Vert.` esplicito e i quattro `Coincidente` degli angoli sono visibili ed eliminabili.
+- [ ] **Gradi liberi invariati**: lo schizzo parte da **4 gradi liberi**; con un angolo `Coincidente` all'origine restano **2** (larghezza e altezza), poi due quote lo definiscono del tutto. Stesso conto di prima e di dune3d.
+- [ ] **Lati indipendenti**: seleziona un lato, dagli una quota `Lunghezza`, `Coincidente` con un'altra linea o cancellalo: gli altri tre restano e il profilo interno continua a funzionare (Estrudi/Taglia cliccando dentro).
+- [ ] **Raccordo tra due linee**: con `Raccordo`/`Smusso` clicca vicino a un vertice del nuovo rettangolo (o di due linee unite): entrambe le linee si accorciano fino ai punti di tangenza e nasce l'arco tangente del raggio impostato (o la linea di smusso). Non serve più ricliccare due volte sullo stesso angolo.
+- [ ] **Rettangoli vecchi**: i rettangoli già salvati come forma singola (`Rettangolo`) restano validi e si comportano come prima (raccordo/smusso sul loro contorno).
+
+## Seguito T127 — raccordo/smusso non aggiunge gradi liberi fantasma
+- [ ] **Gradi liberi invariati dopo il raccordo**: linea singola → `Raccordo` su un suo estremo (come in T108) → `Controlla` mostra ancora gli stessi gradi liberi di prima; nessun vincolo passa a «Ridondante».
+- [ ] **Angolo fra due linee unite**: due linee unite in un vertice (o un lato del rettangolo a 4 linee) → `Raccordo`/`Smusso` sul vertice: i gradi liberi restano quelli di prima del raccordo e i due `Tangente` sono normali (niente arancione).
+- [ ] **File vecchi**: un documento salvato con raccordi fatti prima di questa correzione, riaperto, mostra gli stessi gradi liberi corretti (la tangenza viene riscritta sul punto dell'arco al caricamento).
+
+## Seguito T128 — etichette di vincoli e quote agganciate alla loro geometria
+- [ ] **Quote sui lati**: disegna un rettangolo e quota due lati: il valore (es. «12») sta sulla linea di quota del lato, accanto al lato, non al centro dello schermo né sotto il pannello di destra.
+- [ ] **Simboli sui vertici/lati**: i «•» dei `Coincidente` stanno sui vertici, i «—»/«|» degli `Oriz./Vert.` sul punto medio del lato corrispondente.
+- [ ] **Con i pannelli aperti**: apri/chiudi browser e pannello Parametri: le etichette non si spostano con i pannelli (restano sulla geometria), mentre la barra di stato e i suggerimenti restano nelle isole di vetro.
+
+## Seguito T129 — trascinamento senza doppia soluzione
+- [ ] **Trascinamento fluido**: apri uno schizzo con vincoli e trascina un punto in `Seleziona`: il punto segue il mouse senza scatti; un rettangolo resta ancorato all'angolo opposto e i vincoli bloccanti si illuminano come prima.
+- [ ] **Diagnostica al rilascio**: durante il trascinamento il pannello `Controlla` può restare un attimo indietro (gradi liberi di prima); **appena molli il mouse** si aggiornano gradi liberi, vincoli in conflitto/ridondanti e colori delle forme vincolate.
+- [ ] **Nessuna regressione**: dopo il rilascio, l'annulla (⌘Z) toglie l'intero trascinamento in un solo passo, e le quote si possono ancora modificare con i campi del pannello.
+
+## Seguito T130 — buffer Metal riusati (niente allocazioni per frame)
+- [ ] **Schizzo a schermo**: linee dello schizzo, preselezione e quote si disegnano come prima (spessore e colori identici), anche disegnando rapidamente con molti segmenti.
+- [ ] **Evidenziazioni 3D**: seleziona una faccia/spigolo e passa il mouse su un corpo: contorno arancione e faccia evidenziata come prima; con più corpi selezionati non compaiono sfarfallii.
+- [ ] **Maniglie**: durante un trascinamento con la freccia (gizmo) sull'oggetto selezionato, la freccia resta visibile e colorata mentre la camera gira o il corpo si muove.
+
+## Seguito T131 — Jacobian sparso e dizionario delle forme
+- [ ] **Schizzi grandi**: uno schizzo con molte linee/archi e vincoli (es. 20–30 entità unite) si trascina e si quota senza rallentamenti evidenti; dopo un trascinamento il pannello `Controlla` mostra gli stessi gradi liberi di prima.
+- [ ] **Vincoli tra due forme**: `Coincidente`, `Tangente`, `Uguale`, `Simmetrico` fra due o tre entità continuano a convergere (le entità si muovono insieme) e i conflitti/ridondanti sono segnalati come prima.
+- [ ] **Nessuna regressione**: rettangolo a 4 linee, raccordo/smusso, quote con espressioni e annulla funzionano come nei seguiti precedenti.
+
+## Seguito T132 — curve più fini senza rifare le booleane (isteresi dello zoom)
+- [ ] **Zoom su un corpo tondo**: porta un cilindro/foro grande a riempire lo schermo; passato ≈900 punti di larghezza il bordo e il guscio diventano più lisci (128 lati), oltre ≈2500 ancora più lisci (256), senza che la barra di stato «calcoli» di nuovo il modello e senza che le facce cambino nome (le selezioni restano).
+- [ ] **Isteresi**: zooma piano attorno alla soglia (≈900 punti): la finezza aumenta entrando e **non** ritorna indietro finché non scendi sotto ≈800 (idem 2500/2200); niente lampeggi di triangoli o ricostruzioni continue.
+- [ ] **Niente ricalcoli allo zoom**: durante lo zoom la finestra resta fluida; la versione più fine compare dopo che lo zoom si ferma (≈0,1 s), poi resta in cache per quella revisione.
+- [ ] **Nessuna regressione**: seleziona faccia/spigolo sul corpo fine (l'evidenziazione segue il bordo tondo e le misure restano quelle di prima); dopo una modifica al modello, allo zoom corrente torna il modello normale finché la versione fine non è pronta, poi si aggiorna da sola.
+
+## Seguito T133 — picking con BVH e hover limitato nel tempo
+- [ ] **Hover fluido**: passa il mouse velocemente sopra più corpi (e sopra un corpo tondo ingrandito): l'evidenziazione segue il cursore senza scatti né ritardi percepibili, e scompare quando esci dal viewport.
+- [ ] **Click preciso al primo colpo**: clicca una faccia o uno spigolo dopo aver ingrandito il modello (geometria fine): si seleziona la stessa faccia/spigolo di prima; fra corpi sovrapposti vince sempre quello più vicino alla camera.
+- [ ] **Comandi che usano il pick**: `Misura`, `Foro`, raccordo/smusso e «Schizzo su faccia» prendono la stessa faccia/spigolo di prima; un click sul vuoto deseleziona come sempre.
+- [ ] **Durante la navigazione**: mentre giri o sposti la camera il mouse non cambia l'evidenziazione a metà gesto; alla fine del gesto il primo movimento del mouse la riattiva.
+- [ ] **Nessuna regressione**: con la sezione attiva, in fil di ferro e con più corpi selezionati il pick e le evidenziazioni si comportano come prima.

@@ -9,6 +9,8 @@ struct Ribbon: View {
     @Environment(CircuitModel.self) private var circuits
     /// The sketch constraints' list (VINCOLI › Vincoli).
     @State private var showConstraints = false
+    /// The sketch relations checker (VINCOLI › Controlla), SolidWorks style.
+    @State private var showChecker = false
     /// The copper layers' list (SBROGLIO › Strato).
     @State private var showLayers = false
 
@@ -157,11 +159,23 @@ struct Ribbon: View {
                         .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == tool && sketch.constraintTool == nil, tint: Theme.Palette.sketch))
                         .help(tool.hint + (tool.key.map { " (\($0.uppercased()))" } ?? ""))
                 }
+                Button { sketch.toggleConstructionSelection() } label: { Label("Costruzione", systemImage: "square.dashed") }
+                    .disabled(sketch.selection == nil)
+                    .help("Rende di costruzione l'entità selezionata (assi e riferimenti, fuori dai profili); se lo era, torna normale")
+                Button { _ = sketch.copySelection() } label: { Label("Copia", systemImage: "doc.on.doc") }
+                    .disabled(sketch.selection == nil)
+                    .help("Copia l'entità selezionata (⌘C); ⌘V la incolla dove sta il cursore")
+                Button { sketch.paste() } label: { Label("Incolla", systemImage: "doc.on.clipboard") }
+                    .disabled(sketch.copiedShapes.isEmpty)
+                    .help("Incolla l'entità copiata dove sta il cursore (⌘V), senza i vincoli dell'originale")
             }
             ToolGroup("VINCOLI") {
                 Button { sketch.constraintTool = nil; sketch.tool = .dimension } label: { Label("Quota", systemImage: "ruler") }
                     .buttonStyle(RibbonButtonStyle(isActive: sketch.tool == .dimension, tint: Theme.Palette.sketch))
                     .help(SketchSession.Tool.dimension.hint + " (D)")
+                Button { sketch.referenceNextDimension.toggle() } label: { Label("Rif.", systemImage: "ruler.fill") }
+                    .buttonStyle(RibbonButtonStyle(isActive: sketch.referenceNextDimension, tint: Theme.Palette.sketch))
+                    .help("Quota di riferimento: la prossima quota misura e basta, non muove lo schizzo")
                 Button { workspace.showParameters = true } label: { Label("Parametri", systemImage: "function") }
                     .help("Valori con un nome: nelle quote scrivi «larghezza / 2» e la quota li segue")
                 // Used now and then: behind one button, the list opens below it (fits a 13" screen).
@@ -191,11 +205,19 @@ struct Ribbon: View {
                     .padding(6)
                     .frame(width: 190)
                 }
+                Button { showChecker = true } label: { Label("Controlla", systemImage: "checklist") }
+                    .help("Controlla lo schizzo come SolidWorks: vincoli per entità, conflitti, ridondanti e gradi di libertà")
+                    .sheet(isPresented: $showChecker) { SketchConstraintChecker(sketch: sketch) }
             }
             ToolGroup("OPZIONI") {
                 VStack(alignment: .leading, spacing: 4) {
-                    Toggle("Griglia 1 mm", isOn: Binding(get: { sketch.snapToGrid }, set: { sketch.snapToGrid = $0 }))
-                        .toggleStyle(.checkbox)
+                    HStack(spacing: 8) {
+                        Toggle("Griglia 1 mm", isOn: Binding(get: { sketch.snapToGrid }, set: { sketch.snapToGrid = $0 }))
+                            .toggleStyle(.checkbox)
+                        Toggle("Costruzione", isOn: Binding(get: { sketch.constructionNext }, set: { sketch.constructionNext = $0 }))
+                            .toggleStyle(.checkbox)
+                            .help("Le nuove entità sono di costruzione: servono per assi e riferimenti e non fanno profili")
+                    }
                     if [.fillet, .chamfer, .offset].contains(sketch.tool) {
                         let tool = sketch.tool
                         HStack(spacing: 4) {
@@ -213,6 +235,17 @@ struct Ribbon: View {
                                 .frame(width: 44).textFieldStyle(.roundedBorder)
                             Text("mm")
                         }
+                    }
+                    if SketchSession.Tool.spatial.contains(sketch.tool) {
+                        // The depth of the next 3D point or line (positive along the plane's normal).
+                        HStack(spacing: 4) {
+                            Text("Altezza Z")
+                            TextField("", value: Binding(get: { sketch.drawingHeight }, set: { sketch.drawingHeight = $0 }),
+                                      format: .number.precision(.fractionLength(0...2)))
+                                .frame(width: 44).textFieldStyle(.roundedBorder)
+                            Text("mm")
+                        }
+                        .help("Profondità dei nuovi punti e linee 3D: 0 è il piano dello schizzo")
                     }
                     HStack(spacing: 4) {
                         Stepper("Lati: \(sketch.polygonSides)", value: Binding(get: { sketch.polygonSides }, set: { sketch.polygonSides = $0 }), in: 3...64)

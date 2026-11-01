@@ -146,6 +146,199 @@ extension BodySnapshot {
 }
 
 extension BodySnapshot {
+    /// The same faces and edges, one level finer, for the screen: every triangle is split at its
+    /// midpoints and the new points are put back on the exact surface (and on the exact circle of
+    /// each edge) its face describes, with the normals of the surface. Booleans and the history do
+    /// not run again, and no name changes: only the facets. Faces without an exact description
+    /// (imported meshes) keep their triangles; flat faces are refined only where a circular edge
+    /// makes the cap and the wall meet on a curve.
+    public func refined() -> BodySnapshot {
+        guard !triangles.isEmpty, triangles.count % 3 == 0 else { return self }
+
+        struct Segment: Hashable {
+            let low: Int, high: Int
+            init(_ a: Int, _ b: Int) { low = min(a, b); high = max(a, b) }
+        }
+        /// Positions that meet exactly on screen (a wall and its cap) are the same vertex.
+        struct Key: Hashable {
+            let x: Int64, y: Int64, z: Int64
+            init(_ p: Vec3) {
+                x = Int64((p.x * 1e6).rounded()); y = Int64((p.y * 1e6).rounded()); z = Int64((p.z * 1e6).rounded())
+            }
+        }
+
+        var lookup: [Key: Int] = [:], welded: [Vec3] = [], indices: [Int] = []
+        indices.reserveCapacity(positions.count)
+        for p in positions {
+            let key = Key(p)
+            if let i = lookup[key] { indices.append(i) }
+            else { let i = welded.count; welded.append(p); lookup[key] = i; indices.append(i) }
+        }
+
+        // The face groups on each segment, to tell a face's own diagonals from its borders.
+        var segmentGroups: [Segment: [UInt32]] = [:]
+        for t in 0..<(triangles.count / 3) {
+            let g = triangleFace[t]
+            let a = indices[t * 3], b = indices[t * 3 + 1], c = indices[t * 3 + 2]
+            for (i, j) in [(a, b), (b, c), (c, a)] where i != j {
+                let s = Segment(i, j)
+                var groups = segmentGroups[s] ?? []
+                if !groups.contains(g) { groups.append(g); segmentGroups[s] = groups }
+            }
+        }
+
+        // Edges whose true curve is a circle, per segment: caps and walls then meet on the arc.
+        var segmentCurves: [Segment: EdgeCurve] = [:]
+        for e in edges {
+            guard let curve = e.curve, case .circle = curve else { continue }
+            for (p, q) in zip(e.polyline, e.polyline.dropFirst()) {
+                guard let i = lookup[Key(p)], let j = lookup[Key(q)], i != j else { continue }
+                segmentCurves[Segment(i, j)] = curve
+            }
+        }
+
+        // Flat faces are refined only where a round edge meets them; imported meshes never.
+        var roundBorders: Set<Int> = []
+        for e in edges {
+            guard let curve = e.curve, case .circle = curve else { continue }
+            for id in e.faces {
+                if let g = faces.firstIndex(where: { $0.id == id }) { roundBorders.insert(g) }
+            }
+        }
+        func refines(_ group: Int) -> Bool {
+            switch faces[group].surface {
+            case .plane: roundBorders.contains(group)
+            case .freeform: false
+            case .cylinder, .cone, .torus, .sphere: true
+            }
+        }
+
+        func onSurface(_ p: Vec3, _ s: SurfaceDescriptor) -> Vec3 {
+            switch s {
+            case .plane, .freeform:
+                return p
+            case let .cylinder(o, a, r):
+                let axis = a.normalized, v = p - o, radial = v - axis * v.dot(axis)
+                guard radial.length > 1e-12 else { return p }
+                return o + radial.normalized * r + axis * v.dot(axis)
+            case let .cone(apex, a, half):
+                let axis = a.normalized, v = p - apex, h = v.dot(axis), radial = v - axis * h
+                guard h > 1e-9, radial.length > 1e-12 else { return p }
+                return apex + axis * h + radial.normalized * (h * tan(half))
+            case let .sphere(c, r):
+                let v = p - c
+                guard v.length > 1e-12 else { return p }
+                return c + v.normalized * r
+            case let .torus(c, a, major, minor):
+                let axis = a.normalized, v = p - c, axial = axis * v.dot(axis), radial = v - axial
+                guard radial.length > 1e-12 else { return p }
+                let tube = c + axial + radial.normalized * major
+                let w = p - tube
+                guard w.length > 1e-12 else { return p }
+                return tube + w.normalized * minor
+            }
+        }
+
+        // The surface normal, oriented like the facet it belongs to (the kernel's outward normal).
+        func normalAt(_ p: Vec3, _ s: SurfaceDescriptor, flat: Vec3) -> Vec3 {
+            let n: Vec3?
+            switch s {
+            case .plane, .freeform:
+                n = nil
+            case let .cylinder(o, a, _):
+                let axis = a.normalized, v = p - o, radial = v - axis * v.dot(axis)
+                n = radial.length > 1e-12 ? radial.normalized : nil
+            case let .cone(apex, a, half):
+                let axis = a.normalized, v = p - apex, h = v.dot(axis), radial = v - axis * h
+                n = radial.length > 1e-12 ? (radial.normalized - axis * tan(half)).normalized : nil
+            case let .sphere(c, _):
+                n = (p - c).length > 1e-12 ? (p - c).normalized : nil
+            case let .torus(c, a, major, _):
+                let axis = a.normalized, v = p - c, axial = axis * v.dot(axis), radial = v - axial
+                let tube = c + axial + radial.normalized * major
+                n = radial.length > 1e-12 && (p - tube).length > 1e-12 ? (p - tube).normalized : nil
+            }
+            guard let n else { return flat }
+            return n.dot(flat) < 0 ? -n : n
+        }
+
+        var midpoints: [Segment: Vec3] = [:]
+        func midpoint(_ i: Int, _ j: Int, surface: SurfaceDescriptor) -> Vec3 {
+            let s = Segment(i, j)
+            if let m = midpoints[s] { return m }
+            let middle = (welded[i] + welded[j]) * 0.5
+            let p: Vec3
+            if let curve = segmentCurves[s] {
+                // A border on a known circle: the arc, not the chord (and the same for both faces).
+                p = curve.closest(middle)
+            } else if let groups = segmentGroups[s], groups.count == 1 {
+                // A diagonal inside one face: put it back on that face's surface.
+                p = onSurface(middle, surface)
+            } else {
+                // A border between two faces with no exact curve: both use the straight midpoint.
+                p = middle
+            }
+            midpoints[s] = p
+            return p
+        }
+
+        var outPositions: [Vec3] = [], outNormals: [Vec3] = [], outTriangles: [UInt32] = []
+        var outFace: [UInt32] = [], outTopology: [FaceID] = []
+        outPositions.reserveCapacity(positions.count * 4); outNormals.reserveCapacity(normals.count * 4)
+        outTriangles.reserveCapacity(triangles.count * 4)
+        outFace.reserveCapacity(triangleFace.count * 4); outTopology.reserveCapacity(triangleTopologyFace.count * 4)
+
+        func emit(_ a: Vec3, _ b: Vec3, _ c: Vec3, flat: Vec3, surface: SurfaceDescriptor,
+                  group: UInt32, topology: FaceID) {
+            for p in [a, b, c] {
+                outTriangles.append(UInt32(outPositions.count))
+                outPositions.append(p)
+                outNormals.append(normalAt(p, surface, flat: flat))
+            }
+            outFace.append(group); outTopology.append(topology)
+        }
+
+        for t in 0..<(triangles.count / 3) {
+            let group = Int(triangleFace[t])
+            let topology = triangleTopologyFace[t]
+            let surface = faces[group].surface
+            let flat = normals[t * 3]
+            let (ia, ib, ic) = (indices[t * 3], indices[t * 3 + 1], indices[t * 3 + 2])
+            let (a, b, c) = (positions[t * 3], positions[t * 3 + 1], positions[t * 3 + 2])
+            guard refines(group) else {
+                emit(a, b, c, flat: flat, surface: surface, group: triangleFace[t], topology: topology)
+                continue
+            }
+            let (ab, bc, ca) = (midpoint(ia, ib, surface: surface), midpoint(ib, ic, surface: surface),
+                                midpoint(ic, ia, surface: surface))
+            let children = [(a, ab, ca), (ab, b, bc), (ca, bc, c), (ab, bc, ca)]
+            for (p, q, r) in children where (q - p).cross(r - p).length > 1e-18 {
+                emit(p, q, r, flat: flat, surface: surface, group: triangleFace[t], topology: topology)
+            }
+        }
+
+        let refinedEdges = edges.map { e -> EdgeInfo in
+            guard let curve = e.curve, case .circle = curve, e.polyline.count > 1 else { return e }
+            var points: [Vec3] = []
+            points.reserveCapacity(e.polyline.count * 2)
+            for (k, p) in e.polyline.enumerated() {
+                points.append(p)
+                guard k + 1 < e.polyline.count else { continue }
+                let q = e.polyline[k + 1]
+                guard (q - p).length > 1e-12 else { continue }
+                points.append(curve.closest((p + q) * 0.5))
+            }
+            return EdgeInfo(id: e.id, polyline: points, isSharp: e.isSharp, faces: e.faces,
+                            topologyEdgeIDs: e.topologyEdgeIDs, curve: e.curve)
+        }
+
+        return BodySnapshot(bodyID: bodyID, revision: revision, positions: outPositions, normals: outNormals,
+                            triangles: outTriangles, triangleFace: outFace, triangleTopologyFace: outTopology,
+                            faces: faces, edges: refinedEdges, maximumSurfaceDeviation: maximumSurfaceDeviation)
+    }
+}
+
+extension BodySnapshot {
     /// The plane of a flat face: its kernel description, or, when the kernel only has its
     /// triangles (a bevel, an imported mesh, a face rebuilt by a boolean), the plane they all lie
     /// in. Nil for a face that is not flat. The normal points out of the part.

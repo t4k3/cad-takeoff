@@ -32,17 +32,17 @@ enum SelectionFilter: String, CaseIterable, Identifiable {
 
 @MainActor
 enum GeoPicking {
-    /// Face under the ray (nearest body).
-    static func face(_ ray: Ray, bodies: [ViewportRenderer.Body]) -> GeoRef? {
-        guard let hit = Picking.pick(ray, in: bodies),
-              let body = bodies.first(where: { $0.feature.id == hit.featureID }),
+    /// Face under the GPU identity pass hit (nearest body).
+    static func face(_ hit: ViewportRenderer.PickHit, bodies: [ViewportRenderer.Body]) -> GeoRef? {
+        guard let body = bodies.first(where: { $0.feature.id == hit.featureID }),
               let face = body.face(ofTriangle: hit.triangle) else { return nil }
         return GeoRef(feature: hit.featureID, kind: .face(face.id))
     }
 
-    /// Nearest visible B-rep edge within `tolerance(distance)` mm of the ray.
-    static func edge(_ ray: Ray, bodies: [ViewportRenderer.Body], tolerance: (Float) -> Float) -> GeoRef? {
-        let front = Picking.pick(ray, in: bodies)?.distance ?? .infinity
+    /// Nearest visible B-rep edge within `tolerance(distance)` mm of the ray. `front` is the
+    /// distance of the first surface along the ray (the GPU hit): edges behind it are hidden.
+    static func edge(_ ray: Ray, bodies: [ViewportRenderer.Body], front: Float,
+                     tolerance: (Float) -> Float) -> GeoRef? {
         var best: (ref: GeoRef, score: Float)?
         for body in bodies {
             for e in body.snapshot.edges {

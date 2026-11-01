@@ -137,21 +137,24 @@ final class DesignModel {
 
     func exactVolumesReady() async { await exactTask?.value }
 
-    /// Asks for the design at `factor` for the screen (1: nothing to build).
+    /// Asks for the design at `factor` for the screen (1: nothing to build). The finer snapshot is
+    /// refined from the surfaces of the current one (`BodySnapshot.refined()`): the history and its
+    /// booleans run once, not once per zoom level.
     func requestScreenFactor(_ factor: Int) {
         screenWanted = factor
         guard factor > 1 else { screenTask?.cancel(); return }
         if let s = screenSnapshot, s.revision == designRevision, s.factor >= factor { return }
         screenTask?.cancel()
-        let doc = document, revision = designRevision, components = componentResolver, cache = screenCache
+        let base = snapshot(), revision = designRevision
+        let steps = factor >= 4 ? 2 : 1
         screenTask = Task { [weak self] in
             let built = await Task.detached(priority: .utility) { () -> DesignSnapshot? in
-                let e = Tessellation.$factor.withValue(factor) {
-                    DesignEvaluator.evaluate(doc, revision: revision + "-screen\(factor)", components: components, cache: cache)
-                }
                 guard !Task.isCancelled else { return nil }
-                return DesignSnapshot(revision: revision + "-screen\(factor)", bodies: e.bodies.filter(\.isVisible).map(\.snapshot),
-                                      issues: e.issues.map { .init(featureID: $0.featureID, message: $0.message) })
+                return DesignSnapshot(revision: base.revision + "-display\(factor)",
+                                      bodies: base.bodies.map { body in
+                                          (0..<steps).reduce(body) { fine, _ in fine.refined() }
+                                      },
+                                      issues: base.issues)
             }.value
             guard !Task.isCancelled, let self, let built, self.designRevision == revision else { return }
             self.screenSnapshot = (revision, factor, built)

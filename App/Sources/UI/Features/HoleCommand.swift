@@ -26,8 +26,9 @@ final class HolePlacement {
     struct Target { var point: Vec3; var origin: Vec3; var normal: Vec3; var snap: String? }
 
     /// Adds a centre from a viewport click (the face must be planar).
-    func click(_ ray: Ray, bodies: [ViewportRenderer.Body], tolerance: (Double) -> Double) -> String? {
-        switch locate(ray, bodies: bodies, tolerance: tolerance) {
+    func click(_ ray: Ray, bodies: [ViewportRenderer.Body], tolerance: (Double) -> Double,
+               pick: @MainActor (Ray) -> ViewportRenderer.PickHit?) -> String? {
+        switch locate(ray, bodies: bodies, tolerance: tolerance, pick: pick) {
         case let .failure(message): return message.text
         case let .success(t):
             if normal == nil { planeOrigin = t.origin; normal = t.normal }
@@ -35,8 +36,9 @@ final class HolePlacement {
         }
     }
 
-    func hover(_ ray: Ray?, bodies: [ViewportRenderer.Body], tolerance: (Double) -> Double) {
-        guard let ray, case let .success(t) = locate(ray, bodies: bodies, tolerance: tolerance) else {
+    func hover(_ ray: Ray?, bodies: [ViewportRenderer.Body], tolerance: (Double) -> Double,
+               pick: @MainActor (Ray) -> ViewportRenderer.PickHit?) {
+        guard let ray, case let .success(t) = locate(ray, bodies: bodies, tolerance: tolerance, pick: pick) else {
             if hover != nil { hover = nil }
             return
         }
@@ -60,13 +62,14 @@ final class HolePlacement {
     struct Message: Error { let text: String }
 
     /// `tolerance(d)`: snap radius in mm at distance `d` along the ray (a fixed size on screen).
-    private func locate(_ ray: Ray, bodies: [ViewportRenderer.Body], tolerance: (Double) -> Double) -> Result<Target, Message> {
+    private func locate(_ ray: Ray, bodies: [ViewportRenderer.Body], tolerance: (Double) -> Double,
+                        pick: @MainActor (Ray) -> ViewportRenderer.PickHit?) -> Result<Target, Message> {
         let o: Vec3, n: Vec3, raw: Vec3
         if let pn = normal, let po = planeOrigin {
             guard let p = ray.intersect(planePoint: f(po), normal: f(pn)) else { return .failure(Message(text: "")) }
             (o, n, raw) = (po, pn, Vec3(Double(p.x), Double(p.y), Double(p.z)))
         } else {
-            guard let hit = Picking.pick(ray, in: bodies),
+            guard let hit = pick(ray),
                   let body = bodies.first(where: { $0.feature.id == hit.featureID }),
                   let face = body.face(ofTriangle: hit.triangle) else { return .failure(Message(text: "Clicca su una faccia del pezzo.")) }
             guard case let .plane(fo, fn) = face.surface else { return .failure(Message(text: "Il foro va posizionato su una faccia piana.")) }
@@ -84,7 +87,7 @@ final class HolePlacement {
         }.min { $0.1 < $1.1 }
         if let (target, _) = near { return .success(Target(point: target.0, origin: o, normal: n, snap: target.1)) }
         // Free placement only on the face itself (or a coplanar one), never on its empty extension.
-        guard let hit = Picking.pick(ray, in: bodies),
+        guard let hit = pick(ray),
               let face = bodies.first(where: { $0.feature.id == hit.featureID })?.face(ofTriangle: hit.triangle),
               case let .plane(fo, fn) = face.surface, fn.dot(n) > 1 - 1e-9, abs((fo - o).dot(n)) < 1e-4 else {
             return .failure(Message(text: "Clicca sulla faccia, o vicino a un vertice, a uno spigolo o a un punto dello schizzo."))
@@ -162,6 +165,13 @@ final class HolePlacement {
             return [(shape.point(0)!, "Centro schizzo"), (shape.point(1)!, "Estremità schizzo"), (shape.point(2)!, "Estremità schizzo")]
         case let .spline(p, _):
             return p.map { ($0, "Punto spline") }
+        case .bezier:
+            let o = shape.outline
+            return [(shape.point(0)!, "Estremità schizzo"), (shape.point(3)!, "Estremità schizzo"),
+                    (o[o.count / 2], "Punto medio schizzo")]
+        case .point3D, .line3D, .workplane:
+            // Off-plane geometry has no planar key point on the face being drilled.
+            return []
         }
     }
 

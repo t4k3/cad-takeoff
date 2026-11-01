@@ -54,6 +54,24 @@ public struct SketchPlane: Codable, Sendable, Equatable {
         return SketchPlane(origin: origin, xAxis: x, yAxis: n.cross(x).normalized)
     }
 
+    /// Plane of a workplane entity: origin, X running from the origin to `xAxisPoint`, normal by
+    /// the right-hand rule origin → xAxisPoint → planePoint; nil when the points are in line.
+    public static func workplane(_ origin: Vec3, _ xAxisPoint: Vec3, _ planePoint: Vec3) -> SketchPlane? {
+        let u = xAxisPoint - origin, w = planePoint - origin
+        guard u.length > 1e-9 else { return nil }
+        let n = u.cross(w)
+        guard n.length > 1e-9 * u.length * max(w.length, 1e-9) else { return nil }
+        let x = u.normalized, z = n.normalized
+        return SketchPlane(origin: origin, xAxis: x, yAxis: z.cross(x).normalized)
+    }
+
+    /// Plane coordinates of a world point, with the height along the normal (exact 3D inverse of
+    /// `world(_:height:)`).
+    public func local3(_ p: Vec3) -> Vec3 {
+        let d = p - origin
+        return Vec3(d.dot(xAxis), d.dot(yAxis), d.dot(normal))
+    }
+
     /// Construction plane through three points (normal by the right-hand rule a → b → c), with
     /// the axes of `onFace`; nil when the points are (nearly) in line.
     public static func through(_ a: Vec3, _ b: Vec3, _ c: Vec3) -> SketchPlane? {
@@ -117,6 +135,17 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
         case arc(center: Vec2, radius: Double, start: Double, end: Double)
         /// Smooth curve through the points (centripetal Catmull–Rom), open or closed.
         case spline(points: [Vec2], closed: Bool)
+        /// Cubic Bezier curve: start and end points plus the two control points (handles), open.
+        case bezier(start: Vec2, control1: Vec2, control2: Vec2, end: Vec2)
+        /// A free point in the sketch's 3D frame: x and y along the plane axes, z along the
+        /// plane normal (mm). It never becomes a profile.
+        case point3D(position: Vec3)
+        /// A free 3D segment between two points of the sketch's 3D frame (may leave the plane).
+        case line3D(start: Vec3, end: Vec3)
+        /// A workplane defined by three points of the sketch's 3D frame: the origin, a point
+        /// along its X axis and a point in its plane. Its orientation can be frozen with
+        /// `SketchConstraintKind.lockRotation`; it never becomes a profile.
+        case workplane(origin: Vec3, xAxisPoint: Vec3, planePoint: Vec3)
     }
 
     public var id: UUID
@@ -130,10 +159,16 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
 
     /// Segments used to tessellate full circles (slots use half on each end).
     public static let arcSegments = 64
+    /// Segments used to tessellate a Bezier curve (drawing, length, picking).
+    public static let bezierSegments = 32
 
     public var isClosed: Bool {
         if case let .polyline(_, closed) = kind { return closed }
         if case .arc = kind { return false }
+        if case .bezier = kind { return false }
+        if case .point3D = kind { return false }
+        if case .line3D = kind { return false }
+        if case .workplane = kind { return false }
         if case let .spline(_, closed) = kind { return closed }
         return true
     }
@@ -191,7 +226,50 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
             }
         case let .spline(p, closed):
             return Self.spline(p, closed: closed)
+        case let .bezier(p0, c1, c2, p3):
+            let n = Self.bezierSegments
+            return (0...n).map { i in
+                Self.bezier(Double(i) / Double(n), start: p0, control1: c1, control2: c2, end: p3)
+            }
+        case .point3D, .line3D, .workplane:
+            return []
         }
+    }
+
+    // MARK: Bezier curve
+
+    /// Point of the cubic Bezier at parameter `t` ∈ [0, 1].
+    public static func bezier(_ t: Double, start p0: Vec2, control1 c1: Vec2, control2 c2: Vec2, end p3: Vec2) -> Vec2 {
+        let mt = 1 - t
+        let a = mt * mt * mt, b = 3 * mt * mt * t, c = 3 * mt * t * t, d = t * t * t
+        return p0 * a + c1 * b + c2 * c + p3 * d
+    }
+
+    /// Derivative (velocity) of the cubic Bezier at parameter `t`, not normalised.
+    public static func bezierTangent(_ t: Double, start p0: Vec2, control1 c1: Vec2, control2 c2: Vec2, end p3: Vec2) -> Vec2 {
+        let mt = 1 - t
+        return (c1 - p0) * (3 * mt * mt) + (c2 - c1) * (6 * mt * t) + (p3 - c2) * (3 * t * t)
+    }
+
+    /// Parameter of the curve nearest to `q` (sampling then a ternary search), for the initial
+    /// value of a point-on-curve constraint; nil when the shape is not a Bezier.
+    public func bezierParameter(nearest q: Vec2) -> Double? {
+        guard case let .bezier(p0, c1, c2, p3) = kind else { return nil }
+        func distance(_ t: Double) -> Double {
+            (Self.bezier(t, start: p0, control1: c1, control2: c2, end: p3) - q).length
+        }
+        let n = 64
+        var best = 0.0, bestD = Double.infinity
+        for i in 0...n {
+            let d = distance(Double(i) / Double(n))
+            if d < bestD { bestD = d; best = Double(i) / Double(n) }
+        }
+        var lo = max(0, best - 1 / Double(n)), hi = min(1, best + 1 / Double(n))
+        for _ in 0..<30 {
+            let m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3
+            if distance(m1) < distance(m2) { hi = m2 } else { lo = m1 }
+        }
+        return (lo + hi) / 2
     }
 
     /// Points along a centripetal Catmull–Rom curve through `p` (16 per span); closed curves
@@ -238,6 +316,9 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
         switch kind {
         case let .circle(_, r): return 2 * .pi * r
         case let .arc(_, r, a0, a1): return r * Self.sweep(a0, a1)
+        case .point3D: return 0
+        case let .line3D(a, b): return (b - a).length
+        case .workplane: return 0
         case let .slot(a, b, w):
             return 2 * ((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)).squareRoot() + .pi * w
         default:
@@ -274,7 +355,18 @@ public struct SketchShape: Identifiable, Codable, Sendable, Equatable {
         case .slot: "Asola"
         case .arc: "Arco"
         case .spline: "Spline"
+        case .bezier: "Bezier"
+        case .point3D: "Punto 3D"
+        case .line3D: "Linea 3D"
+        case .workplane: "Piano di lavoro"
         }
+    }
+
+    /// The plane a workplane entity describes: origin, X axis and normal from its three points
+    /// (the third point only fixes the normal). Nil for other shapes or degenerate points.
+    public var workplanePlane: SketchPlane? {
+        guard case let .workplane(origin, xAxisPoint, planePoint) = kind else { return nil }
+        return SketchPlane.workplane(origin, xAxisPoint, planePoint)
     }
 }
 
@@ -304,6 +396,44 @@ public struct Sketch: Identifiable, Codable, Sendable, Equatable {
         shapes = try c.decode([SketchShape].self, forKey: .shapes)
         isVisible = try c.decodeIfPresent(Bool.self, forKey: .isVisible) ?? true
         constraints = try c.decodeIfPresent([SketchConstraint].self, forKey: .constraints) ?? []
+        normalizeFilletTangents()
+    }
+
+    /// Sketches saved before the tangency-at-an-arc-end form kept a fillet as «side · circle of the
+    /// arc». With the coincidence that already pins the side's end to the arc's end, the same relation
+    /// is «side · arc end», whose row does not vanish at the touch point — so the degrees of freedom
+    /// stay right when such a document is reopened. Geometry and constraint count do not change.
+    private mutating func normalizeFilletTangents() {
+        func isArc(_ id: UUID) -> Bool {
+            guard let s = shapes.first(where: { $0.id == id }) else { return false }
+            if case .arc = s.kind { return true }
+            return false
+        }
+        let joined: [(SketchRef, SketchRef)] = constraints.compactMap { c in
+            if case let .coincident(a, b) = c.kind { return (a, b) }
+            return nil
+        }
+        /// The arc end joined to one of the segment's ends, if any.
+        func arcEnd(of segment: SketchRef) -> SketchRef? {
+            guard case let .segment(id, _) = segment, let shape = shapes.first(where: { $0.id == id }),
+                  case let .polyline(pts, _) = shape.kind, pts.count >= 2 else { return nil }
+            for j in [0, pts.count - 1] {
+                let end = SketchRef.point(id, j)
+                for (a, b) in joined {
+                    if a == end, case let .point(cid, ci) = b, ci == 1 || ci == 2, isArc(cid) { return b }
+                    if b == end, case let .point(cid, ci) = a, ci == 1 || ci == 2, isArc(cid) { return a }
+                }
+            }
+            return nil
+        }
+        for k in constraints.indices {
+            guard case let .tangent(a, b) = constraints[k].kind else { continue }
+            if let p = arcEnd(of: a), case let .circle(cid, _) = b, isArc(cid) {
+                constraints[k].kind = .tangent(a, p)
+            } else if let p = arcEnd(of: b), case let .circle(cid, _) = a, isArc(cid) {
+                constraints[k].kind = .tangent(p, b)
+            }
+        }
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -318,11 +448,12 @@ public struct Sketch: Identifiable, Codable, Sendable, Equatable {
     @discardableResult
     public mutating func solve(drag: (SketchRef, Vec2)? = nil) -> Bool {
         let ids = Set(shapes.map(\.id))
-        constraints.removeAll { c in c.kind.refs.contains { !ids.contains($0.shapeID) } }
+        constraints.removeAll { c in c.kind.refs.contains { !$0.isFixedGeometry && !ids.contains($0.shapeID) } }
         guard !constraints.isEmpty || drag != nil else { return true }
         let result = SketchSolver.solve(shapes, constraints, drag: drag)
         guard result.converged else { return false }
         shapes = result.shapes
+        constraints = result.constraints
         return true
     }
 
@@ -353,9 +484,53 @@ public struct Sketch: Identifiable, Codable, Sendable, Equatable {
         }
         if pinned.solve() {
             shapes = pinned.shapes
+            // Only the auxiliary parameters (a Bezier's `t`) travel back: the pins were temporary.
+            for c in pinned.constraints {
+                if let i = constraints.firstIndex(where: { $0.id == c.id }) { constraints[i] = c }
+            }
             return true
         }
         return solve()
+    }
+
+    /// Moves the sketch onto `newPlane`. 3D points, lines and workplanes keep their world position:
+    /// only their coordinates in the plane's frame change; 2D geometry keeps its plane coordinates,
+    /// so it follows the plane. The constraints that store absolute frame numbers (a pinned 3D point,
+    /// a distance from the plane, a frozen workplane orientation) are re-expressed so they still
+    /// hold; the ones relative to the plane (on the plane, normal to it) are left to the next solve,
+    /// which brings the geometry onto the new plane.
+    public mutating func setPlane(_ newPlane: SketchPlane) {
+        let old = plane
+        func moved(_ p: Vec3) -> Vec3 { newPlane.local3(old.world(Vec2(p.x, p.y), height: p.z)) }
+        for k in shapes.indices {
+            switch shapes[k].kind {
+            case let .point3D(p):
+                shapes[k].kind = .point3D(position: moved(p))
+            case let .line3D(a, b):
+                shapes[k].kind = .line3D(start: moved(a), end: moved(b))
+            case let .workplane(o, x, p):
+                shapes[k].kind = .workplane(origin: moved(o), xAxisPoint: moved(x), planePoint: moved(p))
+            default:
+                break
+            }
+        }
+        for k in constraints.indices {
+            switch constraints[k].kind {
+            case let .fix3D(ref, p):
+                constraints[k].kind = .fix3D(ref, moved(p))
+            case let .planeDistance(ref, _):
+                guard let shape = shapes.first(where: { $0.id == ref.shapeID }), case let .point(_, i) = ref,
+                      let p = shape.point3D(i) else { continue }
+                constraints[k].kind = .planeDistance(ref, p.z)
+            case let .lockRotation(ref, _, _):
+                guard let shape = shapes.first(where: { $0.id == ref.shapeID }),
+                      let o = shape.point3D(0), let x = shape.point3D(1), let p = shape.point3D(2) else { continue }
+                constraints[k].kind = .lockRotation(ref, xDirection: x - o, planeDirection: p - o)
+            default:
+                break
+            }
+        }
+        plane = newPlane
     }
 
     public var profiles: [SketchShape] { shapes.filter { $0.profile != nil } }

@@ -25,6 +25,8 @@ extension DesignModel: CADToolProvider {
                 return result("\(document.features.count) geometrie", ["features": .array(document.features.map(describe))])
             case "get_feature":
                 return result("Parametri geometria", ["feature": describe(document.features[try index(args)])])
+            case "list_sketches": return try listSketches()
+            case "get_sketch": return try getSketch(args)
             case "scene_info": return try sceneInfo()
             case "export_stl": return try export(args)
             case "export_3mf": return try export3MF(args)
@@ -85,6 +87,8 @@ extension DesignModel: CADToolProvider {
         var next = document
         var selected = selection
         let changed: UUID
+        if name == "add_sketch" { return try addSketch(args, title: title) }
+        if name == "extrude_sketch" { return try extrudeSketch(args, title: title) }
         if name == "add_chamfer" {
             let (f, warnings) = try chamfer(args, title: title)
             next.features.append(f)
@@ -647,6 +651,315 @@ extension DesignModel: CADToolProvider {
         }
         try CADToolValidation.profile(p)
         return p
+    }
+
+    // —— 草图 ——
+
+    private func listSketches() throws -> ToolResult {
+        let sketches = document.sketches
+        return result("\(sketches.count) schizzi", ["count": .number(Double(sketches.count)), "sketches": .array(sketches.map { s -> JSONValue in
+            ["id": .string(s.id.uuidString), "name": .string(s.name), "plane": planeJSON(s.plane),
+             "origin": vector(s.plane.origin), "normal": vector(s.plane.normal), "visible": .bool(s.isVisible),
+             "shape_count": .number(Double(s.shapes.count)), "closed_count": .number(Double(s.profiles.count)),
+             "area": .number(sketchArea(s))]
+        })])
+    }
+
+    private func getSketch(_ args: [String: JSONValue]) throws -> ToolResult {
+        let sketch = document.sketches[try sketchIndex(args)]
+        var value: [String: JSONValue] = ["id": .string(sketch.id.uuidString), "name": .string(sketch.name),
+                                          "plane": planeJSON(sketch.plane), "origin": vector(sketch.plane.origin),
+                                          "normal": vector(sketch.plane.normal), "visible": .bool(sketch.isVisible),
+                                          "area": .number(sketchArea(sketch)),
+                                          "length": .number(sketch.shapes.reduce(0) { $0 + $1.length }),
+                                          "shapes": .array(sketch.shapes.map(shapeJSON))]
+        value["regions"] = .array(sketch.regions.map { r -> JSONValue in
+            ["shape_id": .string(r.shapeID.uuidString),
+             "hole_shape_ids": .array(r.holeShapeIDs.map { .string($0.uuidString) }),
+             "area": .number(regionArea(sketch, r)),
+             "holes": .array(r.holeShapeIDs.map { id -> JSONValue in
+                 ["shape_id": .string(id.uuidString),
+                  "area": .number(sketch.shapes.first { $0.id == id }?.area ?? 0)]
+             })]
+        })
+        return result("Schizzo: \(sketch.name)", ["sketch": .object(value)])
+    }
+
+    private func addSketch(_ args: [String: JSONValue], title: String) throws -> ToolResult {
+        let list = args["shapes"]?.array ?? []
+        guard (1...256).contains(list.count) else { throw CADToolFailure("shapes: 1–256 entità.") }
+        // Every shape is parsed before the document is touched: a bad one changes nothing.
+        let shapes = try list.map { try sketchShape($0) }
+        let hasPlaneInfo = args["plane"] != nil || args["face_point"] != nil || args["face_normal"] != nil || args["offset"] != nil
+        let requested = hasPlaneInfo ? try sketchPlane(args) : nil
+        var next = document
+        let sketch: Sketch
+        if args["sketch_id"] != nil {
+            guard let id = UUID(uuidString: try string(args, "sketch_id")) else { throw CADToolFailure("sketch_id: UUID non valido.") }
+            guard let i = next.sketches.firstIndex(where: { $0.id == id }) else { throw CADToolFailure("Schizzo non trovato: rileggere list_sketches.") }
+            var edited = next.sketches[i]
+            if let requested, requested != edited.plane {
+                throw CADToolFailure("Lo schizzo esiste già su un altro piano; creane uno nuovo.")
+            }
+            if args["replace"]?.bool == true {
+                edited.shapes = []
+                edited.solve()
+            }
+            edited.shapes.append(contentsOf: shapes)
+            if let visible = args["visible"]?.bool { edited.isVisible = visible }
+            next.upsert(edited)
+            next.regenerate(from: edited)
+            sketch = edited
+        } else {
+            let made = Sketch(name: try args["name"].map { _ in try string(args, "name") } ?? nextSketchName(),
+                              plane: requested ?? .xy, shapes: shapes, isVisible: args["visible"]?.bool ?? true)
+            next.upsert(made)
+            sketch = made
+        }
+        commitEdit(next, selected: .some(sketch.id), title: "Assistente: \(title)", changed: [])
+        return result("\(sketch.name): \(sketch.shapes.count) entità", [
+            "changed": true, "sketch_id": .string(sketch.id.uuidString), "name": .string(sketch.name),
+            "shape_ids": .array(shapes.map { .string($0.id.uuidString) }),
+            "shape_count": .number(Double(sketch.shapes.count))
+        ])
+    }
+
+    private func extrudeSketch(_ args: [String: JSONValue], title: String) throws -> ToolResult {
+        let sketch = document.sketches[try sketchIndex(args)]
+        let regions = sketch.regions
+        let shape: SketchShape
+        if args["shape_id"] != nil {
+            guard let id = UUID(uuidString: try string(args, "shape_id")) else { throw CADToolFailure("shape_id: UUID non valido.") }
+            guard let s = sketch.shapes.first(where: { $0.id == id }) else {
+                throw CADToolFailure("Entità non trovata in questo schizzo: usare gli ID di get_sketch.")
+            }
+            guard s.profile != nil else { throw CADToolFailure("L'entità non è un profilo chiuso (o è di costruzione): sceglierne una dagli ID di get_sketch.") }
+            shape = s
+        } else {
+            let candidates = regions.filter { !$0.outline.isEmpty }
+            guard candidates.count == 1, let region = candidates.first,
+                  let s = sketch.shapes.first(where: { $0.id == region.shapeID }) else {
+                if candidates.isEmpty { throw CADToolFailure("Nessun profilo chiuso nello schizzo.") }
+                throw CADToolFailure("Lo schizzo ha più profili chiusi: indica shape_id (\(candidates.map { $0.shapeID.uuidString }.joined(separator: ", ")).")
+            }
+            shape = s
+        }
+        guard let profile = shape.profile else { throw CADToolFailure("L'entità non è un profilo chiuso.") }
+        let region = regions.first { $0.shapeID == shape.id }
+        let holes = region?.holes.map { Profile2D(points: $0) } ?? []
+        let height = try number(args, "height")
+        try CADToolValidation.dimension(height)
+        let reversed = args["reversed"]?.bool ?? false
+        var next = document
+        guard next.features.count < 256 else { throw CADToolFailure("Limite prototipo: 256 geometrie per documento.") }
+        // A plane exactly on the print bed starts at Z=0 without a placement; anything else
+        // (on a face, offset, XZ/YZ, reversed) is built on the sketch plane.
+        let placement: FeaturePlacement? = (sketch.plane.isXY && !reversed)
+            ? nil : FeaturePlacement(plane: sketch.plane, reversed: reversed)
+        var feature = Feature(name: try args["name"].map { _ in try string(args, "name") } ?? nextExtrudeName(),
+                              kind: .extrude(profile: profile, height: height),
+                              color: try args["color"].map { _ in try color(args) } ?? .defaultColor,
+                              operation: try operation(args) ?? .newBody,
+                              placement: placement, holes: holes)
+        feature.keyProfile(from: sketch)
+        try CADToolValidation.feature(feature)
+        try CADToolValidation.mesh(feature.buildMesh())
+        next.features.append(feature)
+        next.sketchLinks.append(SketchLink(featureID: feature.id, sketchID: sketch.id, shapeID: shape.id,
+                                           holeShapeIDs: region?.holeShapeIDs ?? []))
+        commitEdit(next, selected: .some(feature.id), title: "Assistente: \(title)", changed: [feature.id])
+        return result("\(feature.name): estrusione da \(sketch.name)", [
+            "changed": true, "feature_id": .string(feature.id.uuidString), "name": .string(feature.name),
+            "height": .number(height), "hole_count": .number(Double(holes.count))
+        ], changed: [feature.id])
+    }
+
+    private func sketchIndex(_ args: [String: JSONValue]) throws -> Int {
+        guard let id = UUID(uuidString: try string(args, "sketch_id")),
+              let i = document.sketches.firstIndex(where: { $0.id == id }) else {
+            throw CADToolFailure("Schizzo non trovato: rileggere list_sketches.")
+        }
+        return i
+    }
+
+    private func vec2JSON(_ p: Vec2) -> JSONValue { ["x": .number(p.x), "y": .number(p.y)] }
+
+    private func shapeJSON(_ s: SketchShape) -> JSONValue {
+        var value: [String: JSONValue] = ["id": .string(s.id.uuidString), "kind": .string(shapeKindName(s.kind)),
+                                          "construction": .bool(s.isConstruction), "closed": .bool(s.isClosed),
+                                          "area": .number(s.area)]
+        switch s.kind {
+        case let .polyline(p, closed):
+            value["points"] = .array(p.map(vec2JSON)); value["closed"] = .bool(closed)
+        case let .rectangle(c, w, h):
+            value["corner"] = vec2JSON(c); value["width"] = .number(w); value["height"] = .number(h)
+        case let .circle(c, r):
+            value["center"] = vec2JSON(c); value["radius"] = .number(r)
+        case let .polygon(c, r, n, rot, circ):
+            value["center"] = vec2JSON(c); value["radius"] = .number(r); value["sides"] = .number(Double(n))
+            value["rotation"] = .number(rot * 180 / .pi); value["circumscribed"] = .bool(circ)
+        case let .slot(a, b, w):
+            value["start"] = vec2JSON(a); value["end"] = vec2JSON(b); value["width"] = .number(w)
+        case let .arc(c, r, a0, a1):
+            value["center"] = vec2JSON(c); value["radius"] = .number(r)
+            value["start_angle"] = .number(a0 * 180 / .pi); value["end_angle"] = .number(a1 * 180 / .pi)
+        case let .spline(p, closed):
+            value["points"] = .array(p.map(vec2JSON)); value["closed"] = .bool(closed)
+        case let .bezier(s, c1, c2, e):
+            value["start"] = vec2JSON(s); value["control1"] = vec2JSON(c1)
+            value["control2"] = vec2JSON(c2); value["end"] = vec2JSON(e)
+        case let .point3D(p):
+            value["position"] = vector(p)
+        case let .line3D(a, b):
+            value["start"] = vector(a); value["end"] = vector(b)
+        case let .workplane(o, x, p):
+            value["origin"] = vector(o); value["x_axis_point"] = vector(x); value["plane_point"] = vector(p)
+        }
+        return .object(value)
+    }
+
+    private func shapeKindName(_ kind: SketchShape.Kind) -> String {
+        switch kind {
+        case let .polyline(p, closed): closed ? "polyline" : (p.count == 2 ? "line" : "polyline")
+        case .rectangle: "rectangle"
+        case .circle: "circle"
+        case .polygon: "polygon"
+        case .slot: "slot"
+        case .arc: "arc"
+        case .spline: "spline"
+        case .bezier: "bezier"
+        case .point3D: "point3D"
+        case .line3D: "line3D"
+        case .workplane: "workplane"
+        }
+    }
+
+    private func sketchShape(_ json: JSONValue) throws -> SketchShape {
+        func point(_ key: String) throws -> Vec2 {
+            guard let x = json[key]?["x"]?.number, let y = json[key]?["y"]?.number else {
+                throw CADToolFailure("\(key): punto {x,y} in mm.")
+            }
+            try CADToolValidation.coordinate(x); try CADToolValidation.coordinate(y)
+            return Vec2(x, y)
+        }
+        func raw(_ key: String) throws -> Double {
+            guard let v = json[key]?.number, v.isFinite else { throw CADToolFailure("\(key) deve essere un numero finito.") }
+            return v
+        }
+        func size(_ key: String) throws -> Double {
+            let v = try raw(key)
+            try CADToolValidation.dimension(v)
+            return v
+        }
+        func degrees(_ key: String) throws -> Double {
+            let v = try raw(key)
+            guard (-360...360).contains(v) else { throw CADToolFailure("\(key): angolo in gradi tra -360 e 360.") }
+            return v * .pi / 180
+        }
+        func points(_ key: String) throws -> [Vec2] {
+            guard let list = json[key]?.array else { throw CADToolFailure("\(key): punti {x,y} in mm.") }
+            guard (2...256).contains(list.count) else { throw CADToolFailure("\(key): 2–256 punti {x,y}.") }
+            var out: [Vec2] = []
+            for v in list {
+                guard let x = v["x"]?.number, let y = v["y"]?.number else { throw CADToolFailure("\(key): ogni punto richiede x e y.") }
+                try CADToolValidation.coordinate(x); try CADToolValidation.coordinate(y)
+                out.append(Vec2(x, y))
+            }
+            return out
+        }
+        guard let kind = json["kind"]?.string else { throw CADToolFailure("Ogni entità richiede kind.") }
+        let shapeKind: SketchShape.Kind
+        switch kind {
+        case "line":
+            let p = try points("points")
+            guard p.count == 2 else { throw CADToolFailure("line: esattamente 2 punti.") }
+            shapeKind = .polyline(p, closed: false)
+        case "polyline":
+            shapeKind = .polyline(try points("points"), closed: json["closed"]?.bool ?? false)
+        case "spline":
+            shapeKind = .spline(points: try points("points"), closed: json["closed"]?.bool ?? false)
+        case "rectangle":
+            var corner = try point("corner")
+            var w = try raw("width"), h = try raw("height")
+            if w < 0 { corner.x += w; w = -w }
+            if h < 0 { corner.y += h; h = -h }
+            try CADToolValidation.dimension(w); try CADToolValidation.dimension(h)
+            shapeKind = .rectangle(corner: corner, width: w, height: h)
+        case "circle":
+            shapeKind = .circle(center: try point("center"), radius: try size("radius"))
+        case "polygon":
+            let rawSides = try raw("sides")
+            guard rawSides == rawSides.rounded(), (3...64).contains(rawSides) else {
+                throw CADToolFailure("polygon: sides tra 3 e 64.")
+            }
+            shapeKind = .polygon(center: try point("center"), radius: try size("radius"), sides: Int(rawSides),
+                                 rotation: json["rotation"] == nil ? 0 : try degrees("rotation"),
+                                 circumscribed: json["circumscribed"]?.bool ?? false)
+        case "slot":
+            shapeKind = .slot(start: try point("start"), end: try point("end"), width: try size("width"))
+        case "arc":
+            shapeKind = .arc(center: try point("center"), radius: try size("radius"),
+                             start: try degrees("start_angle"), end: try degrees("end_angle"))
+        case "bezier":
+            shapeKind = .bezier(start: try point("start"), control1: try point("control1"),
+                                control2: try point("control2"), end: try point("end"))
+        default:
+            throw CADToolFailure("kind: line, polyline, spline, rectangle, circle, polygon, slot, arc o bezier.")
+        }
+        return SketchShape(kind: shapeKind, isConstruction: json["construction"]?.bool ?? false)
+    }
+
+    private func sketchPlane(_ args: [String: JSONValue]) throws -> SketchPlane {
+        if args["face_point"] != nil || args["face_normal"] != nil {
+            guard let fp = args["face_point"], let fn = args["face_normal"] else {
+                throw CADToolFailure("face_point e face_normal vanno insieme.")
+            }
+            guard let px = fp["x"]?.number, let py = fp["y"]?.number, let pz = fp["z"]?.number,
+                  let nx = fn["x"]?.number, let ny = fn["y"]?.number, let nz = fn["z"]?.number,
+                  Vec3(nx, ny, nz).length > 0.5 else {
+                throw CADToolFailure("face_point e face_normal: vettori {x,y,z}, normale non nulla.")
+            }
+            for v in [px, py, pz] { try CADToolValidation.coordinate(v) }
+            return SketchPlane.onFace(point: Vec3(px, py, pz), normal: Vec3(nx, ny, nz))
+        }
+        let plane: SketchPlane
+        switch args["plane"]?.string ?? "xy" {
+        case "xy": plane = .xy
+        case "xz": plane = .xz
+        case "yz": plane = .yz
+        default: throw CADToolFailure("plane: xy, xz o yz.")
+        }
+        guard let offset = args["offset"]?.number else { return plane }
+        guard offset.isFinite, abs(offset) <= 100000 else { throw CADToolFailure("offset: numero finito entro ±100000 mm.") }
+        return offset == 0 ? plane : plane.offset(by: offset)
+    }
+
+    private func planeJSON(_ p: SketchPlane) -> JSONValue {
+        if p == .xy { return "XY" }
+        if p == .xz { return "XZ" }
+        if p == .yz { return "YZ" }
+        return "custom"
+    }
+
+    /// Area covered by the sketch's closed regions, holes subtracted.
+    private func sketchArea(_ sketch: Sketch) -> Double {
+        sketch.regions.reduce(0) { $0 + regionArea(sketch, $1) }
+    }
+
+    private func regionArea(_ sketch: Sketch, _ region: SketchRegion) -> Double {
+        let outer = sketch.shapes.first { $0.id == region.shapeID }?.area ?? abs(Profile2D(points: region.outline).area)
+        let holes = region.holeShapeIDs.compactMap { id in sketch.shapes.first { $0.id == id }?.area }.reduce(0, +)
+        return max(0, outer - holes)
+    }
+
+    private func nextSketchName() -> String {
+        let n = (document.sketches.compactMap { Int($0.name.replacingOccurrences(of: "Schizzo ", with: "")) }.max() ?? 0) + 1
+        return "Schizzo \(n)"
+    }
+
+    private func nextExtrudeName() -> String {
+        let n = (document.features.compactMap { Int($0.name.replacingOccurrences(of: "Estrusione ", with: "")) }.max() ?? 0) + 1
+        return "Estrusione \(n)"
     }
 }
 

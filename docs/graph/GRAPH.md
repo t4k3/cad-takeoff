@@ -1,6 +1,6 @@
 # Grafo dei task
 
-_Generato da `scripts/graph.py` — 2026-10-31 02:49. Non modificare a mano._
+_Generato da `scripts/graph.py` — 2026-11-01 10:38. Non modificare a mano._
 
 Legenda: verde = done · giallo = in corso · rosso = bloccato · grigio = da fare. Etichetta: `ID · titolo · agente`.
 
@@ -89,10 +89,10 @@ flowchart LR
     T49["T49 · MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI<br/><i>claude</i>"]:::done
     T50["T50 · Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida<br/><i>claude</i>"]:::done
     T51["T51 · Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida<br/><i>claude</i>"]:::done
-    T52["T52 · Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude<br/><i>claude</i>"]:::in_progress
+    T52["T52 · Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude<br/><i>claude</i>"]:::done
     T53["T53 · Provider OpenAI per la chat in-app<br/><i>codex</i>"]:::done
     T54["T54 · Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente<br/><i>claude</i>"]:::todo
-    T55["T55 · Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app<br/><i>claude</i>"]:::todo
+    T55["T55 · Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app<br/><i>claude</i>"]:::done
     T56["T56 · Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop<br/><i>claude</i>"]:::done
     T57["T57 · Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP<br/><i>codex</i>"]:::done
   end
@@ -138,6 +138,17 @@ flowchart LR
     T112["T112 · UI: Liquid Glass (HIG macOS) + i18n it/en/zh-Hans (String Catalog)<br/><i>claude</i>"]:::done
     T113["T113 · T112 seguito: i18n pulita (it/en/zh-Hans) + Home stile Pixelmator<br/><i>claude</i>"]:::done
     T114["T114 · i18n della chiave API nell'assistente + issue Xcode (format spec, chiavi stale, recommended settings)<br/><i>claude</i>"]:::done
+    T126["T126 · Schizzo: rettangolo come 4 linee con vincoli H/V espliciti e raccordo/smusso tra due linee (stile dune3d)<br/><i>claude</i>"]:::done
+    T127["T127 · Schizzo: tangenza dei raccordi scritta al punto dell'arco (niente gradi liberi fantasma dopo fillet/smusso)<br/><i>claude</i>"]:::done
+    T135["T135 · Schizzo 3D: modello dati e solver per punti e linee 3D sul piano di lavoro<br/><i>claude</i>"]:::done
+    T136["T136 · Schizzo 3D: vincoli 3D (piano, distanza punto-piano, normale al piano, blocco rotazione) e quote<br/><i>claude</i>"]:::done
+    T137["T137 · Schizzo 3D: strumenti UI punto/linea 3D, rendering e selezione nel viewport<br/><i>claude</i>"]:::done
+    T138["T138 · Schizzo: rettangolo come entità singola, raccordo/smusso di tutti gli angoli e presa centrale di trascinamento<br/><i>claude</i>"]:::done
+    T139["T139 · Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato<br/><i>claude</i>"]:::done
+    T141["T141 · Schizzo: strumento Bezier nella UI (4 clic, anteprima, picking e vincoli punto-su-curva/tangente)<br/><i>claude</i>"]:::done
+    T142["T142 · Schizzo: geometria di costruzione dalla barra (interruttore per le nuove entità e conversione della selezione)<br/><i>claude</i>"]:::done
+    T143["T143 · Schizzo: sposta, ruota e copia-incolla delle entità (strumenti con anteprima, scorciatoie e vincoli)<br/><i>claude</i>"]:::done
+    T151["T151 · Assistente: prompt inviati al modello nella lingua dell'app (it/en/zh)<br/><i>claude</i>"]:::done
   end
   subgraph P20["Fase 0"]
     T81["T81 · Fase 0: Annulla/Ripeti veri per ogni modifica (manuale, schizzo, assistente) + avviso alla chiusura<br/><i>claude</i>"]:::done
@@ -192,6 +203,40 @@ flowchart LR
   end
   subgraph P32["Build"]
     T120["T120 · Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113<br/><i>claude</i>"]:::done
+  end
+  subgraph P33["2"]
+    T121["T121 · Sketch: solver P0-P3 (analitico+QR, diagnosi, assi, drag, copertura)<br/><i>claude</i>"]:::done
+    T122["T122 · Sketch: vincoli con assi/origine selezionabili + ispettore vincoli stile SolidWorks<br/><i>claude</i>"]:::done
+    T123["T123 · Rettangolo: lati come linee e raccordo con click vicino all'angolo<br/><i>claude</i>"]:::done
+    T124["T124 · Schizzo: scelta stile SolidWorks/Fusion (punto prima della linea, origine e assi sempre, preselezione e vincoli in sospeso visibili)<br/><i>claude</i>"]:::done
+    T125["T125 · Schizzo: vincoli impliciti delle forme visibili e rifiuto dei vincoli già garantiti spiegato (rettangolo/poligono/asola/cerchio/arco)<br/><i>claude</i>"]:::done
+  end
+  subgraph P34["sketch"]
+    T128["T128 · Schizzo: etichette di vincoli e quote agganciate alla geometria (niente scostamento con i pannelli laterali)<br/><i>claude</i>"]:::done
+  end
+  subgraph P35["M1"]
+    T129["T129 · Schizzo: niente analisi completa durante il trascinamento (diagnosi solo al rilascio)<br/><i>claude</i>"]:::done
+    T130["T130 · Renderer Metal: buffer riusati per tratti spessi, evidenziazioni e gizmo (niente allocazioni per frame)<br/><i>claude</i>"]:::done
+    T131["T131 · Solver schizzo: Jacobian sparso per vincolo e dizionario forme (prestazioni su schizzi grandi)<br/><i>claude</i>"]:::done
+    T132["T132 · Visualizzazione: refinement indipendente dalle booleane + isteresi screenFactor (niente ricalcoli allo zoom)<br/><i>claude</i>"]:::done
+    T133["T133 · Picking: BVH CPU per i corpi e hover limitato nel tempo<br/><i>claude</i>"]:::done
+  end
+  subgraph P36["E5"]
+    T134["T134 · DRC: contorni scheda precalcolati, maschera strati e bbox in testa al ciclo<br/><i>codex</i>"]:::todo
+  end
+  subgraph P37["P0"]
+    T140["T140 · Schizzo: curve di Bezier nel core (entita cubica, vincoli punto-su-curva e tangente con parametro t)<br/><i>claude</i>"]:::done
+  end
+  subgraph P38["P2"]
+    T144["T144 · Renderer: shader .metal compilati nel bundle (niente makeLibrary a runtime)<br/><i>claude</i>"]:::done
+    T145["T145 · Schizzo: diagnosi (DOF/conflitti) asincrona e annullabile fuori dal main thread<br/><i>claude</i>"]:::done
+    T146["T146 · Solver schizzo: cluster indipendenti risolti in parallelo (risultati deterministici e annullabili)<br/><i>claude</i>"]:::done
+    T147["T147 · Viewport: etichette dello schizzo disegnate dal renderer con un atlante di testo (niente Text SwiftUI per ogni etichetta)<br/><i>claude</i>"]:::done
+    T148["T148 · Viewport: picking GPU al posto dell'albero CPU (ID pass 1x1, hover e clic)<br/><i>claude</i>"]:::done
+  end
+  subgraph P39["P1"]
+    T149["T149 · Strumenti assistente/MCP per lo schizzo: elenco, lettura, creazione entita e profilo da estrudere<br/><i>claude</i>"]:::done
+    T150["T150 · Assistenti: interfacce compatibili OpenAI e Anthropic con Claude, ChatGPT e DeepSeek di primo livello<br/><i>claude</i>"]:::done
   end
   T00 --> T02
   T00 --> T03
@@ -420,6 +465,41 @@ flowchart LR
   T117 --> T118
   T118 --> T119
   T119 --> T120
+  T120 --> T121
+  T121 --> T122
+  T122 --> T123
+  T123 --> T124
+  T124 --> T125
+  T125 --> T126
+  T126 --> T127
+  T127 --> T128
+  T128 --> T129
+  T129 --> T130
+  T129 --> T131
+  T130 --> T132
+  T130 --> T133
+  T133 --> T134
+  T133 --> T135
+  T135 --> T136
+  T135 --> T137
+  T136 --> T137
+  T123 --> T138
+  T126 --> T138
+  T137 --> T139
+  T139 --> T140
+  T140 --> T141
+  T141 --> T142
+  T141 --> T143
+  T143 --> T144
+  T143 --> T145
+  T145 --> T146
+  T146 --> T147
+  T147 --> T148
+  T48 --> T149
+  T47 --> T150
+  T53 --> T150
+  T52 --> T151
+  T150 --> T151
   classDef done fill:#2e7d32,color:#fff,stroke:#222
   classDef in_progress fill:#f9a825,color:#fff,stroke:#222
   classDef blocked fill:#c62828,color:#fff,stroke:#222
@@ -434,6 +514,7 @@ flowchart LR
 - **T92** Elettronica E1: librerie native, import KiCad/EasyEDA e catalogo JLCPCB — suggerito: codex
 - **T93** Elettronica E2: schema gerarchico, ERC e comandi transazionali per UI e assistente — suggerito: codex
 - **T94** Elettronica E3: PCB multistrato, routing interattivo, rame e DRC geometrico — suggerito: codex
+- **T134** DRC: contorni scheda precalcolati, maschera strati e bbox in testa al ciclo — suggerito: codex
 
 ## Tabella
 
@@ -491,10 +572,10 @@ flowchart LR
 | T49 | MCP core nell'app: JSON-RPC, tools/list-call, HTTP localhost + token, stato in UI | done | claude | T47 | App/Sources/Integration/MCP<br>App/Sources/UI/Connectors<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Workspace/StatusBar.swift |
 | T50 | Connettore Claude: bridge stdio ftk-mcp, config Claude Desktop/Code, guida | done | claude | T49 | Tools/ftk-mcp<br>docs/connectors/CLAUDE.md<br>project.yml<br>scripts/install-claude-connector.sh<br>App/Sources/UI/Connectors |
 | T51 | Connettore ChatGPT: MCP remoto HTTPS, auth, setup ChatGPT, guida | done | claude | T49 | App/Sources/UI/Connectors |
-| T52 | Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude | in_progress | claude | T47, T25 | App/Sources/UI/Assistant<br>App/Sources/Integration/Assistant<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Previews |
+| T52 | Chat assistente in-app: pannello, streaming, schede strumenti con Annulla, provider Claude | done | claude | T47, T25 | App/Sources/UI/Assistant<br>App/Sources/Integration/Assistant<br>App/Sources/UI/Workspace<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Previews |
 | T53 | Provider OpenAI per la chat in-app | done | codex | T47 | App/Sources/Integration/OpenAI<br>Tests/OpenAIProvider<br>scripts/test-openai-provider.sh |
 | T54 | Strumenti CAD v2: schizzi, storico, lamiera, assiemi esposti all'assistente | todo | claude | T48, T28 | App/Sources/Model/Tools |
-| T55 | Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app | todo | claude | T50, T51, T52, T53, T48 | docs/connectors/E2E.md |
+| T55 | Prova end-to-end: stessa richiesta via Claude, ChatGPT e chat in-app | done | claude | T50, T51, T52, T53, T48 | docs/connectors/E2E.md |
 | T56 | Distribuzione TestFlight: bridge ftk-mcp nel bundle in sandbox, App Group, Collega a Claude Desktop | done | claude | T50 | Tools/ftk-mcp<br>project.yml<br>App/FusionTakeoff.entitlements<br>Tools/ftk-mcp.entitlements<br>App/Sources/Integration/MCP/MCPHost.swift<br>App/Sources/UI/Connectors |
 | T57 | Integrazione MCP-CAD: risultati compatibili, Origin esatto e test HTTP | done | codex | T48, T49 | App/Sources/Integration/MCP/MCPServer.swift<br>App/Sources/Integration/MCP/LocalHTTPTransport.swift<br>Tests/MCPIntegration<br>scripts/test-mcp-integration.sh |
 | T58 | Aggiornare grafo sorgente navigabile con chat, MCP e Metal | done | codex | T24, T48, T49 | docs/architecture<br>scripts/architecture_graph.py |
@@ -560,3 +641,34 @@ flowchart LR
 | T118 | Avvio: solo la finestra di benvenuto (niente workspace dietro) e Home senza striscia vuota in alto | done | claude | T117 | App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Home/HomeView.swift<br>App/Sources/UI/Workspace/WorkspaceView.swift<br>docs/DA_PROVARE.md |
 | T119 | UI: MCP in alto a destra, barra inferiore unica (navigazione+stato), statistiche nel pannello destro e pannelli laterali a tutta altezza | done | claude | T118 | App/Sources/UI/FusionTakeoffApp.swift<br>App/Sources/UI/Workspace/WorkspaceView.swift<br>App/Sources/UI/Workspace/StatusBar.swift<br>App/Sources/UI/Workspace/TimelineBar.swift<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Sources/UI/Connectors/ConnectorsPanel.swift<br>App/Sources/UI/Connectors/ChatGPTSetupView.swift<br>App/Resources/Localizable.xcstrings<br>docs/DA_PROVARE.md |
 | T120 | Build: deployment target macOS 14, warning fixes, compatibilità API e amend del commit T112/T113 | done | claude | T119 | project.yml<br>Packages/CADCore/Package.swift<br>Packages/ElectronicsCore/Package.swift<br>App/Sources<br>App/Resources<br>Packages/ElectronicsCore/Sources/ElectronicsCore/Assembly.swift<br>docs/DA_PROVARE.md |
+| T121 | Sketch: solver P0-P3 (analitico+QR, diagnosi, assi, drag, copertura) | done | claude | T120 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift<br>App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Resources/Localizable.xcstrings<br>docs/DA_PROVARE.md |
+| T122 | Sketch: vincoli con assi/origine selezionabili + ispettore vincoli stile SolidWorks | done | claude | T121 | App/Sources/UI/Sketch<br>App/Sources/UI/Workspace/Ribbon.swift<br>App/Resources/Localizable.xcstrings<br>Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift<br>docs/DA_PROVARE.md |
+| T123 | Rettangolo: lati come linee e raccordo con click vicino all'angolo | done | claude | T122 | App/Sources/UI/Sketch<br>App/Resources/Localizable.xcstrings<br>Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift<br>docs/DA_PROVARE.md |
+| T124 | Schizzo: scelta stile SolidWorks/Fusion (punto prima della linea, origine e assi sempre, preselezione e vincoli in sospeso visibili) | done | claude | T123 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Resources/Localizable.xcstrings<br>Packages/CADCore/Tests/CADCoreTests<br>docs/DA_PROVARE.md |
+| T125 | Schizzo: vincoli impliciti delle forme visibili e rifiuto dei vincoli già garantiti spiegato (rettangolo/poligono/asola/cerchio/arco) | done | claude | T124 | App/Sources/UI/Sketch<br>App/Resources/Localizable.xcstrings<br>Packages/CADCore/Tests/CADCoreTests<br>docs/DA_PROVARE.md |
+| T126 | Schizzo: rettangolo come 4 linee con vincoli H/V espliciti e raccordo/smusso tra due linee (stile dune3d) | done | claude | T125 | Packages/CADCore/Sources/CADCore/Sketch<br>App/Sources/UI/Sketch<br>App/Resources/Localizable.xcstrings<br>Packages/CADCore/Tests/CADCoreTests<br> docs/DA_PROVARE.md |
+| T127 | Schizzo: tangenza dei raccordi scritta al punto dell'arco (niente gradi liberi fantasma dopo fillet/smusso) | done | claude | T126 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/UI/Sketch<br>App/Resources/Localizable.xcstrings<br> docs/DA_PROVARE.md |
+| T128 | Schizzo: etichette di vincoli e quote agganciate alla geometria (niente scostamento con i pannelli laterali) | done | claude | T127 | App/Sources/UI/Viewport<br>App/Sources/UI/Sketch<br>docs/DA_PROVARE.md |
+| T129 | Schizzo: niente analisi completa durante il trascinamento (diagnosi solo al rilascio) | done | claude | T128 | App/Sources/UI/Sketch<br>App/Resources/Localizable.xcstrings<br>Packages/CADCore/Tests/CADCoreTests<br>scripts/test-sketch.sh |
+| T130 | Renderer Metal: buffer riusati per tratti spessi, evidenziazioni e gizmo (niente allocazioni per frame) | done | claude | T129 | App/Sources/UI/Viewport |
+| T131 | Solver schizzo: Jacobian sparso per vincolo e dizionario forme (prestazioni su schizzi grandi) | done | claude | T129 | Packages/CADCore/Sources/CADCore/Sketch<br>App/Sources/UI/Sketch<br>scripts/test-sketch.sh<br>Tests/Sketch |
+| T132 | Visualizzazione: refinement indipendente dalle booleane + isteresi screenFactor (niente ricalcoli allo zoom) | done | claude | T130 | Packages/CADCore/Sources/CADCore/Kernel<br>App/Sources/UI/Viewport<br>App/Sources/Model/DesignModel.swift<br>Packages/CADCore/Tests/CADCoreTests |
+| T133 | Picking: BVH CPU per i corpi e hover limitato nel tempo | done | claude | T130 | App/Sources/UI/Viewport<br>Packages/CADCore/Sources/CADCore/Kernel<br>Packages/CADCore/Tests/CADCoreTests |
+| T134 | DRC: contorni scheda precalcolati, maschera strati e bbox in testa al ciclo | todo | codex | T133 | Packages/ElectronicsCore<br>Tests/Electronics<br>scripts/test-electronics.sh |
+| T135 | Schizzo 3D: modello dati e solver per punti e linee 3D sul piano di lavoro | done | claude | T133 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/UI/Sketch/SketchInspector.swift<br>App/Sources/UI/Sketch/SketchSession.swift<br>App/Sources/UI/Sketch/SketchSession+Constraints.swift<br>App/Sources/UI/Sketch/SketchConstraintChecker.swift<br>App/Sources/UI/Features/HoleCommand.swift<br>App/Resources/Localizable.xcstrings |
+| T136 | Schizzo 3D: vincoli 3D (piano, distanza punto-piano, normale al piano, blocco rotazione) e quote | done | claude | T135 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/UI/Sketch<br>App/Resources/Localizable.xcstrings |
+| T137 | Schizzo 3D: strumenti UI punto/linea 3D, rendering e selezione nel viewport | done | claude | T135, T136 | App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/Model<br>App/Sources/UI/Workspace/Ribbon.swift<br>App/Resources/Localizable.xcstrings |
+| T138 | Schizzo: rettangolo come entità singola, raccordo/smusso di tutti gli angoli e presa centrale di trascinamento | done | claude | T123, T126 | App/Resources/Localizable.xcstrings<br>App/Sources/UI/Sketch/SketchSession.swift<br>App/Sources/UI/Sketch/SketchSession+Constraints.swift<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests |
+| T139 | Schizzo 3D: entità piano di lavoro nel core (3 punti, riquadro, lock rotazione) e piano derivato | done | claude | T137 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/UI/Sketch<br>App/Sources/UI/Viewport<br>App/Sources/UI/Workspace/Ribbon.swift<br>App/Sources/UI/Features/HoleCommand.swift<br>App/Resources/Localizable.xcstrings<br>Tests/Sketch |
+| T140 | Schizzo: curve di Bezier nel core (entita cubica, vincoli punto-su-curva e tangente con parametro t) | done | claude | T139 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/UI/Sketch<br>App/Sources/UI/Features/HoleCommand.swift<br>App/Resources/Localizable.xcstrings<br>Tests/Sketch |
+| T141 | Schizzo: strumento Bezier nella UI (4 clic, anteprima, picking e vincoli punto-su-curva/tangente) | done | claude | T140 | App/Sources/UI/Sketch<br>App/Sources/UI/Workspace/Ribbon.swift<br>App/Resources/Localizable.xcstrings<br>Tests/Sketch |
+| T142 | Schizzo: geometria di costruzione dalla barra (interruttore per le nuove entità e conversione della selezione) | done | claude | T141 | App/Sources/UI/Sketch<br>App/Sources/UI/Workspace/Ribbon.swift<br>App/Resources/Localizable.xcstrings<br>Tests/Sketch |
+| T143 | Schizzo: sposta, ruota e copia-incolla delle entità (strumenti con anteprima, scorciatoie e vincoli) | done | claude | T141 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests<br>App/Sources/UI/Sketch<br>App/Sources/UI/Workspace/Ribbon.swift<br>App/Sources/UI/Viewport/ViewportContainer.swift<br>App/Resources/Localizable.xcstrings<br>Tests/Sketch<br>scripts/test-sketch.sh |
+| T144 | Renderer: shader .metal compilati nel bundle (niente makeLibrary a runtime) | done | claude | T143 | App/Sources/UI/Viewport/ShaderSource.swift<br>App/Sources/UI/Viewport/Shaders.metal<br>App/Sources/UI/Viewport/ViewportRenderer.swift<br>Tests/Shaders/Runner.swift<br>scripts/test-shaders.sh |
+| T145 | Schizzo: diagnosi (DOF/conflitti) asincrona e annullabile fuori dal main thread | done | claude | T143 | App/Sources/UI/Sketch/SketchSession.swift<br>Packages/CADCore/Sources/CADCore/Sketch/SketchSolver.swift<br>Packages/CADCore/Tests/CADCoreTests/SketchConstraintTests.swift |
+| T146 | Solver schizzo: cluster indipendenti risolti in parallelo (risultati deterministici e annullabili) | done | claude | T145 | Packages/CADCore/Sources/CADCore/Sketch<br>Packages/CADCore/Tests/CADCoreTests |
+| T147 | Viewport: etichette dello schizzo disegnate dal renderer con un atlante di testo (niente Text SwiftUI per ogni etichetta) | done | claude | T146 | App/Sources/UI/Viewport<br>App/Sources/UI/Sketch<br>Tests/Shaders |
+| T148 | Viewport: picking GPU al posto dell'albero CPU (ID pass 1x1, hover e clic) | done | claude | T147 | App/Sources/UI/Viewport<br>App/Sources/UI/Selection<br>App/Sources/UI/Features<br>Tests/Shaders<br>Packages/CADCore/Sources/CADCore/Kernel/RayIndex.swift<br>Packages/CADCore/Tests/CADCoreTests/PrimitiveKernelTests.swift |
+| T149 | Strumenti assistente/MCP per lo schizzo: elenco, lettura, creazione entita e profilo da estrudere | done | claude | T48 | App/Sources/Model/DesignModel.swift<br>App/Sources/Model/Tools<br>Tests/MCPIntegration<br>Tests/AssistantTools<br>scripts/test-mcp-integration.sh |
+| T150 | Assistenti: interfacce compatibili OpenAI e Anthropic con Claude, ChatGPT e DeepSeek di primo livello | done | claude | T47, T53 | App/Sources/Integration/Assistant<br>App/Sources/Integration/OpenAI<br>App/Sources/UI/Assistant<br>App/Sources/UI/FusionTakeoffApp.swift<br>App/Resources/Localizable.xcstrings<br>Tests/AssistantProviders<br>scripts/test-assistant-deepseek.sh |
+| T151 | Assistente: prompt inviati al modello nella lingua dell'app (it/en/zh) | done | claude | T52, T150 | App/Sources/Integration/Assistant<br>Tests/AppleIntelligence |

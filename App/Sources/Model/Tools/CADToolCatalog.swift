@@ -26,6 +26,29 @@ enum CADToolCatalog {
         let operation: JSONValue = ["type": "string", "enum": ["newBody", "join", "cut", "intersect"],
                                     "description": "newBody (default): separate body. join: merge with the bodies it touches. cut: remove its volume from the bodies it touches (holes, pockets, slots: e.g. a cylinder with operation cut through a plate). intersect: keep only the overlap."]
         let common: [String: JSONValue] = ["name": name, "position": position, "color": color, "operation": operation]
+        let sketchID: JSONValue = ["type": "string", "format": "uuid",
+                                   "description": "Sketch ID from list_sketches; never guess."]
+        let shapeID: JSONValue = ["type": "string", "format": "uuid",
+                                  "description": "Closed shape ID from get_sketch."]
+        let sketchPoint: JSONValue = object(["x": coordinate, "y": coordinate], required: ["x", "y"])
+        let sketchShape: JSONValue = ["type": "object", "additionalProperties": false, "required": ["kind"],
+            "properties": [
+                "kind": ["type": "string", "enum": ["line", "polyline", "rectangle", "circle", "polygon",
+                                                    "slot", "arc", "spline", "bezier"]],
+                "points": ["type": "array", "minItems": 2, "maxItems": 256, "items": sketchPoint],
+                "closed": ["type": "boolean"],
+                "corner": sketchPoint, "width": number, "height": number,
+                "center": sketchPoint, "radius": number,
+                "sides": ["type": "integer", "minimum": 3, "maximum": 64],
+                "rotation": ["type": "number", "minimum": -360, "maximum": 360],
+                "circumscribed": ["type": "boolean"],
+                "start": sketchPoint, "end": sketchPoint,
+                "start_angle": ["type": "number", "minimum": -360, "maximum": 360],
+                "end_angle": ["type": "number", "minimum": -360, "maximum": 360],
+                "control1": sketchPoint, "control2": sketchPoint,
+                "construction": ["type": "boolean"]
+            ]]
+        let skPlane: JSONValue = ["type": "string", "enum": ["xy", "xz", "yz"], "description": "Sketch plane. Default xy (print bed)."]
         func fields(_ extra: [String: JSONValue]) -> [String: JSONValue] { common.merging(extra) { _, b in b } }
         return [
             tool("scene_info", "Informazioni scena", "Use before modelling to inspect bounds, feature count, mesh volume and available undo. The scene is a collection of independent solids, NOT a boolean union; overlaps may double-count volume."),
@@ -106,6 +129,25 @@ enum CADToolCatalog {
                  ["parameters": ["type": "array", "items": object(["name": ["type": "string"], "expression": ["type": "string"], "comment": ["type": "string"]], required: ["name", "expression"])],
                   "remove": ["type": "array", "items": ["type": "string"]]], write: true),
             tool("export_flat_dxf", "Esporta sviluppo DXF", "Return the flat pattern of a sheet-metal part as ASCII DXF (base64), mm: closed outline and round holes on layer CUT, bend lines on BEND_UP/BEND_DOWN, bend-zone tangents on BEND_TANGENT, material/radius/K in comments. Holes drilled into the folded part are unfolded when they are on the plate or on a flange's straight part. feature_id: the sheet-metal feature (optional when there is only one).", ["feature_id": id]),
+            tool("list_sketches", "Elenco schizzi",
+                 "List sketches with plane, visibility, entity count and closed area. Sketches are timeline steps: edits are undoable."),
+            tool("get_sketch", "Leggi schizzo",
+                 "Read one sketch: plane, every entity with its ID and parameters, and its closed regions (outline + holes) usable with extrude_sketch. Points are millimetres; rotation, start_angle and end_angle are degrees.",
+                 ["sketch_id": sketchID], required: ["sketch_id"]),
+            tool("add_sketch", "Crea schizzo",
+                 "Create a sketch or append entities to it. One undo step per call. Shapes: line/polyline/spline need points; rectangle needs corner+width+height; circle center+radius; polygon center+radius+sides (+rotation, circumscribed); slot start+end+width; arc center+radius+start_angle+end_angle; bezier start+control1+control2+end. Set construction true for reference geometry (it never forms profiles). On a face pass face_point (a point on the planar face) and face_normal (its outward normal). Points are millimetres in the sketch's own plane; rotation, start_angle and end_angle are degrees (counter-clockwise), as returned by get_sketch.",
+                 ["sketch_id": sketchID, "name": name, "plane": skPlane,
+                  "face_point": position, "face_normal": position,
+                  "offset": ["type": "number", "minimum": -100000, "maximum": 100000],
+                  "shapes": ["type": "array", "minItems": 1, "maxItems": 256, "items": sketchShape],
+                  "replace": ["type": "boolean"],
+                  "visible": ["type": "boolean"]],
+                 required: ["shapes"], write: true),
+            tool("extrude_sketch", "Estrudi schizzo",
+                 "Extrude one closed region of a sketch; prefer this over add_extrude when the profile already exists as a sketch (add_extrude takes a raw polygon and no holes). Omit shape_id only when the sketch has exactly one closed profile. Holes nested inside the profile are kept automatically. Height is along the sketch normal; reversed flips it. On XY with no offset the result starts at Z=0.",
+                 ["sketch_id": sketchID, "shape_id": shapeID, "height": number, "reversed": ["type": "boolean"]]
+                    .merging(["name": name, "color": color, "operation": operation]) { _, b in b },
+                 required: ["sketch_id", "height"], write: true),
             tool("undo", "Annulla assistente", "Undo the latest change if it was made by the assistant; a change made by the user is never undone. Session undo, not persistent parametric history.", write: true),
             tool("redo", "Ripeti assistente", "Redo the latest undone assistant change. A new edit clears redo.", write: true)
         ]

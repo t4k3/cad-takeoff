@@ -29,7 +29,6 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         var edgeVertexCount: Int
         var bounds: BoundingBox?
 
-        var triangleCount: Int { snapshot.triangles.count / 3 }
         func triangle(_ i: Int) -> (Vec3, Vec3, Vec3) {
             let t = snapshot.triangles, p = snapshot.positions
             return (p[Int(t[i * 3])], p[Int(t[i * 3 + 1])], p[Int(t[i * 3 + 2])])
@@ -52,6 +51,66 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     private struct LineVertex { var position: SIMD4<Float>; var color: SIMD4<Float> }
     private struct FrameUniforms { var viewProjection: simd_float4x4; var eye: SIMD4<Float>; var lightDir: SIMD4<Float>; var clip: SIMD4<Float> }
     private struct DrawUniforms { var color: SIMD4<Float> }
+    private struct TextInstance { var origin: SIMD2<Float>; var size: SIMD2<Float>; var uv: SIMD4<Float>; var color: SIMD4<Float> }
+    private struct LabelBackgroundInstance {
+        var origin: SIMD2<Float>
+        var size: SIMD2<Float>
+        var fill: SIMD4<Float>
+        var border: SIMD4<Float>
+        var params: SIMD4<Float>
+    }
+    private struct PickUniforms { var viewProjection: simd_float4x4; var rayOrigin: SIMD4<Float>; var rayDirection: SIMD4<Float> }
+    private struct PickDraw { var feature: UInt32 }
+
+    /// Nearest surface under a ray, found by the GPU (identity pass, T148).
+    struct PickHit {
+        var featureID: Feature.ID
+        var triangle: Int
+        var distance: Float
+        var point: SIMD3<Float>
+    }
+
+    /// An on-canvas label: a constraint symbol or a dimension value, drawn by the renderer
+    /// through the text atlas (screen points, top-left origin, centre of the box).
+    struct Label {
+        var text: String
+        var center: CGPoint
+        var style: LabelText.Style
+        var textColor: SIMD4<Float>
+        var fill: SIMD4<Float>
+        var border: SIMD4<Float>
+        /// Reference dimensions: dashed border.
+        var dashed: Bool
+    }
+
+    /// CPU-writable buffer reused frame after frame. Three slots rotate, so the GPU still reading
+    /// the previous frames never sees the CPU overwrite its vertices (no allocation per frame).
+    private final class BufferRing {
+        private struct Slot {
+            var buffer: MTLBuffer?
+            var capacity = 0
+        }
+        private let device: MTLDevice
+        private var slots = [Slot(), Slot(), Slot()]
+        private var next = 0
+
+        init(device: MTLDevice) { self.device = device }
+
+        func write<T>(_ items: [T]) -> (buffer: MTLBuffer, count: Int)? {
+            guard !items.isEmpty else { return nil }
+            let i = next
+            next = (next + 1) % slots.count
+            let bytes = items.count * MemoryLayout<T>.stride
+            if slots[i].buffer == nil || slots[i].capacity < bytes {
+                slots[i].capacity = max(bytes, 4 * bytes, 256)
+                slots[i].buffer = device.makeBuffer(length: slots[i].capacity, options: .storageModeShared)
+            }
+            guard let b = slots[i].buffer else { return nil }
+            items.withUnsafeBytes { b.contents().copyMemory(from: $0.baseAddress!, byteCount: bytes) }
+            return (b, items.count)
+        }
+    }
+
 
     let camera: CameraController
     private let device: MTLDevice
@@ -61,14 +120,31 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     private let edgePipeline: MTLRenderPipelineState
     private let thickPipeline: MTLRenderPipelineState
     private let gizmoPipeline: MTLRenderPipelineState
+    private let labelTextPipeline: MTLRenderPipelineState
+    private let labelBackgroundPipeline: MTLRenderPipelineState
+    private let pickPipeline: MTLRenderPipelineState
     private let depthWrite: MTLDepthStencilState
     private let depthReadOnly: MTLDepthStencilState
     /// Overlays (sketch) are always visible, even behind bodies.
     private let depthAlways: MTLDepthStencilState
     private var grid: (buffer: MTLBuffer, count: Int)?
+    /// Vertex data that changes every frame (highlights, sketch overlays, gizmos). One ring per
+    /// draw call site, so two calls in the same frame never share a buffer.
+    private let highlightTriangleBuffers: BufferRing
+    private let highlightLineBuffers: BufferRing
+    private let overlayLineBuffers: BufferRing
+    private let gizmoBuffers: BufferRing
+    private let labelTextBuffers: BufferRing
+    private let labelBackgroundBuffers: BufferRing
+    /// Rasterized runs shared by every label (one texture, no SwiftUI Text per label).
+    private let labelAtlas: TextAtlas
 
     private(set) var bodies: [Feature.ID: Body] = [:]
     private var order: [Feature.ID] = []
+    /// 1×1 identity pass for picking (T148), and the pick-only vertex buffers of bodies that
+    /// have no drawing buffer (the pre-command reference bodies).
+    private var pickTargets: (ids: MTLTexture, distance: MTLTexture, depth: MTLTexture)?
+    private var pickMeshes: [Feature.ID: (revision: String, buffer: MTLBuffer, count: Int)] = [:]
     var selection: Feature.ID?
     var hovered: Feature.ID?
     var style: DisplayStyle = .shadedEdges
@@ -81,6 +157,9 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
     var gizmos: [GizmoMesh] = []
     /// Section plane (Ispeziona › Sezione): bodies with dot(p, xyz) > w are cut away; zero = off.
     var section: SIMD4<Float> = .zero
+    /// On-canvas labels for the frame (sketch constraints and dimensions). Asked again at every
+    /// draw, so they follow the camera without a SwiftUI pass per label.
+    var labelProvider: (@MainActor () -> [Label])?
 
     private weak var view: MTKView?
 
@@ -91,10 +170,18 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
 
     init?(view: MTKView, camera: CameraController) {
         guard let device = view.device, let queue = device.makeCommandQueue(),
-              let library = try? device.makeLibrary(source: ShaderSource.code, options: nil) else { return nil }
+              let library = device.makeDefaultLibrary(),
+              let atlas = TextAtlas(device: device) else { return nil }
         self.device = device
         self.queue = queue
         self.camera = camera
+        self.labelAtlas = atlas
+        self.highlightTriangleBuffers = BufferRing(device: device)
+        self.highlightLineBuffers = BufferRing(device: device)
+        self.overlayLineBuffers = BufferRing(device: device)
+        self.gizmoBuffers = BufferRing(device: device)
+        self.labelTextBuffers = BufferRing(device: device)
+        self.labelBackgroundBuffers = BufferRing(device: device)
 
         func pipeline(_ vertex: String, _ fragment: String, blend: Bool) -> MTLRenderPipelineState? {
             let d = MTLRenderPipelineDescriptor()
@@ -117,8 +204,24 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
               let line = pipeline("lineVertex", "lineFragment", blend: true),
               let edge = pipeline("lineVertex", "edgeFragment", blend: true),
               let gizmo = pipeline("gizmoVertex", "meshFragment", blend: false),
-              let thick = pipeline("thickLineVertex", "edgeFragment", blend: true) else { return nil }
+              let thick = pipeline("thickLineVertex", "edgeFragment", blend: true),
+              let labelText = pipeline("textVertex", "textFragment", blend: true),
+              let labelBackground = pipeline("labelBackgroundVertex", "labelBackgroundFragment", blend: true) else { return nil }
         meshPipeline = mesh; linePipeline = line; edgePipeline = edge; gizmoPipeline = gizmo; thickPipeline = thick
+        labelTextPipeline = labelText; labelBackgroundPipeline = labelBackground
+
+        // Picking draws one pixel to a small identity target (no MSAA, no blending): the colour
+        // attachments carry the body/triangle index and the ray parameter, the depth buffer
+        // decides which surface is in front.
+        let pd = MTLRenderPipelineDescriptor()
+        pd.vertexFunction = library.makeFunction(name: "pickVertex")
+        pd.fragmentFunction = library.makeFunction(name: "pickFragment")
+        pd.colorAttachments[0].pixelFormat = .rgba32Uint
+        pd.colorAttachments[1].pixelFormat = .r32Float
+        pd.depthAttachmentPixelFormat = .depth32Float
+        pd.rasterSampleCount = 1
+        guard let pick = try? device.makeRenderPipelineState(descriptor: pd) else { return nil }
+        pickPipeline = pick
 
         let dw = MTLDepthStencilDescriptor()
         dw.depthCompareFunction = .less
@@ -173,11 +276,16 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
 
     var visibleBodies: [Body] { order.compactMap { bodies[$0] } }
 
-    private func makeBody(_ f: Feature, _ snap: BodySnapshot) -> Body {
+    private func meshVertices(_ snap: BodySnapshot) -> [MeshVertex] {
         func v4(_ v: Vec3, _ w: Float) -> SIMD4<Float> { SIMD4(Float(v.x), Float(v.y), Float(v.z), w) }
-        let tris = snap.triangles.map { i in
+        return snap.triangles.map { i in
             MeshVertex(position: v4(snap.positions[Int(i)], 1), normal: v4(snap.normals[Int(i)], 0))
         }
+    }
+
+    private func makeBody(_ f: Feature, _ snap: BodySnapshot) -> Body {
+        func v4(_ v: Vec3, _ w: Float) -> SIMD4<Float> { SIMD4(Float(v.x), Float(v.y), Float(v.z), w) }
+        let tris = meshVertices(snap)
         // Real B-rep edges only (no tessellation lines on curved faces).
         let color = SIMD4<Float>(0.05, 0.06, 0.08, 1)
         var lines: [LineVertex] = []
@@ -198,6 +306,93 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
         }
         return Body(feature: f, snapshot: snap, triangles: buffer(tris), triangleVertexCount: tris.count,
                     edges: buffer(lines), edgeVertexCount: lines.count, bounds: bounds)
+    }
+
+    // MARK: Picking (T148)
+
+    /// Nearest surface under a ray: one pixel of an identity pass drawn with only depth, then
+    /// read back. Works on any body list (also the reference bodies used while a command preview
+    /// is on), so hover and clicks never scan triangles on the CPU.
+    func pick(_ ray: Ray, in bodies: [Body]) -> PickHit? {
+        guard let view, view.bounds.width > 0, view.bounds.height > 0, !bodies.isEmpty else { return nil }
+        let targets: (ids: MTLTexture, distance: MTLTexture, depth: MTLTexture)
+        if let pickTargets { targets = pickTargets } else if let made = makePickTargets() { targets = made } else { return nil }
+        let aspect = Float(view.bounds.width / view.bounds.height)
+        let ndc = camera.ndc(of: ray, aspect: aspect)
+        // Translation in clip space: the click ray becomes the centre of the 1×1 target.
+        let shift = simd_float4x4(columns: (SIMD4(1, 0, 0, 0), SIMD4(0, 1, 0, 0), SIMD4(0, 0, 1, 0),
+                                           SIMD4(-ndc.x, -ndc.y, 0, 1)))
+        var uniforms = PickUniforms(viewProjection: shift * camera.projectionMatrix(aspect: aspect) * camera.viewMatrix,
+                                    rayOrigin: SIMD4(ray.origin, 0),
+                                    rayDirection: SIMD4(simd_normalize(ray.direction), 0))
+        guard let command = queue.makeCommandBuffer() else { return nil }
+
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = targets.ids
+        pass.colorAttachments[0].loadAction = .clear
+        pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        pass.colorAttachments[0].storeAction = .store
+        pass.colorAttachments[1].texture = targets.distance
+        pass.colorAttachments[1].loadAction = .clear
+        pass.colorAttachments[1].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        pass.colorAttachments[1].storeAction = .store
+        pass.depthAttachment.texture = targets.depth
+        pass.depthAttachment.loadAction = .clear
+        pass.depthAttachment.clearDepth = 1
+        pass.depthAttachment.storeAction = .dontCare
+        guard let enc = command.makeRenderCommandEncoder(descriptor: pass) else { return nil }
+        enc.setRenderPipelineState(pickPipeline)
+        enc.setDepthStencilState(depthWrite)
+        enc.setVertexBytes(&uniforms, length: MemoryLayout<PickUniforms>.stride, index: 1)
+        enc.setFragmentBytes(&uniforms, length: MemoryLayout<PickUniforms>.stride, index: 1)
+        for (i, body) in bodies.enumerated() {
+            guard let (buf, count) = pickVertices(of: body) else { continue }
+            var draw = PickDraw(feature: UInt32(i))
+            enc.setVertexBuffer(buf, offset: 0, index: 0)
+            enc.setFragmentBytes(&draw, length: MemoryLayout<PickDraw>.stride, index: 2)
+            enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: count)
+        }
+        enc.endEncoding()
+        command.commit()
+        command.waitUntilCompleted()
+
+        var ids = SIMD4<UInt32>(repeating: 0)
+        targets.ids.getBytes(&ids, bytesPerRow: 16, from: MTLRegionMake2D(0, 0, 1, 1), mipmapLevel: 0)
+        guard ids.z != 0, Int(ids.x) < bodies.count else { return nil }
+        var distance: Float = 0
+        targets.distance.getBytes(&distance, bytesPerRow: 4, from: MTLRegionMake2D(0, 0, 1, 1), mipmapLevel: 0)
+        // Past the camera (orthographic rays can see behind it): not a hit.
+        guard distance > 1e-4 else { return nil }
+        let body = bodies[Int(ids.x)]
+        guard Int(ids.y) < body.snapshot.triangles.count / 3 else { return nil }
+        return PickHit(featureID: body.feature.id, triangle: Int(ids.y), distance: distance,
+                       point: ray.origin + simd_normalize(ray.direction) * distance)
+    }
+
+    /// The drawing buffer of a body, or one built (and cached) from its snapshot for the
+    /// reference bodies, which the renderer itself never draws.
+    private func pickVertices(of body: Body) -> (MTLBuffer, Int)? {
+        if let buf = body.triangles { return (buf, body.triangleVertexCount) }
+        if let c = pickMeshes[body.feature.id], c.revision == body.snapshot.revision { return (c.buffer, c.count) }
+        let v = meshVertices(body.snapshot)
+        guard let buf = buffer(v) else { return nil }
+        pickMeshes[body.feature.id] = (body.snapshot.revision, buf, v.count)
+        return (buf, v.count)
+    }
+
+    private func makePickTargets() -> (ids: MTLTexture, distance: MTLTexture, depth: MTLTexture)? {
+        func texture(_ format: MTLPixelFormat, _ storage: MTLStorageMode) -> MTLTexture? {
+            let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: format, width: 1, height: 1, mipmapped: false)
+            d.usage = .renderTarget
+            d.storageMode = storage
+            return device.makeTexture(descriptor: d)
+        }
+        guard let ids = texture(.rgba32Uint, .shared),
+              let distance = texture(.r32Float, .shared),
+              let depth = texture(.depth32Float, .private) else { return nil }
+        let targets = (ids, distance, depth)
+        pickTargets = targets
+        return targets
     }
 
     private func makeGrid(extent: Float, step: Float, major: Float) -> (MTLBuffer, Int)? {
@@ -285,33 +480,46 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
             enc.setRenderPipelineState(edgePipeline)
             enc.setDepthStencilState(depthReadOnly)
             enc.setDepthBias(-4, slopeScale: -2, clamp: 0.01)
-            let tris = highlightTriangles.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.3),
-                                                     LineVertex(position: SIMD4($0.1, 1), color: $0.3),
-                                                     LineVertex(position: SIMD4($0.2, 1), color: $0.3)] }
-            if let buf = buffer(tris) {
-                enc.setVertexBuffer(buf, offset: 0, index: 0)
-                enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: tris.count)
+            if !highlightTriangles.isEmpty {
+                let tris = highlightTriangles.flatMap { [LineVertex(position: SIMD4($0.0, 1), color: $0.3),
+                                                          LineVertex(position: SIMD4($0.1, 1), color: $0.3),
+                                                          LineVertex(position: SIMD4($0.2, 1), color: $0.3)] }
+                if let (buf, count) = highlightTriangleBuffers.write(tris) {
+                    enc.setVertexBuffer(buf, offset: 0, index: 0)
+                    enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: count)
+                }
             }
-            drawThick(highlightLines, width: 2, view: view, encoder: enc)   // the colour marks it, not the width
+            drawThick(highlightLines, width: 2, view: view, encoder: enc, buffers: highlightLineBuffers)   // the colour marks it, not the width
             enc.setDepthBias(0, slopeScale: 0, clamp: 0)
         }
         if !overlayLines.isEmpty {
             var none = DrawUniforms(color: .zero)
             enc.setFragmentBytes(&none, length: MemoryLayout<DrawUniforms>.stride, index: 2)
             enc.setDepthStencilState(depthAlways)
-            drawThick(overlayLines, width: 1.5, view: view, encoder: enc)
+            drawThick(overlayLines, width: 1.5, view: view, encoder: enc, buffers: overlayLineBuffers)
         }
         if !gizmos.isEmpty {
             enc.setRenderPipelineState(gizmoPipeline)
             enc.setDepthStencilState(depthWrite)
+            // All handles in one buffer, drawn one range at a time (the colour changes per handle).
+            var v: [MeshVertex] = []
+            var ranges: [(offset: Int, count: Int, color: SIMD4<Float>)] = []
             for g in gizmos {
-                let v = g.vertices.map { MeshVertex(position: SIMD4($0.0, 1), normal: SIMD4($0.1, 0)) }
-                guard let buf = buffer(v) else { continue }
-                var draw = DrawUniforms(color: g.color)
-                enc.setVertexBuffer(buf, offset: 0, index: 0)
-                enc.setFragmentBytes(&draw, length: MemoryLayout<DrawUniforms>.stride, index: 2)
-                enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: v.count)
+                let start = v.count
+                for (p, n) in g.vertices { v.append(MeshVertex(position: SIMD4(p, 1), normal: SIMD4(n, 0))) }
+                ranges.append((start, v.count - start, g.color))
             }
+            if let (buf, _) = gizmoBuffers.write(v) {
+                enc.setVertexBuffer(buf, offset: 0, index: 0)
+                for r in ranges where r.count > 0 {
+                    var draw = DrawUniforms(color: r.color)
+                    enc.setFragmentBytes(&draw, length: MemoryLayout<DrawUniforms>.stride, index: 2)
+                    enc.drawPrimitives(type: .triangle, vertexStart: r.offset, vertexCount: r.count)
+                }
+            }
+        }
+        if let labels = labelProvider?(), !labels.isEmpty {
+            drawLabels(labels, view: view, encoder: enc)
         }
         enc.endEncoding()
         command.present(drawable)
@@ -320,9 +528,45 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
 
     private struct ThickVertex { var position: SIMD4<Float>; var other: SIMD4<Float>; var color: SIMD4<Float>; var params: SIMD4<Float> }
 
+    /// On-canvas labels over the whole scene: a rounded box per label (antialiased border, dashed
+    /// for reference dimensions) and a quad per run sampled from the shared text atlas, both in
+    /// screen points with the origin at the top-left.
+    private func drawLabels(_ labels: [Label], view: MTKView, encoder enc: MTLRenderCommandEncoder) {
+        let scale = view.drawableSize.width / max(view.bounds.width, 1)
+        var boxes: [LabelBackgroundInstance] = [], runs: [TextInstance] = []
+        boxes.reserveCapacity(labels.count)
+        runs.reserveCapacity(labels.count)
+        for label in labels {
+            let box = LabelText.boxSize(label.text, label.style)
+            let origin = SIMD2<Float>(Float(label.center.x - box.width / 2), Float(label.center.y - box.height / 2))
+            boxes.append(LabelBackgroundInstance(origin: origin,
+                                                 size: SIMD2(Float(box.width), Float(box.height)),
+                                                 fill: label.fill, border: label.border,
+                                                 params: SIMD4(label.style.cornerRadius, 1, label.dashed ? 4.5 : 0, 0)))
+            guard let q = labelAtlas.quad(label.text, style: label.style, center: label.center,
+                                          color: label.textColor, scale: scale) else { continue }
+            runs.append(TextInstance(origin: q.origin, size: q.size, uv: q.uv, color: q.color))
+        }
+        var viewport = SIMD2<Float>(Float(max(view.bounds.width, 1)), Float(max(view.bounds.height, 1)))
+        enc.setDepthStencilState(depthAlways)
+        if let (buf, count) = labelBackgroundBuffers.write(boxes) {
+            enc.setRenderPipelineState(labelBackgroundPipeline)
+            enc.setVertexBuffer(buf, offset: 0, index: 0)
+            enc.setVertexBytes(&viewport, length: MemoryLayout<SIMD2<Float>>.stride, index: 3)
+            enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: count)
+        }
+        if let (buf, count) = labelTextBuffers.write(runs), let texture = labelAtlas.metalTexture {
+            enc.setRenderPipelineState(labelTextPipeline)
+            enc.setVertexBuffer(buf, offset: 0, index: 0)
+            enc.setVertexBytes(&viewport, length: MemoryLayout<SIMD2<Float>>.stride, index: 3)
+            enc.setFragmentTexture(texture, index: 0)
+            enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: count)
+        }
+    }
+
     /// Lines `width` points wide (screen space), as two triangles per segment.
     private func drawThick(_ lines: [(SIMD3<Float>, SIMD3<Float>, SIMD4<Float>)], width: Float, view: MTKView,
-                           encoder enc: MTLRenderCommandEncoder) {
+                           encoder enc: MTLRenderCommandEncoder, buffers: BufferRing) {
         guard !lines.isEmpty else { return }
         let scale = Float(view.window?.backingScaleFactor ?? 2)
         let px = width * scale
@@ -336,12 +580,12 @@ final class ViewportRenderer: NSObject, MTKViewDelegate {
             // At B the direction is reversed: its side −1 is A's side +1.
             v += [at(pa, pb, 1), at(pa, pb, -1), at(pb, pa, -1), at(pa, pb, -1), at(pb, pa, 1), at(pb, pa, -1)]
         }
-        guard let buf = buffer(v) else { return }
+        guard let (buf, count) = buffers.write(v) else { return }
         var viewport = SIMD2<Float>(Float(view.drawableSize.width), Float(view.drawableSize.height))
         enc.setRenderPipelineState(thickPipeline)
         enc.setVertexBuffer(buf, offset: 0, index: 0)
         enc.setVertexBytes(&viewport, length: MemoryLayout<SIMD2<Float>>.stride, index: 3)
-        enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: v.count)
+        enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: count)
     }
 
     /// Edge colour override: accent for the selection, light accent on hover, else baked (a = 0).

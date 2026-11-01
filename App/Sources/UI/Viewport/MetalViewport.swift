@@ -110,6 +110,11 @@ final class CADMetalView: MTKView {
     /// A handle took this drag.
     private var handleDrag = false
     private var trackingArea: NSTrackingArea?
+    /// Hover picking is coalesced to one pick per ~16 ms: a 120 Hz trackpad floods `mouseMoved`,
+    /// but only the latest ray matters.
+    private var hoverTask: Task<Void, Never>?
+    private var hoverGeneration = 0
+    private var pendingHover: (CGPoint, Ray)?
 
     override var acceptsFirstResponder: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
@@ -137,6 +142,7 @@ final class CADMetalView: MTKView {
 
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
+        cancelPendingHover()
         if event.modifierFlags.contains(.control) { showContextMenu(event); return }
         dragStart = topLeft(event)
         isDragging = false
@@ -205,10 +211,34 @@ final class CADMetalView: MTKView {
 
     override func mouseMoved(with event: NSEvent) {
         let p = topLeft(event)
-        onHover(p, camera.ray(at: p, in: bounds.size))
+        pendingHover = (p, camera.ray(at: p, in: bounds.size))
+        guard hoverTask == nil else { return }
+        hoverGeneration += 1
+        let generation = hoverGeneration
+        hoverTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(16))
+            guard let self, !Task.isCancelled, self.hoverGeneration == generation,
+                  let pending = self.pendingHover else { return }
+            self.hoverTask = nil
+            self.pendingHover = nil
+            self.onHover(pending.0, pending.1)
+        }
     }
 
-    override func mouseExited(with event: NSEvent) { onHover(nil, nil) }
+    override func mouseExited(with event: NSEvent) {
+        hoverTask?.cancel()
+        hoverTask = nil
+        hoverGeneration += 1
+        pendingHover = nil
+        onHover(nil, nil)
+    }
+
+    private func cancelPendingHover() {
+        hoverTask?.cancel()
+        hoverTask = nil
+        hoverGeneration += 1
+        pendingHover = nil
+    }
 
     override func keyDown(with event: NSEvent) {
         let plain = event.modifierFlags.intersection([.command, .control, .option]).isEmpty

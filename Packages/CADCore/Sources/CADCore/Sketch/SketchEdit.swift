@@ -120,6 +120,10 @@ extension SketchShape {
             let o = outline
             let count = isClosed ? o.count : o.count - 1
             return (0..<max(0, count)).map { SketchPrim.line(o[$0], o[($0 + 1) % o.count]) }
+        case .bezier:
+            // Same sampling as the outline: the curve is drawn and picked piece by piece.
+            let o = outline
+            return (0..<max(0, o.count - 1)).map { SketchPrim.line(o[$0], o[$0 + 1]) }
         case let .circle(c, r):
             return [.arc(center: c, radius: r, start: 0, sweep: 2 * .pi)]
         case let .arc(c, r, a0, a1):
@@ -129,6 +133,9 @@ extension SketchShape {
             let base = atan2(b.y - a.y, b.x - a.x)
             return [.line(p0, q0), .arc(center: b, radius: w / 2, start: base - .pi / 2, sweep: .pi),
                     .line(p1, q1), .arc(center: a, radius: w / 2, start: base + .pi / 2, sweep: .pi)]
+        case .point3D, .line3D, .workplane:
+            // 3D geometry has no planar primitives: it is not trimmed, offset or extruded.
+            return []
         }
     }
 
@@ -154,8 +161,8 @@ extension SketchShape {
             let implied: [SketchConstraint] = [
                 .init(.coincident(.point(l0.id, 1), .point(arcB.id, 1))), .init(.coincident(.point(arcB.id, 2), .point(l1.id, 0))),
                 .init(.coincident(.point(l1.id, 1), .point(arcA.id, 1))), .init(.coincident(.point(arcA.id, 2), .point(l0.id, 0))),
-                .init(.tangent(.segment(l0.id, 0), .circle(arcB.id, 0))), .init(.tangent(.segment(l1.id, 0), .circle(arcB.id, 0))),
-                .init(.tangent(.segment(l1.id, 0), .circle(arcA.id, 0))), .init(.tangent(.segment(l0.id, 0), .circle(arcA.id, 0))),
+                .init(.tangent(.segment(l0.id, 0), .point(arcB.id, 1))), .init(.tangent(.segment(l1.id, 0), .point(arcB.id, 2))),
+                .init(.tangent(.segment(l1.id, 0), .point(arcA.id, 1))), .init(.tangent(.segment(l0.id, 0), .point(arcA.id, 2))),
                 .init(.equal(.circle(arcA.id, 0), .circle(arcB.id, 0))),
             ]
             return ([l0, arcB, l1, arcA], implied)
@@ -202,6 +209,8 @@ extension Sketch {
                         }
                     }
                     return nil
+                case .origin, .axisX, .axisY:
+                    return ref
                 case let .circle(_, j):
                     guard let c0 = old.circle(j) else { return nil }
                     for s in new {
@@ -392,6 +401,7 @@ extension Sketch {
             switch s.kind {
             case let .polyline(p, false): return p.count >= 2 ? (p[0], p[p.count - 1]) : nil
             case let .spline(p, false): return p.count >= 2 ? (p[0], p[p.count - 1]) : nil
+            case let .bezier(p0, _, _, p3): return (p0, p3)
             case .arc: return (s.point(1)!, s.point(2)!)
             default: return nil
             }
@@ -537,6 +547,7 @@ extension Sketch {
                     case let .point(_, i): return .point(nid, i)
                     case let .segment(_, i): return .segment(nid, i)
                     case let .circle(_, i): return .circle(nid, i)
+                    case .origin, .axisX, .axisY: return nil
                     }
                 }.map { SketchConstraint($0) }
             default: return nil
@@ -619,6 +630,20 @@ extension Sketch {
             case let .spline(p, closed):
                 m.kind = .spline(points: p.map(reflect), closed: closed)
                 pairs = p.indices.map { ($0, $0) }
+            case let .bezier(p0, c1, c2, p3):
+                m.kind = .bezier(start: reflect(p0), control1: reflect(c1),
+                                 control2: reflect(c2), end: reflect(p3))
+                pairs = [(0, 0), (1, 1), (2, 2), (3, 3)]
+            case let .point3D(q):
+                let r = reflect(Vec2(q.x, q.y))
+                m.kind = .point3D(position: Vec3(r.x, r.y, q.z))
+            case let .line3D(a, b):
+                let ra = reflect(Vec2(a.x, a.y)), rb = reflect(Vec2(b.x, b.y))
+                m.kind = .line3D(start: Vec3(ra.x, ra.y, a.z), end: Vec3(rb.x, rb.y, b.z))
+            case let .workplane(o, x, p):
+                let ro = reflect(Vec2(o.x, o.y)), rx = reflect(Vec2(x.x, x.y)), rp = reflect(Vec2(p.x, p.y))
+                m.kind = .workplane(origin: Vec3(ro.x, ro.y, o.z), xAxisPoint: Vec3(rx.x, rx.y, x.z),
+                                    planePoint: Vec3(rp.x, rp.y, p.z))
             }
             added += pairs.map { .init(.symmetric(.point(s.id, $0.0), .point(m.id, $0.1), axis)) }
             copies.append(m)
@@ -653,7 +678,7 @@ extension Sketch {
                 for i in [1, 2] {
                     guard let p = new.point(i) else { continue }
                     for k in segments(of: other, endingAt: p) where tangentAt(p, circle: c, segment: other.segment(k)!) {
-                        out.append(.init(.tangent(.segment(other.id, k), .circle(new.id, 0))))
+                        out.append(.init(.tangent(.segment(other.id, k), .point(new.id, i))))
                     }
                 }
             }
@@ -661,7 +686,7 @@ extension Sketch {
                 for i in [1, 2] {
                     guard let p = other.point(i) else { continue }
                     for k in segments(of: new, endingAt: p) where tangentAt(p, circle: c, segment: new.segment(k)!) {
-                        out.append(.init(.tangent(.segment(new.id, k), .circle(other.id, 0))))
+                        out.append(.init(.tangent(.segment(new.id, k), .point(other.id, i))))
                     }
                 }
             }
